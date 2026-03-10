@@ -142,7 +142,7 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 			*Export current frame as PNG/JPEG at the active aspect ratio. Optionally include overlays.*
 
 		- ##### 2.4.2. Video export (Feature)
-			*Render shot or full sequence to video. Configurable resolution and frame rate.*
+			*Proper offline rendering at target resolution and frame rate. Render shot or full sequence. Output via ffmpeg or MCP integration with Adobe Media Encoder.*
 
 		- ##### 2.4.3. Storyboard export (Feature)
 			*Export all shots as a grid/contact sheet with shot names and durations. PDF or image.*
@@ -166,30 +166,36 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 			*Keyframe light properties on the timeline. Animate intensity, color, position for lighting cues.*
 
 	- ### 3.2. Characters / Actors (Milestone)
-		*Poseable humanoid figures for blocking scenes. The core differentiator from ShotDesigner (2D) and the complexity leap from simple objects.*
+		*Poseable, animatable humanoid figures for blocking scenes. At least FrameForge-level manipulation with a better UI. The core differentiator from 2D tools and the biggest complexity leap.*
 
 		- ##### 3.2.1. Mannequin placement (Feature)
-			*Drop poseable humanoid mannequins into the scene. Drag to position like any other object.*
+			*Drop humanoid mannequins into the scene. Generic character set with varied body types. Drag to position like any other object.*
 
 		- ##### 3.2.2. Pose library (Feature)
-			*Preset poses: standing, sitting, walking, running, pointing, conversation. Apply with one click.*
+			*Preset poses: standing, sitting, walking, running, pointing, conversation, lying down. Apply with one click, use as starting points.*
 
 		- ##### 3.2.3. Custom posing (Feature)
-			*Manipulate individual joints — head, arms, torso, legs. IK or FK.*
+			*Manipulate individual joints — head, arms, torso, legs. IK for natural limb movement. Direct joint selection and rotation.*
 
 		- ##### 3.2.4. Character animation (Feature)
-			*Keyframe character poses on the timeline. Interpolate between poses for blocking animation.*
+			*Keyframe character poses on the timeline. Interpolate between poses for blocking animation. Walk cycles and basic locomotion.*
+
+		- ##### 3.2.5. Custom character import (Feature)
+			*Import rigged humanoid models (FBX). Map to Fram3d's pose/animation system. Lets users bring their own characters.*
 
 	- ### 3.3. Multi-camera (Milestone)
-		*Multiple cameras in the same scene. Switch between angles, compare framings, build a multi-cam sequence.*
+		*Start with saved camera positions for quick comparison, then graduate to full multi-cam coverage.*
 
-		- ##### 3.3.1. Camera creation (Feature)
-			*Add/remove cameras. Each has independent position, lens, and animation. Named Camera_A, Camera_B, etc.*
+		- ##### 3.3.1. Camera bookmarks (Feature)
+			*Save and recall named camera positions. Quick A/B comparison of framings. Bookmark = position + rotation + focal length.*
 
-		- ##### 3.3.2. Camera switching (Feature)
-			*Assign cameras to shots. View through any camera. Quick-switch for comparing framings.*
+		- ##### 3.3.2. Camera creation (Feature)
+			*Add/remove independent cameras in the scene. Each has its own position, lens, and animation. Named Camera_A, Camera_B, etc.*
 
-		- ##### 3.3.3. Multi-cam preview (Feature)
+		- ##### 3.3.3. Camera-to-shot assignment (Feature)
+			*Assign cameras to shots. View through any camera. Cut between cameras in the sequence.*
+
+		- ##### 3.3.4. Multi-cam preview (Feature)
 			*Split-screen or picture-in-picture view of multiple cameras simultaneously.*
 
 	- ### 3.4. Scene hierarchy (Milestone)
@@ -201,16 +207,28 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 		- ##### 3.4.2. Hierarchy panel (Feature)
 			*Tree view of all scene objects showing parent/child relationships. Click to select, drag to reparent.*
 
-	- ### 3.5. Selection and manipulation refinements (Milestone)
+	- ### 3.5. Set decoration library (Milestone)
+		*Built-in and marketplace-connected asset library for dressing scenes — furniture, vehicles, props, environments. The goal is zero friction between "I need a table" and having one in the scene.*
+
+		- ##### 3.5.1. Built-in asset library (Feature)
+			*Ship with a core set of common props: tables, chairs, doors, windows, vehicles, trees, walls, floors. Categorized and searchable.*
+
+		- ##### 3.5.2. Marketplace integration (Feature)
+			*Browse and import assets from existing 3D marketplaces (Unity Asset Store, Sketchfab, TurboSquid) directly in-app. Handle format conversion and collider generation.*
+
+		- ##### 3.5.3. User asset management (Feature)
+			*Organize imported and marketplace assets into user collections. Tag, favorite, and quick-access for reuse across projects.*
+
+	- ### 3.6. Selection and manipulation refinements (Milestone)
 		*Quality-of-life improvements to object interaction as scenes get more complex.*
 
-		- ##### 3.5.1. Multi-select (Feature)
+		- ##### 3.6.1. Multi-select (Feature)
 			*Shift-click to add to selection. Drag-select (marquee). Move/rotate/scale multiple objects together.*
 
-		- ##### 3.5.2. Grid snapping (Feature)
+		- ##### 3.6.2. Grid snapping (Feature)
 			*Snap objects to configurable grid. Hold modifier to override. Visual grid overlay.*
 
-		- ##### 3.5.3. Custom interpolation curves (Feature)
+		- ##### 3.6.3. Custom interpolation curves (Feature)
 			*Per-keyframe easing: linear, ease-in, ease-out, ease-in-out, bezier. Curve editor UI.*
 
 - # 4. AI-assisted previsualization (Project)
@@ -243,6 +261,30 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 		- ##### 4.3.2. Shot list generation (Feature)
 			*Generate a full shot list from a scene description or script excerpt. Create shots in sequence.*
 
+- # 5. Platform expansion (Project)
+	*Bring Fram3d beyond desktop. Web first for accessibility, iPad if the port is clean.*
+
+	- ### 5.1. Web (Milestone)
+		*Fram3d in the browser. Removes the install barrier — share a link, open a project.*
+
+		- ##### 5.1.1. WebGL build (Feature)
+			*Unity WebGL export. Validate performance with camera system, timeline, and scene interaction.*
+
+		- ##### 5.1.2. Cloud persistence (Feature)
+			*Save/load projects to cloud storage. Share project URLs.*
+
+		- ##### 5.1.3. Web-specific input (Feature)
+			*Adapt mouse/keyboard controls for browser constraints. Handle scroll hijacking, focus, and modifier key differences.*
+
+	- ### 5.2. iPad (Milestone)
+		*Fram3d on iPad. Touch-first interaction for on-set and location scouting use.*
+
+		- ##### 5.2.1. Touch controls (Feature)
+			*Remap camera controls to touch gestures: pinch zoom, two-finger pan, three-finger orbit.*
+
+		- ##### 5.2.2. Apple Pencil support (Feature)
+			*Precision selection and gizmo manipulation with Pencil. Pressure sensitivity for fine control.*
+
 - # Sequencing principles
 
 	1. **Ship the camera first.** The virtual camera is the product. Everything else supports it. Get camera + overlays + basic scene working before building timeline features.
@@ -250,3 +292,4 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 	3. **Characters are the complexity cliff.** Poseable humanoids with IK, pose libraries, and animation are an order of magnitude harder than everything in Project 1. Don't underestimate this.
 	4. **AI features are speculative.** Project 4 depends on LLM capabilities that may or may not work well enough. Build the tool so it's great without AI — AI is upside, not the product.
 	5. **Don't build a 3D editor.** Every feature should pass the test: "does a director need this to plan a shot?" If the answer is "only a 3D artist would use this," cut it.
+	6. **Platform expansion comes last.** Desktop experience must be solid before porting. Web and iPad are distribution plays, not feature plays.

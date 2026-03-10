@@ -1,7 +1,7 @@
 # Fram3d Architecture Reference
 
 **Date**: 2026-03-10
-**Companion to**: `2026-03-10-fram3d-spec.md`
+**Companion to**: `2026-03-10-fram3d-roadmap.md`
 **Based on**: Vismatic Studio implementation (Unity 6000.1.11f1)
 
 This document captures implementation decisions, patterns, constants, and technical details from the original Vismatic Studio codebase. Use as a reference when rebuilding — not as a prescription.

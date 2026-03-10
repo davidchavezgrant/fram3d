@@ -1,0 +1,38 @@
+# Unity generated
+Unity/*/Library/
+Unity/*/Temp/
+Unity/*/Logs/
+Unity/*/obj/
+Unity/*/Build/
+Unity/*/Builds/
+Unity/*/MemoryCaptures/
+Unity/*/Recordings/
+
+# Unity asset store cache
+Unity/*/Assets/AssetStoreTools*
+
+# IDE
+.vs/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Crashlytics
+crashlytics-build.properties
+firebase-debug.log
+
+# User-specific settings
+Unity/*/UserSettings/

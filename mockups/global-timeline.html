@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fram3d — Global Timeline Visualization Mockup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: -apple-system, 'Segoe UI', Roboto, monospace;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+  }
+
+  /* ── Header ── */
+  #header {
+    padding: 12px 20px;
+    background: #16162a;
+    border-bottom: 1px solid #2a2a4a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  #header h1 { font-size: 14px; font-weight: 600; color: #8888cc; }
+  #header .info { font-size: 11px; color: #666; }
+
+  /* ── Viewport placeholder ── */
+  #viewport {
+    flex: 1;
+    background: #111125;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-height: 120px;
+  }
+  #viewport .placeholder {
+    color: #333;
+    font-size: 13px;
+    text-align: center;
+    line-height: 1.6;
+  }
+  #viewport-shot-label {
+    position: absolute;
+    top: 12px;
+    left: 20px;
+    font-size: 12px;
+    color: #aaa;
+    background: rgba(0,0,0,0.5);
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+  #viewport-time {
+    position: absolute;
+    top: 12px;
+    right: 20px;
+    font-size: 12px;
+    color: #aaa;
+    background: rgba(0,0,0,0.5);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Timeline panel ── */
+  #timeline-panel {
+    background: #1e1e36;
+    border-top: 1px solid #2a2a4a;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Shot Bar ── */
+  #shot-bar-container {
+    display: flex;
+    height: 32px;
+    border-bottom: 1px solid #2a2a4a;
+    flex-shrink: 0;
+  }
+  #shot-bar-label {
+    width: 140px;
+    min-width: 140px;
+    background: #16162a;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    font-size: 10px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-right: 1px solid #2a2a4a;
+  }
+  #shot-bar {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .shot-rect {
+    position: absolute;
+    top: 3px;
+    height: 26px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+    transition: filter 0.15s;
+    border: 1px solid transparent;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 6px;
+  }
+  .shot-rect:hover { filter: brightness(1.2); }
+  .shot-rect.active {
+    border-color: #fff;
+    filter: brightness(1.3);
+    z-index: 1;
+  }
+  /* View range indicator on the shot bar */
+  #shot-bar-view-range {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-left: 2px solid rgba(255,255,255,0.25);
+    border-right: 2px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.04);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ── Ruler ── */
+  #ruler-container {
+    display: flex;
+    height: 22px;
+    border-bottom: 1px solid #222244;
+    flex-shrink: 0;
+  }
+  #ruler-label {
+    width: 140px;
+    min-width: 140px;
+    background: #16162a;
+    border-right: 1px solid #2a2a4a;
+  }
+  #ruler {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #1a1a30;
+  }
+  .ruler-tick {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    background: #2a2a4a;
+  }
+  .ruler-label {
+    position: absolute;
+    top: 4px;
+    font-size: 9px;
+    color: #555;
+    transform: translateX(-50%);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Track area ── */
+  #track-area-wrapper {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  #track-labels {
+    width: 140px;
+    min-width: 140px;
+    background: #16162a;
+    border-right: 1px solid #2a2a4a;
+    overflow: hidden;
+  }
+  .track-label {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    font-size: 11px;
+    border-bottom: 1px solid #222244;
+    gap: 6px;
+  }
+  .track-label .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .track-label .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #track-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  .track-row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 36px;
+    border-bottom: 1px solid #222244;
+  }
+
+  /* Shot background tints on camera track */
+  .shot-bg {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    opacity: 0.12;
+    border-radius: 2px;
+  }
+  .shot-bg.active-shot { opacity: 0.25; }
+
+  /* Linked region (greyed out) */
+  .linked-region {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(100,100,140,0.15),
+      rgba(100,100,140,0.15) 4px,
+      rgba(100,100,140,0.08) 4px,
+      rgba(100,100,140,0.08) 8px
+    );
+    border-radius: 2px;
+    border: 1px dashed rgba(100,100,140,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .linked-region .link-label {
+    font-size: 8px;
+    color: rgba(150,150,200,0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Keyframes */
+  .keyframe {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    transform: translate(-50%, -50%) rotate(45deg);
+    top: 50%;
+    border-radius: 1px;
+    cursor: pointer;
+    transition: transform 0.1s, filter 0.1s;
+    z-index: 2;
+  }
+  .keyframe:hover {
+    transform: translate(-50%, -50%) rotate(45deg) scale(1.3);
+    filter: brightness(1.4);
+  }
+  .keyframe.selected {
+    outline: 2px solid #fff;
+    outline-offset: 1px;
+  }
+  .keyframe.camera { background: #e8a030; }
+  .keyframe.object { background: #5588dd; }
+  .keyframe.object-alt { background: #7755cc; }
+
+  /* Link boundary keyframes */
+  .keyframe.link-boundary {
+    background: #888;
+    width: 8px;
+    height: 14px;
+    border-radius: 1px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Shot boundary lines */
+  .shot-boundary {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(255,255,255,0.08);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Playhead */
+  #playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ff4466;
+    z-index: 10;
+    pointer-events: none;
+  }
+  #playhead::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -5px;
+    width: 12px;
+    height: 12px;
+    background: #ff4466;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+  #playhead-ruler {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ff4466;
+    z-index: 10;
+    pointer-events: none;
+  }
+  #playhead-shotbar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ff4466;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* ── Zoom scroll bar ── */
+  #zoom-bar-container {
+    display: flex;
+    height: 18px;
+    border-top: 1px solid #2a2a4a;
+    flex-shrink: 0;
+  }
+  #zoom-bar-spacer {
+    width: 140px;
+    min-width: 140px;
+    background: #16162a;
+    border-right: 1px solid #2a2a4a;
+  }
+  #zoom-bar {
+    flex: 1;
+    background: #14142a;
+    position: relative;
+    cursor: pointer;
+  }
+  #zoom-thumb {
+    position: absolute;
+    top: 2px;
+    height: 14px;
+    background: rgba(100,100,180,0.3);
+    border: 1px solid rgba(100,100,180,0.5);
+    border-radius: 3px;
+    cursor: grab;
+    min-width: 30px;
+  }
+  #zoom-thumb:active { cursor: grabbing; }
+  #zoom-playhead-indicator {
+    position: absolute;
+    top: 5px;
+    width: 4px;
+    height: 8px;
+    background: #ff4466;
+    border-radius: 1px;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ── Controls bar ── */
+  #controls {
+    height: 36px;
+    background: #16162a;
+    border-top: 1px solid #2a2a4a;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+    flex-shrink: 0;
+    font-size: 11px;
+  }
+  #controls button {
+    background: #2a2a50;
+    color: #ccc;
+    border: 1px solid #3a3a60;
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  #controls button:hover { background: #3a3a60; }
+  #controls button.active { background: #4a4a80; border-color: #6a6aaa; }
+  #controls .spacer { flex: 1; }
+  #controls .time-display {
+    font-variant-numeric: tabular-nums;
+    color: #ff4466;
+    font-weight: 600;
+  }
+
+  /* ── Legend ── */
+  #legend {
+    height: 28px;
+    background: #16162a;
+    border-top: 1px solid #222244;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 20px;
+    font-size: 10px;
+    color: #555;
+    flex-shrink: 0;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 1px;
+  }
+  /* ── Mode switcher ── */
+  #mode-switcher {
+    height: 32px;
+    background: #16162a;
+    border-top: 1px solid #2a2a4a;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .mode-label {
+    font-size: 10px;
+    color: #666;
+    margin-right: 4px;
+  }
+  .mode-btn {
+    background: #2a2a50;
+    color: #999;
+    border: 1px solid #3a3a60;
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .mode-btn:hover { background: #3a3a60; color: #ccc; }
+  .mode-btn.active { background: #4a4a80; border-color: #7a7acc; color: #fff; }
+
+  /* ── Camera clip (mode 1) ── */
+  .camera-clip {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    border-radius: 4px;
+    border: 1px solid rgba(232,160,48,0.5);
+    background: rgba(232,160,48,0.08);
+    overflow: hidden;
+  }
+  .camera-clip.active-clip {
+    border-color: rgba(232,160,48,0.8);
+    background: rgba(232,160,48,0.15);
+  }
+  .camera-clip .clip-label {
+    position: absolute;
+    top: 1px;
+    left: 4px;
+    font-size: 8px;
+    color: rgba(232,160,48,0.5);
+    white-space: nowrap;
+  }
+  .camera-clip.active-clip .clip-label {
+    color: rgba(232,160,48,0.8);
+  }
+
+  /* ── Splice mark (mode 2) ── */
+  .splice-mark {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    transform: translateX(-50%);
+    z-index: 3;
+    pointer-events: none;
+  }
+  .splice-mark::before, .splice-mark::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 2px,
+      rgba(30,30,50,0.9) 2px,
+      rgba(30,30,50,0.9) 3px
+    );
+  }
+  .splice-mark::before { top: 0; }
+  .splice-mark::after { bottom: 0; }
+  .splice-mark-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.15);
+  }
+
+  /* ── Shot-start keyframe (mode 3) ── */
+  .keyframe.camera-start {
+    background: transparent;
+    border: 2px solid #e8a030;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .legend-swatch.diamond { transform: rotate(45deg); width: 8px; height: 8px; }
+  /* ── Minimap ── */
+  #minimap-container {
+    display: flex;
+    height: 48px;
+    border-bottom: 1px solid #2a2a4a;
+    flex-shrink: 0;
+  }
+  #minimap-label {
+    width: 140px;
+    min-width: 140px;
+    background: #16162a;
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    font-size: 9px;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-right: 1px solid #2a2a4a;
+  }
+  #minimap {
+    flex: 1;
+    position: relative;
+    background: #111125;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  #minimap-shots {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 16px;
+  }
+  #minimap-tracks {
+    position: absolute;
+    top: 17px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+  .minimap-track-row {
+    position: absolute;
+    left: 0;
+    right: 0;
+  }
+  .minimap-kf {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 1px;
+    transform: translate(-50%, -50%) rotate(45deg);
+    top: 50%;
+  }
+  .minimap-link-region {
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    background: rgba(100,100,140,0.2);
+    border-radius: 1px;
+  }
+  .minimap-shot {
+    position: absolute;
+    top: 2px;
+    height: 12px;
+    border-radius: 2px;
+    font-size: 7px;
+    color: rgba(255,255,255,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 2px;
+  }
+  #minimap-view-window {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 3;
+  }
+  #minimap-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #ff4466;
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  .legend-swatch.hatched {
+    background: repeating-linear-gradient(
+      45deg, rgba(100,100,140,0.3), rgba(100,100,140,0.3) 2px,
+      rgba(100,100,140,0.1) 2px, rgba(100,100,140,0.1) 4px
+    );
+    border: 1px dashed rgba(100,100,140,0.4);
+  }
+</style>
+</head>
+<body>
+
+
+<!-- Overview (minimap) — above the viewport -->
+<div id="minimap-container">
+  <div id="minimap-label">Overview</div>
+  <div id="minimap">
+    <div id="minimap-shots"></div>
+    <div id="minimap-tracks"></div>
+    <div id="minimap-view-window"></div>
+    <div id="minimap-playhead"></div>
+  </div>
+</div>
+
+<div id="viewport">
+  <div class="placeholder">
+    3D Viewport<br>
+    <span style="font-size:11px;color:#444">(camera view would render here)</span>
+  </div>
+  <div id="viewport-shot-label"></div>
+  <div id="viewport-time"></div>
+</div>
+
+<div id="timeline-panel">
+
+  <!-- Shot Bar -->
+  <div id="shot-bar-container">
+    <div id="shot-bar-label">Shots</div>
+    <div id="shot-bar">
+      <div id="shot-bar-view-range"></div>
+      <div id="playhead-shotbar"></div>
+    </div>
+  </div>
+
+  <!-- Ruler -->
+  <div id="ruler-container">
+    <div id="ruler-label"></div>
+    <div id="ruler">
+      <div id="playhead-ruler"></div>
+    </div>
+  </div>
+
+  <!-- Track Area -->
+  <div id="track-area-wrapper">
+    <div id="track-labels"></div>
+    <div id="track-area">
+      <div id="playhead"></div>
+    </div>
+  </div>
+
+  <!-- Zoom bar -->
+  <div id="zoom-bar-container">
+    <div id="zoom-bar-spacer"></div>
+    <div id="zoom-bar">
+      <div id="zoom-playhead-indicator"></div>
+      <div id="zoom-thumb"></div>
+    </div>
+  </div>
+</div>
+
+<div id="mode-switcher">
+  <span class="mode-label">Camera track style:</span>
+  <button class="mode-btn active" data-mode="clips">1. Clips</button>
+  <button class="mode-btn" data-mode="splice">2. Splice marks</button>
+  <button class="mode-btn" data-mode="shapes">3. Start shapes</button>
+  <button class="mode-btn" data-mode="hide">4. Current only</button>
+</div>
+
+<div id="controls">
+  <button id="btn-play">&#9654; Play</button>
+  <button id="btn-prev-shot">&#9664; Prev Shot</button>
+  <button id="btn-next-shot">Next Shot &#9654;</button>
+  <button id="btn-zoom-fit">Zoom to Fit (\)</button>
+  <div class="spacer"></div>
+  <span class="time-display" id="time-display">0:00.0</span>
+  <span style="color:#555">/ <span id="total-duration"></span></span>
+</div>
+
+<div id="legend">
+  <div class="legend-item"><div class="legend-swatch diamond" style="background:#e8a030"></div>Camera keyframe (per-shot)</div>
+  <div class="legend-item"><div class="legend-swatch diamond" style="background:#5588dd"></div>Object keyframe (global)</div>
+  <div class="legend-item"><div class="legend-swatch diamond" style="background:#7755cc"></div>Object keyframe (alt track)</div>
+  <div class="legend-item"><div class="legend-swatch hatched"></div>Linked period (no independent keyframing)</div>
+  <div class="legend-item"><span style="color:#ff4466">|</span> Playhead</div>
+</div>
+
+<script>
+// ── Data model ──
+const SCENE = {
+  totalDuration: 18, // seconds
+  fps: 24,
+
+  shots: [
+    { name: 'Wide Establishing',  start: 0,  end: 6,  color: '#3a5a7a' },
+    { name: 'Over the Shoulder',  start: 6,  end: 12, color: '#5a4a6a' },
+    { name: 'Close-up Reaction',  start: 12, end: 18, color: '#4a6a5a' },
+  ],
+
+  tracks: [
+    {
+      name: 'Camera',
+      type: 'camera',
+      color: '#e8a030',
+      // Camera keyframes are PER-SHOT (grouped by shot index)
+      keyframes: [
+        // Shot 0: Wide establishing
+        { time: 0,    shot: 0 },
+        { time: 2.5,  shot: 0 },
+        { time: 5.5,  shot: 0 },
+        // Shot 1: Over the shoulder
+        { time: 6,    shot: 1 },
+        { time: 8,    shot: 1 },
+        { time: 10,   shot: 1 },
+        { time: 11.5, shot: 1 },
+        // Shot 2: Close-up reaction
+        { time: 12,   shot: 2 },
+        { time: 14,   shot: 2 },
+        { time: 17,   shot: 2 },
+      ]
+    },
+    {
+      name: 'Character_A',
+      type: 'object',
+      color: '#5588dd',
+      keyframes: [
+        { time: 0 },
+        { time: 3 },
+        { time: 5 },
+        { time: 7.5 },
+        { time: 10 },
+        { time: 13 },
+        { time: 16 },
+      ],
+      linkedPeriods: [] // Character is never linked
+    },
+    {
+      name: 'Sword',
+      type: 'object-alt',
+      color: '#7755cc',
+      keyframes: [
+        { time: 0 },
+        { time: 2 },
+        // linked from 4-11 (follows Character_A hand)
+        { time: 13 },
+        { time: 15.5 },
+        { time: 17 },
+      ],
+      linkedPeriods: [
+        { start: 4, end: 11, parent: 'Character_A hand' }
+      ]
+    },
+    {
+      name: 'Table',
+      type: 'object',
+      color: '#5588dd',
+      keyframes: [
+        { time: 0 },
+        // table is static, just has initial keyframe
+      ],
+      linkedPeriods: []
+    },
+  ]
+};
+
+// ── State ──
+let playhead = 0;
+let viewStart = 0;
+let viewEnd = SCENE.totalDuration;
+let playing = false;
+let selectedKeyframe = null;
+let animFrame = null;
+let cameraMode = 'clips'; // 'clips', 'splice', 'shapes', 'hide'
+let shotBarLastClick = { index: -1, time: 0 };
+
+// ── DOM refs ──
+const shotBar = document.getElementById('shot-bar');
+const ruler = document.getElementById('ruler');
+const trackLabels = document.getElementById('track-labels');
+const trackArea = document.getElementById('track-area');
+const zoomBar = document.getElementById('zoom-bar');
+const zoomThumb = document.getElementById('zoom-thumb');
+const zoomPlayheadIndicator = document.getElementById('zoom-playhead-indicator');
+const playheadEl = document.getElementById('playhead');
+const playheadRuler = document.getElementById('playhead-ruler');
+const playheadShotbar = document.getElementById('playhead-shotbar');
+const timeDisplay = document.getElementById('time-display');
+const totalDurationEl = document.getElementById('total-duration');
+const viewportShotLabel = document.getElementById('viewport-shot-label');
+const viewportTime = document.getElementById('viewport-time');
+
+// ── Helpers ──
+function timeToX(t) {
+  const w = trackArea.clientWidth;
+  return ((t - viewStart) / (viewEnd - viewStart)) * w;
+}
+
+function xToTime(x) {
+  const w = trackArea.clientWidth;
+  return viewStart + (x / w) * (viewEnd - viewStart);
+}
+
+function formatTime(t) {
+  const min = Math.floor(t / 60);
+  const sec = t % 60;
+  return `${min}:${sec.toFixed(1).padStart(4, '0')}`;
+}
+
+function getCurrentShot() {
+  for (let i = 0; i < SCENE.shots.length; i++) {
+    if (playhead >= SCENE.shots[i].start && playhead < SCENE.shots[i].end) return i;
+  }
+  return SCENE.shots.length - 1;
+}
+
+// ── Render ──
+function render() {
+  renderShotBar();
+  renderRuler();
+  renderTracks();
+  renderPlayhead();
+  renderZoomBar();
+  renderMinimap();
+  renderViewportInfo();
+}
+
+function renderShotBar() {
+  // Clear existing shot rects (keep playhead and view range)
+  shotBar.querySelectorAll('.shot-rect').forEach(el => el.remove());
+
+  const currentShot = getCurrentShot();
+
+  SCENE.shots.forEach((shot, i) => {
+    const el = document.createElement('div');
+    el.className = 'shot-rect' + (i === currentShot ? ' active' : '');
+    // Shot bar zooms/pans in sync with the track area
+    const left = timeToX(shot.start);
+    const right = timeToX(shot.end);
+    el.style.left = left + 'px';
+    el.style.width = (right - left - 2) + 'px';
+    el.style.background = shot.color;
+    el.textContent = shot.name;
+    el.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const now = Date.now();
+      if (shotBarLastClick.index === i && now - shotBarLastClick.time < 350) {
+        // Double click: zoom to this shot
+        shotBarLastClick = { index: -1, time: 0 };
+        viewStart = shot.start;
+        viewEnd = shot.end;
+        playhead = shot.start;
+      } else {
+        // Single click: jump playhead to shot start
+        shotBarLastClick = { index: i, time: now };
+        playhead = shot.start;
+      }
+      render();
+    });
+    shotBar.appendChild(el);
+  });
+
+  // Hide the view range indicator (no longer needed — shot bar zooms with tracks)
+  document.getElementById('shot-bar-view-range').style.display = 'none';
+
+  // Re-append playhead so it's always on top
+  shotBar.appendChild(playheadShotbar);
+  const px = timeToX(playhead);
+  playheadShotbar.style.left = px + 'px';
+}
+
+function renderRuler() {
+  ruler.querySelectorAll('.ruler-tick, .ruler-label').forEach(el => el.remove());
+
+  const duration = viewEnd - viewStart;
+  // Determine tick interval based on zoom level
+  let interval;
+  if (duration <= 2) interval = 0.25;
+  else if (duration <= 5) interval = 0.5;
+  else if (duration <= 12) interval = 1;
+  else if (duration <= 30) interval = 2;
+  else interval = 5;
+
+  const startTick = Math.ceil(viewStart / interval) * interval;
+  for (let t = startTick; t <= viewEnd; t += interval) {
+    const x = timeToX(t);
+    if (x < -10 || x > ruler.clientWidth + 10) continue;
+
+    const isMajor = Math.abs(t - Math.round(t)) < 0.01;
+    const tick = document.createElement('div');
+    tick.className = 'ruler-tick';
+    tick.style.left = x + 'px';
+    tick.style.height = isMajor ? '22px' : '10px';
+    tick.style.bottom = '0';
+    ruler.appendChild(tick);
+
+    if (isMajor || interval < 1) {
+      const label = document.createElement('div');
+      label.className = 'ruler-label';
+      label.style.left = x + 'px';
+      label.textContent = formatTime(t);
+      ruler.appendChild(label);
+    }
+  }
+
+  // Ruler playhead
+  const px = timeToX(playhead);
+  playheadRuler.style.left = px + 'px';
+}
+
+function renderTracks() {
+  trackLabels.innerHTML = '';
+  // Clear everything except playhead
+  trackArea.querySelectorAll(':not(#playhead)').forEach(el => el.remove());
+
+  const currentShot = getCurrentShot();
+
+  SCENE.tracks.forEach((track, i) => {
+    // Label
+    const label = document.createElement('div');
+    label.className = 'track-label';
+    label.innerHTML = `<div class="dot" style="background:${track.color}"></div><div class="name">${track.name}</div>`;
+    trackLabels.appendChild(label);
+
+    // Track row
+    const row = document.createElement('div');
+    row.className = 'track-row';
+    row.style.top = (i * 36) + 'px';
+    trackArea.appendChild(row);
+
+    // ── Camera track: mode-dependent rendering ──
+    if (track.type === 'camera') {
+      renderCameraTrack(row, track, i, currentShot);
+    } else {
+      // ── Object tracks: shot boundary lines ──
+      SCENE.shots.forEach(shot => {
+        if (shot.start > 0) {
+          const line = document.createElement('div');
+          line.className = 'shot-boundary';
+          line.style.left = timeToX(shot.start) + 'px';
+          row.appendChild(line);
+        }
+      });
+
+      // Linked periods
+      if (track.linkedPeriods) {
+        track.linkedPeriods.forEach(lp => {
+          const region = document.createElement('div');
+          region.className = 'linked-region';
+          const x1 = timeToX(lp.start);
+          const x2 = timeToX(lp.end);
+          region.style.left = x1 + 'px';
+          region.style.width = (x2 - x1) + 'px';
+          region.title = `Linked to ${lp.parent} — unlink to keyframe independently`;
+
+          const linkLabel = document.createElement('div');
+          linkLabel.className = 'link-label';
+          if (x2 - x1 > 80) {
+            linkLabel.textContent = `→ ${lp.parent}`;
+          }
+          region.appendChild(linkLabel);
+          row.appendChild(region);
+
+          // Link boundary keyframes
+          [lp.start, lp.end].forEach(t => {
+            const kf = document.createElement('div');
+            kf.className = 'keyframe link-boundary';
+            kf.style.left = timeToX(t) + 'px';
+            kf.title = `Link boundary at ${formatTime(t)}`;
+            row.appendChild(kf);
+          });
+        });
+      }
+
+      // Object keyframes (always rendered the same way)
+      track.keyframes.forEach((kf, ki) => {
+        const el = document.createElement('div');
+        el.className = 'keyframe ' + track.type;
+        el.style.left = timeToX(kf.time) + 'px';
+
+        const key = `${i}-${ki}`;
+        if (selectedKeyframe === key) el.classList.add('selected');
+
+        el.title = `${track.name} keyframe at ${formatTime(kf.time)}`;
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectedKeyframe = (selectedKeyframe === key) ? null : key;
+          playhead = kf.time;
+          render();
+        });
+        row.appendChild(el);
+      });
+    }
+  });
+
+  // Set track area height
+  const totalHeight = SCENE.tracks.length * 36;
+  trackArea.style.height = totalHeight + 'px';
+  trackLabels.style.height = totalHeight + 'px';
+}
+
+function renderCameraTrack(row, track, trackIndex, currentShot) {
+  // All modes get shot background tinting
+  SCENE.shots.forEach((shot, si) => {
+    const bg = document.createElement('div');
+    bg.className = 'shot-bg' + (si === currentShot ? ' active-shot' : '');
+    bg.style.left = timeToX(shot.start) + 'px';
+    bg.style.width = (timeToX(shot.end) - timeToX(shot.start)) + 'px';
+    bg.style.background = shot.color;
+    row.appendChild(bg);
+  });
+
+  if (cameraMode === 'clips') {
+    // ── Mode 1: Clips ──
+    // Each shot's camera is a rounded clip container with keyframes inside
+    SCENE.shots.forEach((shot, si) => {
+      const clip = document.createElement('div');
+      clip.className = 'camera-clip' + (si === currentShot ? ' active-clip' : '');
+      clip.style.left = timeToX(shot.start) + 'px';
+      clip.style.width = (timeToX(shot.end) - timeToX(shot.start)) + 'px';
+
+      const label = document.createElement('div');
+      label.className = 'clip-label';
+      label.textContent = 'CAM';
+      clip.appendChild(label);
+
+      row.appendChild(clip);
+    });
+
+    // Keyframes inside clips
+    track.keyframes.forEach((kf, ki) => {
+      const el = document.createElement('div');
+      el.className = 'keyframe camera';
+      el.style.left = timeToX(kf.time) + 'px';
+      if (kf.shot !== currentShot) el.style.opacity = '0.35';
+
+      const key = `${trackIndex}-${ki}`;
+      if (selectedKeyframe === key) el.classList.add('selected');
+      el.title = `Camera keyframe at ${formatTime(kf.time)}`;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedKeyframe = (selectedKeyframe === key) ? null : key;
+        playhead = kf.time;
+        render();
+      });
+      row.appendChild(el);
+    });
+
+  } else if (cameraMode === 'splice') {
+    // ── Mode 2: Splice marks at shot boundaries ──
+    SCENE.shots.forEach(shot => {
+      if (shot.start > 0) {
+        const splice = document.createElement('div');
+        splice.className = 'splice-mark';
+        splice.style.left = timeToX(shot.start) + 'px';
+        const line = document.createElement('div');
+        line.className = 'splice-mark-line';
+        splice.appendChild(line);
+        row.appendChild(splice);
+      }
+    });
+
+    // Regular keyframes with dimming
+    track.keyframes.forEach((kf, ki) => {
+      const el = document.createElement('div');
+      el.className = 'keyframe camera';
+      el.style.left = timeToX(kf.time) + 'px';
+      if (kf.shot !== currentShot) el.style.opacity = '0.35';
+
+      const key = `${trackIndex}-${ki}`;
+      if (selectedKeyframe === key) el.classList.add('selected');
+      el.title = `Camera keyframe at ${formatTime(kf.time)}`;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedKeyframe = (selectedKeyframe === key) ? null : key;
+        playhead = kf.time;
+        render();
+      });
+      row.appendChild(el);
+    });
+
+  } else if (cameraMode === 'shapes') {
+    // ── Mode 3: Different shape for shot-start keyframes ──
+    // Shot boundary lines (subtle)
+    SCENE.shots.forEach(shot => {
+      if (shot.start > 0) {
+        const line = document.createElement('div');
+        line.className = 'shot-boundary';
+        line.style.left = timeToX(shot.start) + 'px';
+        row.appendChild(line);
+      }
+    });
+
+    // Find which keyframes are shot-starters
+    const shotStartTimes = new Set(SCENE.shots.map(s => s.start));
+
+    track.keyframes.forEach((kf, ki) => {
+      const isStart = shotStartTimes.has(kf.time);
+      const el = document.createElement('div');
+
+      if (isStart) {
+        el.className = 'keyframe camera-start';
+      } else {
+        el.className = 'keyframe camera';
+      }
+      el.style.left = timeToX(kf.time) + 'px';
+      if (kf.shot !== currentShot) el.style.opacity = '0.35';
+
+      const key = `${trackIndex}-${ki}`;
+      if (selectedKeyframe === key) el.classList.add('selected');
+      el.title = `Camera ${isStart ? 'start' : 'keyframe'} at ${formatTime(kf.time)}`;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedKeyframe = (selectedKeyframe === key) ? null : key;
+        playhead = kf.time;
+        render();
+      });
+      row.appendChild(el);
+    });
+
+  } else if (cameraMode === 'hide') {
+    // ── Mode 4: Only show current shot's keyframes ──
+    // Shot boundary lines
+    SCENE.shots.forEach(shot => {
+      if (shot.start > 0) {
+        const line = document.createElement('div');
+        line.className = 'shot-boundary';
+        line.style.left = timeToX(shot.start) + 'px';
+        row.appendChild(line);
+      }
+    });
+
+    // Only render keyframes belonging to the current shot
+    // Other shots show as solid colored blocks
+    SCENE.shots.forEach((shot, si) => {
+      if (si !== currentShot) {
+        const block = document.createElement('div');
+        block.style.position = 'absolute';
+        block.style.top = '6px';
+        block.style.bottom = '6px';
+        block.style.left = timeToX(shot.start) + 'px';
+        block.style.width = (timeToX(shot.end) - timeToX(shot.start)) + 'px';
+        block.style.background = 'rgba(232,160,48,0.12)';
+        block.style.borderRadius = '3px';
+        block.style.border = '1px solid rgba(232,160,48,0.15)';
+        row.appendChild(block);
+      }
+    });
+
+    track.keyframes.forEach((kf, ki) => {
+      if (kf.shot !== currentShot) return; // skip other shots' keyframes
+      const el = document.createElement('div');
+      el.className = 'keyframe camera';
+      el.style.left = timeToX(kf.time) + 'px';
+
+      const key = `${trackIndex}-${ki}`;
+      if (selectedKeyframe === key) el.classList.add('selected');
+      el.title = `Camera keyframe at ${formatTime(kf.time)}`;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedKeyframe = (selectedKeyframe === key) ? null : key;
+        playhead = kf.time;
+        render();
+      });
+      row.appendChild(el);
+    });
+  }
+}
+
+function renderPlayhead() {
+  const x = timeToX(playhead);
+  playheadEl.style.left = x + 'px';
+  timeDisplay.textContent = formatTime(playhead);
+  totalDurationEl.textContent = formatTime(SCENE.totalDuration);
+}
+
+function renderZoomBar() {
+  const w = zoomBar.clientWidth;
+
+  // Thumb position and size
+  const thumbLeft = (viewStart / SCENE.totalDuration) * w;
+  const thumbRight = (viewEnd / SCENE.totalDuration) * w;
+  zoomThumb.style.left = thumbLeft + 'px';
+  zoomThumb.style.width = Math.max(30, thumbRight - thumbLeft) + 'px';
+
+  // Playhead indicator in zoom bar
+  const px = (playhead / SCENE.totalDuration) * w;
+  zoomPlayheadIndicator.style.left = (px - 2) + 'px';
+}
+
+function renderMinimap() {
+  const minimap = document.getElementById('minimap');
+  const w = minimap.clientWidth;
+  const tToX = (t) => (t / SCENE.totalDuration) * w;
+
+  // ── Shots ──
+  const shotsContainer = document.getElementById('minimap-shots');
+  shotsContainer.innerHTML = '';
+  const currentShot = getCurrentShot();
+
+  SCENE.shots.forEach((shot, i) => {
+    const el = document.createElement('div');
+    el.className = 'minimap-shot';
+    const left = tToX(shot.start);
+    const right = tToX(shot.end);
+    el.style.left = left + 'px';
+    el.style.width = (right - left - 1) + 'px';
+    el.style.background = i === currentShot ? shot.color : adjustAlpha(shot.color, 0.6);
+    if (right - left > 40) el.textContent = shot.name;
+    shotsContainer.appendChild(el);
+  });
+
+  // ── Tracks with keyframes ──
+  const tracksContainer = document.getElementById('minimap-tracks');
+  tracksContainer.innerHTML = '';
+  const trackCount = SCENE.tracks.length;
+  const trackH = (48 - 17) / trackCount;
+
+  SCENE.tracks.forEach((track, i) => {
+    const row = document.createElement('div');
+    row.className = 'minimap-track-row';
+    row.style.top = (i * trackH) + 'px';
+    row.style.height = trackH + 'px';
+
+    if (track.linkedPeriods) {
+      track.linkedPeriods.forEach(lp => {
+        const region = document.createElement('div');
+        region.className = 'minimap-link-region';
+        region.style.left = tToX(lp.start) + 'px';
+        region.style.width = (tToX(lp.end) - tToX(lp.start)) + 'px';
+        row.appendChild(region);
+      });
+    }
+
+    track.keyframes.forEach(kf => {
+      const el = document.createElement('div');
+      el.className = 'minimap-kf';
+      el.style.left = tToX(kf.time) + 'px';
+      el.style.background = track.color;
+      row.appendChild(el);
+    });
+
+    tracksContainer.appendChild(row);
+  });
+
+  // ── View window ──
+  const viewWindow = document.getElementById('minimap-view-window');
+  const vwLeft = tToX(viewStart);
+  const vwRight = tToX(viewEnd);
+  viewWindow.style.left = vwLeft + 'px';
+  viewWindow.style.width = (vwRight - vwLeft) + 'px';
+  // Hide when viewing everything
+  viewWindow.style.display = (viewEnd - viewStart >= SCENE.totalDuration - 0.01) ? 'none' : 'block';
+
+  // ── Playhead ──
+  const ph = document.getElementById('minimap-playhead');
+  ph.style.left = tToX(playhead) + 'px';
+}
+
+// Helper to dim a hex color
+function adjustAlpha(hex, factor) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r},${g},${b},${factor})`;
+}
+
+function renderViewportInfo() {
+  const si = getCurrentShot();
+  const shot = SCENE.shots[si];
+  viewportShotLabel.textContent = `Shot ${si + 1}: ${shot.name}`;
+  viewportTime.textContent = formatTime(playhead);
+}
+
+// ── View clamping helper ──
+function clampView() {
+  const duration = viewEnd - viewStart;
+  // Clamp duration
+  const clampedDuration = Math.min(SCENE.totalDuration, Math.max(0.5, duration));
+  // Clamp position: keep viewStart in [0, totalDuration - duration]
+  viewStart = Math.max(0, Math.min(SCENE.totalDuration - clampedDuration, viewStart));
+  viewEnd = viewStart + clampedDuration;
+}
+
+// ── Zoom helper (used by track area + ruler + shot bar) ──
+function zoomAtPosition(mouseTimeFraction, deltaY) {
+  const duration = viewEnd - viewStart;
+  const factor = deltaY > 0 ? 1.15 : 0.87;
+  const newDuration = Math.min(SCENE.totalDuration, Math.max(0.5, duration * factor));
+
+  // mouseTimeFraction: where the mouse is as a fraction of the current view [0..1]
+  const mouseTime = viewStart + mouseTimeFraction * duration;
+  viewStart = mouseTime - mouseTimeFraction * newDuration;
+  viewEnd = viewStart + newDuration;
+  clampView();
+  render();
+}
+
+// ── Interaction: click track area to move playhead ──
+let trackDragging = false;
+
+trackArea.addEventListener('mousedown', (e) => {
+  // Left click only, and not on a keyframe (those stopPropagation)
+  if (e.button !== 0) return;
+  trackDragging = true;
+  const rect = trackArea.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  playhead = Math.max(0, Math.min(SCENE.totalDuration, xToTime(x)));
+  selectedKeyframe = null;
+  render();
+});
+
+// ── Interaction: middle-drag to pan track area ──
+let panDragging = false;
+let panStartX = 0;
+let panStartViewStart = 0;
+
+trackArea.addEventListener('mousedown', (e) => {
+  if (e.button === 1) { // middle mouse
+    e.preventDefault();
+    panDragging = true;
+    panStartX = e.clientX;
+    panStartViewStart = viewStart;
+    trackArea.style.cursor = 'grabbing';
+  }
+});
+
+// ── Interaction: scroll to zoom (track area, ruler, shot bar) ──
+function handleZoomWheel(e) {
+  e.preventDefault();
+  const rect = e.currentTarget.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const fraction = mouseX / rect.width;
+
+  // If shift is held, pan instead of zoom
+  if (e.shiftKey) {
+    const duration = viewEnd - viewStart;
+    const panAmount = (e.deltaY > 0 ? 0.1 : -0.1) * duration;
+    viewStart += panAmount;
+    viewEnd += panAmount;
+    clampView();
+    render();
+    return;
+  }
+
+  zoomAtPosition(fraction, e.deltaY);
+}
+
+trackArea.addEventListener('wheel', handleZoomWheel, { passive: false });
+ruler.addEventListener('wheel', handleZoomWheel, { passive: false });
+shotBar.addEventListener('wheel', handleZoomWheel, { passive: false });
+
+// ── Interaction: click/drag ruler to scrub ──
+let rulerDragging = false;
+
+ruler.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return;
+  rulerDragging = true;
+  const rect = ruler.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  playhead = Math.max(0, Math.min(SCENE.totalDuration, xToTime(x)));
+  render();
+});
+
+// ── Interaction: middle-drag on shot bar to pan ──
+shotBar.addEventListener('mousedown', (e) => {
+  if (e.button === 1) {
+    e.preventDefault();
+    panDragging = true;
+    panStartX = e.clientX;
+    panStartViewStart = viewStart;
+    shotBar.style.cursor = 'grabbing';
+  }
+});
+
+// ── Global mousemove / mouseup for all drag operations ──
+document.addEventListener('mousemove', (e) => {
+  // Track area: scrub playhead
+  if (trackDragging) {
+    const rect = trackArea.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    playhead = Math.max(0, Math.min(SCENE.totalDuration, xToTime(x)));
+    render();
+    return;
+  }
+
+  // Ruler: scrub playhead
+  if (rulerDragging) {
+    const rect = ruler.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    playhead = Math.max(0, Math.min(SCENE.totalDuration, xToTime(x)));
+    render();
+    return;
+  }
+
+  // Middle-drag: pan
+  if (panDragging) {
+    const dx = e.clientX - panStartX;
+    const w = trackArea.clientWidth;
+    const duration = viewEnd - viewStart;
+    const dt = -(dx / w) * duration; // negative because dragging right = pan left
+    viewStart = panStartViewStart + dt;
+    viewEnd = viewStart + duration;
+    clampView();
+    render();
+    return;
+  }
+
+  // Zoom bar thumb drag
+  if (zoomDragging) {
+    const dx = e.clientX - zoomDragStartX;
+    const w = zoomBar.clientWidth;
+    const dt = (dx / w) * SCENE.totalDuration;
+    const duration = viewEnd - viewStart;
+    viewStart = zoomDragStartViewStart + dt;
+    viewEnd = viewStart + duration;
+    clampView();
+    render();
+    return;
+  }
+
+  // Minimap drag
+  if (minimapDragging) {
+    handleMinimapClick(e);
+    return;
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  trackDragging = false;
+  rulerDragging = false;
+  minimapDragging = false;
+  if (panDragging) {
+    panDragging = false;
+    trackArea.style.cursor = 'crosshair';
+    shotBar.style.cursor = 'pointer';
+  }
+  zoomDragging = false;
+});
+
+// ── Interaction: drag zoom thumb ──
+let zoomDragging = false;
+let zoomDragStartX = 0;
+let zoomDragStartViewStart = 0;
+
+zoomThumb.addEventListener('mousedown', (e) => {
+  zoomDragging = true;
+  zoomDragStartX = e.clientX;
+  zoomDragStartViewStart = viewStart;
+  e.preventDefault();
+});
+
+// ── Interaction: click zoom bar to jump ──
+zoomBar.addEventListener('click', (e) => {
+  if (e.target === zoomThumb) return;
+  const rect = zoomBar.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const t = (x / rect.width) * SCENE.totalDuration;
+  const duration = viewEnd - viewStart;
+  viewStart = t - duration / 2;
+  viewEnd = viewStart + duration;
+  clampView();
+  playhead = Math.max(0, Math.min(SCENE.totalDuration, t));
+  render();
+});
+
+// ── Buttons ──
+document.getElementById('btn-play').addEventListener('click', () => {
+  playing = !playing;
+  document.getElementById('btn-play').textContent = playing ? '⏸ Pause' : '▶ Play';
+  if (playing) animLoop();
+});
+
+document.getElementById('btn-prev-shot').addEventListener('click', () => {
+  const si = getCurrentShot();
+  const target = Math.max(0, si - 1);
+  const shot = SCENE.shots[target];
+  playhead = shot.start;
+  // Center the view on this shot, keeping current zoom level if wider than the shot
+  const duration = viewEnd - viewStart;
+  if (duration <= shot.end - shot.start) {
+    // View is narrower than or equal to shot: fit to shot
+    viewStart = shot.start;
+    viewEnd = shot.end;
+  } else {
+    // View is wider: center on the shot
+    const mid = (shot.start + shot.end) / 2;
+    viewStart = mid - duration / 2;
+    viewEnd = mid + duration / 2;
+  }
+  clampView();
+  render();
+});
+
+document.getElementById('btn-next-shot').addEventListener('click', () => {
+  const si = getCurrentShot();
+  const target = Math.min(SCENE.shots.length - 1, si + 1);
+  const shot = SCENE.shots[target];
+  playhead = shot.start;
+  const duration = viewEnd - viewStart;
+  if (duration <= shot.end - shot.start) {
+    viewStart = shot.start;
+    viewEnd = shot.end;
+  } else {
+    const mid = (shot.start + shot.end) / 2;
+    viewStart = mid - duration / 2;
+    viewEnd = mid + duration / 2;
+  }
+  clampView();
+  viewEnd = SCENE.shots[target].end;
+  render();
+});
+
+document.getElementById('btn-zoom-fit').addEventListener('click', () => {
+  viewStart = 0;
+  viewEnd = SCENE.totalDuration;
+  render();
+});
+
+// ── Mode switcher ──
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    cameraMode = btn.dataset.mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+});
+
+// Also support 1-4 keys when not typing
+document.addEventListener('keydown', (e) => {
+  if (e.key >= '1' && e.key <= '4') {
+    const modes = ['clips', 'splice', 'shapes', 'hide'];
+    const idx = parseInt(e.key) - 1;
+    cameraMode = modes[idx];
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-mode="${modes[idx]}"]`).classList.add('active');
+    render();
+  }
+});
+
+// ── Interaction: click minimap to jump view + playhead ──
+const minimapEl = document.getElementById('minimap');
+let minimapDragging = false;
+
+minimapEl.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return;
+  minimapDragging = true;
+  handleMinimapClick(e);
+});
+
+function handleMinimapClick(e) {
+  const rect = minimapEl.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const t = (x / rect.width) * SCENE.totalDuration;
+  const duration = viewEnd - viewStart;
+  viewStart = t - duration / 2;
+  viewEnd = viewStart + duration;
+  clampView();
+  playhead = Math.max(0, Math.min(SCENE.totalDuration, t));
+  render();
+}
+
+// Prevent middle-click scroll/paste on all timeline elements
+trackArea.addEventListener('auxclick', (e) => e.preventDefault());
+ruler.addEventListener('auxclick', (e) => e.preventDefault());
+shotBar.addEventListener('auxclick', (e) => e.preventDefault());
+minimapEl.addEventListener('auxclick', (e) => e.preventDefault());
+
+// ── Keyboard ──
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ') {
+    e.preventDefault();
+    document.getElementById('btn-play').click();
+  } else if (e.key === 'ArrowLeft') {
+    playhead = Math.max(0, playhead - 1 / SCENE.fps);
+    render();
+  } else if (e.key === 'ArrowRight') {
+    playhead = Math.min(SCENE.totalDuration, playhead + 1 / SCENE.fps);
+    render();
+  } else if (e.key === '\\') {
+    document.getElementById('btn-zoom-fit').click();
+  }
+});
+
+// ── Animation loop ──
+let lastTime = null;
+function animLoop() {
+  if (!playing) { lastTime = null; return; }
+  animFrame = requestAnimationFrame((ts) => {
+    if (lastTime !== null) {
+      const dt = (ts - lastTime) / 1000;
+      playhead += dt;
+      if (playhead >= SCENE.totalDuration) {
+        playhead = 0;
+      }
+      // Auto-scroll to follow playhead
+      if (playhead < viewStart || playhead > viewEnd) {
+        const duration = viewEnd - viewStart;
+        viewStart = playhead;
+        viewEnd = viewStart + duration;
+        if (viewEnd > SCENE.totalDuration) {
+          viewEnd = SCENE.totalDuration;
+          viewStart = viewEnd - duration;
+        }
+      }
+      render();
+    }
+    lastTime = ts;
+    animLoop();
+  });
+}
+
+// ── Resize ──
+window.addEventListener('resize', render);
+
+// ── Initial render ──
+render();
+</script>
+</body>
+</html>

@@ -824,18 +824,32 @@ document.addEventListener('mousemove', (e) => {
       });
     }
 
-    // Shift object keyframes at or past the original boundary
-    SCENE.tracks.forEach((track, ti) => {
-      track.keyframes.forEach((kf, ki) => {
-        const origTime = snap.objectTimes[ti][ki];
-        kf.time = origTime >= snap.origBoundary ? origTime + delta : origTime;
+    // Shift object keyframes — unless Shift is held (shot-only mode)
+    if (!e.shiftKey) {
+      SCENE.tracks.forEach((track, ti) => {
+        track.keyframes.forEach((kf, ki) => {
+          const origTime = snap.objectTimes[ti][ki];
+          kf.time = origTime >= snap.origBoundary ? origTime + delta : origTime;
+        });
+        (track.linkedPeriods || []).forEach((lp, li) => {
+          const origLp = snap.linkedPeriods[ti][li];
+          lp.start = origLp.start >= snap.origBoundary ? origLp.start + delta : origLp.start;
+          lp.end = origLp.end >= snap.origBoundary ? origLp.end + delta : origLp.end;
+        });
       });
-      (track.linkedPeriods || []).forEach((lp, li) => {
-        const origLp = snap.linkedPeriods[ti][li];
-        lp.start = origLp.start >= snap.origBoundary ? origLp.start + delta : origLp.start;
-        lp.end = origLp.end >= snap.origBoundary ? origLp.end + delta : origLp.end;
+    } else {
+      // Restore object keyframes to original positions
+      SCENE.tracks.forEach((track, ti) => {
+        track.keyframes.forEach((kf, ki) => {
+          kf.time = snap.objectTimes[ti][ki];
+        });
+        (track.linkedPeriods || []).forEach((lp, li) => {
+          const origLp = snap.linkedPeriods[ti][li];
+          lp.start = origLp.start;
+          lp.end = origLp.end;
+        });
       });
-    });
+    }
 
     // Update total duration
     SCENE.totalDuration = SCENE.shots[SCENE.shots.length - 1].end;
@@ -854,7 +868,8 @@ document.addEventListener('mousemove', (e) => {
     resizeLabel.style.display = 'block';
     resizeLabel.style.left = (e.clientX + 14) + 'px';
     resizeLabel.style.top = (e.clientY - 24) + 'px';
-    resizeLabel.textContent = `${leftShot.name}: ${leftDur.toFixed(1)}s (${leftFrames}f)`;
+    const mode = e.shiftKey ? 'shots only' : 'ripple';
+    resizeLabel.textContent = `${leftShot.name}: ${leftDur.toFixed(1)}s (${leftFrames}f)  [${mode}]`;
 
     render();
     return;

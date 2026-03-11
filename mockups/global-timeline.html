@@ -3,94 +3,141 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fram3d — Global Timeline Visualization Mockup</title>
+<title>Fram3d — UI Mockup</title>
 <link rel="stylesheet" href="global-timeline.css">
+<link rel="stylesheet" href="panels.css">
 </head>
 <body>
 
-<!-- Overview (minimap) — above the viewport -->
-<div id="minimap-container">
-  <div id="minimap-label">Overview</div>
-  <div id="minimap">
-    <div id="minimap-shots"></div>
-    <div id="minimap-tracks"></div>
-    <div id="minimap-view-window"></div>
-    <div id="minimap-playhead"></div>
-  </div>
+<!-- ── Toolbar ── -->
+<div id="toolbar">
+  <span class="toolbar-title">Fram3d</span>
+  <div class="toolbar-spacer"></div>
+  <span class="toolbar-group-label">Panels:</span>
+  <button class="toolbar-toggle" data-panel="objects" title="Toggle Objects (O)">Objects</button>
+  <button class="toolbar-toggle active" data-panel="inspector" title="Toggle Inspector (I)">Inspector</button>
+  <button class="toolbar-toggle" data-panel="assets" title="Toggle Assets (A)">Assets</button>
+  <div class="toolbar-spacer"></div>
+  <button class="toolbar-toggle active" data-panel="timeline" title="Toggle Timeline (T)">Timeline</button>
 </div>
 
-<div id="viewport">
-  <div class="placeholder">
-    3D Viewport<br>
-    <span style="font-size:11px;color:#444">(camera view would render here)</span>
+<!-- ── Main area: sidebars + center ── -->
+<div id="main-row">
+
+  <!-- Left sidebar: Objects -->
+  <div id="objects-panel" class="side-panel left hidden">
+    <div class="panel-header">
+      <span class="panel-icon">&#x1F4CB;</span>Objects
+    </div>
+    <div class="panel-body" id="objects-list"></div>
   </div>
-  <div id="viewport-shot-label"></div>
-  <div id="viewport-time"></div>
-</div>
 
-<div id="timeline-panel">
+  <!-- Left sidebar: Assets (shares space with objects) -->
+  <div id="assets-panel" class="side-panel left hidden">
+    <div class="panel-header">
+      <span class="panel-icon">&#x1F4E6;</span>Assets
+      <span class="panel-header-right">
+        <input type="text" class="panel-search" placeholder="Search...">
+      </span>
+    </div>
+    <div class="panel-body" id="assets-grid"></div>
+  </div>
 
-  <!-- Shot Bar -->
-  <div id="shot-bar-container">
-    <div id="shot-bar-label">Shots</div>
-    <div id="shot-bar">
-      <div id="shot-bar-view-range"></div>
-      <div id="playhead-shotbar"></div>
+  <!-- Center column: minimap + viewport -->
+  <div id="center-column">
+    <!-- Overview minimap -->
+    <div id="minimap-container">
+      <div id="minimap-label">Overview</div>
+      <div id="minimap">
+        <div id="minimap-shots"></div>
+        <div id="minimap-tracks"></div>
+        <div id="minimap-view-window"></div>
+        <div id="minimap-playhead"></div>
+      </div>
+    </div>
+
+    <div id="viewport">
+      <div class="placeholder">
+        3D Viewport<br>
+        <span style="font-size:11px;color:#444">(camera view would render here)</span>
+      </div>
+      <div id="viewport-shot-label"></div>
+      <div id="viewport-time"></div>
     </div>
   </div>
 
-  <!-- Ruler -->
-  <div id="ruler-container">
-    <div id="ruler-label"></div>
-    <div id="ruler">
-      <div id="playhead-ruler"></div>
+  <!-- Right sidebar: Inspector -->
+  <div id="inspector-panel" class="side-panel right">
+    <div class="panel-header">
+      <span class="panel-icon">&#x2699;&#xFE0F;</span>Inspector
+    </div>
+    <div class="panel-body" id="inspector-content"></div>
+  </div>
+
+</div>
+
+<!-- ── Timeline (full width, below main row) ── -->
+<div id="timeline-section">
+  <div id="timeline-panel">
+    <div id="shot-bar-container">
+      <div id="shot-bar-label">Shots</div>
+      <div id="shot-bar">
+        <div id="shot-bar-view-range"></div>
+        <div id="playhead-shotbar"></div>
+      </div>
+    </div>
+
+    <div id="ruler-container">
+      <div id="ruler-label"></div>
+      <div id="ruler">
+        <div id="playhead-ruler"></div>
+      </div>
+    </div>
+
+    <div id="track-area-wrapper">
+      <div id="track-labels"></div>
+      <div id="track-area">
+        <div id="playhead"></div>
+      </div>
+    </div>
+
+    <div id="zoom-bar-container">
+      <div id="zoom-bar-spacer"></div>
+      <div id="zoom-bar">
+        <div id="zoom-playhead-indicator"></div>
+        <div id="zoom-thumb"></div>
+      </div>
     </div>
   </div>
 
-  <!-- Track Area -->
-  <div id="track-area-wrapper">
-    <div id="track-labels"></div>
-    <div id="track-area">
-      <div id="playhead"></div>
-    </div>
+  <div id="mode-switcher">
+    <span class="mode-label">Camera track style:</span>
+    <button class="mode-btn active" data-mode="clips">1. Clips</button>
+    <button class="mode-btn" data-mode="splice">2. Splice marks</button>
+    <button class="mode-btn" data-mode="shapes">3. Start shapes</button>
+    <button class="mode-btn" data-mode="hide">4. Current only</button>
   </div>
 
-  <!-- Zoom bar -->
-  <div id="zoom-bar-container">
-    <div id="zoom-bar-spacer"></div>
-    <div id="zoom-bar">
-      <div id="zoom-playhead-indicator"></div>
-      <div id="zoom-thumb"></div>
-    </div>
+  <div id="controls">
+    <button id="btn-play">&#9654; Play</button>
+    <button id="btn-prev-shot">&#9664; Prev Shot</button>
+    <button id="btn-next-shot">Next Shot &#9654;</button>
+    <button id="btn-zoom-fit">Zoom to Fit (\)</button>
+    <div class="spacer"></div>
+    <span class="time-display" id="time-display">0:00.0</span>
+    <span style="color:#555">/ <span id="total-duration"></span></span>
   </div>
-</div>
 
-<div id="mode-switcher">
-  <span class="mode-label">Camera track style:</span>
-  <button class="mode-btn active" data-mode="clips">1. Clips</button>
-  <button class="mode-btn" data-mode="splice">2. Splice marks</button>
-  <button class="mode-btn" data-mode="shapes">3. Start shapes</button>
-  <button class="mode-btn" data-mode="hide">4. Current only</button>
-</div>
-
-<div id="controls">
-  <button id="btn-play">&#9654; Play</button>
-  <button id="btn-prev-shot">&#9664; Prev Shot</button>
-  <button id="btn-next-shot">Next Shot &#9654;</button>
-  <button id="btn-zoom-fit">Zoom to Fit (\)</button>
-  <div class="spacer"></div>
-  <span class="time-display" id="time-display">0:00.0</span>
-  <span style="color:#555">/ <span id="total-duration"></span></span>
-</div>
-
-<div id="legend">
-  <div class="legend-item"><div class="legend-swatch diamond" style="background:#e8a030"></div>Camera keyframe (per-shot)</div>
-  <div class="legend-item"><div class="legend-swatch diamond" style="background:#5588dd"></div>Object keyframe (global)</div>
-  <div class="legend-item"><div class="legend-swatch diamond" style="background:#7755cc"></div>Object keyframe (alt track)</div>
-  <div class="legend-item"><div class="legend-swatch hatched"></div>Linked period (no independent keyframing)</div>
-  <div class="legend-item"><span style="color:#ff4466">|</span> Playhead</div>
+  <div id="legend">
+    <div class="legend-item"><div class="legend-swatch diamond" style="background:#e8a030"></div>Camera keyframe (per-shot)</div>
+    <div class="legend-item"><div class="legend-swatch diamond" style="background:#5588dd"></div>Object keyframe (global)</div>
+    <div class="legend-item"><div class="legend-swatch diamond" style="background:#7755cc"></div>Object keyframe (alt track)</div>
+    <div class="legend-item"><div class="legend-swatch hatched"></div>Linked period (no independent keyframing)</div>
+    <div class="legend-item"><span style="color:#ff4466">|</span> Playhead</div>
+  </div>
 </div>
 
 <script src="global-timeline.js"></script>
+<script src="panels.js"></script>
 </body>
 </html>

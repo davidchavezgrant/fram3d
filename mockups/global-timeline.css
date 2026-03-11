@@ -13,6 +13,24 @@ body {
   user-select: none;
 }
 
+/* ── Layout structure ── */
+#main-row {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+#center-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+#timeline-section {
+  flex-shrink: 0;
+}
+
 /* ── Viewport placeholder ── */
 #viewport {
   flex: 1;

@@ -1,0 +1,626 @@
+/* Fram3d — Global Timeline Visualization Mockup */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font-family: -apple-system, 'Segoe UI', Roboto, monospace;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+/* ── Viewport placeholder ── */
+#viewport {
+  flex: 1;
+  background: #111125;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 120px;
+}
+#viewport .placeholder {
+  color: #333;
+  font-size: 13px;
+  text-align: center;
+  line-height: 1.6;
+}
+#viewport-shot-label {
+  position: absolute;
+  top: 12px;
+  left: 20px;
+  font-size: 12px;
+  color: #aaa;
+  background: rgba(0,0,0,0.5);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+#viewport-time {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  font-size: 12px;
+  color: #aaa;
+  background: rgba(0,0,0,0.5);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Timeline panel ── */
+#timeline-panel {
+  background: #1e1e36;
+  border-top: 1px solid #2a2a4a;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Shot Bar ── */
+#shot-bar-container {
+  display: flex;
+  height: 32px;
+  border-bottom: 1px solid #2a2a4a;
+  flex-shrink: 0;
+}
+#shot-bar-label {
+  width: 140px;
+  min-width: 140px;
+  background: #16162a;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-right: 1px solid #2a2a4a;
+}
+#shot-bar {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.shot-rect {
+  position: absolute;
+  top: 3px;
+  height: 26px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  transition: filter 0.15s;
+  border: 1px solid transparent;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 6px;
+}
+.shot-rect:hover { filter: brightness(1.2); }
+.shot-rect.active {
+  border-color: #fff;
+  filter: brightness(1.3);
+  z-index: 1;
+}
+#shot-bar-view-range {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid rgba(255,255,255,0.25);
+  border-right: 2px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.04);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── Ruler ── */
+#ruler-container {
+  display: flex;
+  height: 22px;
+  border-bottom: 1px solid #222244;
+  flex-shrink: 0;
+}
+#ruler-label {
+  width: 140px;
+  min-width: 140px;
+  background: #16162a;
+  border-right: 1px solid #2a2a4a;
+}
+#ruler {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #1a1a30;
+}
+.ruler-tick {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  background: #2a2a4a;
+}
+.ruler-label {
+  position: absolute;
+  top: 4px;
+  font-size: 9px;
+  color: #555;
+  transform: translateX(-50%);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Track area ── */
+#track-area-wrapper {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+#track-labels {
+  width: 140px;
+  min-width: 140px;
+  background: #16162a;
+  border-right: 1px solid #2a2a4a;
+  overflow: hidden;
+}
+.track-label {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+  font-size: 11px;
+  border-bottom: 1px solid #222244;
+  gap: 6px;
+}
+.track-label .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.track-label .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#track-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: crosshair;
+}
+.track-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 36px;
+  border-bottom: 1px solid #222244;
+}
+
+/* Shot background tints on camera track */
+.shot-bg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  opacity: 0.12;
+  border-radius: 2px;
+}
+.shot-bg.active-shot { opacity: 0.25; }
+
+/* Linked region (greyed out) */
+.linked-region {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(100,100,140,0.15),
+    rgba(100,100,140,0.15) 4px,
+    rgba(100,100,140,0.08) 4px,
+    rgba(100,100,140,0.08) 8px
+  );
+  border-radius: 2px;
+  border: 1px dashed rgba(100,100,140,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.linked-region .link-label {
+  font-size: 8px;
+  color: rgba(150,150,200,0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Keyframes */
+.keyframe {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  top: 50%;
+  border-radius: 1px;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.1s;
+  z-index: 2;
+}
+.keyframe:hover {
+  transform: translate(-50%, -50%) rotate(45deg) scale(1.3);
+  filter: brightness(1.4);
+}
+.keyframe.selected {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+.keyframe.camera { background: #e8a030; }
+.keyframe.object { background: #5588dd; }
+.keyframe.object-alt { background: #7755cc; }
+
+/* Link boundary keyframes */
+.keyframe.link-boundary {
+  background: #888;
+  width: 8px;
+  height: 14px;
+  border-radius: 1px;
+  transform: translate(-50%, -50%);
+}
+
+/* Shot boundary lines */
+.shot-boundary {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255,255,255,0.08);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Playhead */
+#playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ff4466;
+  z-index: 10;
+  pointer-events: none;
+}
+#playhead::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -5px;
+  width: 12px;
+  height: 12px;
+  background: #ff4466;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+#playhead-ruler {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ff4466;
+  z-index: 10;
+  pointer-events: none;
+}
+#playhead-shotbar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ff4466;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ── Zoom scroll bar ── */
+#zoom-bar-container {
+  display: flex;
+  height: 18px;
+  border-top: 1px solid #2a2a4a;
+  flex-shrink: 0;
+}
+#zoom-bar-spacer {
+  width: 140px;
+  min-width: 140px;
+  background: #16162a;
+  border-right: 1px solid #2a2a4a;
+}
+#zoom-bar {
+  flex: 1;
+  background: #14142a;
+  position: relative;
+  cursor: pointer;
+}
+#zoom-thumb {
+  position: absolute;
+  top: 2px;
+  height: 14px;
+  background: rgba(100,100,180,0.3);
+  border: 1px solid rgba(100,100,180,0.5);
+  border-radius: 3px;
+  cursor: grab;
+  min-width: 30px;
+}
+#zoom-thumb:active { cursor: grabbing; }
+#zoom-playhead-indicator {
+  position: absolute;
+  top: 5px;
+  width: 4px;
+  height: 8px;
+  background: #ff4466;
+  border-radius: 1px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── Controls bar ── */
+#controls {
+  height: 36px;
+  background: #16162a;
+  border-top: 1px solid #2a2a4a;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 16px;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+#controls button {
+  background: #2a2a50;
+  color: #ccc;
+  border: 1px solid #3a3a60;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
+#controls button:hover { background: #3a3a60; }
+#controls button.active { background: #4a4a80; border-color: #6a6aaa; }
+#controls .spacer { flex: 1; }
+#controls .time-display {
+  font-variant-numeric: tabular-nums;
+  color: #ff4466;
+  font-weight: 600;
+}
+
+/* ── Legend ── */
+#legend {
+  height: 28px;
+  background: #16162a;
+  border-top: 1px solid #222244;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 20px;
+  font-size: 10px;
+  color: #555;
+  flex-shrink: 0;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+}
+
+/* ── Mode switcher ── */
+#mode-switcher {
+  height: 32px;
+  background: #16162a;
+  border-top: 1px solid #2a2a4a;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.mode-label {
+  font-size: 10px;
+  color: #666;
+  margin-right: 4px;
+}
+.mode-btn {
+  background: #2a2a50;
+  color: #999;
+  border: 1px solid #3a3a60;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.mode-btn:hover { background: #3a3a60; color: #ccc; }
+.mode-btn.active { background: #4a4a80; border-color: #7a7acc; color: #fff; }
+
+/* ── Camera clip (mode 1) ── */
+.camera-clip {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(232,160,48,0.5);
+  background: rgba(232,160,48,0.08);
+  overflow: hidden;
+}
+.camera-clip.active-clip {
+  border-color: rgba(232,160,48,0.8);
+  background: rgba(232,160,48,0.15);
+}
+.camera-clip .clip-label {
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  font-size: 8px;
+  color: rgba(232,160,48,0.5);
+  white-space: nowrap;
+}
+.camera-clip.active-clip .clip-label {
+  color: rgba(232,160,48,0.8);
+}
+
+/* ── Splice mark (mode 2) ── */
+.splice-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  transform: translateX(-50%);
+  z-index: 3;
+  pointer-events: none;
+}
+.splice-mark::before, .splice-mark::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 2px,
+    rgba(30,30,50,0.9) 2px,
+    rgba(30,30,50,0.9) 3px
+  );
+}
+.splice-mark::before { top: 0; }
+.splice-mark::after { bottom: 0; }
+.splice-mark-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.15);
+}
+
+/* ── Shot-start keyframe (mode 3) ── */
+.keyframe.camera-start {
+  background: transparent;
+  border: 2px solid #e8a030;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.legend-swatch.diamond { transform: rotate(45deg); width: 8px; height: 8px; }
+
+/* ── Minimap ── */
+#minimap-container {
+  display: flex;
+  height: 48px;
+  border-bottom: 1px solid #2a2a4a;
+  flex-shrink: 0;
+}
+#minimap-label {
+  width: 140px;
+  min-width: 140px;
+  background: #16162a;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+  font-size: 9px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-right: 1px solid #2a2a4a;
+}
+#minimap {
+  flex: 1;
+  position: relative;
+  background: #111125;
+  cursor: pointer;
+  overflow: hidden;
+}
+#minimap-shots {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 16px;
+}
+#minimap-tracks {
+  position: absolute;
+  top: 17px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.minimap-track-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.minimap-kf {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 1px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  top: 50%;
+}
+.minimap-link-region {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  background: rgba(100,100,140,0.2);
+  border-radius: 1px;
+}
+.minimap-shot {
+  position: absolute;
+  top: 2px;
+  height: 12px;
+  border-radius: 2px;
+  font-size: 7px;
+  color: rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 2px;
+}
+#minimap-view-window {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.05);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 3;
+}
+#minimap-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #ff4466;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.legend-swatch.hatched {
+  background: repeating-linear-gradient(
+    45deg, rgba(100,100,140,0.3), rgba(100,100,140,0.3) 2px,
+    rgba(100,100,140,0.1) 2px, rgba(100,100,140,0.1) 4px
+  );
+  border: 1px dashed rgba(100,100,140,0.4);
+}

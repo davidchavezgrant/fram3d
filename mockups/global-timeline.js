@@ -536,6 +536,24 @@ const OBJECT_PROPS = ['Position X', 'Position Y', 'Position Z', 'Scale', 'Rotati
 const INTERP_CURVES = ['linear', 'ease-in', 'ease-out', 'ease-in-out', 'bezier'];
 const INTERP_SYMBOLS = { 'linear': '─', 'ease-in': '⌒', 'ease-out': '⌓', 'ease-in-out': '~', 'bezier': '∿' };
 
+// Keyframe interpolation shapes (AE-style: linear ◇, smooth ○, hold □)
+const KF_INTERP_TYPES = ['linear', 'smooth', 'hold'];
+const kfInterpOverrides = {};
+function getKfInterp(key) {
+  if (kfInterpOverrides[key]) return kfInterpOverrides[key];
+  // Default: camera kfs get smooth, single-kf objects get hold, multi-kf objects get linear
+  const parts = key.split('-');
+  if (parts[0] === 'cam') return 'smooth';
+  const ti = parseInt(parts[1]);
+  const track = SCENE.tracks[ti];
+  return (track && track.keyframes.length <= 1) ? 'hold' : 'linear';
+}
+function cycleKfInterp(key) {
+  const current = getKfInterp(key);
+  const idx = KF_INTERP_TYPES.indexOf(current);
+  kfInterpOverrides[key] = KF_INTERP_TYPES[(idx + 1) % KF_INTERP_TYPES.length];
+}
+
 const TOOL_MODES = [
   { key: 'Q', label: 'SELECT', icon: '◇' },
   { key: 'W', label: 'MOVE', icon: '✥' },
@@ -1086,8 +1104,12 @@ function renderCameraRow(row, currentShotIndex) {
       el.style.opacity = kfOpacity;
       const key = `cam-${currentShotIndex}-${display.index}-${ki}`;
       if (selectedKeyframe === key) el.classList.add('selected');
+      if (feat('interp-curves')) el.classList.add('kf-' + getKfInterp(key));
       el.addEventListener('mousedown', (e) => {
         e.stopPropagation();
+        if (e.altKey && feat('interp-curves')) {
+          cycleKfInterp(key); render(); return;
+        }
         if (feat('keyframe-drag')) {
           kfDragging = true;
           kfDragInfo = { type:'cam', shotIndex: currentShotIndex, camIndex: display.index, kfIndex: ki, startX: e.clientX, origTime: kf.time };
@@ -1132,8 +1154,12 @@ function renderObjectRow(row, trackIndex, currentShotIndex) {
     el.style.background = track.color;
     const key = `obj-${trackIndex}-${ki}`;
     if (selectedKeyframe === key) el.classList.add('selected');
+    if (feat('interp-curves')) el.classList.add('kf-' + getKfInterp(key));
     el.addEventListener('mousedown', (e) => {
       e.stopPropagation();
+      if (e.altKey && feat('interp-curves')) {
+        cycleKfInterp(key); render(); return;
+      }
       if (feat('keyframe-drag')) {
         kfDragging = true;
         kfDragInfo = { type:'obj', trackIndex, kfIndex: ki, startX: e.clientX, origTime: kf.time };
@@ -1220,22 +1246,24 @@ function renderViewportInfo() {
   const shot = SCENE.shots[si];
   const display = getDisplayCamera(si);
   const letter = String.fromCharCode(65 + display.index);
-  viewportShotLabel.textContent = `Shot ${si+1}${letter}: ${shot.name}`;
-  // Per-shot timecode
-  const elapsed = Math.max(0, playhead - shot.start);
-  const duration = shot.end - shot.start;
-  viewportTimecode.textContent = `${formatTimecode(elapsed)} / ${formatTimecode(duration)}`;
+  const dur = (shot.end - shot.start).toFixed(1);
+  viewportShotLabel.textContent = `Shot ${si+1}${letter}: ${shot.name} (${dur}s)`;
+  // Sequence timecode
+  viewportTimecode.textContent = formatTimecode(playhead);
 }
 
 function renderTransportBar() {
-  document.getElementById('transport-time').textContent = formatTimecode(playhead);
-  document.getElementById('transport-duration').textContent = formatTimecode(SCENE.totalDuration);
+  // Local shot timecode (elapsed / duration)
   const si = getCurrentShot();
-  document.getElementById('transport-shot').textContent = SCENE.shots[si].name;
+  const shot = SCENE.shots[si];
+  const elapsed = Math.max(0, playhead - shot.start);
+  const duration = shot.end - shot.start;
+  document.getElementById('transport-time').textContent = formatTimecode(elapsed);
+  document.getElementById('transport-duration').textContent = formatTimecode(duration);
+  document.getElementById('transport-shot').textContent = shot.name;
   const playBtn = document.getElementById('transport-play');
   playBtn.textContent = playing ? '⏸' : '▶';
   playBtn.classList.toggle('playing', playing);
-  document.getElementById('aggregate-duration').textContent = `Total: ${SCENE.totalDuration.toFixed(1)}s`;
 }
 
 function renderCoverageTrack() {
@@ -1637,6 +1665,93 @@ function animLoop() {
     lastTime = ts; animLoop();
   });
 }
+
+// ── Multi-panel viewport layout ──
+let currentLayout = 1;
+
+const VIEW_PLACEHOLDERS = {
+  '3d': { icon: '🎥', label: '3D Viewport', hint: 'Camera view would render here' },
+  '2d': { icon: '✏️', label: '2D Designer', hint: 'Top-down scene layout and blocking' },
+  'director': { icon: '🎬', label: 'Director Mode', hint: 'Storyboard overview with shot thumbnails' },
+};
+
+function setLayout(layout) {
+  currentLayout = layout;
+  const area = document.getElementById('viewport-area');
+  area.className = 'layout-' + layout;
+  document.querySelectorAll('.layout-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.layout) === layout);
+  });
+  document.getElementById('view-panel-0').style.display = '';
+  document.getElementById('view-panel-1').style.display = layout >= 2 ? '' : 'none';
+  document.getElementById('view-panel-2').style.display = layout >= 3 ? '' : 'none';
+  requestAnimationFrame(updateViewportFrame);
+}
+
+function updatePanelView(panelIdx, newViewType) {
+  const panel = document.getElementById('view-panel-' + panelIdx);
+  const content = panel.querySelector('.view-panel-content');
+  const oldViewType = panel.dataset.view;
+
+  if (newViewType === '3d') {
+    // Find which panel currently has 3D and swap
+    const current3d = document.querySelector('.view-panel[data-view="3d"]');
+    if (current3d && current3d !== panel) {
+      const currentContent = current3d.querySelector('.view-panel-content');
+      // Move viewport out, put placeholder in old location
+      const ph = VIEW_PLACEHOLDERS[oldViewType] || VIEW_PLACEHOLDERS['2d'];
+      currentContent.innerHTML = `<div class="view-placeholder"><div class="view-placeholder-icon">${ph.icon}</div><div class="view-placeholder-label">${ph.label}</div><div class="view-placeholder-hint">${ph.hint}</div></div>`;
+      current3d.dataset.view = oldViewType;
+      const oldSel = current3d.querySelector('.view-selector');
+      if (oldSel) oldSel.value = oldViewType;
+    }
+    // Move viewport into this panel
+    const viewport = document.getElementById('viewport');
+    content.innerHTML = '';
+    content.appendChild(viewport);
+  } else {
+    // If this panel was 3D, move viewport to panel 0
+    if (oldViewType === '3d' && panelIdx !== 0) {
+      const p0 = document.getElementById('view-panel-0');
+      const viewport = document.getElementById('viewport');
+      p0.querySelector('.view-panel-content').innerHTML = '';
+      p0.querySelector('.view-panel-content').appendChild(viewport);
+      p0.dataset.view = '3d';
+      const p0Sel = p0.querySelector('.view-selector');
+      if (p0Sel) p0Sel.value = '3d';
+    } else if (oldViewType === '3d' && panelIdx === 0) {
+      // Moving 3D away from panel 0 — find another panel to host it
+      const alt = currentLayout >= 2 ? document.getElementById('view-panel-1') : null;
+      if (alt) {
+        const viewport = document.getElementById('viewport');
+        alt.querySelector('.view-panel-content').innerHTML = '';
+        alt.querySelector('.view-panel-content').appendChild(viewport);
+        alt.dataset.view = '3d';
+        const altSel = alt.querySelector('.view-selector');
+        if (altSel) altSel.value = '3d';
+      }
+    }
+    // Set placeholder
+    if (!content.querySelector('#viewport')) {
+      const ph = VIEW_PLACEHOLDERS[newViewType] || VIEW_PLACEHOLDERS['2d'];
+      content.innerHTML = `<div class="view-placeholder"><div class="view-placeholder-icon">${ph.icon}</div><div class="view-placeholder-label">${ph.label}</div><div class="view-placeholder-hint">${ph.hint}</div></div>`;
+    }
+  }
+  panel.dataset.view = newViewType;
+  requestAnimationFrame(updateViewportFrame);
+}
+
+// Layout chooser clicks
+document.querySelectorAll('.layout-btn').forEach(btn => {
+  btn.addEventListener('click', () => setLayout(parseInt(btn.dataset.layout)));
+});
+
+// View selector changes
+document.querySelectorAll('.view-selector').forEach(sel => {
+  sel.addEventListener('change', (e) => {
+    updatePanelView(parseInt(sel.dataset.panelIdx), e.target.value);
+  });
+});
 
 // ── Resize & init ──
 window.addEventListener('resize', () => { render(); updateViewportFrame(); });

@@ -9,36 +9,15 @@
 </head>
 <body>
 
-<!-- ── Main area: gutters + sidebars + center ── -->
+<!-- ── Main area: gutters + center + sidebars ── -->
 <div id="main-row">
 
   <!-- Left gutter -->
   <div class="gutter left">
     <button class="gutter-tab" data-panel="overview">Overview</button>
-    <button class="gutter-tab" data-panel="objects">Objects</button>
-    <button class="gutter-tab" data-panel="assets">Assets</button>
   </div>
 
-  <!-- Left sidebar: Objects -->
-  <div id="objects-panel" class="side-panel left hidden">
-    <div class="panel-header">Objects</div>
-    <div class="panel-body" id="objects-list"></div>
-    <div class="panel-drag-edge"></div>
-  </div>
-
-  <!-- Left sidebar: Assets -->
-  <div id="assets-panel" class="side-panel left hidden">
-    <div class="panel-header">
-      Assets
-      <span class="panel-header-right">
-        <input type="text" class="panel-search" placeholder="Search...">
-      </span>
-    </div>
-    <div class="panel-body" id="assets-grid"></div>
-    <div class="panel-drag-edge"></div>
-  </div>
-
-  <!-- Center column: overview + viewport -->
+  <!-- Center column: overview + viewport area -->
   <div id="center-column">
     <div id="minimap-container">
       <div id="minimap-label">Overview</div>
@@ -50,73 +29,155 @@
       </div>
     </div>
 
-    <div id="viewport">
-      <div id="viewport-frame">
-        <div class="placeholder">
-          3D Viewport<br>
-          <span style="font-size:11px;color:#555">(camera view would render here)</span>
+    <!-- Viewport area (multi-panel capable) -->
+    <div id="viewport-area" class="layout-1">
+
+      <!-- Panel 0: 3D Viewport (default) -->
+      <div class="view-panel" id="view-panel-0" data-view="3d">
+        <div class="view-panel-bar">
+          <select class="view-selector" data-panel-idx="0">
+            <option value="3d" selected>3D Viewport</option>
+            <option value="2d">2D Designer</option>
+            <option value="director">Director Mode</option>
+          </select>
         </div>
+        <div class="view-panel-content">
+          <div id="viewport">
+            <div id="viewport-frame">
+              <div class="placeholder">
+                3D Viewport<br>
+                <span style="font-size:11px;color:#555">(camera view would render here)</span>
+              </div>
 
-        <!-- Shot label + timecode (above masks) -->
-        <div id="viewport-shot-label"></div>
-        <div id="viewport-timecode"></div>
+              <!-- Shot label + timecode (above masks) -->
+              <div id="viewport-shot-label"></div>
+              <div id="viewport-timecode"></div>
 
-        <!-- Camera Info HUD -->
-        <div id="viewport-hud" style="display:none">
-          <div class="hud-row"><span class="hud-key">Lens</span><span class="hud-val" id="hud-focal">50mm</span></div>
-          <div class="hud-row"><span class="hud-key">Height</span><span class="hud-val" id="hud-height">1.6m</span></div>
-          <div class="hud-row"><span class="hud-key">AOV</span><span class="hud-val" id="hud-aov">39.6°</span></div>
-          <div class="hud-row"><span class="hud-key">Ratio</span><span class="hud-val" id="hud-ratio">2.39:1</span></div>
-          <div class="hud-row"><span class="hud-key">Body</span><span class="hud-val" id="hud-body">Generic 35mm</span></div>
-          <div class="hud-row"><span class="hud-key">Lens Set</span><span class="hud-val" id="hud-lensset">Generic Prime</span></div>
-        </div>
+              <!-- Camera Info HUD (includes aperture, focus, DOF) -->
+              <div id="viewport-hud" style="display:none">
+                <div class="hud-row"><span class="hud-key">Lens</span><span class="hud-val" id="hud-focal">50mm</span></div>
+                <div class="hud-row"><span class="hud-key">Height</span><span class="hud-val" id="hud-height">1.6m</span></div>
+                <div class="hud-row"><span class="hud-key">AOV</span><span class="hud-val" id="hud-aov">39.6°</span></div>
+                <div class="hud-row"><span class="hud-key">Aperture</span><span class="hud-val" id="hud-aperture">f/2.8</span></div>
+                <div class="hud-row"><span class="hud-key">Focus</span><span class="hud-val" id="hud-focus">Detective</span></div>
+                <div class="hud-row"><span class="hud-key">DOF</span><span class="hud-val" id="hud-dof">On</span></div>
+                <div class="hud-row"><span class="hud-key">Ratio</span><span class="hud-val" id="hud-ratio">2.39:1</span></div>
+                <div class="hud-row"><span class="hud-key">Body</span><span class="hud-val" id="hud-body">Generic 35mm</span></div>
+                <div class="hud-row"><span class="hud-key">Lens Set</span><span class="hud-val" id="hud-lensset">Generic Prime</span></div>
+              </div>
 
-        <!-- Aspect Ratio Masks (opaque) -->
-        <div id="aspect-mask-top" class="aspect-mask"></div>
-        <div id="aspect-mask-bottom" class="aspect-mask"></div>
-        <div id="aspect-mask-left" class="aspect-mask"></div>
-        <div id="aspect-mask-right" class="aspect-mask"></div>
+              <!-- Aspect Ratio Masks (opaque) -->
+              <div id="aspect-mask-top" class="aspect-mask"></div>
+              <div id="aspect-mask-bottom" class="aspect-mask"></div>
+              <div id="aspect-mask-left" class="aspect-mask"></div>
+              <div id="aspect-mask-right" class="aspect-mask"></div>
 
-        <!-- Frame Guides -->
-        <svg id="viewport-guides" style="display:none">
-          <line class="guide-thirds" x1="33.33%" y1="0" x2="33.33%" y2="100%"/>
-          <line class="guide-thirds" x1="66.66%" y1="0" x2="66.66%" y2="100%"/>
-          <line class="guide-thirds" x1="0" y1="33.33%" x2="100%" y2="33.33%"/>
-          <line class="guide-thirds" x1="0" y1="66.66%" x2="100%" y2="66.66%"/>
-          <line class="guide-center" x1="48%" y1="50%" x2="52%" y2="50%"/>
-          <line class="guide-center" x1="50%" y1="48%" x2="50%" y2="52%"/>
-          <rect class="guide-safe-title" x="5%" y="5%" width="90%" height="90%" rx="1"/>
-          <rect class="guide-safe-action" x="3.5%" y="3.5%" width="93%" height="93%" rx="1"/>
-        </svg>
+              <!-- Frame Guides -->
+              <svg id="viewport-guides" style="display:none">
+                <line class="guide-thirds" x1="33.33%" y1="0" x2="33.33%" y2="100%"/>
+                <line class="guide-thirds" x1="66.66%" y1="0" x2="66.66%" y2="100%"/>
+                <line class="guide-thirds" x1="0" y1="33.33%" x2="100%" y2="33.33%"/>
+                <line class="guide-thirds" x1="0" y1="66.66%" x2="100%" y2="66.66%"/>
+                <line class="guide-center" x1="48%" y1="50%" x2="52%" y2="50%"/>
+                <line class="guide-center" x1="50%" y1="48%" x2="50%" y2="52%"/>
+                <rect class="guide-safe-title" x="5%" y="5%" width="90%" height="90%" rx="1"/>
+                <rect class="guide-safe-action" x="3.5%" y="3.5%" width="93%" height="93%" rx="1"/>
+              </svg>
 
-        <!-- Tool Mode Badge -->
-        <div id="tool-mode-badge" style="display:none">
-          <span id="tool-mode-icon">◇</span>
-          <span id="tool-mode-label">SELECT</span>
-          <span id="tool-mode-key">Q</span>
-        </div>
+              <!-- Tool Mode Badge -->
+              <div id="tool-mode-badge" style="display:none">
+                <span id="tool-mode-icon">◇</span>
+                <span id="tool-mode-label">SELECT</span>
+                <span id="tool-mode-key">Q</span>
+              </div>
 
-        <!-- Director View Badge -->
-        <div id="director-badge" style="display:none">DIRECTOR VIEW</div>
+              <!-- Director View Badge -->
+              <div id="director-badge" style="display:none">DIRECTOR VIEW</div>
 
-        <!-- Camera Path Badge -->
-        <div id="camera-path-badge" style="display:none">
-          <span style="opacity:0.6">⟜</span> PATH
+              <!-- Camera Path Badge -->
+              <div id="camera-path-badge" style="display:none">
+                <span style="opacity:0.6">⟜</span> PATH
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      <!-- Panel 1: Director Mode (default) -->
+      <div class="view-panel" id="view-panel-1" data-view="director" style="display:none">
+        <div class="view-panel-bar">
+          <select class="view-selector" data-panel-idx="1">
+            <option value="3d">3D Viewport</option>
+            <option value="2d">2D Designer</option>
+            <option value="director" selected>Director Mode</option>
+          </select>
+        </div>
+        <div class="view-panel-content">
+          <div class="view-placeholder">
+            <div class="view-placeholder-icon">🎬</div>
+            <div class="view-placeholder-label">Director Mode</div>
+            <div class="view-placeholder-hint">Storyboard overview with shot thumbnails</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: 2D Designer (default) -->
+      <div class="view-panel" id="view-panel-2" data-view="2d" style="display:none">
+        <div class="view-panel-bar">
+          <select class="view-selector" data-panel-idx="2">
+            <option value="3d">3D Viewport</option>
+            <option value="2d" selected>2D Designer</option>
+            <option value="director">Director Mode</option>
+          </select>
+        </div>
+        <div class="view-panel-content">
+          <div class="view-placeholder">
+            <div class="view-placeholder-icon">✏️</div>
+            <div class="view-placeholder-label">2D Designer</div>
+            <div class="view-placeholder-hint">Top-down scene layout and blocking</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layout chooser (bottom-right) -->
+      <div id="layout-chooser">
+        <button class="layout-btn active" data-layout="1" title="Single panel">
+          <svg width="18" height="14"><rect x="1" y="1" width="16" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        </button>
+        <button class="layout-btn" data-layout="2" title="Side by side">
+          <svg width="18" height="14"><rect x="1" y="1" width="7" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="10" y="1" width="7" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+        </button>
+        <button class="layout-btn" data-layout="3" title="Three panels">
+          <svg width="18" height="14"><rect x="4" y="0" width="10" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="7" width="7" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="10" y="7" width="7" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+        </button>
+      </div>
+
     </div>
   </div>
 
-  <!-- Right sidebar: Inspector -->
-  <div id="inspector-panel" class="side-panel right">
-    <div class="panel-header">Inspector</div>
-    <div class="panel-body" id="inspector-content"></div>
+  <!-- Right sidebar: Objects -->
+  <div id="objects-panel" class="side-panel right hidden">
+    <div class="panel-header">Objects</div>
+    <div class="panel-body" id="objects-list"></div>
+    <div class="panel-drag-edge"></div>
+  </div>
+
+  <!-- Right sidebar: Assets -->
+  <div id="assets-panel" class="side-panel right hidden">
+    <div class="panel-header">
+      Assets
+      <span class="panel-header-right">
+        <input type="text" class="panel-search" placeholder="Search...">
+      </span>
+    </div>
+    <div class="panel-body" id="assets-grid"></div>
     <div class="panel-drag-edge"></div>
   </div>
 
   <!-- Right gutter -->
   <div class="gutter right">
-    <button class="gutter-tab" data-panel="inspector">Inspector</button>
+    <button class="gutter-tab" data-panel="objects">Objects</button>
+    <button class="gutter-tab" data-panel="assets">Assets</button>
   </div>
 
 </div>
@@ -128,17 +189,19 @@
 <div id="timeline-section">
   <div id="timeline-panel">
 
-    <!-- Timeline header: scene tabs + transport -->
-    <div id="timeline-header">
+    <!-- Scene tabs (dedicated row) -->
+    <div id="scene-tabs-row">
       <div id="scene-tabs"></div>
+    </div>
+
+    <!-- Transport bar -->
+    <div id="timeline-header">
       <div id="transport-controls">
         <button id="transport-play" class="transport-btn">▶</button>
         <span id="transport-time" class="transport-time">00;00;00;00</span>
         <span class="transport-divider">/</span>
-        <span id="transport-duration" class="transport-time">00;00;48;00</span>
+        <span id="transport-duration" class="transport-time">00;00;05;00</span>
         <span id="transport-shot" class="transport-shot"></span>
-        <span class="transport-spacer"></span>
-        <span id="aggregate-duration"></span>
       </div>
     </div>
 

@@ -1,20 +1,21 @@
-/* Fram3d — Panel Layout Styles */
+/* Fram3d — Panel Layout Styles (Grey Premiere Theme) */
 
 /* ── Gutters (JetBrains-style vertical label strips) ── */
 .gutter {
   display: flex;
   flex-direction: column;
-  background: #12122a;
+  background: #1e1e1e;
   flex-shrink: 0;
   gap: 0;
   z-index: 5;
 }
-.gutter.left { border-right: 1px solid #2a2a4a; }
-.gutter.right { border-left: 1px solid #2a2a4a; }
+.gutter.left { border-right: 1px solid #3c3c3c; }
+.gutter.right { border-left: 1px solid #3c3c3c; }
 .gutter.bottom {
   flex-direction: row;
-  border-top: 1px solid #2a2a4a;
+  border-top: 1px solid #3c3c3c;
   height: 22px;
+  align-items: center;
 }
 
 /* Vertical tab in left/right gutters */
@@ -41,12 +42,12 @@
 }
 .gutter-tab.active {
   color: #ccc;
-  background: rgba(100,100,180,0.1);
-  border-left-color: #6666bb;
+  background: rgba(255,255,255,0.06);
+  border-left-color: #888;
 }
 .gutter.right .gutter-tab.active {
   border-left-color: transparent;
-  border-right: 2px solid #6666bb;
+  border-right: 2px solid #888;
 }
 
 /* Horizontal tab in bottom gutter */
@@ -68,32 +69,45 @@
 }
 .gutter-tab-h.active {
   color: #ccc;
-  background: rgba(100,100,180,0.1);
-  border-top-color: #6666bb;
+  background: rgba(255,255,255,0.06);
+  border-top-color: #888;
 }
+
+/* Bottom gutter extras */
+.gutter-spacer { flex: 1; }
+.gutter-play {
+  background: none;
+  border: none;
+  color: #777;
+  font-size: 13px;
+  padding: 2px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.gutter-play:hover { color: #ccc; }
 
 /* ── Side panels (shared) ── */
 .side-panel {
   display: flex;
   flex-direction: column;
-  background: #1a1a32;
+  background: #252525;
   overflow: hidden;
   flex-shrink: 0;
 }
 .side-panel.left {
   width: 200px;
-  border-right: 1px solid #2a2a4a;
+  border-right: 1px solid #3c3c3c;
 }
 .side-panel.right {
   width: 250px;
-  border-left: 1px solid #2a2a4a;
+  border-left: 1px solid #3c3c3c;
 }
 .side-panel.hidden { display: none; }
 
 .panel-header {
   height: 28px;
-  background: #16162a;
-  border-bottom: 1px solid #2a2a4a;
+  background: #1e1e1e;
+  border-bottom: 1px solid #3c3c3c;
   display: flex;
   align-items: center;
   padding: 0 10px;
@@ -106,8 +120,8 @@
 }
 .panel-header-right { margin-left: auto; }
 .panel-search {
-  background: #14142a;
-  border: 1px solid #2a2a4a;
+  background: #1a1a1a;
+  border: 1px solid #3c3c3c;
   border-radius: 3px;
   padding: 2px 6px;
   color: #aaa;
@@ -116,7 +130,7 @@
   width: 100px;
   outline: none;
 }
-.panel-search:focus { border-color: #4a4a7a; }
+.panel-search:focus { border-color: #666; }
 .panel-search::placeholder { color: #444; }
 .panel-body {
   flex: 1;
@@ -138,7 +152,7 @@
 }
 .object-item:hover { background: rgba(255,255,255,0.04); }
 .object-item.selected {
-  background: rgba(100,100,180,0.2);
+  background: rgba(255,255,255,0.08);
   color: #ddd;
 }
 .object-item .obj-icon {
@@ -174,7 +188,7 @@
   letter-spacing: 0.5px;
   margin-bottom: 5px;
   padding-bottom: 3px;
-  border-bottom: 1px solid #222244;
+  border-bottom: 1px solid #333;
 }
 .inspector-row {
   display: flex;
@@ -190,8 +204,8 @@
 }
 .inspector-value {
   flex: 1;
-  background: #14142a;
-  border: 1px solid #2a2a4a;
+  background: #1a1a1a;
+  border: 1px solid #3c3c3c;
   border-radius: 3px;
   padding: 2px 6px;
   color: #aaa;
@@ -227,8 +241,8 @@
 }
 .asset-item {
   aspect-ratio: 1;
-  background: #14142a;
-  border: 1px solid #2a2a4a;
+  background: #1a1a1a;
+  border: 1px solid #3c3c3c;
   border-radius: 4px;
   display: flex;
   flex-direction: column;
@@ -239,8 +253,8 @@
   gap: 4px;
 }
 .asset-item:hover {
-  border-color: #3a3a6a;
-  background: #1c1c38;
+  border-color: #555;
+  background: #2a2a2a;
 }
 .asset-item .asset-icon {
   font-size: 22px;

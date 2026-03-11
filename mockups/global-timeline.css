@@ -1,10 +1,10 @@
-/* Fram3d — Global Timeline Visualization Mockup */
+/* Fram3d — Global Timeline (Premiere-style grey theme) */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: #1a1a2e;
-  color: #e0e0e0;
+  background: #232323;
+  color: #cccccc;
   font-family: -apple-system, 'Segoe UI', Roboto, monospace;
   overflow: hidden;
   height: 100vh;
@@ -31,10 +31,10 @@ body {
   flex-shrink: 0;
 }
 
-/* ── Viewport placeholder ── */
+/* ── Viewport ── */
 #viewport {
   flex: 1;
-  background: #111125;
+  background: #1a1a1a;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -42,7 +42,7 @@ body {
   min-height: 120px;
 }
 #viewport .placeholder {
-  color: #333;
+  color: #444;
   font-size: 13px;
   text-align: center;
   line-height: 1.6;
@@ -52,27 +52,30 @@ body {
   top: 12px;
   left: 20px;
   font-size: 12px;
-  color: #aaa;
+  color: #999;
   background: rgba(0,0,0,0.5);
   padding: 4px 10px;
   border-radius: 4px;
 }
-#viewport-time {
+#viewport-timecode {
   position: absolute;
-  top: 12px;
-  right: 20px;
-  font-size: 12px;
-  color: #aaa;
-  background: rgba(0,0,0,0.5);
-  padding: 4px 10px;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  color: #bbb;
+  background: rgba(0,0,0,0.6);
+  padding: 4px 14px;
   border-radius: 4px;
   font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: 1px;
 }
 
 /* ── Timeline panel ── */
 #timeline-panel {
-  background: #1e1e36;
-  border-top: 1px solid #2a2a4a;
+  background: #282828;
+  border-top: 1px solid #3c3c3c;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -82,13 +85,13 @@ body {
 #shot-bar-container {
   display: flex;
   height: 32px;
-  border-bottom: 1px solid #2a2a4a;
+  border-bottom: 1px solid #333;
   flex-shrink: 0;
 }
 #shot-bar-label {
   width: 140px;
   min-width: 140px;
-  background: #16162a;
+  background: #1e1e1e;
   display: flex;
   align-items: center;
   padding-left: 12px;
@@ -96,7 +99,7 @@ body {
   color: #666;
   text-transform: uppercase;
   letter-spacing: 1px;
-  border-right: 1px solid #2a2a4a;
+  border-right: 1px solid #3c3c3c;
 }
 #shot-bar {
   flex: 1;
@@ -114,7 +117,7 @@ body {
   justify-content: center;
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255,255,255,0.7);
   transition: filter 0.15s;
   border: 1px solid transparent;
   overflow: hidden;
@@ -122,53 +125,73 @@ body {
   white-space: nowrap;
   padding: 0 6px;
 }
-.shot-rect:hover { filter: brightness(1.2); }
+.shot-rect:hover { filter: brightness(1.15); }
 .shot-rect.active {
-  border-color: #fff;
-  filter: brightness(1.3);
+  border-color: rgba(255,255,255,0.5);
+  filter: brightness(1.2);
   z-index: 1;
 }
 #shot-bar-view-range {
   position: absolute;
   top: 0;
   bottom: 0;
-  border-left: 2px solid rgba(255,255,255,0.25);
-  border-right: 2px solid rgba(255,255,255,0.25);
-  background: rgba(255,255,255,0.04);
+  border-left: 2px solid rgba(255,255,255,0.2);
+  border-right: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.03);
   pointer-events: none;
   z-index: 2;
+}
+
+/* Shot boundary drag handles */
+.shot-boundary-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  transform: translateX(-50%);
+  cursor: col-resize;
+  z-index: 5;
+}
+.shot-boundary-handle:hover::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255,255,255,0.4);
 }
 
 /* ── Ruler ── */
 #ruler-container {
   display: flex;
   height: 22px;
-  border-bottom: 1px solid #222244;
+  border-bottom: 1px solid #333;
   flex-shrink: 0;
 }
 #ruler-label {
   width: 140px;
   min-width: 140px;
-  background: #16162a;
-  border-right: 1px solid #2a2a4a;
+  background: #1e1e1e;
+  border-right: 1px solid #3c3c3c;
 }
 #ruler {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #1a1a30;
+  background: #222;
 }
 .ruler-tick {
   position: absolute;
   top: 0;
   width: 1px;
-  background: #2a2a4a;
+  background: #3c3c3c;
 }
 .ruler-label {
   position: absolute;
   top: 4px;
   font-size: 9px;
-  color: #555;
+  color: #666;
   transform: translateX(-50%);
   font-variant-numeric: tabular-nums;
 }
@@ -182,18 +205,19 @@ body {
 #track-labels {
   width: 140px;
   min-width: 140px;
-  background: #16162a;
-  border-right: 1px solid #2a2a4a;
+  background: #1e1e1e;
+  border-right: 1px solid #3c3c3c;
   overflow: hidden;
 }
 .track-label {
-  height: 36px;
+  height: 28px;
   display: flex;
   align-items: center;
   padding-left: 12px;
   font-size: 11px;
-  border-bottom: 1px solid #222244;
+  border-bottom: 1px solid #2a2a2a;
   gap: 6px;
+  color: #aaa;
 }
 .track-label .dot {
   width: 8px;
@@ -206,6 +230,11 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.track-label.camera-label {
+  font-size: 10px;
+  color: #888;
+  padding-left: 20px;
+}
 
 #track-area {
   flex: 1;
@@ -217,41 +246,51 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  height: 36px;
-  border-bottom: 1px solid #222244;
+  height: 28px;
+  border-bottom: 1px solid #2a2a2a;
 }
 
-/* Shot background tints on camera track */
+/* Shot background tints */
 .shot-bg {
   position: absolute;
   top: 0;
   bottom: 0;
-  opacity: 0.12;
+  opacity: 0.08;
   border-radius: 2px;
 }
-.shot-bg.active-shot { opacity: 0.25; }
+.shot-bg.active-shot { opacity: 0.18; }
 
-/* Linked region (greyed out) */
-.linked-region {
+/* Camera collapsed block (non-current shot) */
+.camera-block {
   position: absolute;
   top: 4px;
   bottom: 4px;
+  border-radius: 3px;
+  opacity: 0.2;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Linked region */
+.linked-region {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
   background: repeating-linear-gradient(
     45deg,
-    rgba(100,100,140,0.15),
-    rgba(100,100,140,0.15) 4px,
-    rgba(100,100,140,0.08) 4px,
-    rgba(100,100,140,0.08) 8px
+    rgba(150,150,150,0.08),
+    rgba(150,150,150,0.08) 4px,
+    rgba(150,150,150,0.03) 4px,
+    rgba(150,150,150,0.03) 8px
   );
   border-radius: 2px;
-  border: 1px dashed rgba(100,100,140,0.3);
+  border: 1px dashed rgba(150,150,150,0.2);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .linked-region .link-label {
   font-size: 8px;
-  color: rgba(150,150,200,0.5);
+  color: rgba(150,150,150,0.4);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -276,13 +315,10 @@ body {
   outline: 2px solid #fff;
   outline-offset: 1px;
 }
-.keyframe.camera { background: #e8a030; }
-.keyframe.object { background: #5588dd; }
-.keyframe.object-alt { background: #7755cc; }
 
 /* Link boundary keyframes */
 .keyframe.link-boundary {
-  background: #888;
+  background: #777;
   width: 8px;
   height: 14px;
   border-radius: 1px;
@@ -295,7 +331,7 @@ body {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.06);
   z-index: 1;
   pointer-events: none;
 }
@@ -339,22 +375,36 @@ body {
   pointer-events: none;
 }
 
-/* ── Zoom scroll bar ── */
+/* ── Zoom bar ── */
 #zoom-bar-container {
   display: flex;
   height: 18px;
-  border-top: 1px solid #2a2a4a;
+  border-top: 1px solid #3c3c3c;
   flex-shrink: 0;
 }
-#zoom-bar-spacer {
+#zoom-bar-label {
   width: 140px;
   min-width: 140px;
-  background: #16162a;
-  border-right: 1px solid #2a2a4a;
+  background: #1e1e1e;
+  border-right: 1px solid #3c3c3c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+.zoom-fit-btn {
+  background: #333;
+  color: #888;
+  border: 1px solid #444;
+  border-radius: 2px;
+  padding: 1px 8px;
+  font-size: 9px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.zoom-fit-btn:hover { background: #444; color: #aaa; }
 #zoom-bar {
   flex: 1;
-  background: #14142a;
+  background: #1e1e1e;
   position: relative;
   cursor: pointer;
 }
@@ -362,8 +412,8 @@ body {
   position: absolute;
   top: 2px;
   height: 14px;
-  background: rgba(100,100,180,0.3);
-  border: 1px solid rgba(100,100,180,0.5);
+  background: rgba(150,150,150,0.2);
+  border: 1px solid rgba(150,150,150,0.3);
   border-radius: 3px;
   cursor: grab;
   min-width: 30px;
@@ -380,176 +430,18 @@ body {
   z-index: 2;
 }
 
-/* ── Controls bar ── */
-#controls {
-  height: 36px;
-  background: #16162a;
-  border-top: 1px solid #2a2a4a;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 16px;
-  flex-shrink: 0;
-  font-size: 11px;
-}
-#controls button {
-  background: #2a2a50;
-  color: #ccc;
-  border: 1px solid #3a3a60;
-  border-radius: 4px;
-  padding: 3px 10px;
-  font-size: 11px;
-  cursor: pointer;
-  font-family: inherit;
-}
-#controls button:hover { background: #3a3a60; }
-#controls button.active { background: #4a4a80; border-color: #6a6aaa; }
-#controls .spacer { flex: 1; }
-#controls .time-display {
-  font-variant-numeric: tabular-nums;
-  color: #ff4466;
-  font-weight: 600;
-}
-
-/* ── Legend ── */
-#legend {
-  height: 28px;
-  background: #16162a;
-  border-top: 1px solid #222244;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 20px;
-  font-size: 10px;
-  color: #555;
-  flex-shrink: 0;
-}
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.legend-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 1px;
-}
-
-/* ── Mode switcher ── */
-#mode-switcher {
-  height: 32px;
-  background: #16162a;
-  border-top: 1px solid #2a2a4a;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.mode-label {
-  font-size: 10px;
-  color: #666;
-  margin-right: 4px;
-}
-.mode-btn {
-  background: #2a2a50;
-  color: #999;
-  border: 1px solid #3a3a60;
-  border-radius: 4px;
-  padding: 3px 10px;
-  font-size: 10px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-.mode-btn:hover { background: #3a3a60; color: #ccc; }
-.mode-btn.active { background: #4a4a80; border-color: #7a7acc; color: #fff; }
-
-/* ── Camera clip (mode 1) ── */
-.camera-clip {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  border-radius: 4px;
-  border: 1px solid rgba(232,160,48,0.5);
-  background: rgba(232,160,48,0.08);
-  overflow: hidden;
-}
-.camera-clip.active-clip {
-  border-color: rgba(232,160,48,0.8);
-  background: rgba(232,160,48,0.15);
-}
-.camera-clip .clip-label {
-  position: absolute;
-  top: 1px;
-  left: 4px;
-  font-size: 8px;
-  color: rgba(232,160,48,0.5);
-  white-space: nowrap;
-}
-.camera-clip.active-clip .clip-label {
-  color: rgba(232,160,48,0.8);
-}
-
-/* ── Splice mark (mode 2) ── */
-.splice-mark {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  transform: translateX(-50%);
-  z-index: 3;
-  pointer-events: none;
-}
-.splice-mark::before, .splice-mark::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 50%;
-  background: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 2px,
-    rgba(30,30,50,0.9) 2px,
-    rgba(30,30,50,0.9) 3px
-  );
-}
-.splice-mark::before { top: 0; }
-.splice-mark::after { bottom: 0; }
-.splice-mark-line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 2px;
-  transform: translateX(-50%);
-  background: rgba(255,255,255,0.15);
-}
-
-/* ── Shot-start keyframe (mode 3) ── */
-.keyframe.camera-start {
-  background: transparent;
-  border: 2px solid #e8a030;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.legend-swatch.diamond { transform: rotate(45deg); width: 8px; height: 8px; }
-
 /* ── Minimap ── */
 #minimap-container {
   display: flex;
   height: 48px;
-  border-bottom: 1px solid #2a2a4a;
+  border-bottom: 1px solid #3c3c3c;
   flex-shrink: 0;
 }
+#minimap-container.hidden { display: none; }
 #minimap-label {
   width: 140px;
   min-width: 140px;
-  background: #16162a;
+  background: #1e1e1e;
   display: flex;
   align-items: center;
   padding-left: 12px;
@@ -557,12 +449,12 @@ body {
   color: #555;
   text-transform: uppercase;
   letter-spacing: 1px;
-  border-right: 1px solid #2a2a4a;
+  border-right: 1px solid #3c3c3c;
 }
 #minimap {
   flex: 1;
   position: relative;
-  background: #111125;
+  background: #1a1a1a;
   cursor: pointer;
   overflow: hidden;
 }
@@ -597,7 +489,7 @@ body {
   position: absolute;
   top: 1px;
   bottom: 1px;
-  background: rgba(100,100,140,0.2);
+  background: rgba(150,150,150,0.15);
   border-radius: 1px;
 }
 .minimap-shot {
@@ -606,7 +498,7 @@ body {
   height: 12px;
   border-radius: 2px;
   font-size: 7px;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -619,8 +511,8 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  border: 1px solid rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.04);
   border-radius: 2px;
   pointer-events: none;
   z-index: 3;
@@ -635,10 +527,17 @@ body {
   pointer-events: none;
 }
 
-.legend-swatch.hatched {
-  background: repeating-linear-gradient(
-    45deg, rgba(100,100,140,0.3), rgba(100,100,140,0.3) 2px,
-    rgba(100,100,140,0.1) 2px, rgba(100,100,140,0.1) 4px
-  );
-  border: 1px dashed rgba(100,100,140,0.4);
+/* ── Resize label (floating tooltip for shot dragging) ── */
+#resize-label {
+  position: fixed;
+  pointer-events: none;
+  background: rgba(0,0,0,0.85);
+  color: #eee;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  display: none;
+  z-index: 100;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }

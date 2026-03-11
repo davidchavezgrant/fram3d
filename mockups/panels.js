@@ -7,6 +7,7 @@ const panelVisible = {
   inspector: true,
   assets: false,
   timeline: true,
+  overview: true,
 };
 
 // ── Sample data ──
@@ -154,6 +155,7 @@ function applyPanelState() {
     inspector: document.getElementById('inspector-panel'),
     assets: document.getElementById('assets-panel'),
     timeline: document.getElementById('timeline-section'),
+    overview: document.getElementById('minimap-container'),
   };
 
   for (const [id, el] of Object.entries(mapping)) {
@@ -191,16 +193,18 @@ document.addEventListener('keydown', (e) => {
     case 'TAB':
       // Hide/show all panels
       e.preventDefault();
-      const allHidden = !panelVisible.objects && !panelVisible.inspector && !panelVisible.assets && !panelVisible.timeline;
+      const allHidden = !panelVisible.objects && !panelVisible.inspector && !panelVisible.assets && !panelVisible.timeline && !panelVisible.overview;
       if (allHidden) {
         // Restore defaults
         panelVisible.inspector = true;
         panelVisible.timeline = true;
+        panelVisible.overview = true;
       } else {
         panelVisible.objects = false;
         panelVisible.inspector = false;
         panelVisible.assets = false;
         panelVisible.timeline = false;
+        panelVisible.overview = false;
       }
       applyPanelState();
       break;

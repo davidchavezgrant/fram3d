@@ -24,7 +24,7 @@
     <div class="panel-body" id="objects-list"></div>
   </div>
 
-  <!-- Left sidebar: Assets (shares space with objects) -->
+  <!-- Left sidebar: Assets -->
   <div id="assets-panel" class="side-panel left hidden">
     <div class="panel-header">
       Assets
@@ -35,9 +35,8 @@
     <div class="panel-body" id="assets-grid"></div>
   </div>
 
-  <!-- Center column: minimap + viewport -->
+  <!-- Center column: overview + viewport -->
   <div id="center-column">
-    <!-- Overview minimap -->
     <div id="minimap-container">
       <div id="minimap-label">Overview</div>
       <div id="minimap">
@@ -51,10 +50,10 @@
     <div id="viewport">
       <div class="placeholder">
         3D Viewport<br>
-        <span style="font-size:11px;color:#444">(camera view would render here)</span>
+        <span style="font-size:11px;color:#555">(camera view would render here)</span>
       </div>
       <div id="viewport-shot-label"></div>
-      <div id="viewport-time"></div>
+      <div id="viewport-timecode"></div>
     </div>
   </div>
 
@@ -74,9 +73,22 @@
 <!-- ── Bottom gutter + Timeline ── -->
 <div class="gutter bottom">
   <button class="gutter-tab-h" data-panel="timeline">Timeline</button>
+  <button class="gutter-tab-h" data-panel="overview">Overview</button>
+  <div class="gutter-spacer"></div>
+  <button id="btn-play" class="gutter-play">&#9654;</button>
 </div>
+
 <div id="timeline-section">
   <div id="timeline-panel">
+    <!-- Ruler (on top) -->
+    <div id="ruler-container">
+      <div id="ruler-label"></div>
+      <div id="ruler">
+        <div id="playhead-ruler"></div>
+      </div>
+    </div>
+
+    <!-- Shot Bar (below ruler) -->
     <div id="shot-bar-container">
       <div id="shot-bar-label">Shots</div>
       <div id="shot-bar">
@@ -85,13 +97,7 @@
       </div>
     </div>
 
-    <div id="ruler-container">
-      <div id="ruler-label"></div>
-      <div id="ruler">
-        <div id="playhead-ruler"></div>
-      </div>
-    </div>
-
+    <!-- Track Area -->
     <div id="track-area-wrapper">
       <div id="track-labels"></div>
       <div id="track-area">
@@ -99,41 +105,21 @@
       </div>
     </div>
 
+    <!-- Zoom bar -->
     <div id="zoom-bar-container">
-      <div id="zoom-bar-spacer"></div>
+      <div id="zoom-bar-label">
+        <button id="btn-zoom-fit" class="zoom-fit-btn" title="Zoom to Fit (\)">Fit</button>
+      </div>
       <div id="zoom-bar">
         <div id="zoom-playhead-indicator"></div>
         <div id="zoom-thumb"></div>
       </div>
     </div>
   </div>
-
-  <div id="mode-switcher">
-    <span class="mode-label">Camera track style:</span>
-    <button class="mode-btn active" data-mode="clips">1. Clips</button>
-    <button class="mode-btn" data-mode="splice">2. Splice marks</button>
-    <button class="mode-btn" data-mode="shapes">3. Start shapes</button>
-    <button class="mode-btn" data-mode="hide">4. Current only</button>
-  </div>
-
-  <div id="controls">
-    <button id="btn-play">&#9654; Play</button>
-    <button id="btn-prev-shot">&#9664; Prev Shot</button>
-    <button id="btn-next-shot">Next Shot &#9654;</button>
-    <button id="btn-zoom-fit">Zoom to Fit (\)</button>
-    <div class="spacer"></div>
-    <span class="time-display" id="time-display">0:00.0</span>
-    <span style="color:#555">/ <span id="total-duration"></span></span>
-  </div>
-
-  <div id="legend">
-    <div class="legend-item"><div class="legend-swatch diamond" style="background:#e8a030"></div>Camera keyframe (per-shot)</div>
-    <div class="legend-item"><div class="legend-swatch diamond" style="background:#5588dd"></div>Object keyframe (global)</div>
-    <div class="legend-item"><div class="legend-swatch diamond" style="background:#7755cc"></div>Object keyframe (alt track)</div>
-    <div class="legend-item"><div class="legend-swatch hatched"></div>Linked period (no independent keyframing)</div>
-    <div class="legend-item"><span style="color:#ff4466">|</span> Playhead</div>
-  </div>
 </div>
+
+<!-- Floating label for shot resize -->
+<div id="resize-label"></div>
 
 <script src="global-timeline.js"></script>
 <script src="panels.js"></script>

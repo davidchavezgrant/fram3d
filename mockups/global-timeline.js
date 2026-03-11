@@ -1,75 +1,165 @@
 // Fram3d — Global Timeline Visualization Mockup
 
 // ── Data model ──
+// Each shot owns its cameras. Object tracks span the entire timeline.
 const SCENE = {
-  totalDuration: 18, // seconds
   fps: 24,
 
   shots: [
-    { name: 'Wide Establishing',  start: 0,  end: 6,  color: '#3a5a7a' },
-    { name: 'Over the Shoulder',  start: 6,  end: 12, color: '#5a4a6a' },
-    { name: 'Close-up Reaction',  start: 12, end: 18, color: '#4a6a5a' },
-  ],
-
-  tracks: [
     {
-      name: 'Camera',
-      type: 'camera',
-      color: '#e8a030',
-      keyframes: [
-        { time: 0,    shot: 0 },
-        { time: 2.5,  shot: 0 },
-        { time: 5.5,  shot: 0 },
-        { time: 6,    shot: 1 },
-        { time: 8,    shot: 1 },
-        { time: 10,   shot: 1 },
-        { time: 11.5, shot: 1 },
-        { time: 12,   shot: 2 },
-        { time: 14,   shot: 2 },
-        { time: 17,   shot: 2 },
+      name: 'Wide Establishing', start: 0, end: 6, color: '#9a5555',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 0 }, { time: 2.5 }, { time: 5.5 }] },
+        { name: 'Cam B', keyframes: [{ time: 1 }, { time: 4 }] },
+        { name: 'Cam C', keyframes: [{ time: 0.5 }, { time: 3 }, { time: 5 }] },
+        { name: 'Cam D', keyframes: [{ time: 2 }, { time: 4.5 }] },
       ]
     },
     {
-      name: 'Character_A',
-      type: 'object',
-      color: '#5588dd',
+      name: 'Over Shoulder', start: 6, end: 10, color: '#5577aa',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 6 }, { time: 8 }, { time: 9.5 }] },
+        { name: 'Cam B', keyframes: [{ time: 7 }, { time: 9 }] },
+      ]
+    },
+    {
+      name: 'Close-up Reaction', start: 10, end: 18, color: '#aa8844',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 10 }, { time: 13 }, { time: 17 }] },
+      ]
+    },
+    {
+      name: 'Tracking', start: 18, end: 23, color: '#8855aa',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 18 }, { time: 20 }, { time: 22.5 }] },
+        { name: 'Cam B', keyframes: [{ time: 19 }, { time: 21 }] },
+        { name: 'Cam C', keyframes: [{ time: 18.5 }, { time: 22 }] },
+      ]
+    },
+    {
+      name: 'Two-Shot', start: 23, end: 30, color: '#aa5577',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 23 }, { time: 26 }, { time: 29 }] },
+        { name: 'Cam B', keyframes: [{ time: 24.5 }, { time: 28 }] },
+      ]
+    },
+    {
+      name: 'Insert Detail', start: 30, end: 33, color: '#557799',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 30 }, { time: 32 }] },
+      ]
+    },
+    {
+      name: 'Dolly In', start: 33, end: 39, color: '#aa7744',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 33 }, { time: 35 }, { time: 38 }] },
+        { name: 'Cam B', keyframes: [{ time: 34 }, { time: 37 }] },
+        { name: 'Cam C', keyframes: [{ time: 33.5 }, { time: 36 }, { time: 38.5 }] },
+        { name: 'Cam D', keyframes: [{ time: 34.5 }, { time: 37.5 }] },
+      ]
+    },
+    {
+      name: 'Reverse Angle', start: 39, end: 43, color: '#7755aa',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 39 }, { time: 41 }, { time: 42.5 }] },
+        { name: 'Cam B', keyframes: [{ time: 40 }, { time: 42 }] },
+      ]
+    },
+    {
+      name: 'Steadicam Walk', start: 43, end: 53, color: '#996655',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 43 }, { time: 46 }, { time: 50 }, { time: 52 }] },
+      ]
+    },
+    {
+      name: 'High Angle', start: 53, end: 58, color: '#5588aa',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 53 }, { time: 55 }, { time: 57 }] },
+        { name: 'Cam B', keyframes: [{ time: 54 }, { time: 56.5 }] },
+        { name: 'Cam C', keyframes: [{ time: 53.5 }, { time: 57.5 }] },
+      ]
+    },
+    {
+      name: 'POV', start: 58, end: 65, color: '#aa6655',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 58 }, { time: 61 }, { time: 64 }] },
+        { name: 'Cam B', keyframes: [{ time: 59.5 }, { time: 63 }] },
+      ]
+    },
+    {
+      name: 'Whip Pan', start: 65, end: 68, color: '#6677aa',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 65 }, { time: 67 }] },
+      ]
+    },
+    {
+      name: 'Push In', start: 68, end: 76, color: '#aa5555',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 68 }, { time: 71 }, { time: 75 }] },
+        { name: 'Cam B', keyframes: [{ time: 69.5 }, { time: 73 }] },
+      ]
+    },
+    {
+      name: 'Master Wide', start: 76, end: 82, color: '#558899',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 76 }, { time: 78 }, { time: 81 }] },
+        { name: 'Cam B', keyframes: [{ time: 77 }, { time: 80 }] },
+        { name: 'Cam C', keyframes: [{ time: 76.5 }, { time: 79 }, { time: 81.5 }] },
+      ]
+    },
+    {
+      name: 'Final Close-up', start: 82, end: 90, color: '#8866aa',
+      cameras: [
+        { name: 'Cam A', keyframes: [{ time: 82 }, { time: 85 }, { time: 89 }] },
+      ]
+    },
+  ],
+
+  // Object tracks — green shades, span full timeline
+  tracks: [
+    {
+      name: 'Character_A', color: '#4a9a4a',
       keyframes: [
-        { time: 0 },
-        { time: 3 },
-        { time: 5 },
-        { time: 7.5 },
-        { time: 10 },
-        { time: 13 },
-        { time: 16 },
+        { time: 0 }, { time: 3 }, { time: 7 }, { time: 12 }, { time: 17 },
+        { time: 22 }, { time: 27 }, { time: 35 }, { time: 42 }, { time: 48 },
+        { time: 55 }, { time: 62 }, { time: 70 }, { time: 78 }, { time: 86 },
       ],
       linkedPeriods: []
     },
     {
-      name: 'Sword',
-      type: 'object-alt',
-      color: '#7755cc',
+      name: 'Character_B', color: '#3a8a5a',
       keyframes: [
-        { time: 0 },
-        { time: 2 },
-        { time: 13 },
-        { time: 15.5 },
-        { time: 17 },
+        { time: 0 }, { time: 5 }, { time: 10 }, { time: 18 }, { time: 25 },
+        { time: 33 }, { time: 45 }, { time: 58 }, { time: 68 }, { time: 80 },
+      ],
+      linkedPeriods: []
+    },
+    {
+      name: 'Sword', color: '#5a9a3a',
+      keyframes: [
+        { time: 0 }, { time: 2 }, { time: 13 }, { time: 15.5 }, { time: 17 },
+        { time: 40 }, { time: 55 }, { time: 70 }, { time: 85 },
       ],
       linkedPeriods: [
         { start: 4, end: 11, parent: 'Character_A hand' }
       ]
     },
     {
-      name: 'Table',
-      type: 'object',
-      color: '#5588dd',
+      name: 'Table', color: '#4a7a6a',
+      keyframes: [{ time: 0 }],
+      linkedPeriods: []
+    },
+    {
+      name: 'Key_Light', color: '#6a8a4a',
       keyframes: [
-        { time: 0 },
+        { time: 0 }, { time: 18 }, { time: 43 }, { time: 65 }, { time: 82 },
       ],
       linkedPeriods: []
     },
   ]
 };
+
+SCENE.totalDuration = SCENE.shots[SCENE.shots.length - 1].end;
 
 // ── State ──
 let playhead = 0;
@@ -78,8 +168,11 @@ let viewEnd = SCENE.totalDuration;
 let playing = false;
 let selectedKeyframe = null;
 let animFrame = null;
-let cameraMode = 'clips';
 let shotBarLastClick = { index: -1, time: 0 };
+
+// Shot boundary drag
+let boundaryDragging = false;
+let boundaryIndex = -1;
 
 // ── DOM refs ──
 const shotBar = document.getElementById('shot-bar');
@@ -92,11 +185,10 @@ const zoomPlayheadIndicator = document.getElementById('zoom-playhead-indicator')
 const playheadEl = document.getElementById('playhead');
 const playheadRuler = document.getElementById('playhead-ruler');
 const playheadShotbar = document.getElementById('playhead-shotbar');
-const timeDisplay = document.getElementById('time-display');
-const totalDurationEl = document.getElementById('total-duration');
 const viewportShotLabel = document.getElementById('viewport-shot-label');
-const viewportTime = document.getElementById('viewport-time');
+const viewportTimecode = document.getElementById('viewport-timecode');
 const minimapEl = document.getElementById('minimap');
+const resizeLabel = document.getElementById('resize-label');
 
 // ── Helpers ──
 
@@ -110,10 +202,27 @@ function xToTime(x) {
   return viewStart + (x / w) * (viewEnd - viewStart);
 }
 
-function formatTime(t) {
-  const min = Math.floor(t / 60);
-  const sec = t % 60;
-  return `${min}:${sec.toFixed(1).padStart(4, '0')}`;
+function formatTimecode(t) {
+  const totalFrames = Math.max(0, Math.round(t * SCENE.fps));
+  const ff = totalFrames % 24;
+  const totalSeconds = Math.floor(totalFrames / 24);
+  const ss = totalSeconds % 60;
+  const mm = Math.floor(totalSeconds / 60) % 60;
+  const hh = Math.floor(totalSeconds / 3600);
+  return `${String(hh).padStart(2, '0')};${String(mm).padStart(2, '0')};${String(ss).padStart(2, '0')};${String(ff).padStart(2, '0')}`;
+}
+
+function formatRulerTime(t) {
+  const totalFrames = Math.max(0, Math.round(t * SCENE.fps));
+  const ff = totalFrames % 24;
+  const totalSeconds = Math.floor(totalFrames / 24);
+  const ss = totalSeconds % 60;
+  const mm = Math.floor(totalSeconds / 60);
+  const duration = viewEnd - viewStart;
+  if (duration < 3) {
+    return `${mm};${String(ss).padStart(2, '0')};${String(ff).padStart(2, '0')}`;
+  }
+  return `${mm};${String(ss).padStart(2, '0')}`;
 }
 
 function getCurrentShot() {
@@ -124,9 +233,9 @@ function getCurrentShot() {
 }
 
 function adjustAlpha(hex, factor) {
-  const r = parseInt(hex.slice(1,3), 16);
-  const g = parseInt(hex.slice(3,5), 16);
-  const b = parseInt(hex.slice(5,7), 16);
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${factor})`;
 }
 
@@ -148,6 +257,25 @@ function zoomAtPosition(mouseTimeFraction, deltaY) {
   render();
 }
 
+// ── Derived track rows ──
+// Camera rows change based on current shot; object rows are fixed.
+
+function getVisibleRows() {
+  const si = getCurrentShot();
+  const shot = SCENE.shots[si];
+  const rows = [];
+
+  shot.cameras.forEach((cam, ci) => {
+    rows.push({ type: 'camera', name: cam.name, shotIndex: si, cameraIndex: ci });
+  });
+
+  SCENE.tracks.forEach((track, ti) => {
+    rows.push({ type: 'object', name: track.name, trackIndex: ti });
+  });
+
+  return rows;
+}
+
 // ── Render ──
 
 function render() {
@@ -161,7 +289,8 @@ function render() {
 }
 
 function renderShotBar() {
-  shotBar.querySelectorAll('.shot-rect').forEach(el => el.remove());
+  // Clear dynamic children
+  shotBar.querySelectorAll('.shot-rect, .shot-boundary-handle').forEach(el => el.remove());
   const currentShot = getCurrentShot();
 
   SCENE.shots.forEach((shot, i) => {
@@ -170,14 +299,16 @@ function renderShotBar() {
     const left = timeToX(shot.start);
     const right = timeToX(shot.end);
     el.style.left = left + 'px';
-    el.style.width = (right - left - 2) + 'px';
+    el.style.width = Math.max(0, right - left - 2) + 'px';
     el.style.background = shot.color;
     el.textContent = shot.name;
+
     el.addEventListener('mousedown', (e) => {
       e.stopPropagation();
       e.preventDefault();
       const now = Date.now();
       if (shotBarLastClick.index === i && now - shotBarLastClick.time < 350) {
+        // Double-click: zoom to shot
         shotBarLastClick = { index: -1, time: 0 };
         viewStart = shot.start;
         viewEnd = shot.end;
@@ -191,7 +322,27 @@ function renderShotBar() {
     shotBar.appendChild(el);
   });
 
+  // Boundary drag handles
+  for (let i = 0; i < SCENE.shots.length - 1; i++) {
+    const boundaryTime = SCENE.shots[i].end;
+    const handle = document.createElement('div');
+    handle.className = 'shot-boundary-handle';
+    handle.style.left = timeToX(boundaryTime) + 'px';
+
+    const idx = i;
+    handle.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      boundaryDragging = true;
+      boundaryIndex = idx;
+    });
+    shotBar.appendChild(handle);
+  }
+
+  // Shot bar view range (hidden for now)
   document.getElementById('shot-bar-view-range').style.display = 'none';
+
+  // Playhead on shot bar
   shotBar.appendChild(playheadShotbar);
   playheadShotbar.style.left = timeToX(playhead) + 'px';
 }
@@ -201,18 +352,22 @@ function renderRuler() {
 
   const duration = viewEnd - viewStart;
   let interval;
-  if (duration <= 2) interval = 0.25;
+  if (duration <= 2) interval = 1 / SCENE.fps; // per-frame
   else if (duration <= 5) interval = 0.5;
-  else if (duration <= 12) interval = 1;
-  else if (duration <= 30) interval = 2;
-  else interval = 5;
+  else if (duration <= 15) interval = 1;
+  else if (duration <= 40) interval = 2;
+  else if (duration <= 60) interval = 5;
+  else interval = 10;
 
   const startTick = Math.ceil(viewStart / interval) * interval;
   for (let t = startTick; t <= viewEnd; t += interval) {
     const x = timeToX(t);
     if (x < -10 || x > ruler.clientWidth + 10) continue;
 
-    const isMajor = Math.abs(t - Math.round(t)) < 0.01;
+    const isMajor = interval >= 1
+      ? Math.abs(t - Math.round(t / (interval >= 5 ? 10 : 5)) * (interval >= 5 ? 10 : 5)) < 0.01
+      : Math.abs(t - Math.round(t)) < 0.01;
+
     const tick = document.createElement('div');
     tick.className = 'ruler-tick';
     tick.style.left = x + 'px';
@@ -220,11 +375,11 @@ function renderRuler() {
     tick.style.bottom = '0';
     ruler.appendChild(tick);
 
-    if (isMajor || interval < 1) {
+    if (isMajor || interval >= 1) {
       const label = document.createElement('div');
       label.className = 'ruler-label';
       label.style.left = x + 'px';
-      label.textContent = formatTime(t);
+      label.textContent = formatRulerTime(t);
       ruler.appendChild(label);
     }
   }
@@ -236,252 +391,166 @@ function renderTracks() {
   trackLabels.innerHTML = '';
   trackArea.querySelectorAll(':not(#playhead)').forEach(el => el.remove());
 
-  const currentShot = getCurrentShot();
+  const currentShotIndex = getCurrentShot();
+  const currentShot = SCENE.shots[currentShotIndex];
+  const rows = getVisibleRows();
+  const rowHeight = 28;
 
-  SCENE.tracks.forEach((track, i) => {
+  rows.forEach((rowData, i) => {
     // Label
     const label = document.createElement('div');
-    label.className = 'track-label';
-    label.innerHTML = `<div class="dot" style="background:${track.color}"></div><div class="name">${track.name}</div>`;
+    if (rowData.type === 'camera') {
+      label.className = 'track-label camera-label';
+      const cam = currentShot.cameras[rowData.cameraIndex];
+      label.innerHTML = `<div class="dot" style="background:${currentShot.color}"></div><div class="name">${cam.name}</div>`;
+    } else {
+      label.className = 'track-label';
+      const track = SCENE.tracks[rowData.trackIndex];
+      label.innerHTML = `<div class="dot" style="background:${track.color}"></div><div class="name">${track.name}</div>`;
+    }
     trackLabels.appendChild(label);
 
     // Track row
     const row = document.createElement('div');
     row.className = 'track-row';
-    row.style.top = (i * 36) + 'px';
+    row.style.top = (i * rowHeight) + 'px';
     trackArea.appendChild(row);
 
-    if (track.type === 'camera') {
-      renderCameraTrack(row, track, i, currentShot);
+    if (rowData.type === 'camera') {
+      renderCameraRow(row, rowData, currentShotIndex);
     } else {
-      // Shot boundary lines
-      SCENE.shots.forEach(shot => {
-        if (shot.start > 0) {
-          const line = document.createElement('div');
-          line.className = 'shot-boundary';
-          line.style.left = timeToX(shot.start) + 'px';
-          row.appendChild(line);
-        }
-      });
-
-      // Linked periods
-      if (track.linkedPeriods) {
-        track.linkedPeriods.forEach(lp => {
-          const region = document.createElement('div');
-          region.className = 'linked-region';
-          const x1 = timeToX(lp.start);
-          const x2 = timeToX(lp.end);
-          region.style.left = x1 + 'px';
-          region.style.width = (x2 - x1) + 'px';
-          region.title = `Linked to ${lp.parent} — unlink to keyframe independently`;
-
-          const linkLabel = document.createElement('div');
-          linkLabel.className = 'link-label';
-          if (x2 - x1 > 80) {
-            linkLabel.textContent = `→ ${lp.parent}`;
-          }
-          region.appendChild(linkLabel);
-          row.appendChild(region);
-
-          [lp.start, lp.end].forEach(t => {
-            const kf = document.createElement('div');
-            kf.className = 'keyframe link-boundary';
-            kf.style.left = timeToX(t) + 'px';
-            kf.title = `Link boundary at ${formatTime(t)}`;
-            row.appendChild(kf);
-          });
-        });
-      }
-
-      // Object keyframes
-      track.keyframes.forEach((kf, ki) => {
-        const el = document.createElement('div');
-        el.className = 'keyframe ' + track.type;
-        el.style.left = timeToX(kf.time) + 'px';
-
-        const key = `${i}-${ki}`;
-        if (selectedKeyframe === key) el.classList.add('selected');
-
-        el.title = `${track.name} keyframe at ${formatTime(kf.time)}`;
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          selectedKeyframe = (selectedKeyframe === key) ? null : key;
-          playhead = kf.time;
-          render();
-        });
-        row.appendChild(el);
-      });
+      renderObjectRow(row, rowData, currentShotIndex);
     }
   });
 
-  const totalHeight = SCENE.tracks.length * 36;
+  const totalHeight = rows.length * rowHeight;
   trackArea.style.height = totalHeight + 'px';
   trackLabels.style.height = totalHeight + 'px';
 }
 
-function renderCameraTrack(row, track, trackIndex, currentShot) {
-  // Shot background tinting (all modes)
+function renderCameraRow(row, rowData, currentShotIndex) {
+  const currentShot = SCENE.shots[currentShotIndex];
+  const cam = currentShot.cameras[rowData.cameraIndex];
+
+  // Shot background tinting
   SCENE.shots.forEach((shot, si) => {
     const bg = document.createElement('div');
-    bg.className = 'shot-bg' + (si === currentShot ? ' active-shot' : '');
-    bg.style.left = timeToX(shot.start) + 'px';
-    bg.style.width = (timeToX(shot.end) - timeToX(shot.start)) + 'px';
+    bg.className = 'shot-bg' + (si === currentShotIndex ? ' active-shot' : '');
+    const left = timeToX(shot.start);
+    const width = timeToX(shot.end) - left;
+    bg.style.left = left + 'px';
+    bg.style.width = width + 'px';
     bg.style.background = shot.color;
     row.appendChild(bg);
   });
 
-  if (cameraMode === 'clips') {
-    // Each shot's camera is a rounded clip container
-    SCENE.shots.forEach((shot, si) => {
-      const clip = document.createElement('div');
-      clip.className = 'camera-clip' + (si === currentShot ? ' active-clip' : '');
-      clip.style.left = timeToX(shot.start) + 'px';
-      clip.style.width = (timeToX(shot.end) - timeToX(shot.start)) + 'px';
+  // Collapsed blocks for non-current shots
+  SCENE.shots.forEach((shot, si) => {
+    if (si === currentShotIndex) return;
+    const block = document.createElement('div');
+    block.className = 'camera-block';
+    const left = timeToX(shot.start);
+    const width = timeToX(shot.end) - left;
+    block.style.left = left + 'px';
+    block.style.width = width + 'px';
+    block.style.background = shot.color;
+    row.appendChild(block);
+  });
 
-      const label = document.createElement('div');
-      label.className = 'clip-label';
-      label.textContent = 'CAM';
-      clip.appendChild(label);
-      row.appendChild(clip);
+  // Shot boundary lines
+  SCENE.shots.forEach(shot => {
+    if (shot.start > 0) {
+      const line = document.createElement('div');
+      line.className = 'shot-boundary';
+      line.style.left = timeToX(shot.start) + 'px';
+      row.appendChild(line);
+    }
+  });
+
+  // Camera keyframes — shot colored
+  cam.keyframes.forEach((kf, ki) => {
+    if (kf.time < currentShot.start || kf.time > currentShot.end) return;
+    const el = document.createElement('div');
+    el.className = 'keyframe';
+    el.style.left = timeToX(kf.time) + 'px';
+    el.style.background = currentShot.color;
+
+    const key = `cam-${currentShotIndex}-${rowData.cameraIndex}-${ki}`;
+    if (selectedKeyframe === key) el.classList.add('selected');
+    el.title = `${cam.name} @ ${formatTimecode(kf.time)}`;
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedKeyframe = (selectedKeyframe === key) ? null : key;
+      playhead = kf.time;
+      render();
     });
+    row.appendChild(el);
+  });
+}
 
-    track.keyframes.forEach((kf, ki) => {
-      const el = document.createElement('div');
-      el.className = 'keyframe camera';
-      el.style.left = timeToX(kf.time) + 'px';
-      if (kf.shot !== currentShot) el.style.opacity = '0.35';
+function renderObjectRow(row, rowData, currentShotIndex) {
+  const track = SCENE.tracks[rowData.trackIndex];
 
-      const key = `${trackIndex}-${ki}`;
-      if (selectedKeyframe === key) el.classList.add('selected');
-      el.title = `Camera keyframe at ${formatTime(kf.time)}`;
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        selectedKeyframe = (selectedKeyframe === key) ? null : key;
-        playhead = kf.time;
-        render();
+  // Shot boundary lines
+  SCENE.shots.forEach(shot => {
+    if (shot.start > 0) {
+      const line = document.createElement('div');
+      line.className = 'shot-boundary';
+      line.style.left = timeToX(shot.start) + 'px';
+      row.appendChild(line);
+    }
+  });
+
+  // Linked periods
+  if (track.linkedPeriods) {
+    track.linkedPeriods.forEach(lp => {
+      const x1 = timeToX(lp.start);
+      const x2 = timeToX(lp.end);
+
+      const region = document.createElement('div');
+      region.className = 'linked-region';
+      region.style.left = x1 + 'px';
+      region.style.width = (x2 - x1) + 'px';
+      region.title = `Linked to ${lp.parent}`;
+
+      const linkLabel = document.createElement('div');
+      linkLabel.className = 'link-label';
+      if (x2 - x1 > 80) linkLabel.textContent = `\u2192 ${lp.parent}`;
+      region.appendChild(linkLabel);
+      row.appendChild(region);
+
+      [lp.start, lp.end].forEach(t => {
+        const kf = document.createElement('div');
+        kf.className = 'keyframe link-boundary';
+        kf.style.left = timeToX(t) + 'px';
+        kf.title = `Link boundary @ ${formatTimecode(t)}`;
+        row.appendChild(kf);
       });
-      row.appendChild(el);
-    });
-
-  } else if (cameraMode === 'splice') {
-    // Splice marks at shot boundaries
-    SCENE.shots.forEach(shot => {
-      if (shot.start > 0) {
-        const splice = document.createElement('div');
-        splice.className = 'splice-mark';
-        splice.style.left = timeToX(shot.start) + 'px';
-        const line = document.createElement('div');
-        line.className = 'splice-mark-line';
-        splice.appendChild(line);
-        row.appendChild(splice);
-      }
-    });
-
-    track.keyframes.forEach((kf, ki) => {
-      const el = document.createElement('div');
-      el.className = 'keyframe camera';
-      el.style.left = timeToX(kf.time) + 'px';
-      if (kf.shot !== currentShot) el.style.opacity = '0.35';
-
-      const key = `${trackIndex}-${ki}`;
-      if (selectedKeyframe === key) el.classList.add('selected');
-      el.title = `Camera keyframe at ${formatTime(kf.time)}`;
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        selectedKeyframe = (selectedKeyframe === key) ? null : key;
-        playhead = kf.time;
-        render();
-      });
-      row.appendChild(el);
-    });
-
-  } else if (cameraMode === 'shapes') {
-    // Different shape for shot-start keyframes
-    SCENE.shots.forEach(shot => {
-      if (shot.start > 0) {
-        const line = document.createElement('div');
-        line.className = 'shot-boundary';
-        line.style.left = timeToX(shot.start) + 'px';
-        row.appendChild(line);
-      }
-    });
-
-    const shotStartTimes = new Set(SCENE.shots.map(s => s.start));
-
-    track.keyframes.forEach((kf, ki) => {
-      const isStart = shotStartTimes.has(kf.time);
-      const el = document.createElement('div');
-
-      if (isStart) {
-        el.className = 'keyframe camera-start';
-      } else {
-        el.className = 'keyframe camera';
-      }
-      el.style.left = timeToX(kf.time) + 'px';
-      if (kf.shot !== currentShot) el.style.opacity = '0.35';
-
-      const key = `${trackIndex}-${ki}`;
-      if (selectedKeyframe === key) el.classList.add('selected');
-      el.title = `Camera ${isStart ? 'start' : 'keyframe'} at ${formatTime(kf.time)}`;
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        selectedKeyframe = (selectedKeyframe === key) ? null : key;
-        playhead = kf.time;
-        render();
-      });
-      row.appendChild(el);
-    });
-
-  } else if (cameraMode === 'hide') {
-    // Only show current shot's keyframes
-    SCENE.shots.forEach(shot => {
-      if (shot.start > 0) {
-        const line = document.createElement('div');
-        line.className = 'shot-boundary';
-        line.style.left = timeToX(shot.start) + 'px';
-        row.appendChild(line);
-      }
-    });
-
-    SCENE.shots.forEach((shot, si) => {
-      if (si !== currentShot) {
-        const block = document.createElement('div');
-        block.style.position = 'absolute';
-        block.style.top = '6px';
-        block.style.bottom = '6px';
-        block.style.left = timeToX(shot.start) + 'px';
-        block.style.width = (timeToX(shot.end) - timeToX(shot.start)) + 'px';
-        block.style.background = 'rgba(232,160,48,0.12)';
-        block.style.borderRadius = '3px';
-        block.style.border = '1px solid rgba(232,160,48,0.15)';
-        row.appendChild(block);
-      }
-    });
-
-    track.keyframes.forEach((kf, ki) => {
-      if (kf.shot !== currentShot) return;
-      const el = document.createElement('div');
-      el.className = 'keyframe camera';
-      el.style.left = timeToX(kf.time) + 'px';
-
-      const key = `${trackIndex}-${ki}`;
-      if (selectedKeyframe === key) el.classList.add('selected');
-      el.title = `Camera keyframe at ${formatTime(kf.time)}`;
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        selectedKeyframe = (selectedKeyframe === key) ? null : key;
-        playhead = kf.time;
-        render();
-      });
-      row.appendChild(el);
     });
   }
+
+  // Object keyframes — track colored (greens)
+  track.keyframes.forEach((kf, ki) => {
+    const el = document.createElement('div');
+    el.className = 'keyframe';
+    el.style.left = timeToX(kf.time) + 'px';
+    el.style.background = track.color;
+
+    const key = `obj-${rowData.trackIndex}-${ki}`;
+    if (selectedKeyframe === key) el.classList.add('selected');
+    el.title = `${track.name} @ ${formatTimecode(kf.time)}`;
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedKeyframe = (selectedKeyframe === key) ? null : key;
+      playhead = kf.time;
+      render();
+    });
+    row.appendChild(el);
+  });
 }
 
 function renderPlayhead() {
   playheadEl.style.left = timeToX(playhead) + 'px';
-  timeDisplay.textContent = formatTime(playhead);
-  totalDurationEl.textContent = formatTime(SCENE.totalDuration);
 }
 
 function renderZoomBar() {
@@ -496,14 +565,14 @@ function renderZoomBar() {
 }
 
 function renderMinimap() {
+  if (!minimapEl) return;
   const w = minimapEl.clientWidth;
   const tToX = (t) => (t / SCENE.totalDuration) * w;
+  const currentShotIndex = getCurrentShot();
 
   // Shots
   const shotsContainer = document.getElementById('minimap-shots');
   shotsContainer.innerHTML = '';
-  const currentShot = getCurrentShot();
-
   SCENE.shots.forEach((shot, i) => {
     const el = document.createElement('div');
     el.className = 'minimap-shot';
@@ -511,41 +580,52 @@ function renderMinimap() {
     const right = tToX(shot.end);
     el.style.left = left + 'px';
     el.style.width = (right - left - 1) + 'px';
-    el.style.background = i === currentShot ? shot.color : adjustAlpha(shot.color, 0.6);
-    if (right - left > 40) el.textContent = shot.name;
+    el.style.background = i === currentShotIndex ? shot.color : adjustAlpha(shot.color, 0.6);
+    if (right - left > 30) el.textContent = shot.name;
     shotsContainer.appendChild(el);
   });
 
-  // Tracks with keyframes
+  // Tracks
   const tracksContainer = document.getElementById('minimap-tracks');
   tracksContainer.innerHTML = '';
-  const trackCount = SCENE.tracks.length;
-  const trackH = (48 - 17) / trackCount;
+  const rows = getVisibleRows();
+  const trackH = Math.max(4, (48 - 17) / rows.length);
 
-  SCENE.tracks.forEach((track, i) => {
+  rows.forEach((rowData, i) => {
     const row = document.createElement('div');
     row.className = 'minimap-track-row';
     row.style.top = (i * trackH) + 'px';
     row.style.height = trackH + 'px';
 
-    if (track.linkedPeriods) {
-      track.linkedPeriods.forEach(lp => {
-        const region = document.createElement('div');
-        region.className = 'minimap-link-region';
-        region.style.left = tToX(lp.start) + 'px';
-        region.style.width = (tToX(lp.end) - tToX(lp.start)) + 'px';
-        row.appendChild(region);
+    if (rowData.type === 'camera') {
+      const shot = SCENE.shots[rowData.shotIndex];
+      const cam = shot.cameras[rowData.cameraIndex];
+      cam.keyframes.forEach(kf => {
+        const el = document.createElement('div');
+        el.className = 'minimap-kf';
+        el.style.left = tToX(kf.time) + 'px';
+        el.style.background = shot.color;
+        row.appendChild(el);
+      });
+    } else {
+      const track = SCENE.tracks[rowData.trackIndex];
+      if (track.linkedPeriods) {
+        track.linkedPeriods.forEach(lp => {
+          const region = document.createElement('div');
+          region.className = 'minimap-link-region';
+          region.style.left = tToX(lp.start) + 'px';
+          region.style.width = (tToX(lp.end) - tToX(lp.start)) + 'px';
+          row.appendChild(region);
+        });
+      }
+      track.keyframes.forEach(kf => {
+        const el = document.createElement('div');
+        el.className = 'minimap-kf';
+        el.style.left = tToX(kf.time) + 'px';
+        el.style.background = track.color;
+        row.appendChild(el);
       });
     }
-
-    track.keyframes.forEach(kf => {
-      const el = document.createElement('div');
-      el.className = 'minimap-kf';
-      el.style.left = tToX(kf.time) + 'px';
-      el.style.background = track.color;
-      row.appendChild(el);
-    });
-
     tracksContainer.appendChild(row);
   });
 
@@ -564,13 +644,14 @@ function renderMinimap() {
 function renderViewportInfo() {
   const si = getCurrentShot();
   const shot = SCENE.shots[si];
-  viewportShotLabel.textContent = `Shot ${si + 1}: ${shot.name}`;
-  viewportTime.textContent = formatTime(playhead);
+  const camCount = shot.cameras.length;
+  viewportShotLabel.textContent = `Shot ${si + 1}: ${shot.name}  (${camCount} cam${camCount > 1 ? 's' : ''})`;
+  viewportTimecode.textContent = formatTimecode(playhead);
 }
 
 // ── Interactions ──
 
-// Click track area to move playhead
+// Track area click/drag to move playhead
 let trackDragging = false;
 
 trackArea.addEventListener('mousedown', (e) => {
@@ -603,7 +684,7 @@ ruler.addEventListener('mousedown', (e) => {
   render();
 });
 
-// Middle-drag on shot bar to pan
+// Middle-drag to pan
 let panDragging = false;
 let panStartX = 0;
 let panStartViewStart = 0;
@@ -618,7 +699,7 @@ shotBar.addEventListener('mousedown', (e) => {
   }
 });
 
-// Scroll to zoom (track area, ruler, shot bar)
+// Scroll to zoom
 function handleZoomWheel(e) {
   e.preventDefault();
   const rect = e.currentTarget.getBoundingClientRect();
@@ -634,7 +715,6 @@ function handleZoomWheel(e) {
     render();
     return;
   }
-
   zoomAtPosition(fraction, e.deltaY);
 }
 
@@ -642,13 +722,44 @@ trackArea.addEventListener('wheel', handleZoomWheel, { passive: false });
 ruler.addEventListener('wheel', handleZoomWheel, { passive: false });
 shotBar.addEventListener('wheel', handleZoomWheel, { passive: false });
 
-// Global mousemove / mouseup for all drag operations
+// Global mousemove / mouseup
 let zoomDragging = false;
 let zoomDragStartX = 0;
 let zoomDragStartViewStart = 0;
 let minimapDragging = false;
 
 document.addEventListener('mousemove', (e) => {
+  // Shot boundary drag
+  if (boundaryDragging) {
+    const rect = shotBar.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    let newTime = xToTime(x);
+
+    const leftShot = SCENE.shots[boundaryIndex];
+    const rightShot = SCENE.shots[boundaryIndex + 1];
+    const minDuration = 1;
+    newTime = Math.max(leftShot.start + minDuration, Math.min(rightShot.end - minDuration, newTime));
+
+    // Snap to frame boundaries
+    newTime = Math.round(newTime * SCENE.fps) / SCENE.fps;
+
+    leftShot.end = newTime;
+    rightShot.start = newTime;
+
+    // Show floating label
+    const leftDur = leftShot.end - leftShot.start;
+    const rightDur = rightShot.end - rightShot.start;
+    const leftFrames = Math.round(leftDur * SCENE.fps);
+    const rightFrames = Math.round(rightDur * SCENE.fps);
+    resizeLabel.style.display = 'block';
+    resizeLabel.style.left = (e.clientX + 14) + 'px';
+    resizeLabel.style.top = (e.clientY - 24) + 'px';
+    resizeLabel.textContent = `\u2190 ${leftDur.toFixed(1)}s (${leftFrames}f)  |  ${rightDur.toFixed(1)}s (${rightFrames}f) \u2192`;
+
+    render();
+    return;
+  }
+
   if (trackDragging) {
     const rect = trackArea.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -696,6 +807,11 @@ document.addEventListener('mousemove', (e) => {
 });
 
 document.addEventListener('mouseup', () => {
+  if (boundaryDragging) {
+    boundaryDragging = false;
+    boundaryIndex = -1;
+    resizeLabel.style.display = 'none';
+  }
   trackDragging = false;
   rulerDragging = false;
   minimapDragging = false;
@@ -707,7 +823,7 @@ document.addEventListener('mouseup', () => {
   zoomDragging = false;
 });
 
-// Drag zoom thumb
+// Zoom thumb drag
 zoomThumb.addEventListener('mousedown', (e) => {
   zoomDragging = true;
   zoomDragStartX = e.clientX;
@@ -733,73 +849,14 @@ zoomBar.addEventListener('click', (e) => {
 
 document.getElementById('btn-play').addEventListener('click', () => {
   playing = !playing;
-  document.getElementById('btn-play').textContent = playing ? '\u23F8 Pause' : '\u25B6 Play';
+  document.getElementById('btn-play').innerHTML = playing ? '&#10074;&#10074;' : '&#9654;';
   if (playing) animLoop();
-});
-
-document.getElementById('btn-prev-shot').addEventListener('click', () => {
-  const si = getCurrentShot();
-  const target = Math.max(0, si - 1);
-  const shot = SCENE.shots[target];
-  playhead = shot.start;
-  const duration = viewEnd - viewStart;
-  if (duration <= shot.end - shot.start) {
-    viewStart = shot.start;
-    viewEnd = shot.end;
-  } else {
-    const mid = (shot.start + shot.end) / 2;
-    viewStart = mid - duration / 2;
-    viewEnd = mid + duration / 2;
-  }
-  clampView();
-  render();
-});
-
-document.getElementById('btn-next-shot').addEventListener('click', () => {
-  const si = getCurrentShot();
-  const target = Math.min(SCENE.shots.length - 1, si + 1);
-  const shot = SCENE.shots[target];
-  playhead = shot.start;
-  const duration = viewEnd - viewStart;
-  if (duration <= shot.end - shot.start) {
-    viewStart = shot.start;
-    viewEnd = shot.end;
-  } else {
-    const mid = (shot.start + shot.end) / 2;
-    viewStart = mid - duration / 2;
-    viewEnd = mid + duration / 2;
-  }
-  clampView();
-  viewEnd = SCENE.shots[target].end;
-  render();
 });
 
 document.getElementById('btn-zoom-fit').addEventListener('click', () => {
   viewStart = 0;
   viewEnd = SCENE.totalDuration;
   render();
-});
-
-// ── Mode switcher ──
-
-document.querySelectorAll('.mode-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    cameraMode = btn.dataset.mode;
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    render();
-  });
-});
-
-document.addEventListener('keydown', (e) => {
-  if (e.key >= '1' && e.key <= '4') {
-    const modes = ['clips', 'splice', 'shapes', 'hide'];
-    const idx = parseInt(e.key) - 1;
-    cameraMode = modes[idx];
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`[data-mode="${modes[idx]}"]`).classList.add('active');
-    render();
-  }
 });
 
 // ── Minimap interaction ──
@@ -822,7 +879,7 @@ function handleMinimapClick(e) {
   render();
 }
 
-// Prevent middle-click scroll/paste on timeline elements
+// Prevent middle-click scroll/paste
 trackArea.addEventListener('auxclick', (e) => e.preventDefault());
 ruler.addEventListener('auxclick', (e) => e.preventDefault());
 shotBar.addEventListener('auxclick', (e) => e.preventDefault());
@@ -831,6 +888,8 @@ minimapEl.addEventListener('auxclick', (e) => e.preventDefault());
 // ── Keyboard ──
 
 document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+
   if (e.key === ' ') {
     e.preventDefault();
     document.getElementById('btn-play').click();

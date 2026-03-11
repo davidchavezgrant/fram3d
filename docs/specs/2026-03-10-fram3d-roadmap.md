@@ -206,7 +206,7 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 			*Temporal object-to-character and object-to-object linking on the global timeline. Viewport: click-drag to link, right-click to unlink. Panel: pickwhip tool. Anchor point (panel XYZ value) defines attachment offset. Linked period greyed out on timeline. Max chain depth: 4. Positional attachment — flat scene graph, transform override during linked period.*
 
 		- ##### 3.3.2. Object grouping (Feature)
-			*Persistent multiselect. Select any member → all selected. Transform any member → all transform. No timeline behavior. Right-click to group/ungroup.*
+			*Groups with own transform. Single-click selects group; double-click enters it to edit members. 30% opacity on non-group objects when inside. Gizmo at bounding box center. No timeline behavior.*
 
 		- ##### 3.3.3. Object list panel (Feature)
 			*Flat list of all scene objects with link indicators, group markers, and pickwhip handles. Click to select, pickwhip to link. Separate "Lights" section. Dockable left or right.*

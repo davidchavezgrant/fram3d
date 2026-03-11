@@ -84,7 +84,6 @@ body {
 /* ── Shot Bar ── */
 #shot-bar-container {
   display: flex;
-  height: 32px;
   border-bottom: 1px solid #333;
   flex-shrink: 0;
 }
@@ -107,29 +106,41 @@ body {
   overflow: hidden;
   cursor: pointer;
 }
-.shot-rect {
+/* Stacked camera labels within each shot */
+.shot-cam {
   position: absolute;
-  top: 3px;
-  height: 26px;
-  border-radius: 3px;
+  border-radius: 2px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
-  color: rgba(255,255,255,0.7);
-  transition: filter 0.15s;
+  color: rgba(255,255,255,0.55);
+  transition: filter 0.12s, opacity 0.12s;
   border: 1px solid transparent;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding: 0 6px;
+  padding: 0 5px;
+  cursor: pointer;
 }
-.shot-rect:hover { filter: brightness(1.15); }
-.shot-rect.active {
-  border-color: rgba(255,255,255,0.5);
+.shot-cam:hover { filter: brightness(1.15); }
+.shot-cam.active-cam {
+  border-color: rgba(255,255,255,0.45);
   filter: brightness(1.2);
+  color: rgba(255,255,255,0.85);
   z-index: 1;
+}
+.shot-cam.previewed {
+  color: #fff;
+  filter: brightness(0.9);
+}
+.shot-cam.dimmed {
+  filter: brightness(0.65);
+  opacity: 0.55;
+}
+.shot-cam.inactive {
+  filter: brightness(0.45);
+  opacity: 0.35;
 }
 #shot-bar-view-range {
   position: absolute;

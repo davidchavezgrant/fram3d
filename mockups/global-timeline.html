@@ -14,6 +14,7 @@
 
   <!-- Left gutter -->
   <div class="gutter left">
+    <button class="gutter-tab" data-panel="overview">Overview</button>
     <button class="gutter-tab" data-panel="objects">Objects</button>
     <button class="gutter-tab" data-panel="assets">Assets</button>
   </div>
@@ -73,7 +74,6 @@
 <!-- ── Bottom gutter + Timeline ── -->
 <div class="gutter bottom">
   <button class="gutter-tab-h" data-panel="timeline">Timeline</button>
-  <button class="gutter-tab-h" data-panel="overview">Overview</button>
   <div class="gutter-spacer"></div>
   <button id="btn-play" class="gutter-play">&#9654;</button>
 </div>
@@ -107,9 +107,7 @@
 
     <!-- Zoom bar -->
     <div id="zoom-bar-container">
-      <div id="zoom-bar-label">
-        <button id="btn-zoom-fit" class="zoom-fit-btn" title="Zoom to Fit (\)">Fit</button>
-      </div>
+      <div id="zoom-bar-label"></div>
       <div id="zoom-bar">
         <div id="zoom-playhead-indicator"></div>
         <div id="zoom-thumb"></div>

@@ -161,6 +161,10 @@ const SCENE = {
 
 SCENE.totalDuration = SCENE.shots[SCENE.shots.length - 1].end;
 
+// ── Constants ──
+const MAX_CAMERAS = Math.max(...SCENE.shots.map(s => s.cameras.length));
+const CAM_ROW_HEIGHT = 20;
+
 // ── State ──
 let playhead = 0;
 let viewStart = 0;
@@ -168,11 +172,21 @@ let viewEnd = SCENE.totalDuration;
 let playing = false;
 let selectedKeyframe = null;
 let animFrame = null;
-let shotBarLastClick = { index: -1, time: 0 };
 
-// Shot boundary drag
+// Per-shot active camera (index). Default: 0 (Cam A)
+const activeCameraPerShot = {};
+SCENE.shots.forEach((_, i) => { activeCameraPerShot[i] = 0; });
+
+// Single-click preview: shows keyframes without making camera active
+let previewCamera = null; // { shotIndex, cameraIndex } or null
+
+// Shot bar double-click detection
+let shotBarLastClick = { shotIndex: -1, camIndex: -1, time: 0 };
+
+// Shot boundary drag (ripple)
 let boundaryDragging = false;
 let boundaryIndex = -1;
+let boundarySnapshot = null;
 
 // ── DOM refs ──
 const shotBar = document.getElementById('shot-bar');
@@ -189,6 +203,9 @@ const viewportShotLabel = document.getElementById('viewport-shot-label');
 const viewportTimecode = document.getElementById('viewport-timecode');
 const minimapEl = document.getElementById('minimap');
 const resizeLabel = document.getElementById('resize-label');
+
+// ── Init shot bar height ──
+document.getElementById('shot-bar-container').style.height = (MAX_CAMERAS * CAM_ROW_HEIGHT + 2) + 'px';
 
 // ── Helpers ──
 
@@ -257,23 +274,14 @@ function zoomAtPosition(mouseTimeFraction, deltaY) {
   render();
 }
 
-// ── Derived track rows ──
-// Camera rows change based on current shot; object rows are fixed.
-
-function getVisibleRows() {
-  const si = getCurrentShot();
-  const shot = SCENE.shots[si];
-  const rows = [];
-
-  shot.cameras.forEach((cam, ci) => {
-    rows.push({ type: 'camera', name: cam.name, shotIndex: si, cameraIndex: ci });
-  });
-
-  SCENE.tracks.forEach((track, ti) => {
-    rows.push({ type: 'object', name: track.name, trackIndex: ti });
-  });
-
-  return rows;
+// Which camera to display in the track area for a given shot
+function getDisplayCamera(shotIndex) {
+  const shot = SCENE.shots[shotIndex];
+  if (previewCamera && previewCamera.shotIndex === shotIndex) {
+    return { cam: shot.cameras[previewCamera.cameraIndex], index: previewCamera.cameraIndex, isPreviewed: true };
+  }
+  const idx = activeCameraPerShot[shotIndex] || 0;
+  return { cam: shot.cameras[idx], index: idx, isPreviewed: false };
 }
 
 // ── Render ──
@@ -289,40 +297,76 @@ function render() {
 }
 
 function renderShotBar() {
-  // Clear dynamic children
-  shotBar.querySelectorAll('.shot-rect, .shot-boundary-handle').forEach(el => el.remove());
-  const currentShot = getCurrentShot();
+  shotBar.querySelectorAll('.shot-cam, .shot-boundary-handle').forEach(el => el.remove());
+  const currentShotIndex = getCurrentShot();
 
-  SCENE.shots.forEach((shot, i) => {
-    const el = document.createElement('div');
-    el.className = 'shot-rect' + (i === currentShot ? ' active' : '');
+  // Auto-clear preview if we've moved to a different shot
+  if (previewCamera && previewCamera.shotIndex !== currentShotIndex) {
+    previewCamera = null;
+  }
+
+  SCENE.shots.forEach((shot, si) => {
     const left = timeToX(shot.start);
-    const right = timeToX(shot.end);
-    el.style.left = left + 'px';
-    el.style.width = Math.max(0, right - left - 2) + 'px';
-    el.style.background = shot.color;
-    el.textContent = shot.name;
+    const width = timeToX(shot.end) - left;
+    const isCurrentShot = si === currentShotIndex;
+    const activeCamIdx = activeCameraPerShot[si] || 0;
 
-    el.addEventListener('mousedown', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      const now = Date.now();
-      if (shotBarLastClick.index === i && now - shotBarLastClick.time < 350) {
-        // Double-click: zoom to shot
-        shotBarLastClick = { index: -1, time: 0 };
-        viewStart = shot.start;
-        viewEnd = shot.end;
-        playhead = shot.start;
-      } else {
-        shotBarLastClick = { index: i, time: now };
-        playhead = shot.start;
-      }
-      render();
+    shot.cameras.forEach((cam, ci) => {
+      const el = document.createElement('div');
+      el.className = 'shot-cam';
+
+      const isActive = isCurrentShot && ci === activeCamIdx;
+      const isPreviewed = previewCamera && previewCamera.shotIndex === si && previewCamera.cameraIndex === ci;
+
+      if (isActive) el.classList.add('active-cam');
+      else if (isPreviewed) el.classList.add('previewed');
+      else if (isCurrentShot) el.classList.add('dimmed');
+      else el.classList.add('inactive');
+
+      el.style.left = (left + 1) + 'px';
+      el.style.width = Math.max(0, width - 3) + 'px';
+      el.style.top = (ci * CAM_ROW_HEIGHT + 1) + 'px';
+      el.style.height = (CAM_ROW_HEIGHT - 2) + 'px';
+      el.style.background = shot.color;
+
+      const letter = String.fromCharCode(65 + ci);
+      el.textContent = `${letter}: ${shot.name}`;
+
+      el.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const now = Date.now();
+        const isDouble = shotBarLastClick.shotIndex === si &&
+          shotBarLastClick.camIndex === ci &&
+          now - shotBarLastClick.time < 350;
+
+        if (isDouble) {
+          // Double-click: activate this camera (no zoom change)
+          activeCameraPerShot[si] = ci;
+          previewCamera = null;
+          shotBarLastClick = { shotIndex: -1, camIndex: -1, time: 0 };
+        } else {
+          shotBarLastClick = { shotIndex: si, camIndex: ci, time: now };
+
+          // Jump playhead if clicking a different shot
+          if (si !== currentShotIndex) playhead = shot.start;
+
+          // Preview non-active camera; clear preview if clicking active
+          if (ci !== activeCamIdx || si !== currentShotIndex) {
+            previewCamera = { shotIndex: si, cameraIndex: ci };
+          } else {
+            previewCamera = null;
+          }
+        }
+        render();
+      });
+
+      shotBar.appendChild(el);
     });
-    shotBar.appendChild(el);
   });
 
-  // Boundary drag handles
+  // Boundary drag handles (span full shot bar height)
   for (let i = 0; i < SCENE.shots.length - 1; i++) {
     const boundaryTime = SCENE.shots[i].end;
     const handle = document.createElement('div');
@@ -335,11 +379,19 @@ function renderShotBar() {
       e.preventDefault();
       boundaryDragging = true;
       boundaryIndex = idx;
+      // Snapshot state for ripple calculation
+      boundarySnapshot = {
+        shots: SCENE.shots.map(s => ({ start: s.start, end: s.end })),
+        cameraTimes: SCENE.shots.map(s => s.cameras.map(c => c.keyframes.map(kf => kf.time))),
+        objectTimes: SCENE.tracks.map(t => t.keyframes.map(kf => kf.time)),
+        linkedPeriods: SCENE.tracks.map(t => (t.linkedPeriods || []).map(lp => ({ start: lp.start, end: lp.end }))),
+        origBoundary: SCENE.shots[idx].end,
+      };
     });
     shotBar.appendChild(handle);
   }
 
-  // Shot bar view range (hidden for now)
+  // View range indicator (hidden)
   document.getElementById('shot-bar-view-range').style.display = 'none';
 
   // Playhead on shot bar
@@ -352,7 +404,7 @@ function renderRuler() {
 
   const duration = viewEnd - viewStart;
   let interval;
-  if (duration <= 2) interval = 1 / SCENE.fps; // per-frame
+  if (duration <= 2) interval = 1 / SCENE.fps;
   else if (duration <= 5) interval = 0.5;
   else if (duration <= 15) interval = 1;
   else if (duration <= 40) interval = 2;
@@ -393,53 +445,52 @@ function renderTracks() {
 
   const currentShotIndex = getCurrentShot();
   const currentShot = SCENE.shots[currentShotIndex];
-  const rows = getVisibleRows();
+  const display = getDisplayCamera(currentShotIndex);
+  const displayLetter = String.fromCharCode(65 + display.index);
   const rowHeight = 28;
 
-  rows.forEach((rowData, i) => {
-    // Label
+  // Camera track (single row)
+  const camLabel = document.createElement('div');
+  camLabel.className = 'track-label camera-label';
+  camLabel.innerHTML = `<div class="dot" style="background:${currentShot.color}"></div><div class="name">Cam ${displayLetter}</div>`;
+  trackLabels.appendChild(camLabel);
+
+  const camRow = document.createElement('div');
+  camRow.className = 'track-row';
+  camRow.style.top = '0px';
+  trackArea.appendChild(camRow);
+  renderCameraRow(camRow, currentShotIndex);
+
+  // Object tracks
+  SCENE.tracks.forEach((track, ti) => {
     const label = document.createElement('div');
-    if (rowData.type === 'camera') {
-      label.className = 'track-label camera-label';
-      const cam = currentShot.cameras[rowData.cameraIndex];
-      label.innerHTML = `<div class="dot" style="background:${currentShot.color}"></div><div class="name">${cam.name}</div>`;
-    } else {
-      label.className = 'track-label';
-      const track = SCENE.tracks[rowData.trackIndex];
-      label.innerHTML = `<div class="dot" style="background:${track.color}"></div><div class="name">${track.name}</div>`;
-    }
+    label.className = 'track-label';
+    label.innerHTML = `<div class="dot" style="background:${track.color}"></div><div class="name">${track.name}</div>`;
     trackLabels.appendChild(label);
 
-    // Track row
     const row = document.createElement('div');
     row.className = 'track-row';
-    row.style.top = (i * rowHeight) + 'px';
+    row.style.top = ((ti + 1) * rowHeight) + 'px';
     trackArea.appendChild(row);
-
-    if (rowData.type === 'camera') {
-      renderCameraRow(row, rowData, currentShotIndex);
-    } else {
-      renderObjectRow(row, rowData, currentShotIndex);
-    }
+    renderObjectRow(row, ti, currentShotIndex);
   });
 
-  const totalHeight = rows.length * rowHeight;
+  const totalHeight = (1 + SCENE.tracks.length) * rowHeight;
   trackArea.style.height = totalHeight + 'px';
   trackLabels.style.height = totalHeight + 'px';
 }
 
-function renderCameraRow(row, rowData, currentShotIndex) {
+function renderCameraRow(row, currentShotIndex) {
   const currentShot = SCENE.shots[currentShotIndex];
-  const cam = currentShot.cameras[rowData.cameraIndex];
+  const display = getDisplayCamera(currentShotIndex);
 
   // Shot background tinting
   SCENE.shots.forEach((shot, si) => {
     const bg = document.createElement('div');
     bg.className = 'shot-bg' + (si === currentShotIndex ? ' active-shot' : '');
     const left = timeToX(shot.start);
-    const width = timeToX(shot.end) - left;
     bg.style.left = left + 'px';
-    bg.style.width = width + 'px';
+    bg.style.width = (timeToX(shot.end) - left) + 'px';
     bg.style.background = shot.color;
     row.appendChild(bg);
   });
@@ -450,9 +501,8 @@ function renderCameraRow(row, rowData, currentShotIndex) {
     const block = document.createElement('div');
     block.className = 'camera-block';
     const left = timeToX(shot.start);
-    const width = timeToX(shot.end) - left;
     block.style.left = left + 'px';
-    block.style.width = width + 'px';
+    block.style.width = (timeToX(shot.end) - left) + 'px';
     block.style.background = shot.color;
     row.appendChild(block);
   });
@@ -467,29 +517,33 @@ function renderCameraRow(row, rowData, currentShotIndex) {
     }
   });
 
-  // Camera keyframes — shot colored
-  cam.keyframes.forEach((kf, ki) => {
-    if (kf.time < currentShot.start || kf.time > currentShot.end) return;
-    const el = document.createElement('div');
-    el.className = 'keyframe';
-    el.style.left = timeToX(kf.time) + 'px';
-    el.style.background = currentShot.color;
+  // Camera keyframes
+  if (display.cam) {
+    const kfOpacity = display.isPreviewed ? 0.55 : 1;
+    display.cam.keyframes.forEach((kf, ki) => {
+      if (kf.time < currentShot.start || kf.time > currentShot.end) return;
+      const el = document.createElement('div');
+      el.className = 'keyframe';
+      el.style.left = timeToX(kf.time) + 'px';
+      el.style.background = currentShot.color;
+      el.style.opacity = kfOpacity;
 
-    const key = `cam-${currentShotIndex}-${rowData.cameraIndex}-${ki}`;
-    if (selectedKeyframe === key) el.classList.add('selected');
-    el.title = `${cam.name} @ ${formatTimecode(kf.time)}`;
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      selectedKeyframe = (selectedKeyframe === key) ? null : key;
-      playhead = kf.time;
-      render();
+      const key = `cam-${currentShotIndex}-${display.index}-${ki}`;
+      if (selectedKeyframe === key) el.classList.add('selected');
+      el.title = `${display.cam.name} @ ${formatTimecode(kf.time)}`;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedKeyframe = (selectedKeyframe === key) ? null : key;
+        playhead = kf.time;
+        render();
+      });
+      row.appendChild(el);
     });
-    row.appendChild(el);
-  });
+  }
 }
 
-function renderObjectRow(row, rowData, currentShotIndex) {
-  const track = SCENE.tracks[rowData.trackIndex];
+function renderObjectRow(row, trackIndex, currentShotIndex) {
+  const track = SCENE.tracks[trackIndex];
 
   // Shot boundary lines
   SCENE.shots.forEach(shot => {
@@ -529,14 +583,14 @@ function renderObjectRow(row, rowData, currentShotIndex) {
     });
   }
 
-  // Object keyframes — track colored (greens)
+  // Object keyframes
   track.keyframes.forEach((kf, ki) => {
     const el = document.createElement('div');
     el.className = 'keyframe';
     el.style.left = timeToX(kf.time) + 'px';
     el.style.background = track.color;
 
-    const key = `obj-${rowData.trackIndex}-${ki}`;
+    const key = `obj-${trackIndex}-${ki}`;
     if (selectedKeyframe === key) el.classList.add('selected');
     el.title = `${track.name} @ ${formatTimecode(kf.time)}`;
     el.addEventListener('click', (e) => {
@@ -585,47 +639,55 @@ function renderMinimap() {
     shotsContainer.appendChild(el);
   });
 
-  // Tracks
+  // Tracks: 1 camera row + N object rows
   const tracksContainer = document.getElementById('minimap-tracks');
   tracksContainer.innerHTML = '';
-  const rows = getVisibleRows();
-  const trackH = Math.max(4, (48 - 17) / rows.length);
+  const rowCount = 1 + SCENE.tracks.length;
+  const trackH = Math.max(4, (48 - 17) / rowCount);
 
-  rows.forEach((rowData, i) => {
+  // Camera minimap row — show active camera keyframes for each shot
+  const camRow = document.createElement('div');
+  camRow.className = 'minimap-track-row';
+  camRow.style.top = '0px';
+  camRow.style.height = trackH + 'px';
+  SCENE.shots.forEach((shot, si) => {
+    const camIdx = activeCameraPerShot[si] || 0;
+    const cam = shot.cameras[camIdx];
+    cam.keyframes.forEach(kf => {
+      const el = document.createElement('div');
+      el.className = 'minimap-kf';
+      el.style.left = tToX(kf.time) + 'px';
+      el.style.background = shot.color;
+      camRow.appendChild(el);
+    });
+  });
+  tracksContainer.appendChild(camRow);
+
+  // Object minimap rows
+  SCENE.tracks.forEach((track, ti) => {
     const row = document.createElement('div');
     row.className = 'minimap-track-row';
-    row.style.top = (i * trackH) + 'px';
+    row.style.top = ((ti + 1) * trackH) + 'px';
     row.style.height = trackH + 'px';
 
-    if (rowData.type === 'camera') {
-      const shot = SCENE.shots[rowData.shotIndex];
-      const cam = shot.cameras[rowData.cameraIndex];
-      cam.keyframes.forEach(kf => {
-        const el = document.createElement('div');
-        el.className = 'minimap-kf';
-        el.style.left = tToX(kf.time) + 'px';
-        el.style.background = shot.color;
-        row.appendChild(el);
-      });
-    } else {
-      const track = SCENE.tracks[rowData.trackIndex];
-      if (track.linkedPeriods) {
-        track.linkedPeriods.forEach(lp => {
-          const region = document.createElement('div');
-          region.className = 'minimap-link-region';
-          region.style.left = tToX(lp.start) + 'px';
-          region.style.width = (tToX(lp.end) - tToX(lp.start)) + 'px';
-          row.appendChild(region);
-        });
-      }
-      track.keyframes.forEach(kf => {
-        const el = document.createElement('div');
-        el.className = 'minimap-kf';
-        el.style.left = tToX(kf.time) + 'px';
-        el.style.background = track.color;
-        row.appendChild(el);
+    if (track.linkedPeriods) {
+      track.linkedPeriods.forEach(lp => {
+        const region = document.createElement('div');
+        region.className = 'minimap-link-region';
+        region.style.left = tToX(lp.start) + 'px';
+        region.style.width = (tToX(lp.end) - tToX(lp.start)) + 'px';
+        row.appendChild(region);
       });
     }
+
+    track.keyframes.forEach(kf => {
+      const el = document.createElement('div');
+      el.className = 'minimap-kf';
+      el.style.left = tToX(kf.time) + 'px';
+      el.style.background = track.color;
+      row.appendChild(el);
+    });
+
     tracksContainer.appendChild(row);
   });
 
@@ -644,8 +706,9 @@ function renderMinimap() {
 function renderViewportInfo() {
   const si = getCurrentShot();
   const shot = SCENE.shots[si];
-  const camCount = shot.cameras.length;
-  viewportShotLabel.textContent = `Shot ${si + 1}: ${shot.name}  (${camCount} cam${camCount > 1 ? 's' : ''})`;
+  const display = getDisplayCamera(si);
+  const letter = String.fromCharCode(65 + display.index);
+  viewportShotLabel.textContent = `Shot ${si + 1}${letter}: ${shot.name}`;
   viewportTimecode.textContent = formatTimecode(playhead);
 }
 
@@ -657,6 +720,7 @@ let trackDragging = false;
 trackArea.addEventListener('mousedown', (e) => {
   if (e.button === 0) {
     trackDragging = true;
+    previewCamera = null;
     const rect = trackArea.getBoundingClientRect();
     const x = e.clientX - rect.left;
     playhead = Math.max(0, Math.min(SCENE.totalDuration, xToTime(x)));
@@ -678,6 +742,7 @@ let rulerDragging = false;
 ruler.addEventListener('mousedown', (e) => {
   if (e.button !== 0) return;
   rulerDragging = true;
+  previewCamera = null;
   const rect = ruler.getBoundingClientRect();
   const x = e.clientX - rect.left;
   playhead = Math.max(0, Math.min(SCENE.totalDuration, xToTime(x)));
@@ -729,32 +794,67 @@ let zoomDragStartViewStart = 0;
 let minimapDragging = false;
 
 document.addEventListener('mousemove', (e) => {
-  // Shot boundary drag
-  if (boundaryDragging) {
+  // Shot boundary drag (ripple)
+  if (boundaryDragging && boundarySnapshot) {
     const rect = shotBar.getBoundingClientRect();
     const x = e.clientX - rect.left;
     let newTime = xToTime(x);
 
-    const leftShot = SCENE.shots[boundaryIndex];
-    const rightShot = SCENE.shots[boundaryIndex + 1];
+    // Clamp: dragged shot can't be shorter than 1 second
+    const snap = boundarySnapshot;
     const minDuration = 1;
-    newTime = Math.max(leftShot.start + minDuration, Math.min(rightShot.end - minDuration, newTime));
+    newTime = Math.max(snap.shots[boundaryIndex].start + minDuration, newTime);
 
-    // Snap to frame boundaries
+    // Snap to frame boundary
     newTime = Math.round(newTime * SCENE.fps) / SCENE.fps;
 
-    leftShot.end = newTime;
-    rightShot.start = newTime;
+    const delta = newTime - snap.origBoundary;
 
-    // Show floating label
+    // Update dragged shot's end
+    SCENE.shots[boundaryIndex].end = newTime;
+
+    // Ripple: shift all subsequent shots and their camera keyframes
+    for (let j = boundaryIndex + 1; j < SCENE.shots.length; j++) {
+      SCENE.shots[j].start = snap.shots[j].start + delta;
+      SCENE.shots[j].end = snap.shots[j].end + delta;
+      SCENE.shots[j].cameras.forEach((cam, ci) => {
+        cam.keyframes.forEach((kf, ki) => {
+          kf.time = snap.cameraTimes[j][ci][ki] + delta;
+        });
+      });
+    }
+
+    // Shift object keyframes at or past the original boundary
+    SCENE.tracks.forEach((track, ti) => {
+      track.keyframes.forEach((kf, ki) => {
+        const origTime = snap.objectTimes[ti][ki];
+        kf.time = origTime >= snap.origBoundary ? origTime + delta : origTime;
+      });
+      (track.linkedPeriods || []).forEach((lp, li) => {
+        const origLp = snap.linkedPeriods[ti][li];
+        lp.start = origLp.start >= snap.origBoundary ? origLp.start + delta : origLp.start;
+        lp.end = origLp.end >= snap.origBoundary ? origLp.end + delta : origLp.end;
+      });
+    });
+
+    // Update total duration
+    SCENE.totalDuration = SCENE.shots[SCENE.shots.length - 1].end;
+
+    // Clamp view if total duration shrank
+    if (viewEnd > SCENE.totalDuration) {
+      const dur = viewEnd - viewStart;
+      viewEnd = SCENE.totalDuration;
+      viewStart = Math.max(0, viewEnd - dur);
+    }
+
+    // Show floating label with shot name + new duration
+    const leftShot = SCENE.shots[boundaryIndex];
     const leftDur = leftShot.end - leftShot.start;
-    const rightDur = rightShot.end - rightShot.start;
     const leftFrames = Math.round(leftDur * SCENE.fps);
-    const rightFrames = Math.round(rightDur * SCENE.fps);
     resizeLabel.style.display = 'block';
     resizeLabel.style.left = (e.clientX + 14) + 'px';
     resizeLabel.style.top = (e.clientY - 24) + 'px';
-    resizeLabel.textContent = `\u2190 ${leftDur.toFixed(1)}s (${leftFrames}f)  |  ${rightDur.toFixed(1)}s (${rightFrames}f) \u2192`;
+    resizeLabel.textContent = `${leftShot.name}: ${leftDur.toFixed(1)}s (${leftFrames}f)`;
 
     render();
     return;
@@ -810,6 +910,7 @@ document.addEventListener('mouseup', () => {
   if (boundaryDragging) {
     boundaryDragging = false;
     boundaryIndex = -1;
+    boundarySnapshot = null;
     resizeLabel.style.display = 'none';
   }
   trackDragging = false;
@@ -853,17 +954,12 @@ document.getElementById('btn-play').addEventListener('click', () => {
   if (playing) animLoop();
 });
 
-document.getElementById('btn-zoom-fit').addEventListener('click', () => {
-  viewStart = 0;
-  viewEnd = SCENE.totalDuration;
-  render();
-});
-
 // ── Minimap interaction ──
 
 minimapEl.addEventListener('mousedown', (e) => {
   if (e.button !== 0) return;
   minimapDragging = true;
+  previewCamera = null;
   handleMinimapClick(e);
 });
 
@@ -900,7 +996,9 @@ document.addEventListener('keydown', (e) => {
     playhead = Math.min(SCENE.totalDuration, playhead + 1 / SCENE.fps);
     render();
   } else if (e.key === '\\') {
-    document.getElementById('btn-zoom-fit').click();
+    viewStart = 0;
+    viewEnd = SCENE.totalDuration;
+    render();
   }
 });
 

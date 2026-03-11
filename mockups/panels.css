@@ -299,5 +299,53 @@
   border-top: 1px solid #333;
 }
 
+/* ── Keyframe stopwatch UI ── */
+.kf-stopwatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  color: #444;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-right: 4px;
+  border-radius: 2px;
+  transition: color 0.15s, background 0.15s;
+  user-select: none;
+}
+.kf-stopwatch:hover {
+  color: #888;
+  background: rgba(255,255,255,0.05);
+}
+.kf-stopwatch.active {
+  color: #e8a030;
+}
+.kf-stopwatch.active:hover {
+  color: #f0b848;
+  background: rgba(232,160,48,0.1);
+}
+
+/* ── Value tuples (After Effects-style) ── */
+.inspector-value.tuple {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+  color: #8ab4d6;
+}
+
+/* ── Panel drag edge for horizontal resize ── */
+.panel-drag-edge {
+  position: absolute;
+  top: 0;
+  width: 5px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 10;
+}
+.side-panel.left .panel-drag-edge { right: 0; }
+.side-panel.right .panel-drag-edge { left: 0; }
+.side-panel { position: relative; }
+
 /* ── Timeline section toggle ── */
 #timeline-section.hidden { display: none; }

@@ -29,24 +29,42 @@ body {
 }
 #timeline-section {
   flex-shrink: 0;
+  height: 320px;
+  min-height: 80px;
+  max-height: 80vh;
 }
 
-/* ── Viewport ── */
+/* ── Viewport (outer container — black background for letterbox) ── */
 #viewport {
   flex: 1;
-  background: #1a1a1a;
+  background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  min-height: 120px;
+  min-height: 80px;
+  overflow: hidden;
 }
-#viewport .placeholder {
+
+/* Viewport frame (maintains 16:9 aspect ratio inside container) */
+#viewport-frame {
+  position: relative;
+  background: #1a1a1a;
+  overflow: hidden;
+  /* sized by JS to maintain aspect ratio */
+}
+#viewport-frame .placeholder {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
   color: #444;
   font-size: 13px;
   text-align: center;
   line-height: 1.6;
+  pointer-events: none;
 }
+
+/* Shot label + timecode — z-index ABOVE masks */
 #viewport-shot-label {
   position: absolute;
   top: 12px;
@@ -56,13 +74,14 @@ body {
   background: rgba(0,0,0,0.5);
   padding: 4px 10px;
   border-radius: 4px;
+  z-index: 10;
 }
 #viewport-timecode {
   position: absolute;
   bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 14px;
+  font-size: 13px;
   color: #bbb;
   background: rgba(0,0,0,0.6);
   padding: 4px 14px;
@@ -70,6 +89,7 @@ body {
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   letter-spacing: 1px;
+  z-index: 10;
 }
 
 /* ── Timeline panel ── */
@@ -79,7 +99,104 @@ body {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
+
+/* ── Timeline header (scene tabs + transport) ── */
+#timeline-header {
+  display: flex;
+  height: 28px;
+  background: #1e1e1e;
+  border-bottom: 1px solid #3c3c3c;
+  flex-shrink: 0;
+  align-items: center;
+}
+#scene-tabs {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  flex-shrink: 0;
+}
+.scene-tab {
+  background: none;
+  border: none;
+  border-right: 1px solid #333;
+  color: #666;
+  font-size: 10px;
+  font-family: inherit;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.scene-tab:hover { color: #aaa; background: rgba(255,255,255,0.03); }
+.scene-tab.active {
+  color: #ccc;
+  background: rgba(255,255,255,0.06);
+  border-bottom: 2px solid #888;
+}
+#transport-controls {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  padding: 0 10px;
+  gap: 6px;
+  min-width: 0;
+}
+.transport-btn {
+  background: #333;
+  color: #ccc;
+  border: 1px solid #444;
+  border-radius: 3px;
+  width: 24px;
+  height: 20px;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.transport-btn:hover { background: #444; }
+.transport-btn.playing { color: #ff4466; }
+.transport-time {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: #aaa;
+  flex-shrink: 0;
+}
+.transport-divider {
+  color: #555;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.transport-shot {
+  font-size: 10px;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.transport-spacer { flex: 1; }
+#aggregate-duration {
+  font-size: 9px;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Timeline resize handle ── */
+#timeline-resize-handle {
+  height: 5px;
+  background: #1e1e1e;
+  cursor: ns-resize;
+  flex-shrink: 0;
+  border-top: 1px solid #3c3c3c;
+}
+#timeline-resize-handle:hover { background: #3c3c3c; }
 
 /* ── Shot Bar ── */
 #shot-bar-container {
@@ -106,7 +223,6 @@ body {
   overflow: hidden;
   cursor: pointer;
 }
-/* Stacked camera labels within each shot */
 .shot-cam {
   position: absolute;
   border-radius: 2px;
@@ -144,20 +260,16 @@ body {
 }
 #shot-bar-view-range {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 0; bottom: 0;
   border-left: 2px solid rgba(255,255,255,0.2);
   border-right: 2px solid rgba(255,255,255,0.2);
   background: rgba(255,255,255,0.03);
   pointer-events: none;
   z-index: 2;
 }
-
-/* Shot boundary drag handles */
 .shot-boundary-handle {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 0; bottom: 0;
   width: 8px;
   transform: translateX(-50%);
   cursor: col-resize;
@@ -167,8 +279,7 @@ body {
   content: '';
   position: absolute;
   left: 3px;
-  top: 0;
-  bottom: 0;
+  top: 0; bottom: 0;
   width: 2px;
   background: rgba(255,255,255,0.4);
 }
@@ -255,8 +366,7 @@ body {
 }
 .track-row {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 0; right: 0;
   height: 28px;
   border-bottom: 1px solid #2a2a2a;
 }
@@ -264,18 +374,16 @@ body {
 /* Shot background tints */
 .shot-bg {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 0; bottom: 0;
   opacity: 0.08;
   border-radius: 2px;
 }
 .shot-bg.active-shot { opacity: 0.18; }
 
-/* Camera collapsed block (non-current shot) */
+/* Camera collapsed block */
 .camera-block {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
+  top: 4px; bottom: 4px;
   border-radius: 3px;
   opacity: 0.2;
   border: 1px solid rgba(255,255,255,0.06);
@@ -284,8 +392,7 @@ body {
 /* Linked region */
 .linked-region {
   position: absolute;
-  top: 3px;
-  bottom: 3px;
+  top: 3px; bottom: 3px;
   background: repeating-linear-gradient(
     45deg,
     rgba(150,150,150,0.08),
@@ -326,6 +433,10 @@ body {
   outline: 2px solid #fff;
   outline-offset: 1px;
 }
+.keyframe.dragging {
+  opacity: 0.6;
+  z-index: 20;
+}
 
 /* Link boundary keyframes */
 .keyframe.link-boundary {
@@ -339,8 +450,7 @@ body {
 /* Shot boundary lines */
 .shot-boundary {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 0; bottom: 0;
   width: 1px;
   background: rgba(255,255,255,0.06);
   z-index: 1;
@@ -350,8 +460,7 @@ body {
 /* Playhead */
 #playhead {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 0; bottom: 0;
   width: 2px;
   background: #ff4466;
   z-index: 10;
@@ -369,8 +478,7 @@ body {
 }
 #playhead-ruler {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 0; bottom: 0;
   width: 2px;
   background: #ff4466;
   z-index: 10;
@@ -378,8 +486,95 @@ body {
 }
 #playhead-shotbar {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: #ff4466;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ── Coverage Track (3.6.4) ── */
+#coverage-container {
+  display: flex;
+  height: 24px;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+#coverage-label {
+  width: 140px;
+  min-width: 140px;
+  background: #1e1e1e;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-right: 1px solid #3c3c3c;
+  line-height: 1.2;
+}
+.coverage-hint {
+  font-size: 7px;
+  color: #444;
+  text-transform: none;
+  letter-spacing: 0;
+}
+#coverage-track {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+.coverage-segment {
+  position: absolute;
+  top: 2px; bottom: 2px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
+  transition: opacity 0.1s, filter 0.1s;
+  border: 1px solid transparent;
+}
+.coverage-segment.active-coverage {
+  filter: brightness(1.3);
+  color: rgba(255,255,255,0.9);
+  border-color: rgba(255,255,255,0.4);
+  z-index: 1;
+}
+.coverage-segment.inactive-coverage {
+  opacity: 0.4;
+}
+.coverage-divider {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 8px;
+  transform: translateX(-50%);
+  cursor: col-resize;
+  z-index: 3;
+}
+.coverage-divider::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 2px; bottom: 2px;
+  width: 2px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 1px;
+}
+.coverage-divider:hover::after {
+  background: rgba(255,255,255,0.7);
+}
+#playhead-coverage {
+  position: absolute;
+  top: 0; bottom: 0;
   width: 2px;
   background: #ff4466;
   z-index: 10;
@@ -402,17 +597,6 @@ body {
   align-items: center;
   justify-content: center;
 }
-.zoom-fit-btn {
-  background: #333;
-  color: #888;
-  border: 1px solid #444;
-  border-radius: 2px;
-  padding: 1px 8px;
-  font-size: 9px;
-  cursor: pointer;
-  font-family: inherit;
-}
-.zoom-fit-btn:hover { background: #444; color: #aaa; }
 #zoom-bar {
   flex: 1;
   background: #1e1e1e;
@@ -471,22 +655,16 @@ body {
 }
 #minimap-shots {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: 16px;
 }
 #minimap-tracks {
   position: absolute;
-  top: 17px;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 17px; left: 0; right: 0; bottom: 0;
 }
 .minimap-track-row {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 0; right: 0;
 }
 .minimap-kf {
   position: absolute;
@@ -498,8 +676,7 @@ body {
 }
 .minimap-link-region {
   position: absolute;
-  top: 1px;
-  bottom: 1px;
+  top: 1px; bottom: 1px;
   background: rgba(150,150,150,0.15);
   border-radius: 1px;
 }
@@ -520,8 +697,7 @@ body {
 }
 #minimap-view-window {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 0; bottom: 0;
   border: 1px solid rgba(255,255,255,0.3);
   background: rgba(255,255,255,0.04);
   border-radius: 2px;
@@ -530,172 +706,10 @@ body {
 }
 #minimap-playhead {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 0; bottom: 0;
   width: 1px;
   background: #ff4466;
   z-index: 4;
-  pointer-events: none;
-}
-
-/* ── Resize label (floating tooltip for shot dragging) ── */
-#resize-label {
-  position: fixed;
-  pointer-events: none;
-  background: rgba(0,0,0,0.85);
-  color: #eee;
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 3px;
-  display: none;
-  z-index: 100;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-/* ── Transport Bar (1.5.1) ── */
-#transport-bar {
-  display: flex;
-  align-items: center;
-  height: 28px;
-  background: #1e1e1e;
-  border-bottom: 1px solid #333;
-  padding: 0 10px;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.transport-btn {
-  background: #333;
-  color: #ccc;
-  border: 1px solid #444;
-  border-radius: 3px;
-  width: 24px;
-  height: 20px;
-  font-size: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: inherit;
-}
-.transport-btn:hover { background: #444; }
-.transport-btn.playing { color: #ff4466; }
-.transport-time {
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: #aaa;
-  min-width: 36px;
-}
-.transport-divider {
-  color: #555;
-  font-size: 11px;
-}
-.transport-shot {
-  font-size: 11px;
-  color: #666;
-  margin-left: 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ── Status Bar (1.5.1) ── */
-#status-bar {
-  display: flex;
-  align-items: center;
-  height: 20px;
-  background: #1a1a1a;
-  border-top: 1px solid #333;
-  padding: 0 10px;
-  flex-shrink: 0;
-}
-#status-hints {
-  font-size: 9px;
-  color: #555;
-  letter-spacing: 0.5px;
-}
-#status-hints kbd {
-  background: #333;
-  color: #888;
-  padding: 0 4px;
-  border-radius: 2px;
-  border: 1px solid #444;
-  font-size: 9px;
-  font-family: inherit;
-  margin: 0 2px;
-}
-
-/* ── Coverage Track (3.6.4) ── */
-#coverage-container {
-  display: flex;
-  height: 22px;
-  border-bottom: 1px solid #333;
-  flex-shrink: 0;
-}
-#coverage-label {
-  width: 140px;
-  min-width: 140px;
-  background: #1e1e1e;
-  display: flex;
-  align-items: center;
-  padding-left: 12px;
-  font-size: 10px;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  border-right: 1px solid #3c3c3c;
-}
-#coverage-track {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-}
-.coverage-segment {
-  position: absolute;
-  top: 2px;
-  bottom: 2px;
-  border-radius: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 8px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.6);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 0 4px;
-}
-.coverage-divider {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  transform: translateX(-50%);
-  cursor: col-resize;
-  z-index: 3;
-}
-.coverage-divider::after {
-  content: '';
-  position: absolute;
-  left: 2px;
-  top: 2px;
-  bottom: 2px;
-  width: 2px;
-  background: rgba(255,255,255,0.3);
-  border-radius: 1px;
-}
-.coverage-divider:hover::after {
-  background: rgba(255,255,255,0.6);
-}
-#playhead-coverage {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: #ff4466;
-  z-index: 10;
   pointer-events: none;
 }
 
@@ -708,7 +722,7 @@ body {
   border-radius: 4px;
   padding: 6px 10px;
   font-size: 10px;
-  z-index: 5;
+  z-index: 10;
 }
 .hud-row {
   display: flex;
@@ -728,11 +742,11 @@ body {
   text-align: right;
 }
 
-/* ── Aspect Ratio Masks (1.2.1) ── */
+/* ── Aspect Ratio Masks (opaque black) ── */
 .aspect-mask {
   position: absolute;
-  background: rgba(0,0,0,0.85);
-  z-index: 4;
+  background: #000;
+  z-index: 5;
   pointer-events: none;
 }
 #aspect-mask-top { top: 0; left: 0; right: 0; }
@@ -740,12 +754,12 @@ body {
 #aspect-mask-left { top: 0; bottom: 0; left: 0; }
 #aspect-mask-right { top: 0; bottom: 0; right: 0; }
 
-/* ── Frame Guides SVG (1.2.2) ── */
+/* ── Frame Guides SVG ── */
 #viewport-guides {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  z-index: 3;
+  z-index: 6;
   pointer-events: none;
 }
 .guide-thirds {
@@ -769,7 +783,7 @@ body {
   stroke-dasharray: 2 2;
 }
 
-/* ── Tool Mode Badge (1.3.2) ── */
+/* ── Tool Mode Badge ── */
 #tool-mode-badge {
   position: absolute;
   bottom: 12px;
@@ -781,12 +795,9 @@ body {
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  z-index: 5;
+  z-index: 10;
 }
-#tool-mode-icon {
-  font-size: 14px;
-  color: #4a9eff;
-}
+#tool-mode-icon { font-size: 14px; color: #4a9eff; }
 #tool-mode-label {
   color: #aaa;
   font-weight: 600;
@@ -802,7 +813,7 @@ body {
   border-radius: 2px;
 }
 
-/* ── Director View Badge (1.3.5) ── */
+/* ── Director View Badge ── */
 #director-badge {
   position: absolute;
   top: 12px;
@@ -816,10 +827,10 @@ body {
   letter-spacing: 2px;
   padding: 3px 14px;
   border-radius: 3px;
-  z-index: 5;
+  z-index: 10;
 }
 
-/* ── Camera Path Badge (1.5.6) ── */
+/* ── Camera Path Badge ── */
 #camera-path-badge {
   position: absolute;
   bottom: 12px;
@@ -831,10 +842,10 @@ body {
   padding: 3px 10px;
   border-radius: 3px;
   letter-spacing: 1px;
-  z-index: 5;
+  z-index: 10;
 }
 
-/* ── Track Expand / Collapse (1.5.2) ── */
+/* ── Track Expand / Collapse ── */
 .expand-arrow {
   cursor: pointer;
   font-size: 8px;
@@ -850,20 +861,9 @@ body {
   color: #666;
   height: 22px;
 }
-.track-row.sub-track-row {
-  height: 22px;
-}
+.track-row.sub-track-row { height: 22px; }
 
-/* ── Keyframe Drag States (1.5.3) ── */
-.keyframe.dragging {
-  opacity: 0.6;
-  z-index: 20;
-}
-.keyframe.snap-indicator {
-  outline: 1px solid rgba(255,255,255,0.3);
-}
-
-/* ── Interpolation Curve Indicator (3.5.3) ── */
+/* ── Interpolation Curve Indicator ── */
 .interp-indicator {
   position: absolute;
   top: 50%;
@@ -874,7 +874,7 @@ body {
   white-space: nowrap;
 }
 
-/* ── Shot Hover Tooltip (1.4.2) ── */
+/* ── Shot Hover Tooltip ── */
 #shot-tooltip {
   position: fixed;
   pointer-events: none;
@@ -897,7 +897,7 @@ body {
   font-size: 9px;
 }
 
-/* ── Shot Management Buttons (1.4.2) ── */
+/* ── Shot Management Buttons ── */
 #shot-mgmt-buttons {
   display: inline-flex;
   gap: 2px;
@@ -919,36 +919,35 @@ body {
   font-family: inherit;
   line-height: 1;
 }
-.shot-mgmt-btn:hover {
-  background: #444;
-  color: #ccc;
-}
+.shot-mgmt-btn:hover { background: #444; color: #ccc; }
 
-/* ── Scenes Switcher (1.4.4) ── */
-#scenes-switcher {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  padding: 0 8px;
-}
-#scenes-label {
-  font-size: 10px;
-  color: #888;
-}
-.scenes-arrow {
-  font-size: 9px;
-  color: #666;
-}
-#scenes-switcher:hover #scenes-label { color: #bbb; }
-
-/* ── Aggregate Duration (1.4.2) ── */
-#aggregate-duration {
-  font-size: 10px;
-  color: #666;
+/* ── Resize label (floating tooltip for shot dragging) ── */
+#resize-label {
+  position: fixed;
+  pointer-events: none;
+  background: rgba(0,0,0,0.85);
+  color: #eee;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  display: none;
+  z-index: 100;
   font-variant-numeric: tabular-nums;
-  padding: 0 8px;
+  white-space: nowrap;
 }
 
 /* ── Feature visibility helper ── */
 .feature-hidden { display: none !important; }
+
+/* ── Panel drag edge (horizontal resize) ── */
+.panel-drag-edge {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 5px;
+  cursor: ew-resize;
+  z-index: 10;
+  background: transparent;
+}
+.panel-drag-edge:hover { background: rgba(255,255,255,0.05); }
+.side-panel.left .panel-drag-edge { right: 0; }
+.side-panel.right .panel-drag-edge { left: 0; }

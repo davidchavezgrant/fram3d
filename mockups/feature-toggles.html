@@ -54,18 +54,18 @@ body {
 .milestone-header {
   display: flex;
   align-items: center;
-  padding: 6px 16px;
+  padding: 10px 16px;
   cursor: pointer;
   transition: background 0.1s;
-  gap: 8px;
+  gap: 10px;
 }
 .milestone-header:hover { background: rgba(255,255,255,0.03); }
 .milestone-toggle {
   position: relative;
-  width: 34px;
-  height: 18px;
+  width: 44px;
+  height: 24px;
   background: #333;
-  border-radius: 9px;
+  border-radius: 12px;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.2s;
@@ -78,26 +78,26 @@ body {
 .milestone-toggle::after {
   content: '';
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 12px;
-  height: 12px;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
   background: #888;
   border-radius: 50%;
   transition: transform 0.2s, background 0.2s;
 }
 .milestone-toggle.on::after {
-  transform: translateX(16px);
+  transform: translateX(20px);
   background: #afd8a0;
 }
 .milestone-name {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: #bbb;
   flex: 1;
 }
 .milestone-count {
-  font-size: 9px;
+  font-size: 11px;
   color: #555;
 }
 
@@ -108,15 +108,15 @@ body {
 .feature-item {
   display: flex;
   align-items: center;
-  padding: 3px 0;
-  gap: 8px;
+  padding: 6px 0;
+  gap: 10px;
 }
 .feature-toggle {
   position: relative;
-  width: 28px;
-  height: 14px;
+  width: 36px;
+  height: 20px;
   background: #333;
-  border-radius: 7px;
+  border-radius: 10px;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.2s;
@@ -129,25 +129,25 @@ body {
 .feature-toggle::after {
   content: '';
   position: absolute;
-  top: 1px;
-  left: 1px;
-  width: 10px;
-  height: 10px;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
   background: #777;
   border-radius: 50%;
   transition: transform 0.15s, background 0.15s;
 }
 .feature-toggle.on::after {
-  transform: translateX(14px);
+  transform: translateX(16px);
   background: #9ac88a;
 }
 .feature-name {
-  font-size: 10px;
+  font-size: 12px;
   color: #999;
   flex: 1;
 }
 .feature-section {
-  font-size: 8px;
+  font-size: 10px;
   color: #555;
   font-variant-numeric: tabular-nums;
 }
@@ -164,9 +164,9 @@ body {
   background: #333;
   color: #888;
   border: 1px solid #444;
-  border-radius: 3px;
-  padding: 4px 10px;
-  font-size: 9px;
+  border-radius: 4px;
+  padding: 7px 14px;
+  font-size: 11px;
   cursor: pointer;
   font-family: inherit;
 }

@@ -79,6 +79,9 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 		- ##### 1.4.3. Object continuity — global object timeline (Feature)
 			*Objects animate on a single global timeline spanning all shots. Shots are windows into this timeline for camera purposes. No per-shot initial state, no continuity propagation — the global timeline IS the continuity. Object keyframes are global; camera keyframes are per-shot.*
 
+		- ##### 1.4.4. Scenes (Feature)
+			*A project contains one or more scenes. Each scene has its own objects, global object timeline, and shot sequence — fully independent. Create new empty scenes or duplicate the current scene. Use cases: multiple locations, flashbacks, dream sequences, alternate blocking experiments. A project must have at least one scene.*
+
 	- ### 1.5. Keyframe animation (Milestone)
 		*Per-property keyframe timeline editor for camera and object animation within each shot. After Effects / Premiere-style property tracks with unified auto-keyframing.*
 

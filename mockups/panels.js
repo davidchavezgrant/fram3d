@@ -161,8 +161,8 @@ function applyPanelState() {
     el.classList.toggle('hidden', !panelVisible[id]);
   }
 
-  // Update toolbar toggle buttons
-  document.querySelectorAll('.toolbar-toggle').forEach(btn => {
+  // Update gutter tab active states
+  document.querySelectorAll('.gutter-tab, .gutter-tab-h').forEach(btn => {
     const panel = btn.dataset.panel;
     btn.classList.toggle('active', panelVisible[panel]);
   });
@@ -173,8 +173,8 @@ function applyPanelState() {
   }
 }
 
-// ── Wire up toolbar buttons ──
-document.querySelectorAll('.toolbar-toggle').forEach(btn => {
+// ── Wire up gutter tabs ──
+document.querySelectorAll('.gutter-tab, .gutter-tab-h').forEach(btn => {
   btn.addEventListener('click', () => togglePanel(btn.dataset.panel));
 });
 

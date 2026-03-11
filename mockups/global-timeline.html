@@ -9,33 +9,25 @@
 </head>
 <body>
 
-<!-- ── Toolbar ── -->
-<div id="toolbar">
-  <span class="toolbar-title">Fram3d</span>
-  <div class="toolbar-spacer"></div>
-  <span class="toolbar-group-label">Panels:</span>
-  <button class="toolbar-toggle" data-panel="objects" title="Toggle Objects (O)">Objects</button>
-  <button class="toolbar-toggle active" data-panel="inspector" title="Toggle Inspector (I)">Inspector</button>
-  <button class="toolbar-toggle" data-panel="assets" title="Toggle Assets (A)">Assets</button>
-  <div class="toolbar-spacer"></div>
-  <button class="toolbar-toggle active" data-panel="timeline" title="Toggle Timeline (T)">Timeline</button>
-</div>
-
-<!-- ── Main area: sidebars + center ── -->
+<!-- ── Main area: gutters + sidebars + center ── -->
 <div id="main-row">
+
+  <!-- Left gutter -->
+  <div class="gutter left">
+    <button class="gutter-tab" data-panel="objects">Objects</button>
+    <button class="gutter-tab" data-panel="assets">Assets</button>
+  </div>
 
   <!-- Left sidebar: Objects -->
   <div id="objects-panel" class="side-panel left hidden">
-    <div class="panel-header">
-      <span class="panel-icon">&#x1F4CB;</span>Objects
-    </div>
+    <div class="panel-header">Objects</div>
     <div class="panel-body" id="objects-list"></div>
   </div>
 
   <!-- Left sidebar: Assets (shares space with objects) -->
   <div id="assets-panel" class="side-panel left hidden">
     <div class="panel-header">
-      <span class="panel-icon">&#x1F4E6;</span>Assets
+      Assets
       <span class="panel-header-right">
         <input type="text" class="panel-search" placeholder="Search...">
       </span>
@@ -68,15 +60,21 @@
 
   <!-- Right sidebar: Inspector -->
   <div id="inspector-panel" class="side-panel right">
-    <div class="panel-header">
-      <span class="panel-icon">&#x2699;&#xFE0F;</span>Inspector
-    </div>
+    <div class="panel-header">Inspector</div>
     <div class="panel-body" id="inspector-content"></div>
+  </div>
+
+  <!-- Right gutter -->
+  <div class="gutter right">
+    <button class="gutter-tab" data-panel="inspector">Inspector</button>
   </div>
 
 </div>
 
-<!-- ── Timeline (full width, below main row) ── -->
+<!-- ── Bottom gutter + Timeline ── -->
+<div class="gutter bottom">
+  <button class="gutter-tab-h" data-panel="timeline">Timeline</button>
+</div>
 <div id="timeline-section">
   <div id="timeline-panel">
     <div id="shot-bar-container">

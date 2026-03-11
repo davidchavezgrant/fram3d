@@ -1,46 +1,75 @@
 /* Fram3d — Panel Layout Styles */
 
-/* ── Toolbar ── */
-#toolbar {
-  height: 36px;
-  background: #12122a;
-  border-bottom: 1px solid #2a2a4a;
+/* ── Gutters (JetBrains-style vertical label strips) ── */
+.gutter {
   display: flex;
-  align-items: center;
-  padding: 0 12px;
-  gap: 6px;
+  flex-direction: column;
+  background: #12122a;
   flex-shrink: 0;
+  gap: 0;
+  z-index: 5;
 }
-.toolbar-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: #6666aa;
-  letter-spacing: 0.5px;
+.gutter.left { border-right: 1px solid #2a2a4a; }
+.gutter.right { border-left: 1px solid #2a2a4a; }
+.gutter.bottom {
+  flex-direction: row;
+  border-top: 1px solid #2a2a4a;
+  height: 22px;
 }
-.toolbar-spacer { flex: 1; }
-.toolbar-group-label {
-  font-size: 9px;
-  color: #444;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-right: 2px;
-}
-.toolbar-toggle {
-  padding: 3px 10px;
-  font-size: 10px;
+
+/* Vertical tab in left/right gutters */
+.gutter-tab {
+  writing-mode: vertical-lr;
+  background: none;
+  border: none;
   color: #555;
-  background: transparent;
-  border: 1px solid #2a2a4a;
-  border-radius: 3px;
-  cursor: pointer;
+  font-size: 11px;
   font-family: inherit;
+  padding: 10px 5px;
+  cursor: pointer;
   transition: all 0.12s;
+  border-left: 2px solid transparent;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
 }
-.toolbar-toggle:hover { color: #888; border-color: #3a3a5a; }
-.toolbar-toggle.active {
-  color: #bbb;
-  background: rgba(100,100,180,0.12);
-  border-color: #4a4a7a;
+.gutter.right .gutter-tab {
+  transform: rotate(180deg);
+}
+.gutter-tab:hover {
+  color: #aaa;
+  background: rgba(255,255,255,0.03);
+}
+.gutter-tab.active {
+  color: #ccc;
+  background: rgba(100,100,180,0.1);
+  border-left-color: #6666bb;
+}
+.gutter.right .gutter-tab.active {
+  border-left-color: transparent;
+  border-right: 2px solid #6666bb;
+}
+
+/* Horizontal tab in bottom gutter */
+.gutter-tab-h {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 11px;
+  font-family: inherit;
+  padding: 3px 12px;
+  cursor: pointer;
+  transition: all 0.12s;
+  border-top: 2px solid transparent;
+  white-space: nowrap;
+}
+.gutter-tab-h:hover {
+  color: #aaa;
+  background: rgba(255,255,255,0.03);
+}
+.gutter-tab-h.active {
+  color: #ccc;
+  background: rgba(100,100,180,0.1);
+  border-top-color: #6666bb;
 }
 
 /* ── Side panels (shared) ── */
@@ -50,7 +79,6 @@
   background: #1a1a32;
   overflow: hidden;
   flex-shrink: 0;
-  transition: width 0.15s ease;
 }
 .side-panel.left {
   width: 200px;
@@ -76,7 +104,6 @@
   flex-shrink: 0;
   gap: 6px;
 }
-.panel-icon { font-size: 11px; opacity: 0.5; }
 .panel-header-right { margin-left: auto; }
 .panel-search {
   background: #14142a;

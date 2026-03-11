@@ -112,6 +112,10 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 - # 2. Workflow essentials (Project)
 	*Make it usable for real work: undo mistakes, save projects, bring in your own assets, get frames out.*
 
+	> **Design note — build early infrastructure:**
+	> - **Settings / Preferences panel:** A centralized settings panel should be built early (Milestone 2.1 or 2.2 timeframe) so that new settings can be added incrementally as features ship. This avoids scattering configuration UIs across the application.
+	> - **Panel / docking system:** A general panel system with docking support should be built early, since downstream milestones (hierarchy panel, pose library, asset library, inspector) all require dockable panels. Building the system once avoids reimplementing panel infrastructure for each feature.
+
 	- ### 2.1. Undo / Redo (Milestone)
 		*Command-based undo stack. Every user action (move, keyframe, shot change) is reversible. Selection changes are not undoable.*
 

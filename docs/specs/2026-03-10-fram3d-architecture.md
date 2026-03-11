@@ -313,3 +313,58 @@ Uses Unity Input System (`Controls` input asset) for Scroll and MouseDelta actio
   - `.Animation`, `.Shots`, `.UI`
 - `VismaticStudio.Overlays` — viewport overlays
 - `VismaticStudio.Tracking` — auto-keyframing
+
+---
+
+## 11. Architecture Considerations
+
+Items surfaced during spec work that need to be resolved before implementation.
+
+### 11.1 Scene Serialization & Lazy Loading
+
+**Source**: Multi-Scene Project Structure spec — unlimited scenes, lazy load/lazy render
+
+Scenes must be independently loadable without pulling in sibling scene data. Only the active scene's heavy data (meshes, textures, keyframes) should be in memory; inactive scenes keep only lightweight metadata (object list, shot count, character assignments) for fast tab switching.
+
+**Implications for file format:**
+- The project file format needs clear scene boundaries — either separate chunks within a single file, or separate files per scene within a project bundle (e.g., `project.fram3d/scene-1.json`, `project.fram3d/scene-2.json`)
+- Scene-level save should be possible without re-serializing the entire project
+- Consider: a project manifest file (settings, character definitions, scene order) + individual scene files. This also makes scene duplication and deletion cheap (copy/delete a file rather than splicing a monolithic blob)
+- Character definitions live at project level but are referenced by scenes — avoid duplicating character data across scene files
+
+**Resolve before Save/Load spec (Milestone 2.2).**
+
+### 11.2 Infrastructure to Build Early
+
+These are cross-cutting systems that multiple downstream features depend on. Build during Project 2 timeframe to avoid reimplementing for each feature.
+
+- **Settings / Preferences panel:** Centralized settings panel so new settings can be added incrementally as features ship. Avoids scattering configuration UIs across the application.
+- **Panel / docking system:** General panel system with docking support. Downstream milestones (hierarchy panel, pose library, asset library, inspector) all require dockable panels.
+- **File format:** JSON vs YAML vs custom binary — deferred to implementation. Human-readable preferred for git diffing and debugging.
+
+### 11.3 Implementation Details (from Milestone Specs)
+
+Details moved here from the roadmap to keep the roadmap at product-level.
+
+**Auto-keyframing thresholds:**
+- Near existing keyframe threshold: 0.1 seconds. If near: update existing. If not: create new.
+- Camera tracker change thresholds: position 0.001 units, rotation 0.01 degrees, focal length 0.01mm
+- Object tracker change thresholds: position 0.001, rotation 0.01, scale 0.001
+
+**Camera shake:** Perlin noise-based. Default amplitude 0.1, frequency 1.0. Position scale 0.01. Rotation scale 0.5 (X/Y only, no Z roll).
+
+**Undo coalescing:** Scroll gesture coalescing with 1000ms inactivity timeout (undo from where the user "settles"). Command pattern: `ICommand` with `Execute()` / `Undo()` / `Redo()`.
+
+**Keyframe interaction rules:**
+- Moving a main keyframe moves all child property keyframes
+- Moving a child keyframe creates a new main keyframe at the target time containing only that property; the original slot empties
+- Deleting a main keyframe deletes all children
+- Deleting all children deletes the main keyframe
+- Dragging onto an existing keyframe silently merges
+- Snap to 0.1s during drag
+
+**Object linking constraints:** Max chain depth: 4.
+
+**Input mappings:**
+- Mouse: Scroll Y = focal length, +Alt = dolly, +Shift = crane, +Ctrl = roll, +Cmd+Alt = dolly zoom, Scroll X+Cmd = truck, Ctrl-drag = pan/tilt, Alt-drag = orbit (around selected or world origin)
+- Keyboard: Space = play/pause, QWER = tool modes, F = focus, 1-9 = focal length presets, A/Shift+A = aspect ratio cycle, C = camera keyframe, V = object keyframe, Arrows = scrub 1 frame, Delete = context-sensitive delete, Ctrl+D = duplicate, Ctrl+R = reset camera, Cmd+Z / Cmd+Shift+Z = undo/redo

@@ -71,13 +71,13 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 		*Horizontal strip of shot thumbnails. Add, delete, reorder, select shots. Each shot is an independent camera animation over shared world-space objects.*
 
 		- ##### 1.4.1. Shot model (Feature)
-			*Shot = name + duration + camera animation + object animations. Auto-named Shot_01, Shot_02, etc. Objects exist in world space — all objects are present in every shot. Default duration 5 seconds, max 300 seconds.*
+			*Shot = name + duration + camera animation + time range on global object timeline. Auto-named Shot_01, Shot_02, etc. Objects animate on a global timeline — shots are windows into it. Camera keyframes are per-shot. Default duration 5 seconds, max 300 seconds.*
 
 		- ##### 1.4.2. Sequencer UI (Feature)
 			*Scrollable thumbnail strip with shot name, editable duration, drag-and-drop reordering, add/delete buttons. Aggregate duration display (total running time). Delete requires confirmation with "don't show again" option and menu item to re-enable.*
 
-		- ##### 1.4.3. Object continuity (Feature)
-			*New shots inherit current object transforms as initial state. Continuity propagates: changing animation endpoints in Shot N updates starting positions in Shot N+1. Backward navigation restores objects to their initial state for that shot.*
+		- ##### 1.4.3. Object continuity — global object timeline (Feature)
+			*Objects animate on a single global timeline spanning all shots. Shots are windows into this timeline for camera purposes. No per-shot initial state, no continuity propagation — the global timeline IS the continuity. Object keyframes are global; camera keyframes are per-shot.*
 
 	- ### 1.5. Keyframe animation (Milestone)
 		*Per-property keyframe timeline editor for camera and object animation within each shot. After Effects / Premiere-style property tracks with unified auto-keyframing.*
@@ -196,14 +196,17 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 		- ##### 3.2.5. Custom character import (Feature)
 			*Import rigged humanoid models (FBX). Map to Fram3d's pose/animation system. Lets users bring their own characters.*
 
-	- ### 3.3. Scene hierarchy (Milestone)
-		*Parent/child relationships between objects. Group objects, attach props to characters, build compound setups.*
+	- ### 3.3. Object linking & grouping (Milestone)
+		*Temporal linking (object follows character or object) and persistent grouping (simultaneous transforms). Flat scene graph with positional attachment — no Unity hierarchy.*
 
-		- ##### 3.3.1. Parenting (Feature)
-			*Parent via viewport drag (drag onto object in 3D) or hierarchy panel. Child inherits parent transforms. Unparent to detach. Deleting a parent deletes the entire subtree. Max nesting depth: 4 levels. Duplicating a parent duplicates the full subtree without confirmation. Relationships are global but dynamic between shots — a prop can be parented in one shot and independent in the next.*
+		- ##### 3.3.1. Object linking (Feature)
+			*Temporal object-to-character and object-to-object linking on the global timeline. Viewport: click-drag to link, right-click to unlink. Panel: pickwhip tool. Anchor point (panel XYZ value) defines attachment offset. Linked period greyed out on timeline. Max chain depth: 4. Positional attachment — flat scene graph, transform override during linked period.*
 
-		- ##### 3.3.2. Hierarchy panel (Feature)
-			*Tree view of all scene objects showing parent/child relationships. Click to select, drag to reparent. Separate "Lights" section. Dockable to left or right side (configurable).*
+		- ##### 3.3.2. Object grouping (Feature)
+			*Persistent multiselect. Select any member → all selected. Transform any member → all transform. No timeline behavior. Right-click to group/ungroup.*
+
+		- ##### 3.3.3. Object list panel (Feature)
+			*Flat list of all scene objects with link indicators, group markers, and pickwhip handles. Click to select, pickwhip to link. Separate "Lights" section. Dockable left or right.*
 
 	- ### 3.4. Set decoration library (Milestone)
 		*Built-in and marketplace-connected asset library for dressing scenes — furniture, vehicles, props, environments. Zero friction between "I need a table" and having one in the scene.*

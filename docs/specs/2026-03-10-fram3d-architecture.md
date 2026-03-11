@@ -6,6 +6,8 @@
 
 This document captures implementation decisions, patterns, constants, and technical details from the original Vismatic Studio codebase. Use as a reference when rebuilding — not as a prescription.
 
+> **File format decision**: The project file format (JSON vs YAML vs custom binary) is deferred to implementation. Human-readable is preferred for git diffing and debugging. The file must serialize full project state (see 2.2.1 spec).
+
 ---
 
 ## 1. Platform & Framework

@@ -115,6 +115,8 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 	> **Design note — build early infrastructure:**
 	> - **Settings / Preferences panel:** A centralized settings panel should be built early (Milestone 2.1 or 2.2 timeframe) so that new settings can be added incrementally as features ship. This avoids scattering configuration UIs across the application.
 	> - **Panel / docking system:** A general panel system with docking support should be built early, since downstream milestones (hierarchy panel, pose library, asset library, inspector) all require dockable panels. Building the system once avoids reimplementing panel infrastructure for each feature.
+	> - **Project creation prompt:** Creating a new project should prompt for camera body + lens selection and project resolution. This establishes the camera and output resolution from the start, matching real production workflows where these are decided before shooting begins.
+	> - **File format:** The project file format decision (JSON vs YAML vs custom binary) is deferred to implementation. Human-readable is preferred for git diffing and debugging.
 
 	- ### 2.1. Undo / Redo (Milestone)
 		*Command-based undo stack. Every user action (move, keyframe, shot change) is reversible. Selection changes are not undoable.*
@@ -123,13 +125,13 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 			*Cmd+Z / Cmd+Shift+Z. Stack-based history of all user actions. Survives save — saving does not clear the stack. Cross-shot undo does not auto-switch the active shot. Auto-keyframe + movement is one compound undo step.*
 
 		- ##### 2.1.2. Command pattern completion (Feature)
-			*Wire existing command infrastructure (already scaffolded with Execute/Undo/Redo) into a working undo manager. Scroll gesture coalescing with configurable inactivity timeout.*
+			*Wire existing command infrastructure (already scaffolded with Execute/Undo/Redo) into a working undo manager. Scroll gesture coalescing with 1000ms inactivity timeout (undo from where the user "settles").*
 
 	- ### 2.2. Save / Load (Milestone)
 		*Project persistence. Save scene state, shots, animations, and settings to disk. Reopen and continue.*
 
 		- ##### 2.2.1. Project file format (Feature)
-			*Serialize full project state: scene objects (with embedded asset data), shot sequence, all keyframe data (per-property), camera settings, overlay state, camera shake per-shot state. Human-readable format preferred. Version-tolerant loading — older files load in newer versions with conversion if needed.*
+			*Serialize full project state: scene objects, shot sequence, all keyframe data (per-property), camera settings, overlay state, camera shake per-shot state. Asset bundling configurable: prompt on first import with "No" (by reference), "Yes (everything)", or "Yes (up to X MB)". Configurable in Settings/Preferences, auto-migrates on mode change. Human-readable format preferred (exact format deferred to implementation). Version-tolerant loading — older files load in newer versions with conversion if needed.*
 
 		- ##### 2.2.2. Save / Load UI (Feature)
 			*Save, Save As, Open, Recent Projects (with Clear Recent option). Auto-save on user-configurable interval (default 2 minutes). Crash recovery dialog shows timestamp only.*
@@ -210,7 +212,7 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 			*Ship with a core set of common props: tables, chairs, doors, windows, vehicles, trees, walls, floors. Categorized and searchable. Visual style: clearly "previs" (stylized/abstract, not realistic).*
 
 		- ##### 3.4.2. Marketplace integration (Feature)
-			*Browse and import free assets from existing 3D marketplaces (Unity Asset Store, Sketchfab, TurboSquid) directly in-app. Handle format conversion and collider generation. No in-app purchases — redirect to marketplace for paid content.*
+			*Browse and import free assets from ALL three major 3D marketplaces (Sketchfab, Unity Asset Store, TurboSquid) plus Mixamo directly in-app. In-app browser shows FREE assets only. Handle format conversion and collider generation. No in-app purchases — redirect to marketplace for paid content.*
 
 		- ##### 3.4.3. User asset management (Feature)
 			*Organize imported and marketplace assets into user collections. Tag, favorite, and quick-access for reuse across projects. No disk space cap. Simple cache management UI. Local storage only.*

@@ -825,7 +825,7 @@ document.addEventListener('mousemove', (e) => {
     }
 
     // Shift object keyframes — unless Shift is held (shot-only mode)
-    if (e.shiftKey) {
+    if (!e.shiftKey) {
       SCENE.tracks.forEach((track, ti) => {
         track.keyframes.forEach((kf, ki) => {
           const origTime = snap.objectTimes[ti][ki];
@@ -868,7 +868,7 @@ document.addEventListener('mousemove', (e) => {
     resizeLabel.style.display = 'block';
     resizeLabel.style.left = (e.clientX + 14) + 'px';
     resizeLabel.style.top = (e.clientY - 24) + 'px';
-    const mode = e.shiftKey ? 'ripple' : 'shots only';
+    const mode = e.shiftKey ? 'shots only' : 'ripple';
     resizeLabel.textContent = `${leftShot.name}: ${leftDur.toFixed(1)}s (${leftFrames}f)  [${mode}]`;
 
     render();

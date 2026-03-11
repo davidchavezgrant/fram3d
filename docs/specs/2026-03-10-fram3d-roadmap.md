@@ -277,6 +277,62 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 		- ##### 4.3.2. Shot list generation (Feature)
 			*Generate a full shot list from a scene description or script excerpt. Create shots in sequence. OTS pairing determined by characters facing each other within threshold distance.*
 
+- # 5. Feature parity and extensions (Project)
+	*Competitive features identified from market research (Previs Pro, RADiCAL Canvas). Prioritized by impact on user workflow. See companion doc: "Fram3d Feature Parity Specs" in Obsidian vault for detailed specs and open questions.*
+
+	- ### 5.1. Premade environments (Milestone) — HIGHER PRIORITY
+		*Ship with a library of ready-to-use environments so users don't start from a blank canvas. Interior and exterior sets that establish context in one click.*
+
+		- ##### 5.1.1. Environment library (Feature)
+			*Premade sets: living room, office, restaurant, bar, street, alley, park, parking lot, warehouse, courtroom, hospital room, classroom. Each includes walls/floors/props/lighting. One-click placement into scene. Objects are independent after placement (not a locked prefab) — user can modify, delete, or rearrange anything.*
+
+	- ### 5.2. Script import (Milestone) — HIGHER PRIORITY
+		*Import screenplays to auto-populate scenes, characters, and shot structure. Bridges the gap between script and previs.*
+
+		- ##### 5.2.1. Script parsing (Feature)
+			*Import Final Draft (.fdx) and Fountain (.fountain) screenplay files. Parse scene headings, character names, and action lines. Auto-create shots from scene headings. Auto-create named character placeholders from dialogue attributions.*
+
+	- ### 5.3. 2D overhead view (Milestone) — HIGHER PRIORITY
+		*Bird's-eye 2D view of the scene showing object positions, camera frustums, and light positions. Essential for blocking and planning — the same tool a director uses when drawing diagrams on paper.*
+
+		- ##### 5.3.1. 2D scene view (Feature)
+			*Top-down orthographic view of the scene. Objects shown as labeled icons/silhouettes. Camera shown as frustum with field of view cone. Lights shown as standard lighting diagram symbols. Drag objects to reposition. Click camera to see its view in a side panel. Switchable between 3D viewport and 2D view (or split view if implemented).*
+
+	- ### 5.4. AI prop generation (Milestone) — MEDIUM PRIORITY
+		*Generate 3D props from text descriptions. "Red leather armchair" → usable 3D model in the scene. Fills gaps in the asset library without requiring manual sourcing.*
+
+		- ##### 5.4.1. Text-to-prop (Feature)
+			*Text prompt generates a 3D model suitable for previs. Low-poly, consistent visual style with bundled assets. Auto-generates collider. Saved to asset library for reuse. Requires internet connection and API key.*
+
+	- ### 5.5. AI character generation (Milestone) — LOWER PRIORITY
+		*Generate character models from text descriptions. "Tall woman in a business suit" → character model with standard rig. Supplements mannequin characters when visual distinction matters.*
+
+		- ##### 5.5.1. Text-to-character (Feature)
+			*Text prompt generates a humanoid character model compatible with Fram3d's pose/animation system. Standard rig mapping. Consistent enough for previs — not photorealistic. Saved for reuse across scenes.*
+
+	- ### 5.6. LiDAR scanning (Milestone) — LOWER PRIORITY
+		*Scan real locations with iPhone/iPad LiDAR and import as scene backgrounds. Requires companion iOS app.*
+
+		- ##### 5.6.1. LiDAR import (Feature)
+			*Import point cloud or mesh data from LiDAR scans (iPhone Pro, iPad Pro). Use as scene backdrop for accurate spatial reference during previs. Not editable — display only.*
+
+		- ##### 5.6.2. Companion iOS app (Feature)
+			*Minimal iOS app for capturing LiDAR scans and exporting in a format Fram3d can import. Not a full previs tool — scan capture only.*
+
+	- ### 5.7. Style grading (Milestone) — MAYBE
+		*Apply visual styles to rendered frames and sequences. "Film noir," "golden hour," "gritty documentary" — communicate the intended look to the team without detailed lighting work.*
+
+		- ##### 5.7.1. Frame style grading (Feature)
+			*Apply visual style presets or AI-generated styles to exported frames and video. Preserves camera framing, blocking, and timing. Output is a stylized version of the previs, not a replacement for it.*
+
+	- ### 5.8. AI video generation (Milestone) — MAYBE
+		*Generate stylized video from previs sequences using AI. Turns grey-box previs into something closer to the intended visual style. Speculative — depends on future AI capabilities.*
+
+	> **Explicitly NOT building:**
+	> - Color grading tools (not previs — that's post-production)
+	> - AR overlay (placing 3D assets on real camera feed — requires mobile-first architecture)
+	> - Facial scanning / face capture (out of scope for previs)
+
 - # Sequencing principles
 
 	1. **Ship the camera first.** The virtual camera is the product. Everything else supports it. Get camera + overlays + basic scene working before building timeline features.

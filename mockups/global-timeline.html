@@ -55,6 +55,53 @@
       </div>
       <div id="viewport-shot-label"></div>
       <div id="viewport-timecode"></div>
+
+      <!-- 1.1.7 Camera Info HUD -->
+      <div id="viewport-hud" class="feature-1-1" style="display:none">
+        <div class="hud-row"><span class="hud-key">Lens</span><span class="hud-val" id="hud-focal">50mm</span></div>
+        <div class="hud-row"><span class="hud-key">Height</span><span class="hud-val" id="hud-height">1.6m</span></div>
+        <div class="hud-row"><span class="hud-key">AOV</span><span class="hud-val" id="hud-aov">39.6°</span></div>
+        <div class="hud-row"><span class="hud-key">Ratio</span><span class="hud-val" id="hud-ratio">16:9</span></div>
+        <div class="hud-row"><span class="hud-key">Body</span><span class="hud-val" id="hud-body">Generic 35mm</span></div>
+        <div class="hud-row"><span class="hud-key">Lens Set</span><span class="hud-val" id="hud-lensset">Generic Prime</span></div>
+        <div class="hud-row hud-dof" style="display:none"><span class="hud-key">Aperture</span><span class="hud-val" id="hud-aperture">f/5.6</span></div>
+      </div>
+
+      <!-- 1.2.1 Aspect Ratio Masks -->
+      <div id="aspect-mask-top" class="aspect-mask feature-1-2" style="display:none"></div>
+      <div id="aspect-mask-bottom" class="aspect-mask feature-1-2" style="display:none"></div>
+      <div id="aspect-mask-left" class="aspect-mask feature-1-2" style="display:none"></div>
+      <div id="aspect-mask-right" class="aspect-mask feature-1-2" style="display:none"></div>
+
+      <!-- 1.2.2 Frame Guides -->
+      <svg id="viewport-guides" class="feature-1-2" style="display:none">
+        <!-- Rule of thirds -->
+        <line class="guide-thirds" x1="33.33%" y1="0" x2="33.33%" y2="100%"/>
+        <line class="guide-thirds" x1="66.66%" y1="0" x2="66.66%" y2="100%"/>
+        <line class="guide-thirds" x1="0" y1="33.33%" x2="100%" y2="33.33%"/>
+        <line class="guide-thirds" x1="0" y1="66.66%" x2="100%" y2="66.66%"/>
+        <!-- Center cross -->
+        <line class="guide-center" x1="48%" y1="50%" x2="52%" y2="50%"/>
+        <line class="guide-center" x1="50%" y1="48%" x2="50%" y2="52%"/>
+        <!-- Safe zones -->
+        <rect class="guide-safe-title" x="5%" y="5%" width="90%" height="90%" rx="1"/>
+        <rect class="guide-safe-action" x="3.5%" y="3.5%" width="93%" height="93%" rx="1"/>
+      </svg>
+
+      <!-- 1.3.2 Tool Mode Badge -->
+      <div id="tool-mode-badge" class="feature-1-3" style="display:none">
+        <span id="tool-mode-icon">◇</span>
+        <span id="tool-mode-label">SELECT</span>
+        <span id="tool-mode-key">Q</span>
+      </div>
+
+      <!-- 1.3.5 Director View Badge -->
+      <div id="director-badge" class="feature-1-3" style="display:none">DIRECTOR VIEW</div>
+
+      <!-- 1.5.6 Camera Path Badge -->
+      <div id="camera-path-badge" class="feature-1-5" style="display:none">
+        <span style="opacity:0.6">⟜</span> PATH
+      </div>
     </div>
   </div>
 
@@ -75,12 +122,31 @@
 <div class="gutter bottom">
   <button class="gutter-tab-h" data-panel="timeline">Timeline</button>
   <div class="gutter-spacer"></div>
+  <!-- 1.4.4 Scenes switcher -->
+  <div id="scenes-switcher" class="feature-1-4" style="display:none">
+    <span id="scenes-label">Scene 1</span>
+    <span class="scenes-arrow">▾</span>
+  </div>
+  <div class="gutter-spacer"></div>
+  <!-- 1.4.2 Aggregate duration -->
+  <span id="aggregate-duration" class="feature-1-4" style="display:none">Total: 90.0s</span>
+  <div class="gutter-spacer"></div>
   <button id="btn-play" class="gutter-play">&#9654;</button>
 </div>
 
 <div id="timeline-section">
   <div id="timeline-panel">
-    <!-- Ruler (on top) -->
+
+    <!-- 1.5.1 Transport Bar -->
+    <div id="transport-bar" class="feature-1-5" style="display:none">
+      <button id="transport-play" class="transport-btn">▶</button>
+      <span id="transport-time" class="transport-time">0.0</span>
+      <span class="transport-divider">/</span>
+      <span id="transport-duration" class="transport-time">90.0</span>
+      <span id="transport-shot" class="transport-shot">Wide Establishing</span>
+    </div>
+
+    <!-- Ruler -->
     <div id="ruler-container">
       <div id="ruler-label"></div>
       <div id="ruler">
@@ -88,12 +154,26 @@
       </div>
     </div>
 
-    <!-- Shot Bar (below ruler) -->
+    <!-- Shot Bar -->
     <div id="shot-bar-container">
-      <div id="shot-bar-label">Shots</div>
+      <div id="shot-bar-label">
+        Shots
+        <!-- 1.4.2 Add/Delete buttons -->
+        <div id="shot-mgmt-buttons" class="feature-1-4" style="display:none">
+          <button id="btn-add-shot" class="shot-mgmt-btn" title="Add Shot">+</button>
+        </div>
+      </div>
       <div id="shot-bar">
         <div id="shot-bar-view-range"></div>
         <div id="playhead-shotbar"></div>
+      </div>
+    </div>
+
+    <!-- 3.6.4 Coverage Track -->
+    <div id="coverage-container" class="feature-3-6" style="display:none">
+      <div id="coverage-label">Coverage</div>
+      <div id="coverage-track">
+        <div id="playhead-coverage"></div>
       </div>
     </div>
 
@@ -113,12 +193,19 @@
         <div id="zoom-thumb"></div>
       </div>
     </div>
+
+    <!-- 1.5.1 Status Bar -->
+    <div id="status-bar" class="feature-1-5" style="display:none">
+      <span id="status-hints"></span>
+    </div>
   </div>
 </div>
 
-<!-- Floating label for shot resize -->
+<!-- Floating elements -->
 <div id="resize-label"></div>
+<div id="shot-tooltip" style="display:none"></div>
 
+<script src="features.js"></script>
 <script src="global-timeline.js"></script>
 <script src="panels.js"></script>
 </body>

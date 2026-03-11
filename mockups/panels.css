@@ -277,5 +277,27 @@
   letter-spacing: 0.5px;
 }
 
+/* ── Link indicators (3.3.3) ── */
+.object-item .obj-link {
+  font-size: 8px;
+  color: #557799;
+  margin-left: auto;
+  margin-right: 4px;
+  white-space: nowrap;
+  opacity: 0.7;
+}
+.object-item:hover .obj-link { opacity: 1; }
+
+/* ── Lights section header (3.3.3) ── */
+.objects-section-header {
+  font-size: 8px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 6px 4px;
+  margin-top: 4px;
+  border-top: 1px solid #333;
+}
+
 /* ── Timeline section toggle ── */
 #timeline-section.hidden { display: none; }

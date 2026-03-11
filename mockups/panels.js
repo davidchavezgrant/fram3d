@@ -11,6 +11,11 @@ const panelVisible = {
 };
 
 // ── Sample data ──
+// Link data for objects (3.3.3)
+const LINK_DATA = {
+  'Sword': { parent: 'Character_A', slot: 'hand' },
+};
+
 const OBJECTS = [
   { name: 'Camera', icon: '\u25C7', tag: 'cam', selected: true },
   { name: 'Character_A', icon: '\u25CB', tag: 'actor', children: [
@@ -46,7 +51,13 @@ const ASSETS = [
 function populateObjects() {
   const list = document.getElementById('objects-list');
   list.innerHTML = '';
-  OBJECTS.forEach(obj => {
+
+  // Split objects into non-lights and lights
+  const nonLights = OBJECTS.filter(o => o.tag !== 'light');
+  const lights = OBJECTS.filter(o => o.tag === 'light');
+
+  // Render non-light objects
+  nonLights.forEach(obj => {
     list.appendChild(makeObjectItem(obj, false));
     if (obj.children) {
       obj.children.forEach(child => {
@@ -54,12 +65,36 @@ function populateObjects() {
       });
     }
   });
+
+  // Lights section header (3.3.3)
+  if (feat('lights-section') && lights.length > 0) {
+    const header = document.createElement('div');
+    header.className = 'objects-section-header';
+    header.textContent = 'Lights';
+    list.appendChild(header);
+  }
+
+  // Render lights
+  lights.forEach(obj => {
+    list.appendChild(makeObjectItem(obj, false));
+  });
 }
 
 function makeObjectItem(obj, isChild) {
   const el = document.createElement('div');
   el.className = 'object-item' + (obj.selected ? ' selected' : '') + (isChild ? ' child' : '');
-  el.innerHTML = `<span class="obj-icon">${obj.icon}</span><span class="obj-name">${obj.name}</span><span class="obj-tag">${obj.tag}</span>`;
+
+  let html = `<span class="obj-icon">${obj.icon}</span><span class="obj-name">${obj.name}</span>`;
+
+  // Link indicator (3.3.3)
+  if (feat('link-indicators') && LINK_DATA[obj.name]) {
+    const link = LINK_DATA[obj.name];
+    html += `<span class="obj-link" title="Linked to ${link.parent} (${link.slot})">\u2192 ${link.parent}</span>`;
+  }
+
+  html += `<span class="obj-tag">${obj.tag}</span>`;
+  el.innerHTML = html;
+
   el.addEventListener('click', () => {
     document.querySelectorAll('.object-item.selected').forEach(s => s.classList.remove('selected'));
     el.classList.add('selected');
@@ -89,12 +124,11 @@ function updateInspector(objectName) {
     return;
   }
 
-  // Find the object in SCENE.tracks or OBJECTS
   const track = SCENE.tracks.find(t => t.name === objectName);
   const obj = OBJECTS.find(o => o.name === objectName);
 
   if (objectName === 'Camera') {
-    content.innerHTML = `
+    let html = `
       <div class="inspector-section">
         <div class="inspector-section-title">Camera</div>
         <div class="inspector-row"><span class="inspector-label">Lens</span><span class="inspector-value highlight">50mm</span></div>
@@ -114,10 +148,24 @@ function updateInspector(objectName) {
         <div class="inspector-row"><span class="inspector-label">Keyframes</span><span class="inspector-value">3</span></div>
       </div>
     `;
+
+    // Interpolation section (3.5.3)
+    if (feat('interp-curves')) {
+      html += `
+        <div class="inspector-section">
+          <div class="inspector-section-title">Interpolation</div>
+          <div class="inspector-row"><span class="inspector-label">Position</span><span class="inspector-value">Ease In-Out</span></div>
+          <div class="inspector-row"><span class="inspector-label">Rotation</span><span class="inspector-value">Linear</span></div>
+          <div class="inspector-row"><span class="inspector-label">Focal</span><span class="inspector-value">Ease Out</span></div>
+        </div>
+      `;
+    }
+
+    content.innerHTML = html;
   } else {
     const kfCount = track ? track.keyframes.length : 0;
     const tag = obj ? obj.tag : '';
-    content.innerHTML = `
+    let html = `
       <div class="inspector-section">
         <div class="inspector-section-title">${objectName}</div>
         <div class="inspector-row"><span class="inspector-label">Type</span><span class="inspector-value">${tag}</span></div>
@@ -131,13 +179,38 @@ function updateInspector(objectName) {
         <div class="inspector-row"><span class="inspector-label">Scale</span><div class="inspector-value-group"><span class="inspector-value">1.0</span><span class="inspector-value">1.0</span><span class="inspector-value">1.0</span></div></div>
       </div>
     `;
+
+    // Link info in inspector (3.3.3)
+    if (feat('link-indicators') && LINK_DATA[objectName]) {
+      const link = LINK_DATA[objectName];
+      html += `
+        <div class="inspector-section">
+          <div class="inspector-section-title">Link</div>
+          <div class="inspector-row"><span class="inspector-label">Parent</span><span class="inspector-value">${link.parent}</span></div>
+          <div class="inspector-row"><span class="inspector-label">Slot</span><span class="inspector-value">${link.slot}</span></div>
+          <div class="inspector-row"><span class="inspector-label">Mode</span><span class="inspector-value">Temporal</span></div>
+        </div>
+      `;
+    }
+
+    // Interpolation section (3.5.3)
+    if (feat('interp-curves') && kfCount > 1) {
+      html += `
+        <div class="inspector-section">
+          <div class="inspector-section-title">Interpolation</div>
+          <div class="inspector-row"><span class="inspector-label">Position</span><span class="inspector-value">Linear</span></div>
+          <div class="inspector-row"><span class="inspector-label">Rotation</span><span class="inspector-value">Ease In-Out</span></div>
+        </div>
+      `;
+    }
+
+    content.innerHTML = html;
   }
 }
 
 // ── Panel toggle logic ──
 
 function togglePanel(panelId) {
-  // Objects and Assets share the left sidebar space — opening one closes the other
   if (panelId === 'objects' && !panelVisible.objects) {
     panelVisible.assets = false;
   } else if (panelId === 'assets' && !panelVisible.assets) {
@@ -149,7 +222,6 @@ function togglePanel(panelId) {
 }
 
 function applyPanelState() {
-  // Map panel IDs to DOM elements
   const mapping = {
     objects: document.getElementById('objects-panel'),
     inspector: document.getElementById('inspector-panel'),
@@ -163,13 +235,11 @@ function applyPanelState() {
     el.classList.toggle('hidden', !panelVisible[id]);
   }
 
-  // Update gutter tab active states
   document.querySelectorAll('.gutter-tab, .gutter-tab-h').forEach(btn => {
     const panel = btn.dataset.panel;
     btn.classList.toggle('active', panelVisible[panel]);
   });
 
-  // Re-render timeline since track area width may have changed
   if (typeof render === 'function') {
     requestAnimationFrame(render);
   }
@@ -182,20 +252,23 @@ document.querySelectorAll('.gutter-tab, .gutter-tab-h').forEach(btn => {
 
 // ── Keyboard shortcuts for panels ──
 document.addEventListener('keydown', (e) => {
-  // Only handle if no input is focused
   if (e.target.tagName === 'INPUT') return;
 
-  switch (e.key.toUpperCase()) {
+  // When full-shortcuts is enabled, 'A' is reserved for aspect ratio cycling
+  const upper = e.key.toUpperCase();
+
+  switch (upper) {
     case 'O': togglePanel('objects'); break;
     case 'I': togglePanel('inspector'); break;
-    case 'A': togglePanel('assets'); break;
+    case 'A':
+      // Only toggle assets panel if full-shortcuts is not active
+      if (!feat('full-shortcuts')) togglePanel('assets');
+      break;
     case 'T': togglePanel('timeline'); break;
     case 'TAB':
-      // Hide/show all panels
       e.preventDefault();
       const allHidden = !panelVisible.objects && !panelVisible.inspector && !panelVisible.assets && !panelVisible.timeline && !panelVisible.overview;
       if (allHidden) {
-        // Restore defaults
         panelVisible.inspector = true;
         panelVisible.timeline = true;
         panelVisible.overview = true;

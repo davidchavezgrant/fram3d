@@ -2,17 +2,13 @@
 
 **Date**: 2026-03-10
 **Companion to**: `2026-03-10-fram3d-roadmap.md`
+**Based on**: Vismatic Studio implementation (Unity 6000.1.11f1)
 
-This document is split into two parts:
-- **Part 1** — Vismatic Studio reference. How things were built in the previous iteration. Use as reference when rebuilding — not as a prescription.
-- **Part 2** — Fram3d architecture. Decisions made for the new build, things we know we'll need, and the domain modeling approach.
+This document captures implementation decisions, patterns, constants, and technical details from the original Vismatic Studio codebase. Use as a reference when rebuilding — not as a prescription.
 
----
----
+> **File format decision**: The project file format (JSON vs YAML vs custom binary) is deferred to implementation. Human-readable is preferred for git diffing and debugging. The file must serialize full project state (see 2.2.1 spec).
 
-# Part 1 — Vismatic Studio Reference
-
-*The original implementation (Unity 6000.1.11f1). Class names, constants, patterns, and layout details from the codebase that Fram3d is rebuilding from.*
+> **Playback frame dropping**: When scenes are too heavy for real-time playback, drop frames (maintain timing, skip visual updates) rather than slowing down. This preserves accurate shot timing at the expense of visual smoothness. The playback system should track wall-clock time and evaluate the timeline at the correct time regardless of render performance.
 
 ---
 
@@ -321,33 +317,36 @@ Uses Unity Input System (`Controls` input asset) for Scroll and MouseDelta actio
 - `VismaticStudio.Tracking` — auto-keyframing
 
 ---
----
 
-# Part 2 — Fram3d Architecture
+## 11. Architecture Considerations
 
-*Decisions made for the new build. Things we know we'll run into, confirmed constants and behaviors, and the domain modeling approach.*
+Items surfaced during spec work that need to be resolved before implementation.
 
----
+### 11.1 Scene Serialization & Lazy Loading
 
-## 11. Confirmed Decisions
+**Source**: Multi-Scene Project Structure spec — unlimited scenes, lazy load/lazy render
 
-> **File format**: Deferred to implementation. Human-readable preferred for git diffing and debugging. Must serialize full project state (see 2.2 spec).
+Scenes must be independently loadable without pulling in sibling scene data. Only the active scene's heavy data (meshes, textures, keyframes) should be in memory; inactive scenes keep only lightweight metadata (object list, shot count, character assignments) for fast tab switching.
 
-> **Playback frame dropping**: When scenes are too heavy for real-time playback, drop frames (maintain timing, skip visual updates) rather than slowing down. The playback system tracks wall-clock time and evaluates the timeline at the correct time regardless of render performance.
+**Implications for file format:**
+- The project file format needs clear scene boundaries — either separate chunks within a single file, or separate files per scene within a project bundle (e.g., `project.fram3d/scene-1.json`, `project.fram3d/scene-2.json`)
+- Scene-level save should be possible without re-serializing the entire project
+- Consider: a project manifest file (settings, character definitions, scene order) + individual scene files. This also makes scene duplication and deletion cheap (copy/delete a file rather than splicing a monolithic blob)
+- Character definitions live at project level but are referenced by scenes — avoid duplicating character data across scene files
 
-> **Rotation storage**: Quaternions internally, pan/tilt/roll displayed in UI. Prevents gimbal lock transparently.
+**Resolve before Save/Load spec (Milestone 2.2).**
 
-> **Auto-keyframing**: Only changed properties (not all properties). Per-track stopwatch model (AE/Premiere). Stopwatches default to off.
+### 11.2 Infrastructure to Build Early
 
-> **Undo model**: Global stack, not per-shot. Cross-shot undo does not auto-switch the active shot.
+These are cross-cutting systems that multiple downstream features depend on. Build during Project 2 timeframe to avoid reimplementing for each feature.
 
-> **Delete behavior**: Delete key = keyframe only. Cmd+Delete = object. Context-sensitive to avoid ambiguity.
+- **Settings / Preferences panel:** Centralized settings panel so new settings can be added incrementally as features ship. Avoids scattering configuration UIs across the application.
+- **Panel / docking system:** General panel system with docking support. Downstream milestones (hierarchy panel, pose library, asset library, inspector) all require dockable panels.
+- **File format:** JSON vs YAML vs custom binary — deferred to implementation. Human-readable preferred for git diffing and debugging.
 
----
+### 11.3 Implementation Details (from Milestone Specs)
 
-## 12. Implementation Details
-
-Confirmed constants and behaviors that carry forward or are newly decided for Fram3d.
+Details moved here from the roadmap to keep the roadmap at product-level.
 
 **Auto-keyframing thresholds:**
 - Near existing keyframe threshold: 0.1 seconds. If near: update existing. If not: create new.
@@ -371,94 +370,3 @@ Confirmed constants and behaviors that carry forward or are newly decided for Fr
 **Input mappings:**
 - Mouse: Scroll Y = focal length, +Alt = dolly, +Shift = crane, +Ctrl = roll, +Cmd+Alt = dolly zoom, Scroll X+Cmd = truck, Ctrl-drag = pan/tilt, Alt-drag = orbit (around selected or world origin)
 - Keyboard: Space = play/pause, QWER = tool modes, F = focus, 1-9 = focal length presets, A/Shift+A = aspect ratio cycle, C = camera keyframe, V = object keyframe, Arrows = scrub 1 frame, Delete = context-sensitive delete, Ctrl+D = duplicate, Ctrl+R = reset camera, Cmd+Z / Cmd+Shift+Z = undo/redo
-
----
-
-## 13. Architecture Considerations
-
-Items that need to be resolved before or during implementation.
-
-### 13.1 Scene Serialization & Lazy Loading
-
-**Source**: Multi-Scene Project Structure spec — unlimited scenes, lazy load/lazy render
-
-Scenes must be independently loadable without pulling in sibling scene data. Only the active scene's heavy data (meshes, textures, keyframes) should be in memory; inactive scenes keep only lightweight metadata (object list, shot count, character assignments) for fast tab switching.
-
-**Implications for file format:**
-- The project file format needs clear scene boundaries — either separate chunks within a single file, or separate files per scene within a project bundle (e.g., `project.fram3d/scene-1.json`, `project.fram3d/scene-2.json`)
-- Scene-level save should be possible without re-serializing the entire project
-- Consider: a project manifest file (settings, character definitions, scene order) + individual scene files. This also makes scene duplication and deletion cheap (copy/delete a file rather than splicing a monolithic blob)
-- Character definitions live at project level but are referenced by scenes — avoid duplicating character data across scene files
-
-**Resolve before Save/Load spec (Milestone 2.2).**
-
-### 13.2 Infrastructure to Build Early
-
-Cross-cutting systems that multiple downstream features depend on. Build during Project 2 timeframe to avoid reimplementing for each feature.
-
-- **Settings / Preferences panel:** Centralized settings panel so new settings can be added incrementally as features ship. Avoids scattering configuration UIs across the application.
-- **Panel / docking system:** General panel system with docking support. Downstream milestones (hierarchy panel, pose library, asset library, inspector) all require dockable panels.
-
----
-
-## 14. Domain Modeling Approach
-
-DDD-informed, not DDD-orthodox. The cinema domain is rich enough to warrant modeling discipline; Unity is opinionated enough that full layered architecture would fight the engine.
-
-### 14.1 What We Use
-
-**Ubiquitous language.** Cinema terminology is consistent from roadmap to spec to class name to method name. Dolly, crane, truck, coverage, blocking, stopwatch — these terms mean the same thing everywhere. This is the single highest-value DDD concept.
-
-**Bounded contexts via Assembly Definitions.** Each context is a separate `.asmdef`, enforcing boundaries at compile time:
-
-| Context | Core Concepts | Assembly |
-|---------|--------------|----------|
-| Camera | Rig, lens, focus, shake, DOF | `Fram3d.Camera` |
-| Sequencing | Shot, keyframe, track, playback, stopwatch | `Fram3d.Sequencing` |
-| Scene | Element, selection, gizmo, ground plane | `Fram3d.Scene` |
-| Characters | Mannequin, pose, IK, expression, skeleton | `Fram3d.Characters` |
-| Persistence | Project, scene file, asset bundle | `Fram3d.Persistence` |
-| Export | Renderer, storyboard, EDL | `Fram3d.Export` |
-
-If Characters can't reference Camera internals, you physically can't create the wrong coupling.
-
-**Aggregates.** Domain objects with clear ownership boundaries:
-
-| Aggregate Root | Owns |
-|---------------|------|
-| `ShotSetup` | `CameraAnimation`, `ShotObjectManager`, per-object `ObjectAnimation` instances |
-| `Character` | Pose state, expression state, skeleton mapping, customization |
-| `Scene` | Objects, shots, lighting, timelines |
-| `Project` | Scenes, character definitions, settings |
-
-**Value objects.** Immutable types that carry meaning without identity:
-
-- `ShotId`, `KeyframeId` — GUID-based identity
-- `CameraKeyframeState`, `ObjectState` — state snapshots
-- `FocalLength`, `AspectRatio`, `SensorDimensions` — typed domain values
-- `Pose`, `Expression` — character state snapshots
-
-**Domain events.** Cross-context communication without coupling:
-
-- Shot-level: `DurationChanged`, `KeyframeAdded`, `KeyframeRemoved`, `KeyframeMoved`
-- Selection: `ElementSelected`, `SelectionCleared`
-- Scene-level: events for object add/remove, lighting changes
-
-**Command pattern.** `ICommand` with `Execute()` / `Undo()` / `Redo()` for all user actions. Enables undo stack and action replay.
-
-### 14.2 What We Skip
-
-**Repositories.** Unity manages object lifecycles through `MonoBehaviour`, `Instantiate`, `Destroy`, and scene serialization. Wrapping that in repositories duplicates what the engine already does.
-
-**Application services / use case classes.** The `ApplicationController.Update()` frame loop is inherently imperative. Routing every frame tick through application service abstractions adds indirection in a hot path.
-
-**Full layered architecture** (domain → application → infrastructure → presentation). Unity blurs these layers by design. `MonoBehaviour` is simultaneously presentation, infrastructure, and sometimes domain logic.
-
-### 14.3 The Split Model
-
-The key architectural pattern: **pure C# for domain logic, thin MonoBehaviour wrappers for scene graph integration.**
-
-- **Pure C# domain layer**: `ShotSetup`, `CameraAnimation`, `KeyframeManager<T>`, `Character`, `Pose`, value objects. No Unity dependencies. Testable with standard xUnit without Unity's test runner.
-- **MonoBehaviour integration layer**: `SceneElement`, `VirtualCameraRig`, `ApplicationController`. Thin wrappers that delegate to the domain layer. These need Unity to run but contain minimal logic.
-
-This gives testability without the ceremony of formal DDD layering.

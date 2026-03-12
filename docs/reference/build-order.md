@@ -59,9 +59,9 @@
 | # | Milestone | Rationale |
 |---|-----------|-----------|
 | 3 | **2.1 Scene Management** | Selection, gizmos, ground plane, duplication, Director View. The interaction model. |
-| 4 | **2.2 Viewport Panel System** | Split-view as soon as Camera View + Director View exist. Side-by-side layouts, view selector. |
+| 4 | **2.2 View System** | Split views as soon as Camera View + Director View exist. Side-by-side layouts, view selector. |
 
-**Exit criteria:** You can place elements, select them, move/rotate/scale with gizmos, duplicate, and use split-view to see Camera View and Director View simultaneously.
+**Exit criteria:** You can place elements, select them, move/rotate/scale with gizmos, duplicate, and use split views to see Camera View and Director View simultaneously.
 
 ---
 
@@ -70,7 +70,7 @@
 
 | # | Milestone | Rationale |
 |---|-----------|-----------|
-| 5 | **3.1 Shot Structure** | Shot model, shot track UI, global element timeline. Multi-scene data model (3.1.4) built here but scene tab UI is the last feature in the milestone. Overview (3.1.5) deferred. |
+| 5 | **3.1 Shot Structure** | Shot model, shot track UI, global element timeline. Multi-scene data model (3.1.4) built here but scene tab UI is the last feature in the milestone. Timeline overview (3.1.5) deferred. |
 | 6 | **3.2 Keyframe Animation** | Timeline editor, tracks, stopwatch, keyframe interaction, interpolation, playback, path visualization. |
 
 **Exit criteria:** You can create multiple shots, animate the camera and elements with keyframes, scrub the timeline, and play back a sequence. The core previs loop works end-to-end.
@@ -86,12 +86,12 @@
 |---|-----------|-----------|
 | 7 | **4.1 Undo/Redo** | Safety net. Without undo, users can't experiment. Wire the command pattern infrastructure incrementally as features are built, but finalize and test the full stack here. |
 | 8 | **4.2 Save/Load** | Project persistence. Creation wizard, file format, auto-save, crash recovery. Scene persistence (4.2.5) included. |
-| 9 | **4.3 Asset Import** | Drag-and-drop FBX/OBJ/glTF. Auto-colliders. Asset library panel. Without this, users are stuck with whatever ships built-in. |
+| 9 | **4.3 Asset Import** | Drag-and-drop FBX/OBJ/glTF. Auto-colliders. Assets panel. Without this, users are stuck with whatever ships built-in. |
 | 10 | **4.4 Export** | Image (4.4.1) and video (4.4.2) export are essential. Storyboard export (4.4.3) and NLE export (4.4.4) can follow later. |
 
 **Exit criteria:** The tool is genuinely usable. Save work, undo mistakes, import models, export stills and video. This is the **alpha** — a solo filmmaker could do real previs work with this.
 
-**Implementation note for 4.1:** The command pattern infrastructure should be scaffolded early (Phase 1–3). Each new feature adds its Undo/Redo commands as it's built. Phase 4 is where you finalize, stress-test, and handle the hard edge cases (cross-shot undo, animate mode compound steps, gesture coalescing).
+**Implementation note for 4.1:** The command pattern infrastructure should be scaffolded early (Phase 1–3). Each new feature adds its Undo/Redo commands as it's built. Phase 4 is where you finalize, stress-test, and handle the hard edge cases (cross-shot undo, recording compound steps, gesture coalescing).
 
 ---
 
@@ -100,7 +100,7 @@
 
 | # | Milestone | Rationale |
 |---|-----------|-----------|
-| 11 | **5.1 Lighting** | Simplest production feature. Validates property animation pipeline. Makes the view visually useful. A lit room is already useful for DP previs even without characters. |
+| 11 | **5.1 Lighting** | Simplest production feature. Validates property animation pipeline. Makes the scene visually useful. A lit room is already useful for DP previs even without characters. |
 | 12 | **5.2 Set Decoration Library** | Built-in props (5.2.1) ship with the app — tables, chairs, walls, vehicles. The browsing UI is simple. Marketplace integration (5.2.2) and user asset management (5.2.3) can follow later. |
 | 13 | **5.3 Premade Environments** | 12-15 ready-to-use sets. Click "Office" and start blocking. Code is trivial (load a saved scene). Content creation runs in parallel from Phase 4 onward. |
 
@@ -116,8 +116,8 @@
 | # | Milestone | Rationale |
 |---|-----------|-----------|
 | 14 | **6.1 Characters** | Mannequin placement, body customization, pose library, joint posing, character animation, walk cycles. This is the longest single milestone — plan accordingly. Custom character import (6.1.5) can be deferred to end of phase. |
-| 15 | **6.2 Camera Follow & Watch** | Immediately useful after characters. "Follow the detective down the hallway" is a bread-and-butter previs shot. Every director will want this. |
-| 16 | **6.3 Element Linking & Grouping** | Prop holding — character carries a briefcase, picks up a weapon. Link tool, anchor points. Core blocking capability. |
+| 15 | **6.2 Camera Follow & Watch** | Immediately useful after characters. "Follow the detective down the hallway" is a bread-and-butter previs shot. Every director wants this. |
+| 16 | **6.3 Element Linking & Grouping** | Prop holding — character carries a briefcase, picks up a weapon. Link tool, anchor points. Core blocking. |
 
 **Exit criteria:** You can drop characters into a premade environment, pose them, animate their movement, have the camera follow them, and link props to their hands. This is the feature set that differentiates Fram3d from every 2D tool.
 

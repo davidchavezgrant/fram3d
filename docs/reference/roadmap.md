@@ -72,16 +72,16 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 		- ##### 2.1.5. Director view
 			*Global utility camera decoupled from the shot timeline. Move freely to position elements without creating keyframes. Separate from the virtual camera rig — does not affect shot animation.*
 
-	- ### 2.2. Viewport panel system
-		*Multi-view workspace with configurable layouts. Per-panel view selector (Camera View, Designer View, Director View). Layout chooser for single, side-by-side, and three-panel arrangements.*
+	- ### 2.2. View system
+		*Multi-view workspace with configurable layouts. Per-view selector (Camera View, Designer View, Director View). Layout chooser for single, side-by-side, and three-view arrangements.*
 
-		- ##### 2.2.1. Panel layouts
-			*Three layout options: single panel (default), side-by-side (two panels), and one-large-two-small (three panels). Layout chooser buttons in the view area. Each panel independently selectable between Camera View, Designer View, and Director View.*
+		- ##### 2.2.1. View layouts
+			*Three layout options: single view (default), side-by-side (two views), and one-large-two-small (three views). Layout chooser buttons in the view area. Each view independently selectable between Camera View, Designer View, and Director View.*
 
 		- ##### 2.2.2. Views
-			*Camera View: standard view through the virtual camera rig. Designer View: top-down orthographic view (see 8.2). Director View: free utility camera decoupled from the shot timeline (see 2.1.5). Any view can be assigned to any panel.*
+			*Camera View: standard view through the virtual camera rig. Designer View: top-down orthographic view (see 8.2). Director View: free utility camera decoupled from the shot timeline (see 2.1.5). Any view type can be assigned to any view.*
 
-	**Exit criteria:** You can place elements, select them, move/rotate/scale with gizmos, duplicate, and use split-view to see Camera View and Director View simultaneously.
+	**Exit criteria:** You can place elements, select them, move/rotate/scale with gizmos, duplicate, and use split views to see Camera View and Director View simultaneously.
 
 - # Phase 3 — Time
 	*Turn a static camera position into a moving shot. Multiple shots, a timeline, keyframes, playback.*
@@ -102,7 +102,7 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 			*A project contains one or more scenes. Each scene is a self-contained unit — its own elements, environment, lighting, shots, and timelines. Scene tab bar above the timeline for switching. Scenes are fully independent. Character definitions are project-level; character state (pose, position) is scene-level. Scene order defines full-project playback sequence. See Multi-Scene Project Structure spec.*
 
 		- ##### 3.1.5. Timeline overview *(deferred to Phase 8)*
-			*A collapsible overview panel showing a bird's-eye view of the full timeline — all shots, all tracks, and a view window indicating the currently visible range. Clicking the overview navigates to that position. Shows the playhead position relative to the entire project.*
+			*A collapsible overview showing a bird's-eye view of the full timeline — all shots, all tracks, and a window indicating the currently visible range. Clicking the overview navigates to that position. Shows the playhead position relative to the entire project.*
 
 	- ### 3.2. Keyframe animation
 		*Per-property keyframe timeline editor for camera and element animation. After Effects / Premiere-style property tracks with per-track stopwatch model.*
@@ -114,7 +114,7 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 			*Camera track (yellow) always present. Element tracks (green) per animated element. Each track has a collapsible dropdown showing per-property sub-tracks with current values. Camera properties: position (x, y, z), pan, tilt, roll, focal length (zoom lenses only). Element properties: position (x, y, z), scale (uniform), rotation (x, y, z). Main keyframe diamond = virtual grouping of individual property keyframes.*
 
 		- ##### 3.2.3. Per-track stopwatch
-			*Each track has a stopwatch icon (AE/Premiere model). Stopwatch on = recording (manipulations create/update keyframes). Stopwatch off = not recording (manipulations change values without keyframing). Top-level stopwatch enables all child property tracks. First manipulation with stopwatch on creates initial keyframe at playhead. Only changed properties get keyframed. Turning stopwatch off warns and deletes all keyframes on that track. All stopwatches default to off.*
+			*Each track has a stopwatch icon (AE/Premiere model). Stopwatch on = recording (manipulations create/update keyframes). Stopwatch off = not recording (manipulations change values without keyframing). Top-level stopwatch enables all child property tracks. First manipulation while recording creates initial keyframe at playhead. Only changed properties get keyframed. Turning stopwatch off warns and deletes all keyframes on that track. All stopwatches default to off.*
 
 		- ##### 3.2.4. Keyframe interaction
 			*Click to select, drag to reposition, click timeline to scrub, delete selected. Dragging onto an existing keyframe merges. Minimum 1 camera keyframe enforced.*
@@ -162,7 +162,7 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 		- ##### 4.3.1. Model import
 			*Drag-and-drop FBX, OBJ, glTF files into the view. Auto-generate colliders for selection/gizmos. Multi-mesh models prompt user: treat as single element or unpack. Placed at camera look-point. Supports embedded animation data. Re-importing offers to replace existing.*
 
-		- ##### 4.3.2. Asset library
+		- ##### 4.3.2. Assets panel
 			*Panel showing imported assets for reuse across shots. Thumbnail previews. List-based organization. Warns user about large asset impact on project file size.*
 
 	- ### 4.4. Export
@@ -172,7 +172,7 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 			*Export current frame as PNG/JPEG at the active aspect ratio. Optionally include overlays, DOF effect, and shaken camera position. Remembers last-used export directory across all projects.*
 
 		- ##### 4.4.2. Video export
-			*Proper offline rendering at target resolution and frame rate. Render shot, scene, or full project. Bakes camera shake into keyframes during render. Cuts only between shots.*
+			*Proper offline rendering at target resolution and frame rate. Render shot, scene, or full project. Bakes camera shake into keyframes during render. Cut transitions between shots.*
 
 		- ##### 4.4.3. Storyboard export *(deferred to Phase 10)*
 			*Export all shots as a grid/contact sheet with shot names and durations. PDF or image. User-configurable rows per page. Supports two-column layout. Scene dividers between groups of shots.*
@@ -249,19 +249,19 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 			*Persistent relationship (like prop locking). Creates non-keyframeable segment on timeline. Follow distance, height offset, lateral offset are separately keyframeable. Response slider ("Rigid" to "Loose") controls damping. Lead/trail and watch options. Follow path visualized as 3D spline. See New Feature Specs (Camera Tracking/Following) for full design.*
 
 		- ##### 6.2.2. Watch
-			*Camera stays in position, rotates to face target. Right-click element → "Watch." Separate from follow — can be used independently on a static camera.*
+			*Camera stays in position, rotates to face target. Right-click element → "Watch". Separate from follow — can be used independently on a static camera.*
 
 	- ### 6.3. Element linking & grouping
 		*Temporal linking (element follows element) and persistent grouping (simultaneous transforms). Flat scene graph with positional attachment.*
 
 		- ##### 6.3.1. Element linking
-			*Temporal element-to-element linking on the global timeline. View: click-drag to link, right-click to unlink. Panel: link tool. Anchor point defines attachment offset. Linked period greyed out on timeline. Positional attachment — flat scene graph, transform override during linked period.*
+			*Temporal element-to-element linking on the global timeline. In the view: click-drag to link, right-click to unlink. In the Elements panel: link tool. Anchor point defines attachment offset. Linked period greyed out on timeline. Positional attachment — flat scene graph, transform override during linked period.*
 
 		- ##### 6.3.2. Element grouping
 			*Groups with own transform. Single-click selects group; double-click enters to edit members. Gizmo at bounding box center. No timeline behavior.*
 
 		- ##### 6.3.3. Elements panel
-			*Flat list of all scene elements with link indicators, group markers, and link handles. Click to select, drag to link. Separate "Lights" section. Dockable.*
+			*Flat list of all scene elements with link indicators, group markers, and link tool handles. Click to select, drag to link. Separate "Lights" section. Dockable.*
 
 	**Exit criteria:** You can drop characters into a premade environment, pose them, animate their movement, have the camera follow them, and link props to their hands. This is the feature set that differentiates Fram3d from every 2D tool.
 
@@ -309,7 +309,7 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 		*Bird's-eye 2D view of the scene showing element positions, camera frustums, and light cones. Part of the view system (2.2) — available as a view.*
 
 		- ##### 8.2.1. Designer View
-			*Top-down orthographic view. Elements shown as labeled icons/silhouettes. Camera shown as frustum with FOV cone. Lights shown as standard lighting diagram symbols. Drag elements to reposition. Camera view preview in corner. Movement paths shown as dotted lines with keyframe position dots. Available as a view alongside Camera View and Director View.*
+			*Top-down orthographic view. Elements shown as labeled icons/silhouettes. Camera shown as frustum with FOV cone. Lights shown as standard lighting diagram symbols. Drag elements to reposition. Camera View preview in corner. Movement paths shown as dotted lines with keyframe position dots. Available as a view alongside Camera View and Director View.*
 
 	- ### 8.3. Script import
 		*Import screenplays to auto-populate scenes, characters, and dialogue. Bridges the gap between script and previs.*
@@ -329,7 +329,7 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 	*Get single-camera workflow polished before introducing multi-cam complexity.*
 
 	- ### 9.1. Multi-camera
-		*Up to four cameras per shot with independent keyframe timelines, shared element animation, and an active angle track.*
+		*Up to four cameras per shot with independent keyframe timelines, shared element animation, and active angle editing.*
 
 		- ##### 9.1.1. Per-shot camera addition
 			*Add up to 4 cameras (A, B, C, D) per shot. Each camera labeled and color-coded (user-configurable). Camera preview elements appear above the current shot.*
@@ -338,10 +338,10 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 			*Each camera has its own camera keyframe timeline within the shot. Element keyframe timelines are shared across all cameras.*
 
 		- ##### 9.1.3. Active camera and switching
-			*Right-click camera preview → "Set to active." Shift+1/2/3/4 to switch. Switching during playback auto-splits the active angle track at the switch point.*
+			*Right-click camera preview → "Set to active." Shift+1/2/3/4 to switch. Switching during playback auto-splits the active angle at the switch point.*
 
 		- ##### 9.1.4. Active angle editing
-			*Active angle track row in the timeline. Right-click → "Split" to divide. Drag cuts to adjust timing.*
+			*Active angle row in the timeline. Right-click → "Split" to divide. Drag cuts to adjust timing.*
 
 		- ##### 9.1.5. Multi-split
 			*Right-click → "Multi-split": prompted with "split every {n} frames."*
@@ -434,4 +434,5 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 	4. **AI features are speculative.** Phase 11 depends on LLM capabilities that may or may not work well enough. Build the tool so it's great without AI — AI is upside, not the product.
 	5. **Don't build a 3D editor.** Every feature should pass the test: "does a director need this to plan a shot?" If the answer is "only a 3D artist would use this," cut it.
 	6. **Multi-camera is a capstone.** Get single-camera workflow polished before introducing multi-cam complexity. Active angle editing builds on mature keyframe and shot track foundations.
+
 	7. **Camera rigs depend on characters.** Camera follow, watch, and snorricam all require animated characters to be meaningful. They belong after 6.1, not before.

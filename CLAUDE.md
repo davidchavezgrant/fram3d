@@ -13,17 +13,32 @@ Fram3d is a 3D previsualization tool for filmmakers. Unity project (Unity 6, Cin
 
 | Doc | What it is |
 |-----|-----------|
-| `docs/reference/domain-language.md` | **Read this first.** Canonical terminology: element, shot, angle, track, view, etc. Part 1 is the definitions. Part 2 explains why. Part 3 lists retired terms (don't use these). |
-| `docs/reference/roadmap.md` | Product roadmap — milestones, features, build order. |
-| `docs/reference/architecture.md` | Technical architecture — patterns, anti-patterns, constants, domain modeling. |
+| `docs/reference/domain-language.md` | **Read this first.** Canonical terminology: element, shot, angle, track, view, etc. Part 1 is definitions. Part 2 explains why. Part 3 lists retired terms. |
+| `docs/reference/roadmap.md` | Product roadmap — milestones, features, phases. |
+| `docs/reference/decisions.md` | Architectural decisions (confirmed and pending). |
 
 ### Read before writing code
 
 | Doc | What it is |
 |-----|-----------|
+| `docs/reference/domain-model.md` | DDD approach — bounded contexts, aggregates, value objects, the split model. |
 | `docs/reference/unity-naming-conventions.md` | How domain terms map to C# types. The `*Element` suffix convention, namespace structure, aliasing rules. |
 | `docs/reference/bounded-context-map.md` | Assembly definitions and bounded context boundaries. |
 | `docs/reference/build-order.md` | Implementation sequencing. |
+| `docs/reference/prior-codebase-lessons.md` | Patterns to reuse and anti-patterns to avoid from the prior codebase. |
+
+### Read before writing UI
+
+| Doc | What it is |
+|-----|-----------|
+| `docs/reference/interaction-patterns.md` | Input mappings, keyframe rules, shot bar behavior, panel system, timecodes. |
+| `docs/reference/tuned-constants.md` | Empirically tuned values — camera speeds, thresholds, sensitivities. |
+
+### Other reference
+
+| Doc | What it is |
+|-----|-----------|
+| `docs/reference/tech-stack.md` | Engine, packages, UI framework. |
 
 ### Specs
 

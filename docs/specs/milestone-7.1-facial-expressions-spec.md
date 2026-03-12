@@ -46,7 +46,7 @@
 		Each preset expression = combination of targets at specific weights. Example: "Angry" = Brow_Furrow(1.0) + Eye_Squint(0.5) + Jaw_Clench(0.7).
 
 		**UI:**
-		- **Preset dropdown** in inspector panel when character is selected
+		- **Preset dropdown** in property panel when character is selected
 		- **Intensity slider**: 0% (neutral) to 100% (full expression). Default 100%.
 		- **Advanced dropdown**: Individual blend shape sliders for manual mixing
 		- **Quick access**: Right-click character → "Expression" → submenu of presets
@@ -69,7 +69,7 @@
 		| Eye_Look_Up | Both eyes look up |
 		| Eye_Look_Down | Both eyes look down |
 
-		Eye direction is its own control in the inspector panel. A character can be "Angry" while looking left. Keyframeable independently from expressions.
+		Eye direction is its own control in the property panel. A character can be "Angry" while looking left. Keyframeable independently from expressions.
 
 	- ##### 7.1.3. Expression animation (Feature)
 		*Expression track as a sub-track under the character's track in the timeline.*

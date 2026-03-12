@@ -16,18 +16,18 @@
   This is explicitly speculative. Sequencing principle #4 applies: "AI is upside, not the product." Fram3d must be a great previsualization tool without this feature. Natural language shot description is a workflow accelerator for users who want it, not a core dependency. If it does not work well enough to be useful, it ships as an experimental feature or not at all.
 
   **What might not work well:**
-  - Subject resolution in complex scenes. "Close-up of the actor on the left" requires the system to determine which actor is "on the left" relative to the camera or the scene. Spatial reasoning from natural language is hard and may produce wrong results frequently enough to frustrate users.
+  - Subject resolution in complex scenes. "Close-up of the character on the left" requires the system to determine which character is "on the left" relative to the camera or the scene. Spatial reasoning from natural language is hard and may produce wrong results frequently enough to frustrate users.
   - Ambiguous or contradictory descriptions. "A tight wide shot" is contradictory. "A dramatic angle" is subjective. The system will encounter descriptions it cannot meaningfully interpret, and it needs to fail gracefully rather than produce nonsense.
-  - Shots that reference objects or characters not present in the scene. "Close-up of the knife on the counter" when there is no knife and no counter. The system must recognize what it cannot do.
+  - Shots that reference elements or characters not present in the scene. "Close-up of the knife on the counter" when there is no knife and no counter. The system must recognize what it cannot do.
   - The gap between cinematic intent and geometric output. "An intimate two-shot" carries emotional meaning that is hard to translate into camera coordinates. The system may technically satisfy the shot size while missing the feel entirely.
 
-  *Related: 1.1.1 Camera movement, 1.1.2 Lens system, 1.1.4 Focus, 6.1.1 Mannequin placement*
+  *Related: 1.1.1 Camera movement, 1.1.2 Lens system, 1.1.4 Focus, 6.1.1 Character placement*
 
 ---
 
 ## 11.1.1 Shot-from-text
 
-***Type a shot description in plain language -- "medium close-up of the actor at the table, slightly low angle" -- and the camera repositions to match. Not the final shot, but a starting point the director refines manually.***
+***Type a shot description in plain language -- "medium close-up of the character at the table, slightly low angle" -- and the camera repositions to match. Not the final shot, but a starting point the director refines manually.***
 
 ### Input
 
@@ -35,7 +35,7 @@
 - Input is plain language, not a structured form or dropdown selection
 - Descriptions may include any combination of: shot size, camera angle, subject reference, spatial positioning, lens preference, movement instruction
 - Descriptions may be partial -- "close-up" with no subject specified is valid
-- Compound descriptions create multiple shots. "OTS then reverse" creates two shots in the sequencer.
+- Compound descriptions create multiple shots. "OTS then reverse" creates two shots in the shot track.
 - Input language is English only for initial release
 
 ### Interpretation
@@ -43,18 +43,18 @@
 - The system parses the description and extracts actionable parameters:
   - **Shot size**: mapped from the shot vocabulary (11.1.2) to a subject-to-camera distance and focal length
   - **Camera angle**: mapped to a vertical offset and tilt relative to the subject
-  - **Subject**: resolved to a specific scene object or character, or to the scene as a whole
+  - **Subject**: resolved to a specific element or character, or to the scene as a whole
   - **Spatial modifiers**: "camera left," "camera right," "from behind," "profile" -- mapped to a horizontal angle around the subject
   - **Lens cues**: descriptions that imply focal length ("compressed background," "wide and distorted") influence lens selection beyond what the shot size implies
 
-- Interacts with the stopwatch system: when the AI repositions the camera, it creates keyframes if the camera's stopwatch is on (Animate mode). The shot-from-text action is not a special case -- it moves the camera, and the stopwatch captures that movement like any other camera change. If the stopwatch is off (Setup mode), the camera repositions without keyframing.
+- Interacts with the stopwatch system: when the AI repositions the camera, it creates keyframes if the camera's stopwatch is recording. The shot-from-text action is not a special case -- it moves the camera, and the stopwatch captures that movement like any other camera change. If the stopwatch is not recording, the camera repositions without keyframing.
 
-- Stores movement metadata ("slow dolly in," "tracking shot") for potential future use by the animation system, even if movement generation is not implemented yet. This metadata is attached to the shot in the sequencer so it is available when movement generation ships.
+- Stores movement metadata ("slow dolly in," "tracking shot") for potential future use by the animation system, even if movement generation is not implemented yet. This metadata is attached to the shot in the shot track so it is available when movement generation ships.
 
 - The system does NOT interpret:
   - Camera movement or animation ("dolly in slowly"). This milestone positions the camera; it does not animate it. Movement descriptions are acknowledged and stored as metadata for future milestones.
   - Lighting descriptions ("dark and moody"). Lighting is a separate system.
-  - Editing instructions ("cut to," "dissolve to"). These are sequencer-level operations.
+  - Editing instructions ("cut to," "dissolve to"). These are shot track operations.
 
 ### Subject Resolution
 
@@ -70,18 +70,18 @@
           <== system notifies the user that the referenced subject was not found
           <== camera does not reposition
 
-  .if >> description names a non-character object ("the table," "the car," "the doorway")
-      <== system attempts to match the reference to a scene object by name
+  .if >> description names a non-character element ("the table," "the car," "the doorway")
+      <== system attempts to match the reference to an element by name
       <== matching rules follow the same pattern as character resolution
 
-  .if >> description uses spatial references ("the actor on the left," "the person closest to the window")
+  .if >> description uses spatial references ("the character on the left," "the person closest to the window")
       <== system evaluates spatial relationships relative to the current camera position
       <== "left" and "right" are interpreted from the camera's perspective, not the scene's
       <== this is the hardest resolution problem and may frequently produce incorrect results
 
   .if >> description references no subject ("establishing wide," "high angle of the room")
       <== system frames the entire scene or visible area
-      <== camera positions to see the full extent of scene objects
+      <== camera positions to see the full extent of scene elements
 
   .if >> only one character exists in the scene and the description says "close-up" with no subject
       <== system assumes the single character is the subject
@@ -173,14 +173,14 @@ Shot descriptions carry implicit lens information. The system should set focal l
 
 ### Non-Subject Shots
 
-Not every shot references a person or object. The system must handle compositional and environmental descriptions.
+Not every shot references a person or element. The system must handle compositional and environmental descriptions.
 
 ``` python
   .if >> description is a scene-level shot ("establishing wide of the room," "overhead of the table")
       <== camera positions to show the described scope of the environment
-      <== framing encompasses visible scene objects without targeting any single one
+      <== framing encompasses visible scene elements without targeting any single one
 
-  .if >> description references a spatial location rather than an object ("looking down the hallway," "from the doorway")
+  .if >> description references a spatial location rather than an element ("looking down the hallway," "from the doorway")
       <== system interprets spatial locations as best it can from scene geometry
       <== this will often fail or produce approximate results -- spatial location parsing is extremely difficult without explicit scene markup
 ```
@@ -198,7 +198,7 @@ Not every shot references a person or object. The system must handle composition
   .if description says "close-up of the dog" and no dog exists within the scene >>
       <== system reports that no matching subject was found
       <== camera does not reposition
-      !== system frames a random object and calls it "the dog"
+      !== system frames a random element and calls it "the dog"
 
   # empty or nonsensical input
   .if description is empty, random characters, or contains no recognizable cinematic terms >>
@@ -214,20 +214,20 @@ Not every shot references a person or object. The system must handle composition
 
 ### Compound Descriptions
 
-Compound descriptions that describe a sequence of shots create multiple shots in the sequencer rather than a single camera position.
+Compound descriptions that describe a sequence of shots create multiple shots in the shot track rather than a single camera position.
 
 ``` python
   .if >> description contains a sequence of shots ("OTS then reverse," "wide establishing then cut to close-up")
-      <== system creates one shot per segment in the sequencer
+      <== system creates one shot per segment in the shot track
       <== each shot is independently positioned using the same interpretation pipeline
-      <== shots are ordered in the sequencer in the order they appear in the description
+      <== shots are ordered in the shot track in the order they appear in the description
       !== system combines the segments into a single averaged camera position
 
   .if >> description is "OTS from Actor_01 to Actor_02 then reverse"
-      <== system creates two shots in the sequencer
+      <== system creates two shots in the shot track
       <== first shot: OTS from behind Actor_01's shoulder facing Actor_02
       <== second shot: OTS from behind Actor_02's shoulder facing Actor_01
-      <== both shots are created as distinct entries in the sequencer
+      <== both shots are created as distinct entries in the shot track
 
   .if >> compound description contains one segment the system cannot interpret
       <== system creates shots for the segments it can interpret
@@ -240,17 +240,17 @@ Compound descriptions that describe a sequence of shots create multiple shots in
 Shot-from-text repositions the camera through the standard camera control path, so the stopwatch system applies naturally.
 
 ``` python
-  .if >> camera stopwatch is on (Animate mode) and system repositions the camera from a shot description
+  .if >> camera stopwatch is recording and system repositions the camera from a shot description
       <== the resulting camera position is captured as keyframes by the stopwatch system
       <== no special integration is needed -- the camera moved, the stopwatch records it
       !== shot-from-text bypasses the stopwatch system
 
-  .if >> camera stopwatch is off (Setup mode) and system repositions the camera from a shot description
+  .if >> camera stopwatch is not recording and system repositions the camera from a shot description
       <== camera repositions but no keyframes are created
       <== behavior is identical to manually moving the camera with the stopwatch off
 
   .if >> compound description creates multiple shots with camera stopwatch on
-      <== each shot's camera position generates its own keyframes in the sequencer
+      <== each shot's camera position generates its own keyframes in the shot track
       <== the keyframes correspond to the individual shots, not to the transition between them
 ```
 
@@ -276,7 +276,7 @@ The system recognizes the following shot sizes. Each maps to a framing ratio -- 
 
 - Each shot size maps to an approximate subject-to-frame ratio. The system uses this ratio, combined with the subject's bounding volume, to compute camera distance.
 - Shot sizes are not pixel-precise. A medium shot that frames head-to-waist with a little more or less room is still a correct medium shot. The system targets the center of each framing range.
-- When the subject is not a person (e.g., "close-up of the clock"), the system adapts framing proportionally -- the object fills roughly the same proportion of frame as the human-referenced definition implies.
+- When the subject is not a person (e.g., "close-up of the clock"), the system adapts framing proportionally -- the element fills roughly the same proportion of frame as the human-referenced definition implies.
 
 ``` python
   # shot size with human subject

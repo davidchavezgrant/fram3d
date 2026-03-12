@@ -12,7 +12,7 @@
 	*Body-mounted camera rig. Camera locks to character's root motion. Front and back mount options.*
 
 	- ##### 7.2.1. Snorricam (Feature)
-		*Front mount (camera faces actor's face) and back mount (camera faces away). Camera locks to character's root motion.*
+		*Front mount (camera faces character's face) and back mount (camera faces away). Camera locks to character's root motion.*
 
 		**Front mount behavior:**
 		- Camera attaches to a point offset from the character's chest (configurable distance, default ~0.5m)
@@ -35,7 +35,7 @@
 		| Height offset | How high on the body the rig sits (chest, shoulder, head level) | No |
 		| Distance offset | How far from the body the camera extends | No |
 
-		Adjustable via inspector panel while Snorricam is active. Default offsets produce a reasonable result without adjustment.
+		Adjustable via property panel while Snorricam is active. Default offsets produce a reasonable result without adjustment.
 
 		**Activation:**
 		- Right-click character → "Snorricam" → "Front Mount" / "Back Mount"
@@ -49,7 +49,7 @@
 		**Interaction with existing systems:**
 		- Per-track stopwatch (3.2.3): Camera position/rotation keyframes not created during Snorricam — position is derived from character transform + offset.
 		- Character animation (6.1.4): Snorricam depends on character animation. Without walk cycles or pose keyframes, Snorricam produces a static shot.
-		- Shot sequencer (3.1): Snorricam is per-shot. Shot A can have Snorricam, Shot B can have a normal camera.
+		- Shot track (3.1): Snorricam is per-shot. Shot A can have Snorricam, Shot B can have a normal camera.
 		- Camera movement (1.1.1): All manual camera movements disabled while Snorricam is active.
 		- Lens system (1.1.2): Focal length is still user-adjustable during Snorricam.
 		- Camera shake (1.1.6): Disabled during Snorricam. Snorricam already produces motion from character movement — stacking shake would be too much.

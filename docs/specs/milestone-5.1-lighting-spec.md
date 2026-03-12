@@ -15,9 +15,9 @@
 
 	Three light types map directly to real set lighting. A directional light is the sun or a large source far away — it has direction but no position. A point light is a practical — a lamp on a table, a bare bulb in a hallway. A spot light is a focused beam — a Fresnel, a Leko, a follow spot. Each type behaves the way a DP expects it to behave.
 
-	Lights are first-class scene elements. They are selectable, movable, and aimable using the same gizmos the user already knows from objects. They have visible representations in the viewport — icons or wireframe shapes — so the user can see where lights are even when looking at the scene from an angle where the light effect is not visible. This is how lighting diagrams work on a real set: you see the fixtures, not just the light.
+	Lights are first-class scene elements. They are selectable, movable, and aimable using the same gizmos the user already knows from elements. They have visible representations in the view — icons or wireframe shapes — so the user can see where lights are even when looking at the scene from an angle where the light effect is not visible. This is how lighting diagrams work on a real set: you see the fixtures, not just the light.
 
-	Light animation supports lighting cues within a shot — a dimming lamp, a sunrise through a window, a flickering candle. Light properties are keyframeable on the timeline alongside camera and object animation.
+	Light animation supports lighting cues within a shot — a dimming lamp, a sunrise through a window, a flickering candle. Light properties are keyframeable on the timeline alongside camera and element animation.
 
 	*Blocked by: 3.2 (keyframe animation — light animation uses the timeline system)*
 
@@ -25,7 +25,7 @@
 
 	- ##### 5.1.1. Light types (Feature)
 
-		***Directional (sun), point (practical), and spot (focused beam) — the three lights a DP thinks in. Position and aim with the same gizmo system as objects.***
+		***Directional (sun), point (practical), and spot (focused beam) — the three lights a DP thinks in. Position and aim with the same gizmo system as elements.***
 
 		*Related:
 		- 2.1.1 (scene elements — lights are selectable scene elements)
@@ -44,7 +44,7 @@
 		- Point light:
 			- Represents an omnidirectional practical source (a table lamp, a bare bulb)
 			- Has position and range but no direction — it radiates equally in all directions
-			- Default range: enough to illuminate nearby objects without flooding the scene
+			- Default range: enough to illuminate nearby elements without flooding the scene
 		- Spot light:
 			- Represents a focused directional source (a Fresnel, a follow spot)
 			- Has position, direction, range, and cone angle
@@ -53,21 +53,21 @@
 			- Converting preserves shared properties (intensity, color, name)
 			- Properties that do not apply to the new type are discarded (e.g., cone angle when converting spot to point)
 			- Properties that are new to the target type receive default values (e.g., cone angle gets default 30 degrees when converting point to spot)
-		- Lights carry across shots via continuity, just like objects. A light placed in Shot 1 exists in all subsequent shots. Light properties propagate the same way object positions do.
+		- Lights carry across shots via continuity, just like elements. A light placed in Shot 1 exists in all subsequent shots. Light properties propagate the same way element positions do.
 		- Adding the first light to a scene instantly dims the default ambient lighting. This is an instant transition, not gradual.
-		- Every light type is a scene element — selectable, hoverable, and clickable using the same interaction model as objects (2.1.1)
-		- Selected lights display the same selection highlight as objects
+		- Every light type is a scene element — selectable, hoverable, and clickable using the same interaction model as elements (2.1.1)
+		- Selected lights display the same selection highlight as elements
 		- Selected lights can be moved and rotated with transform gizmos (2.1.2)
 			- Translate gizmo moves the light's position (point, spot) or has no effect (directional)
 			- Rotate gizmo changes the light's aim direction (directional, spot) or has no effect (point)
 			- Scale gizmo has no effect on any light type
-		- Every light has a viewport representation — a visible icon or wireframe shape that indicates its type and direction
+		- Every light has a view representation — a visible icon or wireframe shape that indicates its type and direction
 			- Directional: an arrow or sun icon indicating the light direction
 			- Point: a sphere icon or radial wireframe at the light's position
 			- Spot: a cone wireframe showing beam direction and cone angle
-		- Viewport representations maintain constant screen size regardless of camera distance (same behavior as gizmos)
-		- Viewport representations are visible whether or not the light is selected
-		- Lights can be duplicated with Ctrl+D (same as objects, per 2.1.4)
+		- View representations maintain constant screen size regardless of camera distance (same behavior as gizmos)
+		- View representations are visible whether or not the light is selected
+		- Lights can be duplicated with Ctrl+D (same as elements, per 2.1.4)
 		- Lights can be deleted
 		- A scene can contain zero lights
 		- A scene can contain multiple lights of any type in any combination
@@ -79,10 +79,10 @@
 				<== a spot light appears in the scene in front of the camera
 				<== spot light is auto-named (e.g., "Spot 1")
 				<== cone wireframe visible at the light's position
-				<== the light illuminates objects within its cone
+				<== the light illuminates elements within its cone
 
 			# selecting and moving a light
-			.if user clicks a point light's viewport icon >>
+			.if user clicks a point light's view icon >>
 				<== point light displays selection highlight
 				<== translate gizmo appears at the light's position
 				||> .if user drags the green (Y) arrow handle >>
@@ -123,15 +123,15 @@
 					<== nothing happens
 					!== light changes size or intensity from scaling
 
-			# viewport representations always visible
+			# view representations always visible
 			.if scene contains three lights (directional, point, spot)
 			.if no light is selected >>
-				<== all three viewport icons/wireframes are visible
+				<== all three view icons/wireframes are visible
 				<== each icon indicates its light type
 
-			# viewport representation constant size
+			# view representation constant size
 			.if camera dollies away from a point light >>
-				<== point light's viewport icon remains the same screen size
+				<== point light's view icon remains the same screen size
 				!== icon shrinks with distance
 
 			# duplication
@@ -185,20 +185,20 @@
 			.if user deletes that light >>
 				<== scene has zero lights
 				<== scene renders with default ambient illumination only
-				!== application crashes or shows a black viewport
+				!== application crashes or shows a black view
 
-			# light inside an object
+			# light inside an element
 			.if user places a point light inside a closed mesh >>
 				<== light still illuminates — it is not occluded by the mesh
-				<== viewport icon remains visible and selectable
+				<== view icon remains visible and selectable
 				!== light becomes invisible or unreachable
 
 			# many lights
 			.if scene contains 50 lights >>
-				<== all 50 viewport icons are visible and selectable
+				<== all 50 view icons are visible and selectable
 				<== application remains responsive
-				!== viewport becomes cluttered to the point of unusability
-					(viewport icons should overlap gracefully, not fight for space)
+				!== view becomes cluttered to the point of unusability
+					(view icons should overlap gracefully, not fight for space)
 
 			# type conversion with keyframes
 			.if a spot light has keyframes animating cone angle
@@ -212,14 +212,14 @@
 
 	- ##### 5.1.2. Light properties (Feature)
 
-		***Intensity, color, range, cone angle — the properties a DP adjusts when shaping a shot. Editable in the inspector and through direct manipulation in the viewport.***
+		***Intensity, color, range, cone angle — the properties a DP adjusts when shaping a shot. Editable in the properties sidebar and through direct manipulation in the view.***
 
 		*Blocked by:
 		- 5.1.1 (light types — properties require lights to exist)*
 
 		*Related:
 		- 5.1.3 (light animation — these properties become keyframeable)
-		- 7.1 (hierarchy panel — lights appear in a separate "Lights" section)*
+		- 7.1 (Elements panel — lights appear in a separate "Lights" section)*
 
 		**Functional requirements:**
 		- Every light has the following base properties:
@@ -234,13 +234,13 @@
 			- Inner cone angle — the angular width of the full-intensity core of the beam (always less than cone angle)
 		- Directional lights have no range property (they illuminate infinitely)
 		- Spot light cone wireframe is visible only when the spot light is selected — not always visible
-		- Lights appear in a separate "Lights" section of the hierarchy panel (when hierarchy panel exists in 7.1), not mixed in with scene objects
-		- **Global HUD toggle**: a single viewport toggle hides ALL HUD elements (light viewport icons, gizmos, grid, etc.) simultaneously. This is a global on/off, not per-light or per-type. Camera overlays (aspect ratio masks, safe zones) are NOT affected by this toggle — they remain independently controlled. This lets the user quickly see a clean viewport without individually toggling each HUD element.
+		- Lights appear in a separate "Lights" section of the Elements panel (when Elements panel exists in 7.1), not mixed in with scene elements
+		- **Global overlay toggle**: a single view toggle hides ALL overlay elements (light view icons, gizmos, grid, etc.) simultaneously. This is a global on/off, not per-light or per-type. Camera overlays (aspect ratio masks, safe zones) are NOT affected by this toggle — they remain independently controlled. This lets the user quickly see a clean view without individually toggling each overlay element.
 		- Properties are editable through two methods:
-			- Inspector panel: numeric fields for intensity and angles, a color picker with linked Kelvin field for color, a slider for range
+			- Properties sidebar: numeric fields for intensity and angles, a color picker with linked Kelvin field for color, a slider for range
 			- Direct manipulation: dragging the spot cone wireframe adjusts cone angle interactively
 		- Property changes take effect immediately — the scene illumination updates in real time as the user adjusts values
-		- Intensity of zero turns the light off visually but does not delete it — the viewport icon remains
+		- Intensity of zero turns the light off visually but does not delete it — the view icon remains
 		- Common color temperature presets are available:
 			- Candlelight (warm orange, ~1800K / ~2700K)
 			- Tungsten (warm white, ~3200K)

@@ -1,4 +1,4 @@
-# Milestone 3.1: Shot Sequencer
+# Milestone 3.1: Shot Track
 
 **Date**: 2026-03-10
 **Status**: Draft
@@ -6,19 +6,19 @@
 
 ---
 
-Each shot is an independent camera animation over shared world-space objects. A director thinks within shots. "Shot 1: wide establishing. Shot 2: over-the-shoulder. Shot 3: close-up reaction." The sequencer is their shot list made tangible -- a horizontal strip of thumbnails representing the structure of the scene.
+Each shot is an independent camera animation over shared world-space elements. A director thinks within shots. "Shot 1: wide establishing. Shot 2: over-the-shoulder. Shot 3: close-up reaction." The shot track is their shot list made tangible -- a horizontal strip of thumbnails representing the structure of the scene.
 
 ---
 
 ## 3.1.1 Shot Model
 
-***Objects exist in world space and animate on a single global timeline. Shots are windows into this timeline — each shot captures camera animation for its time segment. Object keyframes live on the global timeline, camera keyframes are per-shot.***
+***Elements exist in world space and animate on a single global timeline. Shots are windows into this timeline — each shot captures camera animation for its time segment. Element keyframes live on the global timeline, camera keyframes are per-shot.***
 
 ### Shot Definition
 
 - Every shot contains: name (string), duration (seconds), camera animation, and a time range on the global timeline
 - Camera animation stores: position, rotation -- each as keyframed curves (per-shot)
-- Object animation lives on the global object timeline (not per-shot) — see 3.1.3
+- Element animation lives on the global element timeline (not per-shot) — see 3.1.3
 - Default duration 5 seconds, max 300 seconds (5 minutes)
 
 ### Naming
@@ -72,34 +72,34 @@ Each shot is an independent camera animation over shared world-space objects. A 
 ``` python
   .if >> new shot is created
       <== camera animation begins using a single keyframe at t=0 capturing the current camera position and rotation
-      <== the shot maps to the next time range on the global object timeline (immediately after the previous shot)
-      <== objects are at whatever position the global timeline defines for this time
-      !== new copies of objects created for the shot
+      <== the shot maps to the next time range on the global element timeline (immediately after the previous shot)
+      <== elements are at whatever position the global timeline defines for this time
+      !== new copies of elements created for the shot
       !== camera state reset to defaults
 ```
 
 ### Minimum Viable Shot
 
 - A shot must contain at minimum: a name, a duration, and one camera keyframe at t=0
-- The shot maps to a time range on the global object timeline
-- All world-space objects are always present; the shot only stores camera animation
+- The shot maps to a time range on the global element timeline
+- All world-space elements are always present; the shot only stores camera animation
 
 ---
 
-## 3.1.2 Sequencer UI
+## 3.1.2 Shot Track UI
 
-***A scrollable horizontal thumbnail strip at the bottom of the viewport. Each thumbnail represents one shot. The director sees their shot list at a glance and restructures it by dragging.***
+***A scrollable horizontal thumbnail strip at the bottom of the view. Each thumbnail represents one shot. The director sees their shot list at a glance and restructures it by dragging.***
 
 ### Layout
 
-- The sequencer occupies a horizontal strip along the bottom edge of the viewport
+- The shot track occupies a horizontal strip along the bottom edge of the view
 - Height: 140px from the bottom of the screen
-- Background: dark, semi-transparent (distinct from the 3D viewport above and the keyframe editor below)
-- Contains: thumbnail cards, an "Add Shot" button, aggregate duration display, scrollbar (when needed)
+- Background: dark, semi-transparent (distinct from the 3D view above and the keyframe editor below)
+- Contains: shot thumbnails, an "Add Shot" button, aggregate duration display, scrollbar (when needed)
 
 ### Aggregate Duration
 
-- The sequencer displays the total running time of all shots combined
+- The shot track displays the total running time of all shots combined
 - Format: "Total: Xs" where X is the sum of all shot durations
 
 ``` python
@@ -113,12 +113,12 @@ Each shot is an independent camera animation over shared world-space objects. A 
       <== aggregate duration displays "Total: 0.0s"
 ```
 
-### Thumbnail Cards
+### Shot Thumbnails
 
-- Each shot renders as a card within the strip
-- Card dimensions: 120px wide, 100px tall
-- Card contents from top to bottom: thumbnail image, shot name, editable duration field
-- Thumbnail image shows a render of the camera's view at t=0 of that shot (the first frame)
+- Each shot renders as a thumbnail within the strip
+- Thumbnail dimensions: 120px wide, 100px tall
+- Thumbnail contents from top to bottom: preview image, shot name, editable duration field
+- Preview image shows a render of the camera's view at t=0 of that shot (the first frame)
 
 ``` python
   .if >> user modifies the camera position at t=0 of a shot
@@ -126,12 +126,12 @@ Each shot is an independent camera animation over shared world-space objects. A 
       !== thumbnail updates for keyframes at times other than t=0
 
   .if >> shot is currently selected
-      <== card displays a visible highlight border distinguishing it from unselected shots
+      <== shot displays a visible highlight border distinguishing it from unselected shots
 
-  .if >> user clicks a shot card
+  .if >> user clicks a shot on the shot track
       <== that shot becomes the current shot
-      <== viewport jumps to t=0 of that shot
-      <== camera and all objects evaluate to their t=0 state for that shot
+      <== view jumps to t=0 of that shot
+      <== camera and all elements evaluate to their t=0 state for that shot
       <== keyframe editor (3.2) loads that shot's tracks, .if >> keyframe editor exists
 ```
 
@@ -140,18 +140,18 @@ Each shot is an independent camera animation over shared world-space objects. A 
 ``` python
   .if >> total thumbnail width exceeds available horizontal space
       <== horizontal scrollbar appears below the thumbnails
-      <== user scrolls via scrollbar drag, mouse wheel over the sequencer area, or trackpad horizontal scroll
+      <== user scrolls via scrollbar drag, mouse wheel over the shot track area, or trackpad horizontal scroll
 
   .if >> total thumbnail width fits within available space
       !== scrollbar shown
 
   .if >> new shot is added while scrolled
-      <== sequencer auto-scrolls to reveal the new shot
+      <== shot track auto-scrolls to reveal the new shot
 ```
 
 ### Add Shot
 
-- An "Add Shot" button appears at the right end of the thumbnail strip, after the last shot card
+- An "Add Shot" button appears at the right end of the thumbnail strip, after the last shot
 - The button is always visible (scrolls along using the strip)
 
 ``` python
@@ -159,8 +159,8 @@ Each shot is an independent camera animation over shared world-space objects. A 
       <== new shot is appended to the end of the sequence
       <== new shot becomes the current shot
       <== new shot maps to the next time range on the global timeline (after the previous shot's end)
-      <== objects are at their global timeline positions for this time range
-      <== sequencer scrolls to show the new shot
+      <== elements are at their global timeline positions for this time range
+      <== shot track scrolls to show the new shot
 
   .if >> no shots exist and user clicks "Add Shot"
       <== first shot is created with camera capturing current view
@@ -170,7 +170,7 @@ Each shot is an independent camera animation over shared world-space objects. A 
 
 ### Delete Shot
 
-- Each shot card has a delete control (button or icon)
+- Each shot has a delete control (button or icon)
 
 ``` python
   .if >> user clicks delete on a shot
@@ -188,12 +188,12 @@ Each shot is an independent camera animation over shared world-space objects. A 
   .if >> user confirms deletion on a shot that is not the only shot
       <== shot is removed from the sequence
       <== if the deleted shot was the current shot, the next shot becomes current; if it was the last shot, the previous shot becomes current
-      <== viewport and keyframe editor update to the new current shot
+      <== view and keyframe editor update to the new current shot
 
   .if >> user confirms deletion on the only remaining shot
       <== shot is removed
       <== sequence is now empty
-      <== viewport shows the scene within its default state (no active shot)
+      <== view shows the scene within its default state (no active shot)
       <== keyframe editor clears (no tracks, no playhead)
       !== application crash or error state
 
@@ -209,7 +209,7 @@ Each shot is an independent camera animation over shared world-space objects. A 
 ### Shot Duplication
 
 ``` python
-  .if >> user presses Ctrl+D while a shot card is selected
+  .if >> user presses Ctrl+D while a shot is selected
       !== shot duplicated
       <== no action is taken
 ```
@@ -219,34 +219,34 @@ Each shot is an independent camera animation over shared world-space objects. A 
 ``` python
   .if >> project is opened for the first time (fresh scene)
       <== one shot exists: "Shot_01", duration 5.0s, capturing default camera and scene state
-      !== empty sequence on first launch
+      !== empty shot track on first launch
 ```
 
 ### Drag-and-Drop Reordering
 
 ``` python
-  .if >> user presses and holds on a shot card
-      <== after a brief hold threshold (not an instant click), card enters drag mode
-      <== card visually lifts from the strip (slight scale increase or opacity change)
-      <== a drop indicator (vertical line or gap) appears between shots showing where the card would land
+  .if >> user presses and holds on a shot
+      <== after a brief hold threshold (not an instant click), shot enters drag mode
+      <== shot visually lifts from the strip (slight scale increase or opacity change)
+      <== a drop indicator (vertical line or gap) appears between shots showing where the shot would land
 
-  .if >> user drags a shot card over the sequencer strip
+  .if >> user drags a shot over the shot track strip
       <== drop indicator tracks the cursor position, snapping to valid insertion points
       <== valid insertion points: before the first shot, between any two shots, after the last shot
-      !== drop indicator shown outside the sequencer strip
+      !== drop indicator shown outside the shot track strip
 
-  .if >> user releases the card at a new position
+  .if >> user releases the shot at a new position
       <== shot moves to the indicated position
       <== remaining shots shift to accommodate
       <== shot names are unchanged (Shot_01 dragged to position 3 is still "Shot_01")
       <== the moved shot remains the current shot
       <== thumbnail order reflects the new sequence
 
-  .if >> user releases the card at its original position
+  .if >> user releases the shot at its original position
       <== no change to sequence order
       !== shot duplicated or deleted
 
-  .if >> user drags the card outside the sequencer strip and releases
+  .if >> user drags the shot outside the shot track strip and releases
       <== drag cancels, shot returns to original position
       !== shot deleted by dragging out
 
@@ -258,7 +258,7 @@ Each shot is an independent camera animation over shared world-space objects. A 
 
 ### Duration Editing
 
-- Duration is displayed as a text field on each shot card
+- Duration is displayed as a text field on each shot
 - Format: "Xs" where X is the duration value (e.g., "5.0s")
 
 ``` python
@@ -324,27 +324,27 @@ Each shot is an independent camera animation over shared world-space objects. A 
 
 ``` python
   .if >> playback crosses from one shot to the next
-      <== the cut happens instantaneously with no visual transition indicator
+      <== the cut is instantaneous with no visual transition indicator
       !== crossfade, wipe, or other transition effect applied
       !== visual marker or flash shown at the boundary
 ```
 
 ---
 
-## 3.1.3 Object Continuity — Global Object Timeline
+## 3.1.3 Element Continuity — Global Element Timeline
 
-***Objects animate on a single global timeline that spans all shots. Shots are windows into this timeline — they define which time range the camera is recording, not where objects are. Object keyframes live on the global timeline. Camera keyframes are per-shot. There is no per-shot "initial state" for objects and no continuity propagation — the global timeline IS the continuity.***
+***Elements animate on a single global timeline that spans all shots. Shots are windows into this timeline — they define which time range the camera is recording, not where elements are. Element keyframes live on the global timeline. Camera keyframes are per-shot. There is no per-shot "initial state" for elements and no continuity propagation — the global timeline IS the continuity.***
 
 ### Global Timeline Model
 
-Objects have one continuous animation timeline. When the user creates shots, each shot maps to a time range on this global timeline. Object positions at any point in time are determined by the object's global keyframes, not by per-shot state.
+Elements have one continuous animation timeline. When the user creates shots, each shot maps to a time range on this global timeline. Element positions at any point in time are determined by the element's global keyframes, not by per-shot state.
 
-- The global timeline is continuous — there are no gaps or boundaries between shots for object animation
-- Object keyframes are placed on the global timeline at absolute times
-- When the user views Shot 2, the viewport shows objects at their global timeline positions for Shot 2's time range
-- Editing an object's keyframe at any point on the global timeline affects every shot that includes that time
+- The global timeline is continuous — there are no gaps or boundaries between shots for element animation
+- Element keyframes are placed on the global timeline at absolute times
+- When the user views Shot 2, the view shows elements at their global timeline positions for Shot 2's time range
+- Editing an element's keyframe at any point on the global timeline affects every shot that includes that time
 
-This model matches how directors think: block the scene first (animate objects on a continuous timeline), then build camera setups around the established sequence of actions.
+This model matches how directors think: block the scene first (animate elements on a continuous timeline), then build camera setups around the established sequence of actions.
 
 ``` python
   .if >> user places a table at position (0, 0, 0) and creates Shot_01 (time range 0–5s)
@@ -360,7 +360,7 @@ This model matches how directors think: block the scene first (animate objects o
       <== this is automatic — there is no propagation, just one timeline
 ```
 
-### Camera vs Object Timeline
+### Camera vs Element Timeline
 
 ``` python
   .if >> user is viewing Shot_02 and adds a camera keyframe
@@ -368,7 +368,7 @@ This model matches how directors think: block the scene first (animate objects o
       <== the camera keyframe does not affect any other shot's camera
 
   .if >> user is viewing Shot_02 and moves a table
-      <== the table keyframe is stored on the global object timeline
+      <== the table keyframe is stored on the global element timeline
       <== the table's position is affected in any shot whose time range includes this keyframe
 ```
 
@@ -376,49 +376,49 @@ This model matches how directors think: block the scene first (animate objects o
 
 ``` python
   .if >> user clicks Shot_01 (navigating to it)
-      <== objects evaluate their global timeline at Shot_01's start time (t=0)
+      <== elements evaluate their global timeline at Shot_01's start time (t=0)
       <== camera loads Shot_01's camera animation at t=0
-      <== the viewport shows the correct state for the start of Shot_01
+      <== the view shows the correct state for the start of Shot_01
 
   .if >> user clicks Shot_03 (navigating forward)
-      <== objects evaluate their global timeline at Shot_03's start time
+      <== elements evaluate their global timeline at Shot_03's start time
       <== camera loads Shot_03's camera animation at t=0
 ```
 
-### Objects Added Mid-Sequence
+### Elements Added Mid-Sequence
 
 ``` python
-  .if >> a new object is added to the scene while any shot is current
-      <== the object exists on the global timeline at its placement position
-      <== the object is visible in every shot (it exists in world space)
-      <== the object can be keyframed at any point on the global timeline
+  .if >> a new element is added to the scene while any shot is current
+      <== the element exists on the global timeline at its placement position
+      <== the element is visible in every shot (it exists in world space)
+      <== the element can be keyframed at any point on the global timeline
 ```
 
-### Objects Deleted
+### Elements Deleted
 
 ``` python
-  .if >> user deletes an object from the scene
-      <== object is removed from world space
-      <== all keyframes for that object are removed from the global timeline
-      !== object persists in earlier shots as a "ghost"
-      !== application errors when navigating to shots that previously contained the object
+  .if >> user deletes an element from the scene
+      <== element is removed from world space
+      <== all keyframes for that element are removed from the global timeline
+      !== element persists in earlier shots as a "ghost"
+      !== application errors when navigating to shots that previously contained the element
 ```
 
 ### Sequence Playback Across Shots
 
 ``` python
   .if >> playback reaches the end of a shot and advances to the next shot
-      <== objects continue their global timeline animation seamlessly (no reset, no jump)
+      <== elements continue their global timeline animation seamlessly (no reset, no jump)
       <== camera cuts to the next shot's camera animation at t=0
       <== the camera cut is instantaneous — no blending between shots
-      <== object animation is continuous across the shot boundary
+      <== element animation is continuous across the shot boundary
 ```
 
 ---
 
 ## 3.1.4 Slow-motion
 
-***Per-shot speed factor. Slow-mo is a playback presentation layer — no keyframes are modified. The global object timeline plays at a different rate.***
+***Per-shot speed factor. Slow-mo is a playback presentation layer — no keyframes are modified. The global element timeline plays at a different rate.***
 
 > **Note**: Multi-scene project structure (scenes containing shots) has moved to milestone 4.2.5. See the Save / Load spec for the scene model, scene switching, scene creation, and scene deletion.
 
@@ -432,7 +432,7 @@ This model matches how directors think: block the scene first (animate objects o
 
 ### UI
 
-- Speed percentage display on the shot card or inspector (e.g., "50%" for speedFactor 0.5)
+- Speed percentage display on the shot or inspector (e.g., "50%" for speedFactor 0.5)
 - Playback duration readout shows the wall-clock duration (shot duration / speed factor)
 
 ``` python
@@ -448,7 +448,7 @@ This model matches how directors think: block the scene first (animate objects o
 
 ### Interaction with other systems
 
-- **Global object timeline (3.1.3)**: Objects animate at the slowed rate. The global timeline position is computed from the speed-adjusted time.
+- **Global element timeline (3.1.3)**: Elements animate at the slowed rate. The global timeline position is computed from the speed-adjusted time.
 - **Camera keyframes**: Camera animation plays at the slowed rate. No keyframe modification needed.
 - **Export (4.4)**: Rendered at the slowed rate — more frames are produced for the same animation content.
 - **Camera shake (1.1.6)**: Shake plays at the slowed rate (cosmetic overlay on top of the slowed playback).
@@ -463,12 +463,12 @@ This model matches how directors think: block the scene first (animate objects o
    ``` python
    <== three shots exist: Shot_01, Shot_02, Shot_03
    <== Shot_03 is the current shot
-   <== all world-space objects are present in every shot -- no duplication
+   <== all world-space elements are present in every shot -- no duplication
    ```
 
 2. User renames Shot_02 to "Over the Shoulder"
    ``` python
-   <== thumbnail card shows "Over the Shoulder"
+   <== shot thumbnail shows "Over the Shoulder"
    <== other shot names unchanged
    ```
 
@@ -501,7 +501,7 @@ This model matches how directors think: block the scene first (animate objects o
    <== dragged shot is selected at t=0
    ```
 
-### Global Object Timeline
+### Global Element Timeline
 
 7. Scene has a table at position (0, 0, 0). User creates Shot_01 (0–5s on global timeline).
    ``` python
@@ -529,12 +529,12 @@ This model matches how directors think: block the scene first (animate objects o
     <== navigating to Shot_01 shows the lamp at its placement position
     ```
 
-12. User presses Ctrl+D on a shot card.
+12. User presses Ctrl+D on a shot.
     ``` python
     <== nothing happens -- shot duplication is not supported
     ```
 
-### Continuous Object Animation
+### Continuous Element Animation
 
 13. User keyframes a box at (0,0,0) at t=0, (4,0,0) at t=5, and (10,0,0) at t=10. Shot_01 covers 0–5s, Shot_02 covers 5–10s.
     - User changes the keyframe at t=5 to (2,0,0).
@@ -546,17 +546,17 @@ This model matches how directors think: block the scene first (animate objects o
 
 14. Playback crosses from Shot_01 to Shot_02.
     ``` python
-    <== object animation is continuous across the shot boundary (no jump, no reset)
+    <== element animation is continuous across the shot boundary (no jump, no reset)
     <== camera cuts to Shot_02's camera animation (instantaneous cut)
-    <== the object moves smoothly while the camera angle changes
+    <== the element moves smoothly while the camera angle changes
     ```
 
 ### Edge Cases
 
 15. User deletes every shot within the sequence.
     ``` python
-    <== sequencer shows only "Add Shot" button
-    <== viewport shows scene within default state
+    <== shot track shows only "Add Shot" button
+    <== view shows scene within default state
     <== clicking "Add Shot" creates Shot_01 normally
     ```
 

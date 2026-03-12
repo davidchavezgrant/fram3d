@@ -36,7 +36,7 @@
 		- **Floors:** Hardwood, tile (white, black, checkered), carpet (grey, blue), concrete
 		- **Ceilings:** White drywall, exposed beam, acoustic tile, open (no ceiling — exterior)
 
-		**Furniture placement:** Uses standard asset library and existing drag-and-drop placement tools. No special set-builder-specific UI — same tools as regular scene editing.
+		**Furniture placement:** Uses the Assets panel and existing drag-and-drop placement tools. No special set-builder-specific UI — same tools as regular scene editing.
 
 		**Lighting presets:**
 
@@ -56,8 +56,8 @@
 
 		**Saving and reuse:**
 		- Saved environments appear in environment library alongside premade environments
-		- Include name (user-specified), thumbnail (auto-captured from 2D overhead), all objects/lights/walls/materials
-		- When placed in a scene, all objects become independent and editable (same as premade environments)
+		- Include name (user-specified), thumbnail (auto-captured from 2D overhead), all elements/lights/walls/materials
+		- When placed in a scene, all elements become independent and editable (same as premade environments)
 		- Shareable — export as file for sharing between users
 
 	- ##### 10.1.2. Wall drawing (Feature)
@@ -103,14 +103,14 @@
 		| Sill height | 0m (floor) | 1.0m |
 
 		- Right-click wall → "Add Door" or "Add Window" → click position on wall
-		- Draggable along wall to reposition, resizable via inspector, deletable
+		- Draggable along wall to reposition, resizable via property editor, deletable
 		- 2D view: doors as gap with arc (standard floor plan convention), windows as gap with thin line
 		- 3D view: holes in wall geometry. No frame mesh, no glass — just openings. This is previs.
 
 		**2D/3D synchronization:**
 		- 2D: thick lines (wall outlines from above)
 		- 3D: extruded rectangles with selected material
-		- Walls are scene objects — appear in hierarchy panel under "Walls" group
+		- Walls are elements — appear in Elements panel under "Walls" group
 		- Walls cast and receive shadows, block camera views (useful for sight lines)
 
 		**Walls are NOT keyframeable.** They are static set pieces. (For a moving wall, import a model.)

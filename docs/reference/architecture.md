@@ -23,11 +23,11 @@
 
 > **Rotation storage**: Quaternions internally, pan/tilt/roll displayed in UI. Prevents gimbal lock transparently.
 
-> **Recording**: Only changed properties get keyframed (not all properties). Per-track stopwatch model (AE/Premiere). Stopwatches default to off.
+> **Recording**: Only changed properties get keyframed (not all properties). Per-track stopwatch model (AE/Premiere). Stopwatches default to off (not recording).
 
 > **Undo model**: Global stack, not per-shot. Cross-shot undo does not auto-switch the active shot.
 
-> **Delete behavior**: Delete key = keyframe only. Cmd+Delete = element. Context-sensitive to avoid ambiguity.
+> **Delete behavior**: Delete key = keyframe only. Cmd+Delete = selected element. Context-sensitive to avoid ambiguity.
 
 ---
 
@@ -137,19 +137,19 @@ Values from the prior codebase that were empirically tuned. Starting points — 
 
 **Input mappings:**
 - Mouse (scene): Scroll Y = focal length, +Alt = dolly, +Shift = crane, +Ctrl = roll, +Cmd+Alt = dolly zoom, Scroll X+Cmd = truck, Ctrl-drag = pan/tilt, Alt-drag = orbit (around selected or world origin)
-- Mouse (timeline): Scroll = zoom at cursor, Shift+Scroll = pan horizontally, Middle-click drag = pan in track area and shot bar
-- Keyboard (scene): Space = play/pause, QWER = active tools (Select, Translate, Rotate, Scale), F = focus, 1-9 = focal length presets, C = camera keyframe, V = element keyframe, Arrows = scrub 1 frame, Delete = context-sensitive delete, Ctrl+D = duplicate, Ctrl+R = reset camera, Cmd+Z / Cmd+Shift+Z = undo/redo
-- Keyboard (overlays): A/Shift+A = aspect ratio cycle, G = composition guides, H = camera info, P = camera path, D = Director View
+- Mouse (timeline): Scroll = zoom at cursor, Shift+Scroll = pan horizontally, Middle-click drag = pan in the track area and shot track
+- Keyboard (scene): Space = play/pause, QWER = active tool (Select, Translate, Rotate, Scale), F = focus, 1-9 = focal length presets, C = camera keyframe, V = element keyframe, Arrows = scrub 1 frame, Delete = context-sensitive delete, Ctrl+D = duplicate, Ctrl+R = reset camera, Cmd+Z / Cmd+Shift+Z = undo/redo
+- Keyboard (overlays): A/Shift+A = aspect ratio cycle, G = composition guides, H = camera info toggle, P = camera path, D = Director View
 - Keyboard (panels): O = Elements panel, T = timeline, Tab = toggle all panels, Home = start, End = end, \\ = zoom to fit
 - Keyboard (multi-camera): Shift+1/2/3/4 = switch active camera
 
-**Shot bar interaction:**
+**Shot track interaction:**
 - Single-click a camera row = preview that camera (dimmed display, non-destructive)
 - Double-click a camera row = activate that camera AND zoom to shot (8% padding)
-- Shot bar auto-adjusts row height based on max camera count across shots
+- Shot track auto-adjusts row height based on max camera count across shots
 
 **Boundary drag (ripple editing):**
-- Dragging a shot boundary shifts all downstream content: shots, camera keyframes, angle segments, and linked periods
+- Dragging a shot boundary shifts all downstream content: shots, camera keyframes, active angle segments, and linked periods
 - Hold Shift = shots only (element keyframes stay in place)
 - Snaps to frame boundaries
 - Resize tooltip shows shot name, duration (seconds + frames), and ripple mode
@@ -165,17 +165,17 @@ Values from the prior codebase that were empirically tuned. Starting points — 
 
 **Dual timecode display:**
 - Transport bar: shot-local elapsed / duration
-- Viewport overlay: sequence-global timecode
+- Camera info overlay: sequence-global timecode
 - Format: semicolon-separated `HH;MM;SS;FF`
 
 **Playback auto-scroll:**
 - During playback, if the playhead exits the visible range, the view shifts to follow while maintaining zoom level
 
 **View layout system:**
-- Three layouts: single, side-by-side, three-panel (top-wide + two bottom)
+- Three layouts: single, side-by-side, three-view (top-wide + two bottom)
 - Camera View is a movable DOM element — only one instance exists
-- When reassigning Camera View to a new panel, the old panel receives the displaced view type (smart swap)
-- Camera View must always exist in exactly one panel
+- When reassigning Camera View to a new view, the old view receives the displaced view type (smart swap)
+- Camera View must always exist in exactly one view
 
 **Panel system (gutters):**
 - JetBrains-style vertical label strips on left/right workspace edges
@@ -185,7 +185,7 @@ Values from the prior codebase that were empirically tuned. Starting points — 
 - Tab key toggles all panels simultaneously
 
 **Timeline and panel resize:**
-- Vertical drag handle between viewport and timeline. Min 80px, max 80vh.
+- Vertical drag handle between the view area and timeline. Min 80px, max 80vh.
 - Side panels have horizontal drag edges. Min 150px, max 500px.
 
 ---
@@ -211,7 +211,7 @@ Scenes must be independently loadable without pulling in sibling scene data. Onl
 Cross-cutting systems that multiple downstream features depend on. Build during Phase 4 timeframe to avoid reimplementing for each feature.
 
 - **Settings / Preferences panel:** Centralized settings panel so new settings can be added incrementally as features ship. Avoids scattering configuration UIs across the application.
-- **Panel / docking system:** General panel system with docking support. Downstream milestones (Elements panel, pose library, Assets panel) all require dockable panels.
+- **Panel / docking system:** General panel system with docking support. Downstream features (Elements panel, pose library, Assets panel) all require dockable panels.
 
 ---
 
@@ -243,7 +243,7 @@ If Characters can't reference Camera internals, you physically can't create the 
 
 | Aggregate Root | Owns |
 |---------------|------|
-| `ShotSetup` | `CameraAnimation`, `ShotObjectManager`, per-object `ObjectAnimation` instances |
+| `ShotSetup` | `CameraAnimation`, `ShotObjectManager`, per-element `ObjectAnimation` instances |
 | `Character` | Pose state, expression state, skeleton mapping, customization |
 | `Scene` | Elements, shots, lighting, timelines |
 | `Project` | Scenes, character definitions, settings |

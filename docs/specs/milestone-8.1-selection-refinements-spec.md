@@ -8,7 +8,7 @@
 ---
 
 - ### 8.1. Selection and manipulation refinements (Milestone)
-	*Quality-of-life improvements to object interaction as scenes get more complex.*
+	*Quality-of-life improvements to element interaction as scenes get more complex.*
 
 	A director blocking a dinner scene has a table, four chairs, plates, glasses, and centerpiece. Moving all of that across the room means nine individual drag operations. Lining up furniture against a wall means eyeballing it. And every camera move interpolates the same way -- mechanical, uniform, lifeless. These three features address the friction that accumulates as scenes grow from a chair and a camera into actual sets.
 
@@ -19,7 +19,7 @@
 	---
 
 	- ##### 8.1.1. Multi-select (Feature)
-		***Select multiple objects and manipulate them as a group. Shift-click to build a selection incrementally, or drag a marquee to grab everything in an area. Gizmos operate on the whole group.***
+		***Select multiple elements and manipulate them as a group. Shift-click to build a selection incrementally, or drag a marquee to grab everything in an area. Gizmos operate on the whole group.***
 
 		*Related:
 		- 2.1.1 (scene elements -- extends single-select)
@@ -27,34 +27,34 @@
 		- 6.2 (scene hierarchy -- parent/child groups are different from multi-select groups)*
 
 		**Functional requirements:**
-		- Clicking an unselected object while holding Shift adds it to the current selection without deselecting anything
-		- Clicking a selected object while holding Shift removes it from the current selection
-		- Clicking an object without Shift replaces the entire selection with that single object (existing 2.1.1 behavior, preserved)
+		- Clicking an unselected element while holding Shift adds it to the current selection without deselecting anything
+		- Clicking a selected element while holding Shift removes it from the current selection
+		- Clicking an element without Shift replaces the entire selection with that single element (existing 2.1.1 behavior, preserved)
 		- Clicking empty space without Shift deselects everything (existing 2.1.1 behavior, preserved)
 		- Clicking empty space with Shift held does nothing -- the current selection is preserved
 		- Marquee selection: clicking and dragging on empty space draws a rectangular selection region on screen
-			- Drag-select (marquee) uses partial intersection / crossing selection -- an object only needs to be partially within the marquee rectangle to be selected, not fully enclosed
+			- Drag-select (marquee) uses partial intersection / crossing selection -- an element only needs to be partially within the marquee rectangle to be selected, not fully enclosed
 			- Without Shift: replaces the current selection
-			- With Shift: adds to the current selection (does not remove objects already selected that fall outside the marquee)
+			- With Shift: adds to the current selection (does not remove elements already selected that fall outside the marquee)
 			- The marquee rectangle is drawn as a visible dashed outline during the drag
 			- Releasing the mouse button completes the marquee and evaluates the selection
-		- When multiple objects are selected, the active gizmo appears at the center of the selection's bounding box
-			- Multi-select gizmo pivot is at the center of the selection bounding box (no option to pivot at first-selected object)
-			- "Center" means the midpoint of the axis-aligned bounding box enclosing all selected objects
-		- Dragging a gizmo handle applies the transform to every selected object
-			- Translation: all objects move by the same offset
-			- Rotation: all objects rotate around the gizmo's position (the selection center), not around their individual origins
-			- Scale: all objects scale relative to the gizmo's position (the selection center)
-		- Ctrl+D (Cmd+D on macOS) duplicates all selected objects
+		- When multiple elements are selected, the active gizmo appears at the center of the selection's bounding box
+			- Multi-select gizmo pivot is at the center of the selection bounding box (no option to pivot at first-selected element)
+			- "Center" means the midpoint of the axis-aligned bounding box enclosing all selected elements
+		- Dragging a gizmo handle applies the transform to every selected element
+			- Translation: all elements move by the same offset
+			- Rotation: all elements rotate around the gizmo's position (the selection center), not around their individual origins
+			- Scale: all elements scale relative to the gizmo's position (the selection center)
+		- Ctrl+D (Cmd+D on macOS) duplicates all selected elements
 			- The duplicates become the new selection
 			- Each duplicate is offset from its original by the same offset vector
 		- Ctrl+A (Cmd+A on macOS) selects all scene elements
-		- The selection count is visible in the UI (e.g., "3 objects selected")
+		- The selection count is visible in the UI (e.g., "3 elements selected")
 
 		**Design constraints:**
 		- Marquee drag must not conflict with camera controls. Camera modifier-key drags (Ctrl-drag for pan/tilt, Alt-drag for orbit) take priority over marquee initiation
 		- Marquee drag must not conflict with gizmo interaction. If a gizmo handle is under the cursor, gizmo drag takes priority
-		- Selection highlighting applies independently to each selected object -- every selected object shows the selection highlight from 2.1.1
+		- Selection highlighting applies independently to each selected element -- every selected element shows the selection highlight from 2.1.1
 
 		**Expected behavior:**
 		``` python
@@ -73,10 +73,10 @@
 			.if user clicks and drags on empty space (no modifier keys) >>
 				<== dashed rectangle drawn from drag start to current cursor position
 				||> .if user releases mouse >>
-					<== all objects whose bounds partially intersect the rectangle become selected
-					<== objects fully outside the rectangle are not selected
+					<== all elements whose bounds partially intersect the rectangle become selected
+					<== elements fully outside the rectangle are not selected
 					<== gizmo appears at center of the group
-					!== only fully enclosed objects are selected
+					!== only fully enclosed elements are selected
 
 			# Marquee with Shift
 			.if elements A and B are selected >>
@@ -129,9 +129,9 @@
 
 		**Error cases:**
 		``` python
-			# Marquee with no objects inside
-			.if user drags a marquee in an empty area of the viewport >>
-				<== no objects selected after release
+			# Marquee with no elements inside
+			.if user drags a marquee in an empty area of the view >>
+				<== no elements selected after release
 				<== previous selection cleared (no Shift held)
 
 			# Shift-click empty space
@@ -150,16 +150,16 @@
 	---
 
 	- ##### 8.1.2. Grid snapping (Feature)
-		***Snap objects to a configurable spatial grid for precise alignment. A visual grid overlay shows the snap points. Hold a modifier key to temporarily move freely without snapping.***
+		***Snap elements to a configurable spatial grid for precise alignment. A visual grid overlay shows the snap points. Hold a modifier key to temporarily move freely without snapping.***
 
 		*Related:
 		- 2.1.2 (transform gizmos -- snapping applies during gizmo drags)
 		- 2.1.3 (ground plane -- the visual grid overlay extends the ground plane grid)*
 
 		**Functional requirements:**
-		- When snapping is enabled, object translation via gizmo drag snaps to the nearest grid increment
-			- Snapping applies per-axis: the object position rounds to the nearest grid value on each axis independently
-			- Snapping occurs during the drag, not just on release -- the object visibly jumps between grid positions as the user drags
+		- When snapping is enabled, element translation via gizmo drag snaps to the nearest grid increment
+			- Snapping applies per-axis: the element position rounds to the nearest grid value on each axis independently
+			- Snapping occurs during the drag, not just on release -- the element visibly jumps between grid positions as the user drags
 		- Rotation snapping: when enabled, rotation via gizmo drag snaps to the nearest angle increment
 			- Default rotation increment: 15 degrees, user-configurable
 			- Configurable: 5, 10, 15, 30, 45, 90 degrees
@@ -178,39 +178,39 @@
 			- Grid lines are subtle and visually distinct from the ground plane's default reference grid (2.1.3)
 			- The snap grid replaces the ground plane reference grid when active -- the user sees one grid, not two overlapping grids
 			- Grid overlay is visible only when snapping is enabled
-		- Snapping applies equally to multi-select operations (8.1.1) -- the gizmo position snaps, and all selected objects move by the snapped offset
+		- Snapping applies equally to multi-select operations (8.1.1) -- the gizmo position snaps, and all selected elements move by the snapped offset
 
 		**Design constraints:**
-		- The Alt modifier for snap override must not conflict with Alt-drag for orbit. Snap override applies only while actively dragging a gizmo handle; Alt-drag starting on empty space or the viewport remains orbit
+		- The Alt modifier for snap override must not conflict with Alt-drag for orbit. Snap override applies only while actively dragging a gizmo handle; Alt-drag starting on empty space or the view remains orbit
 		- Grid configuration UI should be minimal -- a dropdown or small panel, not a full settings dialog
 
 		**Expected behavior:**
 		``` python
 			# Translation snapping
 			.if snapping enabled with 0.5m grid >>
-				||> .if user drags an object along the X axis >>
-					<== object X position jumps in 0.5m increments
-					<== object appears to slide between grid positions
-					!== object moves smoothly between grid points
+				||> .if user drags an element along the X axis >>
+					<== element X position jumps in 0.5m increments
+					<== element appears to slide between grid positions
+					!== element moves smoothly between grid points
 
 			# Rotation snapping (user-configurable default)
 			.if snapping enabled with 15-degree rotation increment >>
 				||> .if user drags the Y rotation ring >>
-					<== object rotation jumps in 15-degree increments
+					<== element rotation jumps in 15-degree increments
 					<== rotation values are always multiples of 15
 
 			# User changes rotation snap increment
 			.if user changes rotation snap from 15 to 45 degrees >>
 				||> .if user drags the Y rotation ring >>
-					<== object rotation jumps in 45-degree increments
+					<== element rotation jumps in 45-degree increments
 					<== rotation values are always multiples of 45
 
 			# Override with modifier
 			.if snapping enabled >>
 				||> .if user holds Alt and drags the translate gizmo >>
-					<== object moves freely, no snapping
+					<== element moves freely, no snapping
 					||> .if user releases Alt while still dragging >>
-						<== object snaps to nearest grid position
+						<== element snaps to nearest grid position
 						<== snapped movement resumes
 
 			# Visual grid matches snap grid
@@ -226,9 +226,9 @@
 			# Snapping off with Alt override
 			.if snapping disabled >>
 				||> .if user holds Alt and drags the translate gizmo >>
-					<== object snaps to grid during this drag
+					<== element snaps to grid during this drag
 					||> .if user releases Alt >>
-						<== object resumes free movement
+						<== element resumes free movement
 
 			# Grid visibility
 			.if user enables snapping >>
@@ -240,18 +240,18 @@
 
 			# Snapping with multi-select
 			.if snapping enabled with 0.5m grid >>
-				.if three objects are selected >>
+				.if three elements are selected >>
 					||> .if user drags translate gizmo along X >>
 						<== gizmo position snaps to 0.5m grid
-						<== all three objects move by the same snapped offset
-						<== relative positions between objects preserved exactly
+						<== all three elements move by the same snapped offset
+						<== relative positions between elements preserved exactly
 		```
 
 		**Error cases:**
 		``` python
 			# Alt-drag on empty space (orbit, not snap override)
 			.if snapping enabled >>
-				||> .if user Alt-drags starting on empty viewport space >>
+				||> .if user Alt-drags starting on empty view space >>
 					<== camera orbits (standard behavior)
 					!== snap override activated
 					!== grid behavior changes

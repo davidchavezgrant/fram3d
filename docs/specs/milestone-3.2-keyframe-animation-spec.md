@@ -8,13 +8,13 @@
 
 - ### 3.2. Keyframe animation (Milestone)
 
-  Multi-track timeline editor for camera and object animation within each shot. This is the heartbeat of previsualization — the system that turns a static camera position into a moving shot.
+  Multi-track timeline editor for camera and element animation within each shot. This is the heartbeat of previsualization — the system that turns a static camera position into a moving shot.
 
   Directors think about time linearly: this happens, then that happens. The timeline must communicate that mental model without requiring animation expertise. Dots on a line, left to right, each one a moment where something changes. Move the camera and a dot appears. Drag the dot to change when it happens. Press play and watch the shot unfold. Everything else is implementation — the user sees cause and effect.
 
   The track system follows an After Effects / Premiere model: each track is collapsible, revealing per-property sub-tracks underneath. When collapsed, keyframes appear as unified "main" dots — one dot per moment in time, containing all property values. When expanded, each property gets its own sub-track row with independent keyframes. This parent/child relationship is the architectural core of the system. Main keyframes own their children. Moving a main keyframe moves all its children. But a child can break free — dragging a property keyframe to a new time detaches it from its parent and creates a new main keyframe at the destination.
 
-  The per-track stopwatch model (After Effects / Premiere) controls when keyframes are created. Each track has a stopwatch that toggles between Setup mode (off — manipulations change values without keyframing) and Animate mode (on — manipulations create/update keyframes). All stopwatches default to off. This gives the director explicit control: set up the scene in Setup mode, then turn on the stopwatch when ready to animate. The first manipulation with stopwatch on creates the initial keyframe.
+  The per-track stopwatch model (After Effects / Premiere) controls when keyframes are created. Each track has a stopwatch that toggles between not recording (off — manipulations change values without keyframing) and recording (on — manipulations create/update keyframes). All stopwatches default to off. This gives the director explicit control: set up the scene while not recording, then turn on the stopwatch when ready to animate. The first manipulation with the stopwatch on creates the initial keyframe.
 
   Camera rotation is expressed in cinematic terms — pan, tilt, and roll in degrees — not quaternions. A director says "pan left 45 degrees" or "tilt up 10." The UI displays and accepts pan/tilt/roll in degrees, but **internally all rotation is stored and interpolated as quaternions**. This is an implementation detail that prevents gimbal lock without any user-visible limitation. At the 90-degree tilt edge case (looking straight up or down), pan and roll become mathematically equivalent — quaternion interpolation handles this transparently, producing smooth motion through the singularity. The user never encounters gimbal lock artifacts.
 
@@ -22,11 +22,11 @@
 
   - ##### 3.2.1. Timeline editor (Feature)
 
-    ***A three-region panel that communicates time, control, and context — transport bar for playback, timeline area for tracks and keyframes, status bar for contextual keyboard hints.***
+    ***A three-region panel that communicates time, control, and context — transport bar for playback, track area for tracks and keyframes, status bar for contextual keyboard hints.***
 
     **Functional requirements:**
-    - The timeline editor sits directly above the shot sequencer panel
-    - The editor is divided into three horizontal regions: transport bar (top), timeline area (middle), status bar (bottom)
+    - The timeline editor sits directly above the shot track
+    - The editor is divided into three horizontal regions: transport bar (top), track area (middle), status bar (bottom)
     - The transport bar contains: play/pause button, current time display (seconds.tenths), shot duration display, and a shot name label
     - The timeline area contains: a horizontal time ruler, vertical track lanes, keyframe markers, and a playhead
     - The time ruler shows second markers and subdivisions, scaled to the shot duration

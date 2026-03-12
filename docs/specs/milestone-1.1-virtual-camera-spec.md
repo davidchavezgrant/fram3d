@@ -10,7 +10,7 @@
 
   The virtual camera is the product. Every creative decision in previsualization flows through how the camera sees the scene -- what lens is on it, where it sits, what it's focused on, how it moves. This milestone delivers a physically-grounded camera rig that a DP or director can operate using cinematic language they already know: focal lengths in millimeters, dolly and crane moves, focus pulls, handheld shake. No 3D jargon, no abstract parameters.
 
-  The camera must feel like a real tool. When a user racks focus to a new subject, the transition should feel like pulling a follow focus ring -- not teleporting. When they switch from a 24mm to an 85mm, the field of view should change exactly as it would on a real set with their chosen camera body and sensor. When they add handheld shake, it should look like a human holding the camera, not a random vibration. The HUD should show the same data a 1st AC would read off a monitor.
+  The camera must feel like a real tool. When a user racks focus to a new subject, the transition should feel like pulling a follow focus ring -- not teleporting. When they switch from a 24mm to an 85mm, the field of view should change exactly as it would on a real set with their chosen camera body and sensor. When they add handheld shake, it should look like a human holding the camera, not a random vibration. The camera info should show the same data a 1st AC would read off a monitor.
 
   - ##### 1.1.1. Camera movement (Feature)
     ***Pan, tilt, dolly, truck, crane, roll, orbit, dolly zoom, and reset -- the full vocabulary of physical camera movement, mapped to mouse and modifier keys.***
@@ -24,14 +24,14 @@
     - Truck translates the camera laterally along its local right axis. Positive trucks rightward.
     - Crane translates the camera vertically along the world Y axis. Positive cranes upward.
     - Roll rotates the camera around its local forward axis. Positive roll tilts the top of the frame rightward (clockwise from the camera's perspective).
-    - Orbit simultaneously rotates the camera around a target point while keeping that point centered in frame. Orbit respects both horizontal and vertical axes. Orbit pivot uses a persistent last-focus model (Maya/Unity style) — the pivot point is the last object the camera focused on, and persists until the user focuses on a new object.
+    - Orbit simultaneously rotates the camera around a target point while keeping that point centered in frame. Orbit respects both horizontal and vertical axes. Orbit pivot uses a persistent last-focus model (Maya/Unity style) — the pivot point is the last element the camera focused on, and persists until the user focuses on a new element.
     - Dolly zoom simultaneously changes focal length and translates the camera forward/backward to maintain the apparent size of a subject at a fixed distance while the perspective distortion changes. The background compresses or expands around the subject.
-    - Dolly zoom can be locked to a specific object. When locked, the reference distance tracks that object's position rather than using a fixed distance. This allows dolly zoom to follow a moving subject.
+    - Dolly zoom can be locked to a specific element. When locked, the reference distance tracks that element's position rather than using a fixed distance. This allows dolly zoom to follow a moving subject.
     - Reset restores the camera to a known default position, rotation, and focal length.
     - Every movement type has a configurable speed multiplier that scales the magnitude of the movement per unit of input.
     - All movements are framerate-independent. The same input produces the same visual result at 30fps and at 120fps.
     - Movements compose naturally. A user can pan while dollying in (via separate inputs) and the result is the sum of both motions applied in the same frame.
-    - There is no collision detection. The camera can pass through objects and below the ground plane. This is previs, not a game -- the camera goes wherever the director wants it.
+    - There is no collision detection. The camera can pass through elements and below the ground plane. This is previs, not a game -- the camera goes wherever the director wants it.
 
     **Design constraints:**
     - Default camera position places the camera at approximate eye height (1.6 units above the ground plane) facing forward.
@@ -64,11 +64,11 @@
           <== background appears to stretch away from subject
           <== focal length decreases while camera moves closer
 
-      # dolly zoom locked to an object
-      .if dolly zoom is locked to an actor in the scene
-      ||> .if the actor moves farther from the camera during dolly zoom >>
-          <== the reference distance updates to track the actor's current position
-          <== the actor remains approximately the same size on screen despite moving
+      # dolly zoom locked to an element
+      .if dolly zoom is locked to a character in the scene
+      ||> .if the character moves farther from the camera during dolly zoom >>
+          <== the reference distance updates to track the character's current position
+          <== the character remains approximately the same size on screen despite moving
           <== focal length and camera position adjust to compensate for the changing reference distance
 
       # movements compose
@@ -87,7 +87,7 @@
     **Error cases:**
     ``` python
       # no target for dolly zoom
-      .if no objects exist within the scene
+      .if no elements exist within the scene
       ||> .if user activates dolly zoom >>
           <== dolly zoom uses the camera's current focus distance as the reference distance
           <== movement still functions, using that fixed distance
@@ -110,8 +110,8 @@
     - Focal length changes smoothly via lerp when adjusted through scroll or preset selection. The transition is fast but perceptible -- the user should see the field of view shift, not jump.
     - Switching camera body (and therefore sensor size) while keeping the same focal length results in a different FOV. A 50mm on a Super 35mm body looks different from a 50mm on a full-frame body, just as it would on set.
     - Common focal length presets are available for quick selection: 14, 18, 21, 24, 28, 35, 50, 65, 75, 85, 100, 135, 150, 200, 300, 400mm.
-    - The current focal length is displayed in millimeters on the HUD and updates in real time during transitions.
-    - Focal length is a keyframeable property. It is recorded when the track's stopwatch is on (Animate mode, see 3.2.3) and interpolated during playback.
+    - The current focal length is displayed in millimeters on the camera info and updates in real time during transitions.
+    - Focal length is a keyframeable property. It is recorded when the track is recording (see 3.2.3) and interpolated during playback.
     - **Anamorphic lenses**: Squeeze factors (1.33x, 1.5x, 1.8x, 2x) are supported. FOV is computed from the squeeze factor and sensor dimensions. Aspect ratio is auto-locked to the computed delivery format when an anamorphic lens is active (see 1.2.1). Oval bokeh is deferred to future polish.
 
     **Design constraints:**
@@ -137,12 +137,12 @@
       ||> .if user switches body to ARRI Alexa Mini LF (large format sensor) >>
           <== FOV becomes wider because sensor is physically larger
           <== focal length remains 50mm
-          <== HUD still reads 50mm
+          <== camera info still reads 50mm
 
       # preset snapping
       .if user selects 24mm preset >>
           <== focal length smoothly transitions to exactly 24.0mm
-          <== HUD displays "24mm" once transition completes
+          <== camera info displays "24mm" once transition completes
 
       # extremes of range
       .if user scrolls focal length upward repeatedly >>
@@ -181,7 +181,7 @@
       - Generic Prime: 14, 18, 21, 24, 28, 35, 50, 65, 75, 85, 100, 135, 150, 200, 300, 400mm
     - Selecting a camera body immediately recalculates the FOV using the new sensor dimensions and the current focal length. The image "breathes" -- it gets wider or narrower as the sensor size changes.
     - Selecting a lens set updates which focal lengths are available for preset snapping. It does not change the current focal length. If the current focal length is not in the new lens set, it remains at its current value -- the user just cannot snap to it.
-    - Both the selected camera body and lens set are displayed on the HUD.
+    - Both the selected camera body and lens set are displayed on the camera info.
     - The default configuration is Generic 35mm body with Generic Prime lens set.
 
     **Design constraints:**
@@ -196,14 +196,14 @@
           <== FOV recalculates using larger sensor dimensions
           <== image appears wider (more of the scene visible)
           <== focal length remains 50mm
-          <== HUD updates to show "ARRI Alexa Mini LF"
+          <== camera info updates to show "ARRI Alexa Mini LF"
 
       # lens set changes available snapping points
       .if current lens set is Generic Prime
       ||> .if user selects Leica Summilux-C >>
           <== preset snap targets change to 16, 18, 21, 25, 29, 35, 40, 50, 65, 75, 100, 135mm
           <== current focal length does not change
-          <== HUD updates to show "Leica Summilux-C"
+          <== camera info updates to show "Leica Summilux-C"
 
       # body and lens are independent choices
       .if user selects ARRI Alexa 35 body AND Cooke S4/i lens set >>
@@ -235,25 +235,25 @@
     ```
 
   - ##### 1.1.4. Focus (Feature)
-    ***Click an object, and the camera smoothly pulls focus to it -- calculating the right distance to frame the subject with breathing room, like a 1st AC executing a rack focus.***
+    ***Click an element, and the camera smoothly pulls focus to it -- calculating the right distance to frame the subject with breathing room, like a 1st AC executing a rack focus.***
 
-    *Related: 2.1.1 Scene elements (requires selectable objects)*
+    *Related: 2.1.1 Scene elements (requires selectable elements)*
 
     **Functional requirements:**
-    - The user triggers focus on a target object. The camera smoothly transitions to frame the subject.
-    - "Framing" means: the camera looks at the center of the object's bounding volume and positions itself at a distance where the object fills a comfortable portion of the frame -- not cropped tight, not lost in empty space. There should be breathing room around the subject.
-    - The focus distance is calculated from the object's bounding volume size and the camera's current FOV. Larger objects or narrower FOVs result in greater focus distance.
-    - A minimum distance multiplier (e.g., 1.5x the bounding radius) ensures the camera never ends up inside or clipping through the object.
+    - The user triggers focus on a target element. The camera smoothly transitions to frame the subject.
+    - "Framing" means: the camera looks at the center of the element's bounding volume and positions itself at a distance where the element fills a comfortable portion of the frame -- not cropped tight, not lost in empty space. There should be breathing room around the subject.
+    - The focus distance is calculated from the element's bounding volume size and the camera's current FOV. Larger elements or narrower FOVs result in greater focus distance.
+    - A minimum distance multiplier (e.g., 1.5x the bounding radius) ensures the camera never ends up inside or clipping through the element.
     - The transition uses smooth interpolation -- both the camera's position and its rotation change gradually, not instantly.
-    - Focus respects the current focal length. Focusing on the same object at 24mm versus 85mm produces different camera positions (the 85mm must be farther away to fit the subject).
-    - When focusing on an object, the depth of field focus distance also automatically moves to that object. The DOF focal plane tracks the focused subject so that it appears sharp in DOF preview without requiring a separate adjustment.
-    - **Focus distance is a keyframeable timeline track**, just like camera position and rotation. When the user focuses on an object outside of playback, a focus keyframe is added at the current playhead time. This enables rack focus — animating the focus distance between two subjects across time by placing focus keyframes at different points on the timeline.
+    - Focus respects the current focal length. Focusing on the same element at 24mm versus 85mm produces different camera positions (the 85mm must be farther away to fit the subject).
+    - When focusing on an element, the depth of field focus distance also automatically moves to that element. The DOF focal plane tracks the focused subject so that it appears sharp in DOF preview without requiring a separate adjustment.
+    - **Focus distance is a keyframeable timeline track**, just like camera position and rotation. When the user focuses on an element outside of playback, a focus keyframe is added at the current playhead time. This enables rack focus — animating the focus distance between two subjects across time by placing focus keyframes at different points on the timeline.
     - After focus completes, the user can immediately continue moving the camera. Focus does not lock the camera.
-    - A minimum focus distance prevents the camera from ending up unreasonably close (e.g., inside a very small object).
+    - A minimum focus distance prevents the camera from ending up unreasonably close (e.g., inside a very small element).
 
     **Expected behavior:**
     ``` python
-      # focus on a scene object
+      # focus on an element
       .if a chair exists within the scene
       ||> .if user triggers focus on the chair >>
           <== camera smoothly rotates to face the chair's center
@@ -263,10 +263,10 @@
           <== after transition completes, camera is stationary and ready for further input
 
       # focus updates DOF focus distance
-      .if DOF preview is active and user focuses on an object at 5 meters >>
+      .if DOF preview is active and user focuses on an element at 5 meters >>
           <== DOF focus distance is set to 5 meters
-          <== the focused object appears sharp within DOF preview
-          <== objects closer or farther than 5 meters appear blurred according to DOF settings
+          <== the focused element appears sharp within DOF preview
+          <== elements closer or farther than 5 meters appear blurred according to DOF settings
 
       # focal length affects focus distance
       .if current focal length is 24mm
@@ -277,7 +277,7 @@
           <== camera positions itself much farther away (long lens, narrow FOV)
           <== person appears approximately the same size on screen at both focal lengths
 
-      # focus on a large object vs small object
+      # focus on a large element vs small element
       .if user focuses on a building >>
           <== camera pulls back far enough to show the full building using generous framing
       .if user focuses on a coffee cup >>
@@ -293,13 +293,13 @@
 
     **Error cases:**
     ``` python
-      # focus on an extremely small object
-      .if user focuses on an object whose bounding volume is nearly zero >>
+      # focus on an extremely small element
+      .if user focuses on an element whose bounding volume is nearly zero >>
           <== camera moves to the minimum focus distance
-          <== camera does not clip through or land inside the object
+          <== camera does not clip through or land inside the element
 
-      # focus when no object is targeted
-      .if user triggers focus without a valid target object >>
+      # focus when no element is targeted
+      .if user triggers focus without a valid target element >>
           <== nothing happens
           <== camera remains at its current position and orientation
     ```
@@ -310,14 +310,14 @@
     *Blocked by: 1.1.2 Lens system (focal length), 1.1.4 Focus (focus distance)*
 
     **Functional requirements:**
-    - Depth of field preview is a toggleable visual mode. When off, everything renders sharp (the default). When on, objects outside the plane of focus appear progressively blurred.
+    - Depth of field preview is a toggleable visual mode. When off, everything renders sharp (the default). When on, elements outside the plane of focus appear progressively blurred.
     - DOF is controlled by three parameters: focal length (from the lens system), aperture (f-stop), and focus distance. Changing any parameter updates the DOF preview in real time.
     - Aperture stops match real cinema lenses: f/1.4, f/2, f/2.8, f/4, f/5.6, f/8, f/11, f/16, f/22. Aperture snaps between these discrete stops rather than sliding continuously.
     - Wider apertures (lower f-numbers) produce shallower DOF. Narrower apertures (higher f-numbers) produce deeper DOF. At f/22, nearly everything should appear in focus.
     - Longer focal lengths produce shallower DOF at the same aperture and focus distance. A 135mm at f/2 has dramatically less depth of field than a 24mm at f/2.
     - The preview does not need to be photorealistic. The goal is creative decision-making: the user should clearly see the boundary between sharp and soft, and understand how changing aperture or focal length shifts that boundary. Smooth blur falloff is preferred over hard cutoffs.
     - Bokeh quality (shape, highlights, chromatic effects) is not a requirement. A simple Gaussian-style blur that increases with distance from the focal plane is sufficient. The user needs to see "this is sharp, this is soft" -- they do not need to evaluate bokeh character.
-    - The aperture value is displayed on the HUD when DOF preview is active.
+    - The aperture value is displayed on the camera info when DOF preview is active.
 
     **Design constraints:**
     - DOF preview must maintain interactive frame rates. If the preview causes significant performance degradation, it is worse than no preview at all -- a DP will turn it off and never use it.
@@ -328,8 +328,8 @@
       # DOF preview toggle
       .if DOF preview is off
       ||> .if user enables DOF preview >>
-          <== objects at the focus distance remain sharp
-          <== objects closer and farther than focus distance appear blurred
+          <== elements at the focus distance remain sharp
+          <== elements closer and farther than focus distance appear blurred
           <== blur intensity increases using distance from focus plane
 
       # aperture affects DOF via discrete stops
@@ -345,7 +345,7 @@
       ||> .if user steps aperture narrower repeatedly >>
           <== aperture snaps through f/2, f/2.8, f/4, f/5.6, f/8, f/11, f/16, f/22
           <== DOF becomes progressively deeper at each stop
-          <== at f/22, nearly every object within the scene appears sharp
+          <== at f/22, nearly every element within the scene appears sharp
 
       # focal length interaction
       .if aperture is f/2.8 using focal length 24mm >>
@@ -361,8 +361,8 @@
       # turning DOF preview off
       .if DOF preview is on
       ||> .if user disables DOF preview >>
-          <== all objects render sharp regardless of aperture setting
-          <== aperture value is hidden from HUD
+          <== all elements render sharp regardless of aperture setting
+          <== aperture value is hidden from camera info
           <== aperture setting is preserved (re-enabling restores the last value)
     ```
 
@@ -438,22 +438,22 @@
     *Blocked by: 1.1.2 Lens system, 1.1.3 Camera body and lens presets, 1.2.1 Aspect ratio masks*
 
     **Functional requirements:**
-    - The HUD is a non-interactive overlay positioned at the top-left of the viewport.
-    - The HUD is toggleable via a keyboard shortcut. It is not always visible -- the user can show or hide it as needed.
-    - The HUD counts as an overlay for export purposes. When visible during export, it renders into the exported output. When hidden, it does not.
-    - The HUD displays the following information, updated every frame:
+    - The camera info is a non-interactive overlay positioned at the top-left of the view.
+    - The camera info is toggleable via a keyboard shortcut. It is not always visible -- the user can show or hide it as needed.
+    - The camera info counts as an overlay for export purposes. When visible during export, it renders into the exported output. When hidden, it does not.
+    - The camera info displays the following information, updated every frame:
       - **Focal length**: current value in millimeters, rounded to the nearest integer (e.g., "50mm"). During animated transitions, this updates in real time.
       - **Camera height**: the camera's Y position in meters above the ground plane (e.g., "1.6m"). Negative values displayed when below ground. This tells the director if they're at eye level, low angle, or bird's eye.
       - **Angle of view**: the horizontal angle of view in degrees, derived from focal length and sensor width (e.g., "39.6deg"). This is horizontal AOV because that's what DPs reference when discussing framing width.
       - **Aspect ratio**: the currently selected aspect ratio from the overlay system (e.g., "2.39:1"). Displays the ratio name, not raw numbers.
       - **Camera body**: the name of the selected camera body preset (e.g., "ARRI Alexa 35").
       - **Lens set**: the name of the selected lens set preset (e.g., "Cooke S4/i").
-    - When depth of field preview is active, the HUD additionally displays:
+    - When depth of field preview is active, the camera info additionally displays:
       - **Aperture**: the current f-stop (e.g., "f/2.8").
-    - The HUD renders above all scene content and overlays. It is always legible regardless of the scene behind it when visible.
+    - The camera info renders above all scene content and overlays. It is always legible regardless of the scene behind it when visible.
 
     **Design constraints:**
-    - The HUD must not interfere with framing composition. It sits outside or at the edge of the primary composition area.
+    - The camera info must not interfere with framing composition. It sits outside or at the edge of the primary composition area.
     - Text must be legible at a glance -- sufficient size and contrast against any background. A subtle background panel behind the text ensures readability against bright scenes.
 
     **Expected behavior:**

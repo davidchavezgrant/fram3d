@@ -31,7 +31,15 @@
 
 ---
 
-## 3. Tuned Constants
+## 3. Anti-patterns from Vismatic Studio
+
+**God object state classes.** The old `TimelineState` held shot list, current/selected/previous indices, current time, IsEvaluating flag, duration editing state, thumbnail references, AND keyframe marker dictionaries — all in one class. This is the natural gravity in Unity: start with one state class, keep adding fields. The aggregate design (Scene, ShotSetup, Project) exists to prevent this. If a class starts accumulating unrelated state, it's becoming a god object.
+
+**Routing internal operations through the command pattern.** The old system made `ScrubTime`, `EvaluateShotAtTime`, `RefreshThumbnails`, `RefreshKeyframeEditor`, `ReorderThumbnails`, and `UpdateTimeline` into `ICommand` implementations. None of these are user actions. None should be undoable. They should be plain method calls. The command pattern is exclusively for user-initiated state changes (the list in spec 2.1.1). Everything else is just a function call.
+
+---
+
+## 4. Tuned Constants
 
 Values from the previous iteration (Vismatic Studio) that were empirically tuned. Starting points — expect to re-tune.
 
@@ -68,7 +76,7 @@ Values from the previous iteration (Vismatic Studio) that were empirically tuned
 
 ---
 
-## 4. Implementation Details
+## 5. Implementation Details
 
 **Keyframe interaction rules:**
 - Moving a main keyframe moves all child property keyframes
@@ -86,7 +94,7 @@ Values from the previous iteration (Vismatic Studio) that were empirically tuned
 
 ---
 
-## 5. Architecture Considerations
+## 6. Architecture Considerations
 
 ### 5.1 Scene Serialization & Lazy Loading
 
@@ -111,7 +119,7 @@ Cross-cutting systems that multiple downstream features depend on. Build during 
 
 ---
 
-## 6. Domain Modeling Approach
+## 7. Domain Modeling Approach
 
 DDD-informed, not DDD-orthodox. The cinema domain is rich enough to warrant modeling discipline; Unity is opinionated enough that full layered architecture would fight the engine.
 

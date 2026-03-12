@@ -8,6 +8,8 @@ This document captures implementation decisions, patterns, constants, and techni
 
 > **File format decision**: The project file format (JSON vs YAML vs custom binary) is deferred to implementation. Human-readable is preferred for git diffing and debugging. The file must serialize full project state (see 2.2.1 spec).
 
+> **Playback frame dropping**: When scenes are too heavy for real-time playback, drop frames (maintain timing, skip visual updates) rather than slowing down. This preserves accurate shot timing at the expense of visual smoothness. The playback system should track wall-clock time and evaluate the timeline at the correct time regardless of render performance.
+
 ---
 
 ## 1. Platform & Framework

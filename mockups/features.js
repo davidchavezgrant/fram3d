@@ -3,7 +3,7 @@
 
 const FEATURES = {
   // 1.1 Virtual Camera
-  'hud':                { name: 'Camera Info HUD',                milestone: '1.1', section: '1.1.7', enabled: true },
+  'hud':                { name: 'Camera Info HUD',                milestone: '1.1', section: '1.2.3', enabled: true },
 
   // 1.2 Camera Overlays
   'aspect-ratio':       { name: 'Aspect Ratio Masks',            milestone: '1.2', section: '1.2.1', enabled: true },
@@ -28,20 +28,20 @@ const FEATURES = {
   'keyframe-drag':      { name: 'Keyframe Drag',                 milestone: '1.5', section: '1.5.3', enabled: true },
   'camera-path':        { name: 'Camera Path Toggle',            milestone: '1.5', section: '1.5.6', enabled: true },
 
-  // 1.6 Input System
-  'full-shortcuts':     { name: 'Full Keyboard Shortcuts',       milestone: '1.6', section: '1.6.2', enabled: true },
+  // 1.6 Viewport Panel System
+  'full-shortcuts':     { name: 'Panel Layout Switcher',         milestone: '1.6', section: '1.6.1', enabled: true },
 
-  // 3.3 Object Linking & Grouping
-  'link-indicators':    { name: 'Link Indicators in Panel',      milestone: '3.3', section: '3.3.3', enabled: true },
-  'lights-section':     { name: 'Separate Lights Section',       milestone: '3.3', section: '3.3.3', enabled: true },
+  // 3.6 Object Linking & Grouping
+  'link-indicators':    { name: 'Link Indicators in Panel',      milestone: '3.6', section: '3.6.3', enabled: true },
+  'lights-section':     { name: 'Separate Lights Section',       milestone: '3.6', section: '3.6.3', enabled: true },
 
-  // 3.5 Selection Refinements
-  'interp-curves':      { name: 'Interpolation Curve Presets',   milestone: '3.5', section: '3.5.3', enabled: true },
+  // 3.8 Selection Refinements
+  'interp-curves':      { name: 'Interpolation Curve Presets',   milestone: '3.8', section: '3.8.3', enabled: true },
 
-  // 3.6 Multi-camera
-  'active-cam-keys':    { name: 'Active Camera Shortcuts',       milestone: '3.6', section: '3.6.3', enabled: true },
-  'coverage-track':     { name: 'Coverage Splitting Track',      milestone: '3.6', section: '3.6.4', enabled: true },
-  'multi-split':        { name: 'Multi-split',                   milestone: '3.6', section: '3.6.5', enabled: true },
+  // 3.9 Multi-camera
+  'active-cam-keys':    { name: 'Active Camera Shortcuts',       milestone: '3.9', section: '3.9.3', enabled: true },
+  'coverage-track':     { name: 'Coverage Splitting Track',      milestone: '3.9', section: '3.9.4', enabled: true },
+  'multi-split':        { name: 'Multi-split',                   milestone: '3.9', section: '3.9.5', enabled: true },
 };
 
 function feat(id) {

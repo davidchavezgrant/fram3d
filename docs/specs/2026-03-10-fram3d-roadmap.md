@@ -68,7 +68,7 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 			*Global utility camera decoupled from the shot timeline. Move freely to position objects and cameras without creating keyframes. Separate from the virtual camera rig — does not affect shot animation.*
 
 	- ### 1.4. Shot sequencer (Milestone)
-		*Horizontal strip of shot thumbnails. Add, delete, reorder, select shots. Each shot is an independent camera animation over shared world-space objects.*
+		*Horizontal strip of shot thumbnails. Add, delete, reorder, select shots. Each shot is an independent camera animation over shared world-space objects. Scene tabs for multi-scene project structure.*
 
 		- ##### 1.4.1. Shot model (Feature)
 			*Shot = name + duration + camera animation + time range on global object timeline. Auto-named Shot_01, Shot_02, etc. Objects animate on a global timeline — shots are windows into it. Camera keyframes are per-shot. Default duration 5 seconds, max 300 seconds.*
@@ -79,8 +79,11 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 		- ##### 1.4.3. Object continuity — global object timeline (Feature)
 			*Objects animate on a single global timeline spanning all shots. Shots are windows into this timeline for camera purposes. No per-shot initial state, no continuity propagation — the global timeline IS the continuity. Object keyframes are global; camera keyframes are per-shot.*
 
-		- ##### 1.4.4. Slow-motion (Feature)
-			*Per-shot speed factor. Playback-time transform: `globalTime = shotStart + (localTime * speedFactor)`. No keyframes modified — slow-mo is a playback presentation layer. UI: speed percentage display + playback duration readout.*
+		- ##### 1.4.4. Multi-scene project structure (Feature)
+			*A project contains one or more scenes. Each scene is a self-contained unit — its own objects, environment, lighting, shots, and timelines. Scene tab bar above the timeline for switching. Scenes are fully independent. Character definitions are project-level; character state (pose, position) is scene-level. Scene order defines full-project playback sequence. See Multi-Scene Project Structure spec.*
+
+		- ##### 1.4.5. Timeline overview minimap (Feature)
+			*A collapsible overview panel showing a bird's-eye view of the full timeline — all shots, all tracks, and a view window indicating the currently visible range. Clicking the minimap navigates to that position. Shows the playhead position relative to the entire project.*
 
 	- ### 1.5. Keyframe animation (Milestone)
 		*Per-property keyframe timeline editor for camera and object animation. After Effects / Premiere-style property tracks with per-track stopwatch model.*
@@ -102,6 +105,21 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 
 		- ##### 1.5.6. Path visualization (Feature)
 			*Render camera and object animation paths as splines in 3D space. Shows keyframe positions as nodes. Camera nodes include frustum indicators showing look direction. Toggleable.*
+
+	- ### 1.6. Viewport panel system (Milestone)
+		*Multi-panel viewport with configurable layouts. Per-panel view selector (3D Viewport, 2D Designer, Director Mode). Layout chooser for single, side-by-side, and three-panel arrangements.*
+
+		- ##### 1.6.1. Panel layouts (Feature)
+			*Three layout options: single panel (default), side-by-side (two panels), and one-large-two-small (three panels). Layout chooser buttons in the viewport area. Each panel independently selectable between 3D Viewport, 2D Designer, and Director Mode.*
+
+		- ##### 1.6.2. View modes (Feature)
+			*3D Viewport: standard camera view through the virtual camera rig. 2D Designer: top-down orthographic view (see 5.3). Director Mode: free utility camera decoupled from the shot timeline (see 1.3.5). Any view mode can be assigned to any panel.*
+
+	- ### 1.7. Slow-motion (Milestone)
+		*Per-shot speed factor that changes the playback clock without modifying keyframes. A playback presentation layer.*
+
+		- ##### 1.7.1. Slow-motion (Feature)
+			*Per-shot speed factor. Playback-time transform: `globalTime = shotStart + (localTime * speedFactor)`. No keyframes modified — slow-mo is a playback presentation layer. UI: text input for speed percentage (like Premiere/AE), text input for target frame rate, dropdown showing camera-specific options ("X% (Y fps)"), checkbox to ignore camera limitations. Sequencer shows playback duration (not authored duration) and speed percentage overlay on shot card. Per-shot only for v1.*
 
 - # 2. Workflow essentials (Project)
 	*Make it usable for real work: undo mistakes, save projects, bring in your own assets, get frames out.*
@@ -127,8 +145,8 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 		- ##### 2.2.4. Dirty state tracking (Feature)
 			*Track unsaved changes. Warn before closing with unsaved work. New Project resets overlay/HUD settings to defaults.*
 
-		- ##### 2.2.5. Multi-scene project structure (Feature)
-			*A project contains one or more scenes. Each scene is a self-contained unit — its own objects, environment, lighting, shots, and timelines. Scene tab bar for switching. Scenes are fully independent. Duplicate creates a precise copy. Character definitions are project-level; character state (pose, position) is scene-level. Unlimited scenes with lazy loading. See Multi-Scene Project Structure spec.*
+		- ##### 2.2.5. Scene persistence (Feature)
+			*Save and load multi-scene projects. Serialize each scene independently with lazy loading. Duplicate scene creates a precise copy. Scene data includes all objects, environment, lighting, shots, and timelines. Project-level data includes character definitions and settings. See Multi-Scene Project Structure spec and 1.4.4.*
 
 	- ### 2.3. Asset import (Milestone)
 		*Bring in 3D models from external tools. Drag-and-drop into the scene.*
@@ -173,7 +191,7 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 		*Poseable, animatable humanoid figures for blocking scenes. At least FrameForge-level manipulation with a better UI. The core differentiator from 2D tools and the biggest complexity leap.*
 
 		- ##### 3.2.1. Mannequin placement and customization (Feature)
-			*Drop humanoid mannequins into the scene. Male/female body type selection with continuous height and build sliders. Color-tintable. Expanded customization: age/weight sliders, skin tone, hair style presets + color, facial hair presets, clothing presets (casual, formal, uniform, workwear, athletic), accessories (glasses, hats), footwear. Customization saveable as character presets (cross-project). See Costume Generation spec for full customization table.*
+			*Drop humanoid mannequins into the scene. Male/female body type selection with continuous height and build sliders. Color-tintable. Expanded customization: age/weight sliders, skin tone, hair style presets + color, facial hair presets, basic clothing color/style presets (solid color changes, not detailed costumes — detailed costumes are in 5.6 AI Costume Generation), accessories (glasses, hats), footwear. Customization saveable as character presets (cross-project).*
 
 		- ##### 3.2.2. Pose library (Feature)
 			*Preset poses: standing, sitting, walking, running, pointing, conversation, lying down. Apply with one click, use as starting points. User-extensible — save custom poses for reuse.*
@@ -313,11 +331,11 @@ Fram3d is a 3D previsualization tool for filmmakers. Cinematic language over 3D 
 		- ##### 5.2.1. Script parsing (Feature)
 			*Import Final Draft (.fdx) and Fountain (.fountain) files. Parse scene headings, character names, and action lines. Auto-create scenes from scene headings (one scene per heading, NOT one shot). Auto-create named character placeholders. Per-scene environment picker during import. Dialogue stored as project-level reference library (user picks from list when creating subtitles). See Multi-Scene Project Structure spec for import interaction.*
 
-	- ### 5.3. 2D overhead view (Milestone) — HIGHER PRIORITY
-		*Bird's-eye 2D view of the scene showing object positions, camera frustums, and light positions.*
+	- ### 5.3. 2D Designer (Milestone) — HIGHER PRIORITY
+		*Bird's-eye 2D view of the scene showing object positions, camera frustums, and light positions. Part of the viewport panel system (1.6) — available as a panel view mode.*
 
-		- ##### 5.3.1. 2D scene view (Feature)
-			*Top-down orthographic view. Objects shown as labeled icons/silhouettes. Camera shown as frustum with FOV cone. Lights shown as standard lighting diagram symbols. Drag objects to reposition. Camera view preview in corner. Movement paths shown as dotted lines with keyframe position dots. Switchable between 3D and 2D view.*
+		- ##### 5.3.1. 2D Designer view (Feature)
+			*Top-down orthographic view. Objects shown as labeled icons/silhouettes. Camera shown as frustum with FOV cone. Lights shown as standard lighting diagram symbols. Drag objects to reposition. Camera view preview in corner. Movement paths shown as dotted lines with keyframe position dots. Available as a viewport panel mode alongside 3D Viewport and Director Mode.*
 
 	- ### 5.4. Set builder (Milestone)
 		*Lightweight environment building tool. Separate page in the application. Room shapes, materials, furniture placement, lighting presets. See Set Builder spec.*

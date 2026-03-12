@@ -28,7 +28,7 @@
     - The user provides a natural language description of a scene setup via a text input field
     - The system interprets the description and places characters into the scene with positions, orientations, and poses
     - Placed characters are standard character elements from the character system (6.1) — they support posing, animation, and all existing scene interactions
-    - Props and furniture referenced in the description are placed using elements from the built-in asset library (7.2.1) when a match exists
+    - Props and furniture referenced in the description are placed using elements from the built-in asset library (5.2.1) when a match exists
     - When the description references a prop or furniture item that has no match in the asset library, the system places a labeled placeholder element (a simple geometric shape with the element name displayed)
     - The system assigns names to placed characters (e.g., "Actor 1", "Actor 2", or names extracted from the description if provided)
     - All placed elements are fully editable after generation — the user can move, rotate, repose, or delete any of them using existing tools

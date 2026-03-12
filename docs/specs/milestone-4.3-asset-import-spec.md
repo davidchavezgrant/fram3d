@@ -240,10 +240,10 @@
     - The user places an asset into the scene by dragging it from the panel onto the view
     - Placement from the Assets panel follows the same rules as initial import: camera look-point on the ground plane, bottom-resting, correct scale
     - Each placement from the library creates an independent scene element — transforms are not linked between copies
-    - Assets are embedded within the project file (4.2) — the project is fully self-contained
-      - Importing a model copies the file (and its textures) into the project's asset storage
-      - The original file on disk is not referenced after import — the project is self-contained
-      - Moving or deleting the original file does not affect the project
+    - Asset storage follows the project's asset bundling mode (see 4.2.2):
+      - When bundling is enabled, assets are embedded in the project file — the project is self-contained
+      - When bundling is disabled, assets are stored by reference (external file paths)
+      - The bundling mode determines whether moving or deleting the original file affects the project
     - When importing large assets, the system warns the user about the impact on project file size (since assets are embedded in the project)
     - The Assets panel persists with the project — closing and reopening the project restores the full panel with thumbnails
     - The panel supports scrolling when the number of assets exceeds the visible area

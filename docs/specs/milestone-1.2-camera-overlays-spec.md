@@ -26,7 +26,7 @@
     ***Letterbox and pillarbox bars that crop the view to the selected delivery format, showing exactly what the audience will see.***
 
     **Functional requirements:**
-    - The system provides eight aspect ratio options: Full Screen (matches window), 16:9, 16:10, 1.85:1, 2.35:1, 2.39:1, 2:1, 4:3
+    - The system provides ten aspect ratio options: Full Screen (matches window), 16:9, 16:10, 1.85:1, 2:1, 2.35:1, 2.39:1, 4:3, 1:1, 9:16
     - The default aspect ratio is 16:9
     - When the selected ratio is wider than the view, horizontal bars appear on top and bottom (letterbox)
     - When the selected ratio is narrower than the view, vertical bars appear on left and right (pillarbox)
@@ -35,7 +35,7 @@
     - The user can cycle through aspect ratios or select one directly
     - `A` key cycles aspect ratios forward through the list. `Shift+A` cycles backward.
     - The selected aspect ratio persists until the user changes it
-    - The active aspect ratio is displayed within the camera info HUD (1.2.3)
+    - The active aspect ratio is displayed within the camera info overlay (1.2.3)
     - When an anamorphic lens is active, the aspect ratio is auto-locked to the computed delivery format based on the squeeze factor. The user cannot manually change the aspect ratio while an anamorphic lens is selected.
 
     **Expected behavior:**
@@ -121,7 +121,8 @@
     **Functional requirements:**
     - Three guide types are available: rule of thirds, center cross, and safe zones
     - Every guide type starts hidden by default
-    - Each guide type is toggled independently (on/off). `G` key toggles all composition guides on/off as a group.
+    - Each guide type is toggled independently: `Shift+G` = rule of thirds, `Ctrl+G` = center cross, `Alt+G` = safe zones
+    - `G` key toggles all composition guides on/off as a group (if any are visible, `G` hides all; if none are visible, `G` shows all that were previously enabled)
     - Guide visibility state is global, not per-shot — changing guides in one shot changes them everywhere
     - Guides are drawn only within the unmasked area defined by the current aspect ratio mask
     - Rule of thirds draws two horizontal and two vertical lines, dividing the frame into a 3x3 grid
@@ -215,7 +216,7 @@
           <== other enabled guides remain visible
     ```
 
-  - ##### 1.2.3. Camera info HUD (Feature)
+  - ##### 1.2.3. Camera info (Feature)
 
     ***An overlay showing the data a DP would read off an on-set monitor: focal length, camera height, angle of view, aspect ratio, body, lens preset, and squeeze factor (if anamorphic). Toggleable via shortcut, glanceable, not intrusive. Counts as an overlay for export purposes.***
 

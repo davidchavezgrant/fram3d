@@ -30,7 +30,7 @@ Values from the prior codebase that were empirically tuned. Starting points — 
 
 ## Lens
 
-- Default focal length: 35mm
+- Default focal length: 50mm
 - Common focal lengths: {14, 18, 24, 35, 50, 85, 100, 135, 200}
 - Focal length adjustment multiplier: 0.5 per scroll unit
 - Dolly zoom speed: 0.5

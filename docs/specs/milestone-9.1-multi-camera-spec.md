@@ -2,7 +2,7 @@
 
 **Date**: 2026-03-10
 **Status**: Draft
-**Blocked by**: 3.2 (Keyframe animation), 3.1 (Shot track), 6.3 (Element linking — cameras are scene entities)
+**Blocked by**: 3.2 (Keyframe animation), 3.1 (Shot track)
 
 ---
 

@@ -1,6 +1,6 @@
 # Bounded Context Map
 
-Every milestone and feature mapped to its primary bounded context (Assembly Definition). See `fram3d-architecture.md` section 12 for the domain modeling approach.
+Every milestone and feature mapped to its primary bounded context (Assembly Definition). See `domain-model.md` for the modeling approach.
 
 ## Context Summary
 

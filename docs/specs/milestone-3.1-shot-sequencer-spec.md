@@ -466,7 +466,7 @@ This model matches how directors think: block the scene first (animate elements 
 
 ### UI
 
-- Speed percentage display on the shot or inspector (e.g., "50%" for speedFactor 0.5)
+- Speed percentage display on the shot track (e.g., "50%" for speedFactor 0.5)
 - Playback duration readout shows the wall-clock duration (shot duration / speed factor)
 
 ``` python

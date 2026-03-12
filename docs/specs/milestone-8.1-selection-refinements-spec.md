@@ -24,7 +24,7 @@
 		*Related:
 		- 2.1.1 (scene elements -- extends single-select)
 		- 2.1.2 (transform gizmos -- gizmos now operate on groups)
-		- 6.2 (scene hierarchy -- parent/child groups are different from multi-select groups)*
+		- 6.3 (element linking & grouping -- persistent groups are different from multi-select groups)*
 
 		**Functional requirements:**
 		- Clicking an unselected element while holding Shift adds it to the current selection without deselecting anything

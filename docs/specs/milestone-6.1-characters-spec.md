@@ -1,4 +1,4 @@
-# Milestone 6.1: Characters / Actors
+# Milestone 6.1: Characters
 
 **Date**: 2026-03-10
 **Status**: Draft
@@ -6,7 +6,7 @@
 
 ---
 
-- ### 6.1. Characters / Actors (Milestone)
+- ### 6.1. Characters (Milestone)
 
   Poseable, animatable humanoid figures for blocking scenes. This is where Fram3d transitions from a camera tool into a previsualization tool. Without characters, directors are framing empty rooms and furniture. With characters, they are staging performances.
 

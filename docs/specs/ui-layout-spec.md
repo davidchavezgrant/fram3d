@@ -111,20 +111,22 @@ All overlays render inside the Camera View frame, above the 3D content.
 
 Four opaque black `div` elements (top, bottom, left, right) that crop the frame to the selected aspect ratio. The frame itself is always 16:9; masks narrow it further.
 
-Supported ratios (cycled by `A` key):
+Supported ratios (cycled by `A` key, `Shift+A` cycles backward):
 
 | Name | Ratio | Mask direction |
 |------|-------|---------------|
-| 2.39:1 | 2.39 | Top/bottom (letterbox) |
-| 2.35:1 | 2.35 | Top/bottom |
-| 1.85:1 | 1.85 | Top/bottom |
+| Full Screen | — | No masks (matches window) |
 | 16:9 | 1.778 | None (native) |
+| 16:10 | 1.6 | Top/bottom (letterbox) |
+| 1.85:1 | 1.85 | Top/bottom |
+| 2:1 | 2.0 | Top/bottom |
+| 2.35:1 | 2.35 | Top/bottom |
+| 2.39:1 | 2.39 | Top/bottom |
 | 4:3 | 1.333 | Left/right (pillarbox) |
 | 1:1 | 1.0 | Left/right |
 | 9:16 | 0.5625 | Left/right |
-| None | — | No masks |
 
-Default: 2.39:1 (index 0). Changing the ratio also updates the "Ratio" field in the camera info overlay.
+Default: 16:9. Changing the ratio also updates the "Ratio" field in the camera info overlay. See milestone 1.2 spec for the canonical list.
 
 ### 3.2 Composition Guides
 
@@ -543,7 +545,7 @@ Zoom is anchored to the mouse position: the time under the cursor stays fixed wh
 
 The "+" button in the shot track label area (visible when `feat('shot-management')` is enabled) appends a new shot:
 - Starts at the end of the last shot
-- Duration: 4 seconds
+- Duration: 5 seconds
 - Color: `hsl((shotCount * 47) % 360, 40%, 45%)` — pseudo-random hue rotation
 - Single camera (Cam A) with two keyframes (start and near-end)
 - Active camera initialized to index 0

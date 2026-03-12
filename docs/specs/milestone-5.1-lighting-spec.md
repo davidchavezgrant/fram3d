@@ -161,14 +161,13 @@
 				<== intensity and color are preserved
 				<== position is discarded — directional arrow icon replaces cone wireframe
 
-			# cross-shot continuity
-			.if user places a point light "Key" in Shot 1 >>
-				<== "Key" exists in Shot 1
-				<== "Key" exists in Shot 2 and all subsequent shots
-				<== light properties in later shots match Shot 1 unless overridden
-				||> .if user modifies "Key" intensity in Shot 3 >>
-					<== intensity change propagates forward from Shot 3
-					<== Shots 1 and 2 retain the original intensity
+			# cross-shot continuity (global element timeline)
+			.if user places a point light "Key" in the scene >>
+				<== "Key" exists in every shot (global element timeline — 3.1.3)
+				<== light properties are determined by keyframes on the global timeline
+				||> .if user keyframes "Key" intensity at a specific time on the global timeline >>
+					<== the intensity at that time affects every shot whose time range includes it
+					<== this follows the same rules as element keyframes (3.1.3)
 
 			# ambient dimming on first light
 			.if scene has zero user-placed lights
@@ -219,7 +218,7 @@
 
 		*Related:
 		- 5.1.3 (light animation — these properties become keyframeable)
-		- 7.1 (Elements panel — lights appear in a separate "Lights" section)*
+		- 6.3.3 (Elements panel — lights appear in a separate "Lights" section)*
 
 		**Functional requirements:**
 		- Every light has the following base properties:

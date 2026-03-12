@@ -357,13 +357,13 @@
 		- 2.1.2 (transform gizmos — work identically in Director View)*
 
 		**Functional requirements:**
-		- Two view types: "Shot View" and "Director View"
-			- Shot View: the view looks through the virtual camera rig (existing behavior). Camera movements create keyframes.
+		- Two view types: "Camera View" and "Director View"
+			- Camera View: the view looks through the virtual camera rig (existing behavior). Camera movements create keyframes.
 			- Director View: the view looks through a free utility camera that never creates keyframes for itself.
-		- The user can switch between Shot View and Director View at any time via keyboard shortcut (`D`) or UI toggle
+		- The user can switch between Camera View and Director View at any time via keyboard shortcut (`D`) or UI toggle
 		- Director View camera controls:
 			- Orbit, pan, and zoom to see the scene from any angle
-			- The camera movement controls (pan, tilt, dolly, truck, crane, orbit) work the same way as in Shot View — they move the director camera instead of the shot camera
+			- The camera movement controls (pan, tilt, dolly, truck, crane, orbit) work the same way as in Camera View — they move the director camera instead of the shot camera
 		- In Director View, the virtual camera rig is visible in the scene as a frustum wireframe showing where the shot camera is pointing
 			- The frustum wireframe updates in real time if the shot camera has animated keyframes during playback
 		- In Director View, the user can still select and manipulate elements using gizmos
@@ -373,20 +373,20 @@
 		- Director View preserves its own position and rotation independently from the shot camera
 			- Moving the director camera does not affect the shot camera's position, rotation, or keyframes
 			- Moving the shot camera (via gizmo in Director View) does not affect the director camera's position
-		- Switching back to Shot View returns to looking through the virtual camera rig at its current keyframed state
+		- Switching back to Camera View returns to looking through the virtual camera rig at its current keyframed state
 		- Director View is per-session state — it does not save with the project
-			- On project load, the view always starts in Shot View
+			- On project load, the view always starts in Camera View
 			- The director camera's position/rotation is not serialized
 
 		**Design constraints:**
-		- Director View must be clearly visually distinguished from Shot View so the user always knows which view they're in
+		- Director View must be clearly visually distinguished from Camera View so the user always knows which view they're in
 		- **Director View badge**: When Director View is active, a prominent badge reading "DIRECTOR VIEW" appears at top-center of the Camera View frame. Colored in red/pink accent to signal "you are NOT looking through the shot camera." See `ui-layout-spec.md` §3.5 for visual design.
 		- The frustum wireframe must not interfere with element selection — it should be selectable like any element but should not block clicks aimed at elements behind it unless the click hits the wireframe geometry directly
 
 		**Expected behavior:**
 		``` python
 			# Switching to Director View
-			.if user is in Shot View >>
+			.if user is in Camera View >>
 				||> .if user activates Director View >>
 					<== view switches to the director camera
 					<== shot camera rig visible as a frustum wireframe in the scene
@@ -425,16 +425,16 @@
 						<== keyframe created for the shot camera's new rotation
 						<== frustum wireframe updates to reflect new orientation
 
-			# Switching back to Shot View
+			# Switching back to Camera View
 			.if user is in Director View >>
-				||> .if user activates Shot View >>
+				||> .if user activates Camera View >>
 					<== view switches to looking through the shot camera rig
 					<== frustum wireframe no longer visible (user is now looking through it)
 					<== director camera position preserved in memory for next switch
 
 			# Director View preserves position across switches
 			.if user is in Director View at position A >>
-				||> .if user switches to Shot View >>
+				||> .if user switches to Camera View >>
 					||> .if user moves the shot camera >>
 						||> .if user switches back to Director View >>
 							<== director camera returns to position A
@@ -465,7 +465,7 @@
 			# Director View state not saved
 			.if user saves the project while in Director View >>
 				||> .if user reloads the project >>
-					<== view opens in Shot View
+					<== view opens in Camera View
 					!== view opens in Director View
 					!== director camera position restored
 

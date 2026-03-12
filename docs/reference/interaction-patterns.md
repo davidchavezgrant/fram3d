@@ -30,7 +30,10 @@ UI/UX interaction rules, input mappings, and behavioral specifications.
 
 **Keyboard (overlays):**
 - A/Shift+A = aspect ratio cycle
-- G = composition guides
+- G = toggle all composition guides on/off
+- Shift+G = toggle rule of thirds
+- Ctrl+G = toggle center cross
+- Alt+G = toggle safe zones
 - H = camera info
 - P = camera path
 - D = Director View

@@ -15,7 +15,7 @@
   - ##### 1.1.1. Camera movement (Feature)
     ***Pan, tilt, dolly, truck, crane, roll, orbit, dolly zoom, and reset -- the full vocabulary of physical camera movement, mapped to mouse and modifier keys.***
 
-    *Related: 2.2.1 Mouse controls, 2.2.2 Keyboard shortcuts*
+    *Related: interaction-patterns.md (mouse controls, keyboard shortcuts)*
 
     **Functional requirements:**
     - Pan rotates the camera horizontally around a vertical axis through the camera's position. Positive pan rotates rightward.
@@ -430,8 +430,8 @@
           <== no shake is present in the exported data
     ```
 
-  - ##### 1.1.7. Camera info HUD (Feature) — *Relocated to 1.2.3*
-    > **Note**: The camera info HUD has been moved to milestone 1.2 (Camera Overlays) as feature 1.2.3, since it is an overlay. The specification below is retained for reference but the canonical location is the Camera Overlays spec. The camera info now also displays squeeze factor when an anamorphic lens is active.
+  - ##### 1.1.7. Camera info (Feature) — *Relocated to 1.2.3*
+    > **Note**: The camera info overlay has been moved to milestone 1.2 (Camera Overlays) as feature 1.2.3, since it is an overlay. The specification below is retained for reference but the canonical location is the Camera Overlays spec. The camera info now also displays squeeze factor when an anamorphic lens is active.
 
     ***An overlay showing the data a DP would read off an on-set monitor: focal length, camera height, angle of view, aspect ratio, body, and lens set. Toggleable via shortcut, glanceable, not intrusive.***
 

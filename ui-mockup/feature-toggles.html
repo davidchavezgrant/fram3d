@@ -193,11 +193,11 @@ body {
     <button class="quick-btn" onclick="setAll(false)">Disable All</button>
     <button class="quick-btn" onclick="enableUpTo('1.1')">Up to 1.1</button>
     <button class="quick-btn" onclick="enableUpTo('1.2')">Up to 1.2</button>
-    <button class="quick-btn" onclick="enableUpTo('1.3')">Up to 1.3</button>
-    <button class="quick-btn" onclick="enableUpTo('1.4')">Up to 1.4</button>
-    <button class="quick-btn" onclick="enableUpTo('1.5')">Up to 1.5</button>
-    <button class="quick-btn" onclick="enableUpTo('1.6')">Up to 1.6</button>
-    <button class="quick-btn" onclick="enableUpTo('3.9')">All milestones</button>
+    <button class="quick-btn" onclick="enableUpTo('2.1')">Up to 2.1</button>
+    <button class="quick-btn" onclick="enableUpTo('2.2')">Up to 2.2</button>
+    <button class="quick-btn" onclick="enableUpTo('3.1')">Up to 3.1</button>
+    <button class="quick-btn" onclick="enableUpTo('3.2')">Up to 3.2</button>
+    <button class="quick-btn" onclick="enableUpTo('9.1')">All milestones</button>
   </div>
 </div>
 
@@ -208,17 +208,17 @@ body {
 const MILESTONE_NAMES = {
   '1.1': 'Virtual Camera',
   '1.2': 'Camera Overlays',
-  '1.3': 'Scene Management',
-  '1.4': 'Shot Sequencer',
-  '1.5': 'Keyframe Animation',
-  '1.6': 'Viewport Panel System',
-  '3.6': 'Object Linking',
-  '3.8': 'Selection Refinements',
-  '3.9': 'Multi-camera',
+  '2.1': 'Scene Management',
+  '3.1': 'Shot Track',
+  '3.2': 'Keyframe Animation',
+  '2.2': 'View Layout System',
+  '6.3': 'Element Linking',
+  '8.1': 'Selection Refinements',
+  '9.1': 'Multi-camera',
 };
 
 // Milestone ordering for "up to" buttons
-const MILESTONE_ORDER = ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '3.6', '3.8', '3.9'];
+const MILESTONE_ORDER = ['1.1', '1.2', '2.1', '2.2', '3.1', '3.2', '6.3', '8.1', '9.1'];
 
 let iframeFeatures = null;
 let iframeWindow = null;
@@ -322,8 +322,8 @@ function syncToIframe() {
     iframeWindow.render();
   }
   // Re-populate panels in case link indicators / lights section changed
-  if (iframeWindow && typeof iframeWindow.populateObjects === 'function') {
-    iframeWindow.populateObjects();
+  if (iframeWindow && typeof iframeWindow.populateElements === 'function') {
+    iframeWindow.populateElements();
   }
 }
 

@@ -6,11 +6,11 @@ Every milestone and feature mapped to its primary bounded context (Assembly Defi
 
 | Context | Assembly | Description |
 |---------|----------|-------------|
-| Camera | `Fram3d.Camera` | Camera rig, lens, focus, shake, DOF, overlays, follow/look-at, snorricam, multi-camera |
+| Camera | `Fram3d.Camera` | Camera rig, lens, focus, shake, DOF, overlays, follow/watch, snorricam, multi-camera |
 | Sequencing | `Fram3d.Sequencing` | Shot model, keyframe timeline, tracks, playback, slow-motion |
-| Scene | `Fram3d.Scene` | Scene elements, selection, gizmos, lighting, object linking, set builder |
-| Viewport | `Fram3d.Viewport` | Panel layouts, view modes, 2D Designer |
-| Characters | `Fram3d.Characters` | Mannequins, posing, IK, expressions, costume generation |
+| Scene | `Fram3d.Scene` | Scene elements, selection, gizmos, lighting, element linking, set builder |
+| Viewport | `Fram3d.Viewport` | Panel layouts, views, Designer View |
+| Characters | `Fram3d.Characters` | Mannequins, posing, expressions, costume generation |
 | Persistence | `Fram3d.Persistence` | Undo/redo, save/load, project files, script import |
 | Assets | `Fram3d.Assets` | Model import, asset library, set decoration, premade environments, LiDAR |
 | Export | `Fram3d.Export` | Image, video, storyboard, NLE export, style grading |
@@ -29,24 +29,24 @@ Every milestone and feature mapped to its primary bounded context (Assembly Defi
 | 1.1.6 | Camera shake | Camera |
 | **1.2** | **Camera overlays** | **Camera** |
 | 1.2.1 | Aspect ratio masks | Camera |
-| 1.2.2 | Frame guides | Camera |
-| 1.2.3 | Camera info HUD | Camera |
+| 1.2.2 | Composition guides | Camera |
+| 1.2.3 | Camera info | Camera |
 | 1.2.4 | Subtitle overlay | Camera |
 | **2.1** | **Scene management** | **Scene** |
 | 2.1.1 | Scene elements | Scene |
 | 2.1.2 | Transform gizmos | Scene |
 | 2.1.3 | Ground plane | Scene |
-| 2.1.4 | Object duplication | Scene |
+| 2.1.4 | Element duplication | Scene |
 | 2.1.5 | Director view | Scene |
 | **2.2** | **Viewport panel system** | **Viewport** |
 | 2.2.1 | Panel layouts | Viewport |
-| 2.2.2 | View modes | Viewport |
-| **3.1** | **Shot sequencer** | **Sequencing** |
+| 2.2.2 | Views | Viewport |
+| **3.1** | **Shot structure** | **Sequencing** |
 | 3.1.1 | Shot model | Sequencing |
-| 3.1.2 | Sequencer UI | Sequencing |
-| 3.1.3 | Object continuity — global object timeline | Sequencing |
+| 3.1.2 | Shot track UI | Sequencing |
+| 3.1.3 | Element continuity — global element timeline | Sequencing |
 | 3.1.4 | Multi-scene project structure | Sequencing |
-| 3.1.5 | Timeline overview minimap | Sequencing |
+| 3.1.5 | Timeline overview | Sequencing |
 | **3.2** | **Keyframe animation** | **Sequencing** |
 | 3.2.1 | Timeline editor | Sequencing |
 | 3.2.2 | Tracks and keyframes | Sequencing |
@@ -80,19 +80,19 @@ Every milestone and feature mapped to its primary bounded context (Assembly Defi
 | 5.2.3 | User asset management | Assets |
 | **5.3** | **Premade environments** | **Assets** |
 | 5.3.1 | Environment library | Assets |
-| **6.1** | **Characters / Actors** | **Characters** |
+| **6.1** | **Characters** | **Characters** |
 | 6.1.1 | Mannequin placement and customization | Characters |
 | 6.1.2 | Pose library | Characters |
 | 6.1.3 | Custom posing | Characters |
 | 6.1.4 | Character animation | Characters |
 | 6.1.5 | Custom character import | Characters |
-| **6.2** | **Camera follow and look-at** | **Camera** |
+| **6.2** | **Camera follow and watch** | **Camera** |
 | 6.2.1 | Camera follow | Camera |
-| 6.2.2 | Look-at tracking | Camera |
-| **6.3** | **Object linking & grouping** | **Scene** |
-| 6.3.1 | Object linking | Scene |
-| 6.3.2 | Object grouping | Scene |
-| 6.3.3 | Object list panel | Scene |
+| 6.2.2 | Watch | Camera |
+| **6.3** | **Element linking & grouping** | **Scene** |
+| 6.3.1 | Element linking | Scene |
+| 6.3.2 | Element grouping | Scene |
+| 6.3.3 | Elements panel | Scene |
 | **7.1** | **Facial expressions** | **Characters** |
 | 7.1.1 | Expression system | Characters |
 | 7.1.2 | Eye direction | Characters |
@@ -103,8 +103,8 @@ Every milestone and feature mapped to its primary bounded context (Assembly Defi
 | 8.1.1 | Multi-select | Scene |
 | 8.1.2 | Grid snapping | Scene |
 | 8.1.3 | Custom interpolation curves | Sequencing |
-| **8.2** | **2D Designer** | **Viewport** |
-| 8.2.1 | 2D Designer view | Viewport |
+| **8.2** | **Designer View** | **Viewport** |
+| 8.2.1 | Designer View | Viewport |
 | **8.3** | **Script import** | **Persistence** |
 | 8.3.1 | Script parsing | Persistence |
 | **8.4** | **Slow-motion** | **Sequencing** |
@@ -113,7 +113,7 @@ Every milestone and feature mapped to its primary bounded context (Assembly Defi
 | 9.1.1 | Per-shot camera addition | Camera |
 | 9.1.2 | Multi-camera timelines | Camera |
 | 9.1.3 | Active camera and switching | Camera |
-| 9.1.4 | Coverage splitting | Camera |
+| 9.1.4 | Active angle editing | Camera |
 | 9.1.5 | Multi-split | Camera |
 | **10.1** | **Set builder** | **Scene** |
 | 10.1.1 | Room construction | Scene |

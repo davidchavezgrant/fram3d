@@ -17,35 +17,35 @@
     <button class="gutter-tab" data-panel="overview">Overview</button>
   </div>
 
-  <!-- Center column: overview + viewport area -->
+  <!-- Center column: overview + view area -->
   <div id="center-column">
-    <div id="minimap-container">
-      <div id="minimap-label">Overview</div>
-      <div id="minimap">
-        <div id="minimap-shots"></div>
-        <div id="minimap-tracks"></div>
-        <div id="minimap-view-window"></div>
-        <div id="minimap-playhead"></div>
+    <div id="overview-container">
+      <div id="overview-label">Overview</div>
+      <div id="overview">
+        <div id="overview-shots"></div>
+        <div id="overview-tracks"></div>
+        <div id="overview-view-window"></div>
+        <div id="overview-playhead"></div>
       </div>
     </div>
 
-    <!-- Viewport area (multi-panel capable) -->
+    <!-- View area (multi-panel capable) -->
     <div id="viewport-area" class="layout-1">
 
-      <!-- Panel 0: 3D Viewport (default) -->
+      <!-- Panel 0: Camera View (default) -->
       <div class="view-panel" id="view-panel-0" data-view="3d">
         <div class="view-panel-bar">
           <select class="view-selector" data-panel-idx="0">
-            <option value="3d" selected>3D Viewport</option>
-            <option value="2d">2D Designer</option>
-            <option value="director">Director Mode</option>
+            <option value="3d" selected>Camera View</option>
+            <option value="2d">Designer View</option>
+            <option value="director">Director View</option>
           </select>
         </div>
         <div class="view-panel-content">
           <div id="viewport">
             <div id="viewport-frame">
               <div class="placeholder">
-                3D Viewport<br>
+                Camera View<br>
                 <span style="font-size:11px;color:#555">(camera view would render here)</span>
               </div>
 
@@ -53,17 +53,17 @@
               <div id="viewport-shot-label"></div>
               <div id="viewport-timecode"></div>
 
-              <!-- Camera Info HUD (includes aperture, focus, DOF) -->
-              <div id="viewport-hud" style="display:none">
-                <div class="hud-row"><span class="hud-key">Lens</span><span class="hud-val" id="hud-focal">50mm</span></div>
-                <div class="hud-row"><span class="hud-key">Height</span><span class="hud-val" id="hud-height">1.6m</span></div>
-                <div class="hud-row"><span class="hud-key">AOV</span><span class="hud-val" id="hud-aov">39.6°</span></div>
-                <div class="hud-row"><span class="hud-key">Aperture</span><span class="hud-val" id="hud-aperture">f/2.8</span></div>
-                <div class="hud-row"><span class="hud-key">Focus</span><span class="hud-val" id="hud-focus">Detective</span></div>
-                <div class="hud-row"><span class="hud-key">DOF</span><span class="hud-val" id="hud-dof">On</span></div>
-                <div class="hud-row"><span class="hud-key">Ratio</span><span class="hud-val" id="hud-ratio">2.39:1</span></div>
-                <div class="hud-row"><span class="hud-key">Body</span><span class="hud-val" id="hud-body">Generic 35mm</span></div>
-                <div class="hud-row"><span class="hud-key">Lens Set</span><span class="hud-val" id="hud-lensset">Generic Prime</span></div>
+              <!-- Camera Info overlay -->
+              <div id="camera-info" style="display:none">
+                <div class="cam-info-row"><span class="cam-info-key">Lens</span><span class="cam-info-val" id="cam-info-focal">50mm</span></div>
+                <div class="cam-info-row"><span class="cam-info-key">Height</span><span class="cam-info-val" id="cam-info-height">1.6m</span></div>
+                <div class="cam-info-row"><span class="cam-info-key">AOV</span><span class="cam-info-val" id="cam-info-aov">39.6°</span></div>
+                <div class="cam-info-row"><span class="cam-info-key">Aperture</span><span class="cam-info-val" id="cam-info-aperture">f/2.8</span></div>
+                <div class="cam-info-row"><span class="cam-info-key">Focus</span><span class="cam-info-val" id="cam-info-focus">Detective</span></div>
+                <div class="cam-info-row"><span class="cam-info-key">DOF</span><span class="cam-info-val" id="cam-info-dof">On</span></div>
+                <div class="cam-info-row"><span class="cam-info-key">Ratio</span><span class="cam-info-val" id="cam-info-ratio">2.39:1</span></div>
+                <div class="cam-info-row"><span class="cam-info-key">Body</span><span class="cam-info-val" id="cam-info-body">Generic 35mm</span></div>
+                <div class="cam-info-row"><span class="cam-info-key">Lens Set</span><span class="cam-info-val" id="cam-info-lensset">Generic Prime</span></div>
               </div>
 
               <!-- Aspect Ratio Masks (opaque) -->
@@ -72,7 +72,7 @@
               <div id="aspect-mask-left" class="aspect-mask"></div>
               <div id="aspect-mask-right" class="aspect-mask"></div>
 
-              <!-- Frame Guides -->
+              <!-- Composition Guides -->
               <svg id="viewport-guides" style="display:none">
                 <line class="guide-thirds" x1="33.33%" y1="0" x2="33.33%" y2="100%"/>
                 <line class="guide-thirds" x1="66.66%" y1="0" x2="66.66%" y2="100%"/>
@@ -84,11 +84,11 @@
                 <rect class="guide-safe-action" x="3.5%" y="3.5%" width="93%" height="93%" rx="1"/>
               </svg>
 
-              <!-- Tool Mode Badge -->
-              <div id="tool-mode-badge" style="display:none">
-                <span id="tool-mode-icon">◇</span>
-                <span id="tool-mode-label">SELECT</span>
-                <span id="tool-mode-key">Q</span>
+              <!-- Active Tool Badge -->
+              <div id="active-tool-badge" style="display:none">
+                <span id="active-tool-icon">◇</span>
+                <span id="active-tool-label">SELECT</span>
+                <span id="active-tool-key">Q</span>
               </div>
 
               <!-- Director View Badge -->
@@ -103,37 +103,37 @@
         </div>
       </div>
 
-      <!-- Panel 1: Director Mode (default) -->
+      <!-- Panel 1: Director View (default) -->
       <div class="view-panel" id="view-panel-1" data-view="director" style="display:none">
         <div class="view-panel-bar">
           <select class="view-selector" data-panel-idx="1">
-            <option value="3d">3D Viewport</option>
-            <option value="2d">2D Designer</option>
-            <option value="director" selected>Director Mode</option>
+            <option value="3d">Camera View</option>
+            <option value="2d">Designer View</option>
+            <option value="director" selected>Director View</option>
           </select>
         </div>
         <div class="view-panel-content">
           <div class="view-placeholder">
             <div class="view-placeholder-icon">🎬</div>
-            <div class="view-placeholder-label">Director Mode</div>
-            <div class="view-placeholder-hint">Storyboard overview with shot thumbnails</div>
+            <div class="view-placeholder-label">Director View</div>
+            <div class="view-placeholder-hint">Free utility camera decoupled from the timeline</div>
           </div>
         </div>
       </div>
 
-      <!-- Panel 2: 2D Designer (default) -->
+      <!-- Panel 2: Designer View (default) -->
       <div class="view-panel" id="view-panel-2" data-view="2d" style="display:none">
         <div class="view-panel-bar">
           <select class="view-selector" data-panel-idx="2">
-            <option value="3d">3D Viewport</option>
-            <option value="2d" selected>2D Designer</option>
-            <option value="director">Director Mode</option>
+            <option value="3d">Camera View</option>
+            <option value="2d" selected>Designer View</option>
+            <option value="director">Director View</option>
           </select>
         </div>
         <div class="view-panel-content">
           <div class="view-placeholder">
             <div class="view-placeholder-icon">✏️</div>
-            <div class="view-placeholder-label">2D Designer</div>
+            <div class="view-placeholder-label">Designer View</div>
             <div class="view-placeholder-hint">Top-down scene layout and blocking</div>
           </div>
         </div>
@@ -155,10 +155,10 @@
     </div>
   </div>
 
-  <!-- Right sidebar: Objects -->
-  <div id="objects-panel" class="side-panel right hidden">
-    <div class="panel-header">Objects</div>
-    <div class="panel-body" id="objects-list"></div>
+  <!-- Right sidebar: Elements -->
+  <div id="elements-panel" class="side-panel right hidden">
+    <div class="panel-header">Elements</div>
+    <div class="panel-body" id="elements-list"></div>
     <div class="panel-drag-edge"></div>
   </div>
 
@@ -176,7 +176,7 @@
 
   <!-- Right gutter -->
   <div class="gutter right">
-    <button class="gutter-tab" data-panel="objects">Objects</button>
+    <button class="gutter-tab" data-panel="elements">Elements</button>
     <button class="gutter-tab" data-panel="assets">Assets</button>
   </div>
 
@@ -227,11 +227,11 @@
       </div>
     </div>
 
-    <!-- Coverage Track -->
-    <div id="coverage-container" style="display:none">
-      <div id="coverage-label">Coverage<br><span class="coverage-hint">⌥ click to split</span></div>
-      <div id="coverage-track">
-        <div id="playhead-coverage"></div>
+    <!-- Active Angle Track -->
+    <div id="active-angle-container" style="display:none">
+      <div id="active-angle-label">Active Angle<br><span class="active-angle-hint">⌥ click to split</span></div>
+      <div id="active-angle-track">
+        <div id="playhead-active-angle"></div>
       </div>
     </div>
 

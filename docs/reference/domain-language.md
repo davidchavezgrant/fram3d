@@ -19,36 +19,38 @@ Canonical terminology for Fram3d. Use these terms in specs, UI, and conversation
 
 ## Assets & Elements
 
-**Asset**: anything in the library. **Element**: anything in the scene. Type names are the same in both contexts.
+**Asset**: anything in the library. **Element**: anything in the scene.
 
 ### Asset types (in the library)
 
 | Type | What it is |
 |------|-----------|
-| **Object** | A 3D model. Tables, chairs, buildings, vehicles. |
+| **Element** | A 3D model. Furniture, vehicles, buildings, vegetation — anything that isn't a character, light, or camera. |
 | **Character** | A poseable humanoid with skeleton, expressions, and pose library. |
 | **Light** | A light source — directional, point, or spot. |
 | **Costume** | Clothing or accessories for a character. |
 | **Animation** | Recorded motion data for an element. |
 | **Expression** | A facial state for a character. |
-| **Environment** | A complete scene — walls, floors, objects, lighting. |
+| **Environment** | A complete scene — walls, floors, elements, lighting. |
 
 ### How assets enter the scene
 
 | Verb | What happens | Asset types |
 |------|-------------|-------------|
-| **Place** | Creates a new element in the scene with a position, rotation, and scale. | Objects, characters, lights |
+| **Place** | Creates a new element in the scene with a position, rotation, and scale. | Elements, characters, lights |
 | **Apply** | Modifies an existing element. No new element created. | Costumes → character appearance. Animations → element's track. Expressions → character's face. |
 | **Load** | Fills a scene with contents — elements, lighting, everything. | Environments |
 
-### Element types (in the scene)
+### Elements (in the scene)
 
-| Type | What it is |
-|------|-----------|
-| **Object** | A placed 3D model. Inert until animated. |
-| **Character** | A placed poseable humanoid. |
-| **Light** | A placed light source. |
-| **Camera** | A virtual camera. Created when you add an angle to a shot — not placed from the library. |
+Everything in the scene is an **element**. Characters, lights, and cameras are specialized elements with extra capabilities. A chair, a bush, a car — these are just elements.
+
+| Element | What it is |
+|---------|-----------|
+| **Element** | A placed 3D model. The base type. Inert until animated. |
+| **Character** | A poseable humanoid element. Has skeleton, expressions, pose library. |
+| **Light** | A light source element — directional, point, or spot. |
+| **Camera** | A virtual camera element. Created when you add an angle to a shot — not placed from the library. |
 
 ## The Timeline
 
@@ -68,7 +70,7 @@ Canonical terminology for Fram3d. Use these terms in specs, UI, and conversation
 |-------|--------------|-------|
 | **Shot track** | Shots arranged in sequence with thumbnail, name, and duration. Always the topmost track. | — |
 | **Camera track** | Camera animation within the selected shot (one per angle). | Yellow |
-| **Object track** | Object animation on the global timeline. | Green |
+| **Element track** | Element animation on the global timeline. Characters and plain elements share this track type. | Green |
 | **Light track** | Light animation. | Amber |
 | **Active angle track** | Which angle is on air at each moment (multi-camera only). | Per-camera color |
 
@@ -149,8 +151,8 @@ Six degrees of movement. No synonyms.
 | **Blend shape** | Mesh deformation target for facial animation. |
 | **Skeleton** | Bone hierarchy inside a character. |
 | **Rig** | Skeleton + mesh binding. A rigged model can be posed and animated. |
-| **Body region** | Area on a character mesh defined by bones (hand, head, torso). Used for attaching objects. |
-| **Blocking** | Placing characters and objects in positions for a scene. Filmmaking rehearsal term. |
+| **Body region** | Area on a character mesh defined by bones (hand, head, torso). Used for attaching elements. |
+| **Blocking** | Placing characters and elements in positions for a scene. Filmmaking rehearsal term. |
 | **Walk cycle** | Animated locomotion with customizable gait (limping, sneaking). |
 
 ## Selection & Interaction
@@ -177,7 +179,7 @@ Six degrees of movement. No synonyms.
 | **Transform** | Position + rotation + scale. The spatial state of an element. |
 | **Active tool** | The current manipulation tool: Select (Q), Translate (W), Rotate (E), Scale (R). |
 
-## Object Relationships
+## Element Relationships
 
 | Term | Definition |
 |------|-----------|
@@ -230,6 +232,12 @@ Six degrees of movement. No synonyms.
 
 Why certain terms were chosen, what to avoid, and how to handle ambiguity.
 
+## Everything is an element
+
+The scene contains **elements**. Characters, lights, and cameras are specialized elements with extra capabilities (posing, intensity controls, focal length). A bush, a car, a table — these are just elements. No sub-category needed for "non-character, non-light, non-camera stuff."
+
+This avoids the "object" problem: `Object` collides with both `System.Object` and `UnityEngine.Object` in C#. "Element" has zero collisions anywhere.
+
 ## Why Shot and Angle are different things
 
 On a film set: *"We need to cover this from two angles — a wide master and an OTS on the lead."* The shot is the scene being captured. Each camera's perspective is an angle.
@@ -248,9 +256,7 @@ In single-camera (most of the time), this collapses: one shot, one camera, one a
 
 ## Asset vs Element: two worlds
 
-The library holds assets. The scene holds elements. Type names are the same in both (an object is an object in the library or in the scene) — context disambiguates. "Element" is the only word that means "any scene thing." Don't say "object" when you mean "element."
-
-"Prop" is informal — it means an object with a narrative role. Fine in conversation. Not a formal type.
+The library holds assets. The scene holds elements. When you place an asset, it becomes an element. The asset stays in the library.
 
 ## Character, not Actor, not Mannequin
 
@@ -277,7 +283,7 @@ The library holds assets. The scene holds elements. Type names are the same in b
 
 ## The shot track is structural
 
-The shot track shows the sequence of shots. Selecting a shot determines which camera, object, and light tracks appear below. Other tracks show animation data; the shot track shows structure.
+The shot track shows the sequence of shots. Selecting a shot determines which camera, element, and light tracks appear below. Other tracks show animation data; the shot track shows structure.
 
 ## Views, not viewports
 
@@ -295,6 +301,7 @@ Every rendering surface is a "view." "Viewport" is retired — calling one view 
 
 | Don't use | Use instead | Why |
 |-----------|------------|-----|
+| object (as a type name) | **element** | `Object` collides with `System.Object` and `UnityEngine.Object`. Everything in the scene is an element. |
 | actor | **character** | Ambiguous with software patterns. |
 | mannequin | **character** (unless discussing uncustomized base mesh) | One concept, one name. |
 | pedestal (camera move) | **crane** | One term for vertical translation. |

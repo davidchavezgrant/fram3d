@@ -94,8 +94,8 @@
   padding: 6px;
 }
 
-/* ── Objects panel ── */
-.object-item {
+/* ── Elements panel ── */
+.element-item {
   display: flex;
   align-items: center;
   padding: 4px 6px;
@@ -105,32 +105,32 @@
   gap: 6px;
   transition: background 0.1s;
 }
-.object-item:hover { background: rgba(255,255,255,0.04); }
-.object-item.selected {
+.element-item:hover { background: rgba(255,255,255,0.04); }
+.element-item.selected {
   background: rgba(255,255,255,0.08);
   color: #ddd;
 }
-.object-item .obj-icon {
+.element-item .el-icon {
   width: 16px;
   text-align: center;
   font-size: 11px;
   opacity: 0.5;
   flex-shrink: 0;
 }
-.object-item .obj-name {
+.element-item .el-name {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #bbb;
 }
-.object-item .obj-tag {
+.element-item .el-tag {
   font-size: 8px;
   color: #555;
   text-transform: uppercase;
 }
-.object-item.child { padding-left: 24px; }
-.object-item.child .obj-icon { opacity: 0.3; }
+.element-item.child { padding-left: 24px; }
+.element-item.child .el-icon { opacity: 0.3; }
 
 /* ── Assets panel ── */
 .asset-grid {
@@ -176,8 +176,8 @@
   letter-spacing: 0.5px;
 }
 
-/* ── Link indicators (3.3.3) ── */
-.object-item .obj-link {
+/* ── Link indicators (6.3.3) ── */
+.element-item .el-link {
   font-size: 8px;
   color: #557799;
   margin-left: auto;
@@ -185,10 +185,10 @@
   white-space: nowrap;
   opacity: 0.7;
 }
-.object-item:hover .obj-link { opacity: 1; }
+.element-item:hover .el-link { opacity: 1; }
 
-/* ── Lights section header (3.3.3) ── */
-.objects-section-header {
+/* ── Lights section header (6.3.3) ── */
+.elements-section-header {
   font-size: 8px;
   color: #555;
   text-transform: uppercase;

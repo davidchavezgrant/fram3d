@@ -23,17 +23,17 @@
 
 > **Rotation storage**: Quaternions internally, pan/tilt/roll displayed in UI. Prevents gimbal lock transparently.
 
-> **Auto-keyframing**: Only changed properties (not all properties). Per-track stopwatch model (AE/Premiere). Stopwatches default to off.
+> **Recording**: Only changed properties get keyframed (not all properties). Per-track stopwatch model (AE/Premiere). Stopwatches default to off.
 
 > **Undo model**: Global stack, not per-shot. Cross-shot undo does not auto-switch the active shot.
 
-> **Delete behavior**: Delete key = keyframe only. Cmd+Delete = object. Context-sensitive to avoid ambiguity.
+> **Delete behavior**: Delete key = keyframe only. Cmd+Delete = element. Context-sensitive to avoid ambiguity.
 
 ---
 
 ## 3. Patterns to Reuse
 
-Good patterns from Vismatic Studio worth carrying forward.
+Good patterns from the prior codebase worth carrying forward.
 
 **`ICameraState` interface isolating Cinemachine.** The interface exposes only `Position`, `Rotation`, `FieldOfView`, `Forward`, `Right`, `Translate()`, `RotateAround()`. The concrete `CinemachineCameraState` is a 49-line adapter. Every controller depends on the interface — Cinemachine is never imported outside the adapter. This is the cleanest boundary in the old codebase.
 
@@ -51,7 +51,7 @@ Good patterns from Vismatic Studio worth carrying forward.
 
 ---
 
-## 4. Anti-patterns from Vismatic Studio
+## 4. Anti-patterns from the Prior Codebase
 
 **God object state classes.** `TimelineState` held shot list, selection indices, current time, IsEvaluating flag, duration editing state, thumbnail references, AND keyframe marker dictionaries — all in one class. The aggregate design (Scene, ShotSetup, Project) exists to prevent this.
 
@@ -73,20 +73,20 @@ Good patterns from Vismatic Studio worth carrying forward.
 
 ## 5. Tuned Constants
 
-Values from Vismatic Studio that were empirically tuned. Starting points — expect to re-tune.
+Values from the prior codebase that were empirically tuned. Starting points — expect to re-tune.
 
 **Camera movement speeds:**
 - `DollyScrollSpeed`: 0.01
 - `PanTiltSpeed`: 0.2
 - `RollSpeed`: 0.03
-- `PedestalSpeed`: 0.02
+- `CraneSpeed`: 0.02
 - `TruckSpeed`: 0.02
 - `DefaultPosition`: (0, 1.6, -5)
 - `DefaultRotation`: Identity quaternion
 
 **Focus:**
 - Lerp speed: 2.0
-- Distance multiplier: 1.5x (breathing room when focusing on an object)
+- Distance multiplier: 1.5x (breathing room when focusing on an element)
 - Minimum distance: 0.1 units
 
 **Camera shake:**
@@ -103,10 +103,10 @@ Values from Vismatic Studio that were empirically tuned. Starting points — exp
 - Dolly zoom speed: 0.5
 - Lens smoothing lerp speed: 10
 
-**Auto-keyframing thresholds:**
+**Recording thresholds:**
 - Near existing keyframe: 0.1 seconds. If near: update existing. If not: create new.
 - Camera change detection: position 0.001 units, rotation 0.01 degrees, focal length 0.01mm
-- Object change detection: position 0.001, rotation 0.01, scale 0.001
+- Element change detection: position 0.001, rotation 0.01, scale 0.001
 
 **Timeline:**
 - Default shot duration: 5.0 seconds
@@ -133,11 +133,11 @@ Values from Vismatic Studio that were empirically tuned. Starting points — exp
 - Dragging onto an existing keyframe silently merges
 - Snap to 0.1s during drag
 
-**Object linking constraints:** Max chain depth: 4.
+**Element linking constraints:** Max chain depth: 4.
 
 **Input mappings:**
 - Mouse: Scroll Y = focal length, +Alt = dolly, +Shift = crane, +Ctrl = roll, +Cmd+Alt = dolly zoom, Scroll X+Cmd = truck, Ctrl-drag = pan/tilt, Alt-drag = orbit (around selected or world origin)
-- Keyboard: Space = play/pause, QWER = tool modes, F = focus, 1-9 = focal length presets, A/Shift+A = aspect ratio cycle, C = camera keyframe, V = object keyframe, Arrows = scrub 1 frame, Delete = context-sensitive delete, Ctrl+D = duplicate, Ctrl+R = reset camera, Cmd+Z / Cmd+Shift+Z = undo/redo
+- Keyboard: Space = play/pause, QWER = tool modes, F = focus, 1-9 = focal length presets, A/Shift+A = aspect ratio cycle, C = camera keyframe, V = element keyframe, Arrows = scrub 1 frame, Delete = context-sensitive delete, Ctrl+D = duplicate, Ctrl+R = reset camera, Cmd+Z / Cmd+Shift+Z = undo/redo
 
 ---
 
@@ -147,7 +147,7 @@ Values from Vismatic Studio that were empirically tuned. Starting points — exp
 
 **Source**: Multi-Scene Project Structure spec — unlimited scenes, lazy load/lazy render
 
-Scenes must be independently loadable without pulling in sibling scene data. Only the active scene's heavy data (meshes, textures, keyframes) should be in memory; inactive scenes keep only lightweight metadata (object list, shot count, character assignments) for fast tab switching.
+Scenes must be independently loadable without pulling in sibling scene data. Only the active scene's heavy data (meshes, textures, keyframes) should be in memory; inactive scenes keep only lightweight metadata (element list, shot count, character assignments) for fast tab switching.
 
 **Implications for file format:**
 - The project file format needs clear scene boundaries — either separate chunks within a single file, or separate files per scene within a project bundle (e.g., `project.fram3d/scene-1.json`, `project.fram3d/scene-2.json`)
@@ -162,7 +162,7 @@ Scenes must be independently loadable without pulling in sibling scene data. Onl
 Cross-cutting systems that multiple downstream features depend on. Build during Phase 4 timeframe to avoid reimplementing for each feature.
 
 - **Settings / Preferences panel:** Centralized settings panel so new settings can be added incrementally as features ship. Avoids scattering configuration UIs across the application.
-- **Panel / docking system:** General panel system with docking support. Downstream milestones (hierarchy panel, pose library, asset library, inspector) all require dockable panels.
+- **Panel / docking system:** General panel system with docking support. Downstream milestones (Elements panel, pose library, Assets panel) all require dockable panels.
 
 ---
 
@@ -172,7 +172,7 @@ DDD-informed, not DDD-orthodox. The cinema domain is rich enough to warrant mode
 
 ### 8.1 What We Use
 
-**Ubiquitous language.** Cinema terminology is consistent from roadmap to spec to class name to method name. Dolly, crane, truck, coverage, blocking, stopwatch — these terms mean the same thing everywhere. This is the single highest-value DDD concept.
+**Ubiquitous language.** Cinema terminology is consistent from roadmap to spec to class name to method name. Dolly, crane, truck, angle, blocking, stopwatch — these terms mean the same thing everywhere. This is the single highest-value DDD concept.
 
 **Bounded contexts via Assembly Definitions.** Each context is a separate `.asmdef`, enforcing boundaries at compile time:
 
@@ -181,8 +181,8 @@ DDD-informed, not DDD-orthodox. The cinema domain is rich enough to warrant mode
 | Camera | Rig, lens, focus, shake, DOF | `Fram3d.Camera` | 1.1, 1.2, 6.2, 7.2, 9.1 |
 | Sequencing | Shot, keyframe, track, playback, stopwatch | `Fram3d.Sequencing` | 3.1, 3.2, 8.4 |
 | Scene | Element, selection, gizmo, ground plane | `Fram3d.Scene` | 2.1, 5.1, 6.3, 8.1, 10.1 |
-| Viewport | Panel system, layout, view modes | `Fram3d.Viewport` | 2.2, 8.2 |
-| Characters | Mannequin, pose, IK, expression, skeleton | `Fram3d.Characters` | 6.1, 7.1, 12.2 |
+| Viewport | Panel system, layout, views | `Fram3d.Viewport` | 2.2, 8.2 |
+| Characters | Mannequin, pose, expression, skeleton | `Fram3d.Characters` | 6.1, 7.1, 12.2 |
 | Persistence | Project, scene file, asset bundle | `Fram3d.Persistence` | 4.1, 4.2, 8.3 |
 | Assets | Import, library, environments | `Fram3d.Assets` | 4.3, 5.2, 5.3, 12.3 |
 | Export | Renderer, storyboard, EDL | `Fram3d.Export` | 4.4 |
@@ -196,7 +196,7 @@ If Characters can't reference Camera internals, you physically can't create the 
 |---------------|------|
 | `ShotSetup` | `CameraAnimation`, `ShotObjectManager`, per-object `ObjectAnimation` instances |
 | `Character` | Pose state, expression state, skeleton mapping, customization |
-| `Scene` | Objects, shots, lighting, timelines |
+| `Scene` | Elements, shots, lighting, timelines |
 | `Project` | Scenes, character definitions, settings |
 
 **Value objects.** Immutable types that carry meaning without identity:
@@ -210,7 +210,7 @@ If Characters can't reference Camera internals, you physically can't create the 
 
 - Shot-level: `DurationChanged`, `KeyframeAdded`, `KeyframeRemoved`, `KeyframeMoved`
 - Selection: `ElementSelected`, `SelectionCleared`
-- Scene-level: events for object add/remove, lighting changes
+- Scene-level: events for element add/remove, lighting changes
 
 **Command pattern.** `ICommand` with `Execute()` / `Undo()` / `Redo()` for all user actions. Enables undo stack and action replay.
 

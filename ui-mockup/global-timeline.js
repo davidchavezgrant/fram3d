@@ -20,7 +20,7 @@ const ALL_SCENES = [
             { time: 2.5, pos: [-1.2, 1.5, -1.8], rot: [3, 55, 0], focal: 35 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 0, end: 3 }],
+        angles: [{ camera: 0, start: 0, end: 3 }],
       },
       { name: 'MED DET ENTERS', start: 3, end: 7, color: '#5577aa',
         cameras: [
@@ -30,7 +30,7 @@ const ALL_SCENES = [
             { time: 6.5, pos: [-0.3, 1.4, -0.8], rot: [-2, 50, 0], focal: 50 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 3, end: 7 }],
+        angles: [{ camera: 0, start: 3, end: 7 }],
       },
       { name: 'OTS DET→WIT', start: 7, end: 10.5, color: '#aa8844',
         cameras: [
@@ -43,7 +43,7 @@ const ALL_SCENES = [
             { time: 10, pos: [0.2, 1.5, 0.7], rot: [3, -162, 0], focal: 65 },
           ]},
         ],
-        coverage: [
+        angles: [
           { camera: 0, start: 7, end: 8.8 },
           { camera: 1, start: 8.8, end: 10.5 },
         ],
@@ -55,7 +55,7 @@ const ALL_SCENES = [
             { time: 12.8, pos: [0.0, 1.3, 0.4], rot: [-1, -180, 0], focal: 85 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 10.5, end: 13 }],
+        angles: [{ camera: 0, start: 10.5, end: 13 }],
       },
       { name: 'TWO-SHOT TABLE', start: 13, end: 18, color: '#aa5577',
         cameras: [
@@ -69,7 +69,7 @@ const ALL_SCENES = [
             { time: 17, pos: [0.5, 2.0, 0.0], rot: [35, -88, 0], focal: 24 },
           ]},
         ],
-        coverage: [
+        angles: [
           { camera: 0, start: 13, end: 15.5 },
           { camera: 1, start: 15.5, end: 18 },
         ],
@@ -81,7 +81,7 @@ const ALL_SCENES = [
             { time: 19.3, pos: [0.1, 1.8, 0.1], rot: [85, 5, 0], focal: 50 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 18, end: 19.5 }],
+        angles: [{ camera: 0, start: 18, end: 19.5 }],
       },
       { name: 'CU DET WATCHES', start: 19.5, end: 22.5, color: '#aa7744',
         cameras: [
@@ -94,7 +94,7 @@ const ALL_SCENES = [
             { time: 22, pos: [-0.8, 1.4, -0.3], rot: [0, 28, 0], focal: 65 },
           ]},
         ],
-        coverage: [
+        angles: [
           { camera: 0, start: 19.5, end: 21 },
           { camera: 1, start: 21, end: 22.5 },
         ],
@@ -106,7 +106,7 @@ const ALL_SCENES = [
             { time: 24.5, pos: [0.2, 1.5, 0.7], rot: [3, -160, 0], focal: 50 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 22.5, end: 25 }],
+        angles: [{ camera: 0, start: 22.5, end: 25 }],
       },
       { name: 'MED WIT EXPLAINS', start: 25, end: 29, color: '#996655',
         cameras: [
@@ -120,7 +120,7 @@ const ALL_SCENES = [
             { time: 28, pos: [0.6, 1.3, 0.3], rot: [0, -148, 0], focal: 65 },
           ]},
         ],
-        coverage: [
+        angles: [
           { camera: 0, start: 25, end: 27 },
           { camera: 1, start: 27, end: 29 },
         ],
@@ -132,7 +132,7 @@ const ALL_SCENES = [
             { time: 30.8, pos: [0.2, 1.0, 0.4], rot: [28, -148, 0], focal: 100 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 29, end: 31 }],
+        angles: [{ camera: 0, start: 29, end: 31 }],
       },
       { name: 'WIDE TENSION', start: 31, end: 34, color: '#aa6655',
         cameras: [
@@ -145,7 +145,7 @@ const ALL_SCENES = [
             { time: 33.5, pos: [1.8, 1.7, -1.8], rot: [10, -48, 6], focal: 28 },
           ]},
         ],
-        coverage: [
+        angles: [
           { camera: 0, start: 31, end: 32.5 },
           { camera: 1, start: 32.5, end: 34 },
         ],
@@ -162,7 +162,7 @@ const ALL_SCENES = [
             { time: 37.5, pos: [-0.6, 1.4, -0.6], rot: [0, 40, 0], focal: 50 },
           ]},
         ],
-        coverage: [
+        angles: [
           { camera: 0, start: 34, end: 37 },
           { camera: 1, start: 37, end: 38 },
         ],
@@ -174,7 +174,7 @@ const ALL_SCENES = [
             { time: 39.8, pos: [0.0, 1.3, 0.25], rot: [0, -180, 0], focal: 135 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 38, end: 40 }],
+        angles: [{ camera: 0, start: 38, end: 40 }],
       },
       { name: 'MED DET LEANS BACK', start: 40, end: 43, color: '#558899',
         cameras: [
@@ -187,7 +187,7 @@ const ALL_SCENES = [
             { time: 42.5, pos: [2.2, 1.4, -1.8], rot: [2, -55, 0], focal: 65 },
           ]},
         ],
-        coverage: [
+        angles: [
           { camera: 0, start: 40, end: 41.5 },
           { camera: 1, start: 41.5, end: 43 },
         ],
@@ -203,7 +203,7 @@ const ALL_SCENES = [
             { time: 47, pos: [0.0, 3.5, -3.0], rot: [30, 0, 0], focal: 24 },
           ]},
         ],
-        coverage: [
+        angles: [
           { camera: 0, start: 43, end: 45.5 },
           { camera: 1, start: 45.5, end: 48 },
         ],
@@ -266,7 +266,7 @@ const ALL_SCENES = [
             { time: 4.5, pos: [0, 1.6, -15], rot: [0, 0, 0], focal: 85 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 0, end: 5 }],
+        angles: [{ camera: 0, start: 0, end: 5 }],
       },
       { name: 'MED DET AT TAPE', start: 5, end: 9, color: '#886644',
         cameras: [
@@ -276,7 +276,7 @@ const ALL_SCENES = [
             { time: 8.5, pos: [1.2, 1.0, -3], rot: [15, -20, 0], focal: 50 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 5, end: 9 }],
+        angles: [{ camera: 0, start: 5, end: 9 }],
       },
       { name: 'POV DET SCANS', start: 9, end: 13, color: '#668844',
         cameras: [
@@ -286,7 +286,7 @@ const ALL_SCENES = [
             { time: 12.5, pos: [0.5, 1.3, -2], rot: [50, 5, 1], focal: 35 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 9, end: 13 }],
+        angles: [{ camera: 0, start: 9, end: 13 }],
       },
       { name: 'CU EVIDENCE GROUND', start: 13, end: 15.5, color: '#884466',
         cameras: [
@@ -295,7 +295,7 @@ const ALL_SCENES = [
             { time: 15, pos: [0.2, 0.25, -1.4], rot: [72, 2, 0], focal: 100 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 13, end: 15.5 }],
+        angles: [{ camera: 0, start: 13, end: 15.5 }],
       },
       { name: 'MED DET KNEELS', start: 15.5, end: 20, color: '#446688',
         cameras: [
@@ -309,7 +309,7 @@ const ALL_SCENES = [
             { time: 19, pos: [-0.3, 0.5, -1.3], rot: [20, 40, 0], focal: 35 },
           ]},
         ],
-        coverage: [
+        angles: [
           { camera: 0, start: 15.5, end: 18 },
           { camera: 1, start: 18, end: 20 },
         ],
@@ -325,7 +325,7 @@ const ALL_SCENES = [
             { time: 23, pos: [0.8, 1.5, -1], rot: [2, -158, 0], focal: 50 },
           ]},
         ],
-        coverage: [
+        angles: [
           { camera: 0, start: 20, end: 22 },
           { camera: 1, start: 22, end: 24 },
         ],
@@ -337,7 +337,7 @@ const ALL_SCENES = [
             { time: 26.5, pos: [0.15, 1.3, -2.1], rot: [-2, 3, 0], focal: 85 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 24, end: 27 }],
+        angles: [{ camera: 0, start: 24, end: 27 }],
       },
       { name: 'WIDE DET EXITS', start: 27, end: 32, color: '#448866',
         cameras: [
@@ -346,7 +346,7 @@ const ALL_SCENES = [
             { time: 31.5, pos: [3, 2, -5], rot: [8, -35, 0], focal: 28 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 27, end: 32 }],
+        angles: [{ camera: 0, start: 27, end: 32 }],
       },
       { name: 'WIDE ALLEY EMPTY', start: 32, end: 36, color: '#446666',
         cameras: [
@@ -355,7 +355,7 @@ const ALL_SCENES = [
             { time: 35.5, pos: [0, 3.5, -8], rot: [18, 0, 0], focal: 24 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 32, end: 36 }],
+        angles: [{ camera: 0, start: 32, end: 36 }],
       },
     ],
     tracks: [
@@ -399,7 +399,7 @@ const ALL_SCENES = [
             { time: 3.5, pos: [2.5, 1.8, -1.8], rot: [8, -40, 0], focal: 28 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 0, end: 4 }],
+        angles: [{ camera: 0, start: 0, end: 4 }],
       },
       { name: 'MED AT DESK', start: 4, end: 9, color: '#557788',
         cameras: [
@@ -409,7 +409,7 @@ const ALL_SCENES = [
             { time: 8.5, pos: [1.0, 1.3, 0], rot: [2, -80, 0], focal: 55 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 4, end: 9 }],
+        angles: [{ camera: 0, start: 4, end: 9 }],
       },
       { name: 'CU EVIDENCE BOARD', start: 9, end: 13, color: '#885566',
         cameras: [
@@ -419,7 +419,7 @@ const ALL_SCENES = [
             { time: 12.5, pos: [-2, 1.4, -0.5], rot: [-5, 90, 0], focal: 40 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 9, end: 13 }],
+        angles: [{ camera: 0, start: 9, end: 13 }],
       },
       { name: 'MED PHONE CALL', start: 13, end: 18, color: '#667755',
         cameras: [
@@ -433,7 +433,7 @@ const ALL_SCENES = [
             { time: 17, pos: [-0.3, 1.3, -0.3], rot: [0, 25, 0], focal: 65 },
           ]},
         ],
-        coverage: [
+        angles: [
           { camera: 0, start: 13, end: 15.5 },
           { camera: 1, start: 15.5, end: 18 },
         ],
@@ -446,7 +446,7 @@ const ALL_SCENES = [
             { time: 22.5, pos: [0.2, 1.4, 0.2], rot: [0, 90, 0], focal: 40 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 18, end: 23 }],
+        angles: [{ camera: 0, start: 18, end: 23 }],
       },
       { name: 'CU DET EUREKA', start: 23, end: 26, color: '#887744',
         cameras: [
@@ -455,7 +455,7 @@ const ALL_SCENES = [
             { time: 25.5, pos: [0.4, 1.3, -0.1], rot: [-2, -55, 0], focal: 85 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 23, end: 26 }],
+        angles: [{ camera: 0, start: 23, end: 26 }],
       },
       { name: 'WIDE EXITS OFFICE', start: 26, end: 32, color: '#558866',
         cameras: [
@@ -465,7 +465,7 @@ const ALL_SCENES = [
             { time: 31.5, pos: [3, 2, -3], rot: [12, -30, 0], focal: 24 },
           ]},
         ],
-        coverage: [{ camera: 0, start: 26, end: 32 }],
+        angles: [{ camera: 0, start: 26, end: 32 }],
       },
     ],
     tracks: [
@@ -540,7 +540,7 @@ const CAMERA_SUB_TRACKS = [
   { name: 'Rotation', prop: 'rot' },
   { name: 'Focal Length', prop: 'focal' },
 ];
-const OBJECT_SUB_TRACKS = [
+const ELEMENT_SUB_TRACKS = [
   { name: 'Position', prop: 'pos' },
   { name: 'Rotation', prop: 'rot' },
   { name: 'Scale', prop: 'scale' },
@@ -553,7 +553,7 @@ const KF_INTERP_TYPES = ['linear', 'smooth', 'hold'];
 const kfInterpOverrides = {};
 function getKfInterp(key) {
   if (kfInterpOverrides[key]) return kfInterpOverrides[key];
-  // Default: camera kfs get smooth, single-kf objects get hold, multi-kf objects get linear
+  // Default: camera kfs get smooth, single-kf elements get hold, multi-kf elements get linear
   const parts = key.split('-');
   if (parts[0] === 'cam') return 'smooth';
   const ti = parseInt(parts[1]);
@@ -568,7 +568,7 @@ function cycleKfInterp(key) {
 
 const TOOL_MODES = [
   { key: 'Q', label: 'SELECT', icon: '◇' },
-  { key: 'W', label: 'MOVE', icon: '✥' },
+  { key: 'W', label: 'TRANSLATE', icon: '✥' },
   { key: 'E', label: 'ROTATE', icon: '↻' },
   { key: 'R', label: 'SCALE', icon: '⬡' },
 ];
@@ -602,11 +602,11 @@ let directorView = false;
 let cameraPathVisible = false;
 let currentAspectIndex = 0; // 2.39:1 default
 let guidesVisible = false;
-let hudVisible = true;
+let cameraInfoVisible = true;
 let kfDragging = false;
 let kfDragInfo = null;
-let coverageDivDragging = false;
-let coverageDivInfo = null;
+let angleDivDragging = false;
+let angleDivInfo = null;
 
 // ── DOM refs ──
 const shotBar = document.getElementById('shot-bar');
@@ -621,16 +621,16 @@ const playheadRuler = document.getElementById('playhead-ruler');
 const playheadShotbar = document.getElementById('playhead-shotbar');
 const viewportShotLabel = document.getElementById('viewport-shot-label');
 const viewportTimecode = document.getElementById('viewport-timecode');
-const minimapEl = document.getElementById('minimap');
+const overviewEl = document.getElementById('overview');
 const resizeLabel = document.getElementById('resize-label');
 const shotTooltip = document.getElementById('shot-tooltip');
 
 // ── Feature visibility ──
 function applyFeatureVisibility() {
   const featureElements = {
-    'tool-mode': ['tool-mode-badge'],
+    'active-tool': ['active-tool-badge'],
     'shot-management': ['shot-mgmt-buttons'],
-    'coverage-track': ['coverage-container'],
+    'active-angle-track': ['active-angle-container'],
   };
   for (const [featId, elIds] of Object.entries(featureElements)) {
     const show = feat(featId);
@@ -639,15 +639,15 @@ function applyFeatureVisibility() {
       if (el) el.style.display = show ? '' : 'none';
     });
   }
-  // HUD, guides, director badge, camera path — all use tracked visibility flags
-  const hudEl = document.getElementById('viewport-hud');
-  if (hudEl) hudEl.style.display = (feat('hud') && hudVisible) ? '' : 'none';
+  // Camera info, guides, director badge, camera path — all use tracked visibility flags
+  const camInfoEl = document.getElementById('camera-info');
+  if (camInfoEl) camInfoEl.style.display = (feat('camera-info') && cameraInfoVisible) ? '' : 'none';
   const dirBadge = document.getElementById('director-badge');
   if (dirBadge) dirBadge.style.display = (feat('director-view') && directorView) ? '' : 'none';
   const pathBadge = document.getElementById('camera-path-badge');
   if (pathBadge) pathBadge.style.display = (feat('camera-path') && cameraPathVisible) ? '' : 'none';
   const guidesEl = document.getElementById('viewport-guides');
-  if (guidesEl) guidesEl.style.display = (feat('frame-guides') && guidesVisible) ? '' : 'none';
+  if (guidesEl) guidesEl.style.display = (feat('composition-guides') && guidesVisible) ? '' : 'none';
   updateAspectMasks();
 }
 
@@ -702,7 +702,7 @@ function updateAspectMasks() {
   } else {
     [top, bottom, left, right].forEach(el => { if (el) el.style.display = 'none'; });
   }
-  const hudRatio = document.getElementById('hud-ratio');
+  const hudRatio = document.getElementById('cam-info-ratio');
   if (hudRatio) hudRatio.textContent = ar.name;
 }
 
@@ -825,9 +825,9 @@ function render() {
   renderMinimap();
   renderViewportInfo();
   renderTransportBar();
-  if (feat('coverage-track')) renderCoverageTrack();
-  if (feat('tool-mode')) renderToolMode();
-  renderHUD();
+  if (feat('active-angle-track')) renderActiveAngleTrack();
+  if (feat('active-tool')) renderActiveTool();
+  renderCameraInfo();
 }
 
 function renderShotBar() {
@@ -912,9 +912,9 @@ function renderShotBar() {
       boundarySnapshot = {
         shots: SCENE.shots.map(s => ({ start: s.start, end: s.end })),
         cameraTimes: SCENE.shots.map(s => s.cameras.map(c => c.keyframes.map(kf => kf.time))),
-        objectTimes: SCENE.tracks.map(t => t.keyframes.map(kf => kf.time)),
+        elementTimes: SCENE.tracks.map(t => t.keyframes.map(kf => kf.time)),
         linkedPeriods: SCENE.tracks.map(t => (t.linkedPeriods||[]).map(lp => ({ start: lp.start, end: lp.end }))),
-        coverageTimes: SCENE.shots.map(s => (s.coverage||[]).map(seg => ({ start: seg.start, end: seg.end }))),
+        angleTimes: SCENE.shots.map(s => (s.angles||[]).map(seg => ({ start: seg.start, end: seg.end }))),
         origBoundary: SCENE.shots[idx].end,
       };
     });
@@ -1035,14 +1035,14 @@ function renderTracks() {
     });
   }
 
-  // Object tracks
+  // Element tracks
   SCENE.tracks.forEach((track, ti) => {
     const label = document.createElement('div');
     label.className = 'track-label';
     let lHTML = '';
     if (feat('track-expand')) {
-      const exp = trackExpanded['obj-'+ti] || false;
-      lHTML += `<span class="expand-arrow ${exp?'expanded':''}" data-track="obj-${ti}">▶</span>`;
+      const exp = trackExpanded['el-'+ti] || false;
+      lHTML += `<span class="expand-arrow ${exp?'expanded':''}" data-track="el-${ti}">▶</span>`;
     }
     lHTML += `<div class="dot" style="background:${track.color}"></div><div class="name">${track.name}</div>`;
     label.innerHTML = lHTML;
@@ -1051,11 +1051,11 @@ function renderTracks() {
     row.className = 'track-row';
     row.style.top = yOffset + 'px';
     trackArea.appendChild(row);
-    renderObjectRow(row, ti, currentShotIndex);
+    renderElementRow(row, ti, currentShotIndex);
     yOffset += TRACK_ROW_HEIGHT;
 
-    if (feat('track-expand') && trackExpanded['obj-'+ti]) {
-      OBJECT_SUB_TRACKS.forEach((sub, pi) => {
+    if (feat('track-expand') && trackExpanded['el-'+ti]) {
+      ELEMENT_SUB_TRACKS.forEach((sub, pi) => {
         const subLabel = document.createElement('div');
         subLabel.className = 'track-label sub-track-label';
         // Live interpolated value in label
@@ -1142,7 +1142,7 @@ function renderCameraRow(row, currentShotIndex) {
   }
 }
 
-function renderObjectRow(row, trackIndex, currentShotIndex) {
+function renderElementRow(row, trackIndex, currentShotIndex) {
   const track = SCENE.tracks[trackIndex];
   SCENE.shots.forEach(shot => {
     if (shot.start > 0) { const line = document.createElement('div'); line.className = 'shot-boundary'; line.style.left = timeToX(shot.start) + 'px'; row.appendChild(line); }
@@ -1203,61 +1203,61 @@ function renderZoomBar() {
 }
 
 function renderMinimap() {
-  if (!minimapEl) return;
-  const w = minimapEl.clientWidth;
+  if (!overviewEl) return;
+  const w = overviewEl.clientWidth;
   const tToX = (t) => (t/SCENE.totalDuration)*w;
   const csi = getCurrentShot();
-  const sc = document.getElementById('minimap-shots');
+  const sc = document.getElementById('overview-shots');
   sc.innerHTML = '';
   SCENE.shots.forEach((shot, i) => {
     const el = document.createElement('div');
-    el.className = 'minimap-shot';
+    el.className = 'overview-shot';
     const l = tToX(shot.start); const r = tToX(shot.end);
     el.style.left = l+'px'; el.style.width = (r-l-1)+'px';
     el.style.background = i===csi ? shot.color : adjustAlpha(shot.color,0.6);
     if (r-l > 30) el.textContent = shot.name;
     sc.appendChild(el);
   });
-  const tc = document.getElementById('minimap-tracks');
+  const tc = document.getElementById('overview-tracks');
   tc.innerHTML = '';
   const rc = 1 + SCENE.tracks.length;
   const tH = Math.max(4, (48-17)/rc);
   const camRow = document.createElement('div');
-  camRow.className = 'minimap-track-row';
+  camRow.className = 'overview-track-row';
   camRow.style.top = '0px'; camRow.style.height = tH+'px';
   SCENE.shots.forEach((shot, si) => {
     const cam = shot.cameras[activeCameraPerShot[si]||0];
     cam.keyframes.forEach(kf => {
       const el = document.createElement('div');
-      el.className='minimap-kf'; el.style.left=tToX(kf.time)+'px'; el.style.background=shot.color;
+      el.className='overview-kf'; el.style.left=tToX(kf.time)+'px'; el.style.background=shot.color;
       camRow.appendChild(el);
     });
   });
   tc.appendChild(camRow);
   SCENE.tracks.forEach((track, ti) => {
     const row = document.createElement('div');
-    row.className = 'minimap-track-row';
+    row.className = 'overview-track-row';
     row.style.top = ((ti+1)*tH)+'px'; row.style.height = tH+'px';
     if (track.linkedPeriods) {
       track.linkedPeriods.forEach(lp => {
         const region = document.createElement('div');
-        region.className = 'minimap-link-region';
+        region.className = 'overview-link-region';
         region.style.left = tToX(lp.start)+'px'; region.style.width = (tToX(lp.end)-tToX(lp.start))+'px';
         row.appendChild(region);
       });
     }
     track.keyframes.forEach(kf => {
       const el = document.createElement('div');
-      el.className='minimap-kf'; el.style.left=tToX(kf.time)+'px'; el.style.background=track.color;
+      el.className='overview-kf'; el.style.left=tToX(kf.time)+'px'; el.style.background=track.color;
       row.appendChild(el);
     });
     tc.appendChild(row);
   });
-  const vw = document.getElementById('minimap-view-window');
+  const vw = document.getElementById('overview-view-window');
   const vL = tToX(viewStart); const vR = tToX(viewEnd);
   vw.style.left = vL+'px'; vw.style.width = (vR-vL)+'px';
   vw.style.display = (viewEnd-viewStart >= SCENE.totalDuration-0.01) ? 'none' : 'block';
-  document.getElementById('minimap-playhead').style.left = tToX(playhead)+'px';
+  document.getElementById('overview-playhead').style.left = tToX(playhead)+'px';
 }
 
 function renderViewportInfo() {
@@ -1285,23 +1285,23 @@ function renderTransportBar() {
   playBtn.classList.toggle('playing', playing);
 }
 
-function renderCoverageTrack() {
-  const track = document.getElementById('coverage-track');
+function renderActiveAngleTrack() {
+  const track = document.getElementById('active-angle-track');
   if (!track) return;
-  track.querySelectorAll('.coverage-segment, .coverage-divider').forEach(el => el.remove());
+  track.querySelectorAll('.angle-segment, .angle-divider').forEach(el => el.remove());
   const si = getCurrentShot();
   const shot = SCENE.shots[si];
-  const coverage = shot.coverage || [];
-  coverage.forEach((seg, i) => {
+  const angles = shot.angles || [];
+  angles.forEach((seg, i) => {
     const cam = shot.cameras[seg.camera];
     if (!cam) return;
     const left = timeToX(seg.start);
     const width = timeToX(seg.end) - left;
     const el = document.createElement('div');
-    el.className = 'coverage-segment';
+    el.className = 'angle-segment';
     // Highlight active segment (playhead is over it)
     const isActive = playhead >= seg.start && playhead < seg.end;
-    el.classList.add(isActive ? 'active-coverage' : 'inactive-coverage');
+    el.classList.add(isActive ? 'active-segment' : 'inactive-segment');
     el.style.left = left + 'px';
     el.style.width = width + 'px';
     el.style.background = shot.color;
@@ -1318,7 +1318,7 @@ function renderCoverageTrack() {
         const splitTime = Math.round(xToTime(x) * SCENE.fps) / SCENE.fps;
         if (splitTime > seg.start + 0.2 && splitTime < seg.end - 0.2) {
           const nextCam = (seg.camera + 1) % shot.cameras.length;
-          coverage.splice(i + 1, 0, { camera: nextCam, start: splitTime, end: seg.end });
+          angles.splice(i + 1, 0, { camera: nextCam, start: splitTime, end: seg.end });
           seg.end = splitTime;
           render();
         }
@@ -1329,44 +1329,44 @@ function renderCoverageTrack() {
     // Divider between segments (draggable)
     if (i > 0) {
       const divider = document.createElement('div');
-      divider.className = 'coverage-divider';
+      divider.className = 'angle-divider';
       divider.style.left = left + 'px';
       const divIdx = i;
       divider.addEventListener('mousedown', (e) => {
         e.stopPropagation(); e.preventDefault();
-        coverageDivDragging = true;
-        coverageDivInfo = { shotIndex: si, dividerIndex: divIdx, coverage };
+        angleDivDragging = true;
+        angleDivInfo = { shotIndex: si, dividerIndex: divIdx, angles };
       });
       track.appendChild(divider);
     }
   });
-  const phCov = document.getElementById('playhead-coverage');
+  const phCov = document.getElementById('playhead-active-angle');
   if (phCov) phCov.style.left = timeToX(playhead) + 'px';
 }
 
-function renderToolMode() {
+function renderActiveTool() {
   const mode = TOOL_MODES[currentToolMode];
-  const icon = document.getElementById('tool-mode-icon');
-  const label = document.getElementById('tool-mode-label');
-  const key = document.getElementById('tool-mode-key');
+  const icon = document.getElementById('active-tool-icon');
+  const label = document.getElementById('active-tool-label');
+  const key = document.getElementById('active-tool-key');
   if (icon) icon.textContent = mode.icon;
   if (label) label.textContent = mode.label;
   if (key) key.textContent = mode.key;
 }
 
-function renderHUD() {
-  if (!feat('hud')) return;
+function renderCameraInfo() {
+  if (!feat('camera-info')) return;
   const si = getCurrentShot();
   const display = getDisplayCamera(si);
   if (!display.cam) return;
   const focal = interpolateTrack(display.cam.keyframes, playhead, 'focal');
   const pos = interpolateTrack(display.cam.keyframes, playhead, 'pos');
-  if (focal != null) document.getElementById('hud-focal').textContent = focal.toFixed(0) + 'mm';
-  if (pos != null) document.getElementById('hud-height').textContent = pos[1].toFixed(1) + 'm';
+  if (focal != null) document.getElementById('cam-info-focal').textContent = focal.toFixed(0) + 'mm';
+  if (pos != null) document.getElementById('cam-info-height').textContent = pos[1].toFixed(1) + 'm';
   // Approximate AOV from focal length (full-frame 35mm)
   if (focal != null) {
     const aov = 2 * Math.atan(36 / (2 * focal)) * (180 / Math.PI);
-    document.getElementById('hud-aov').textContent = aov.toFixed(1) + '°';
+    document.getElementById('cam-info-aov').textContent = aov.toFixed(1) + '°';
   }
 }
 
@@ -1454,7 +1454,7 @@ trackLabels.addEventListener('click', (e) => {
 
 // Global mousemove
 let zoomDragging = false, zoomDragStartX = 0, zoomDragStartViewStart = 0;
-let minimapDragging = false;
+let overviewDragging = false;
 
 document.addEventListener('mousemove', (e) => {
   // Timeline vertical resize
@@ -1476,12 +1476,12 @@ document.addEventListener('mousemove', (e) => {
     return;
   }
   // Coverage divider drag
-  if (coverageDivDragging && coverageDivInfo) {
-    const rect = document.getElementById('coverage-track').getBoundingClientRect();
+  if (angleDivDragging && angleDivInfo) {
+    const rect = document.getElementById('active-angle-track').getBoundingClientRect();
     const x = e.clientX - rect.left;
     let newTime = Math.round(xToTime(x) * SCENE.fps) / SCENE.fps;
-    const cov = coverageDivInfo.coverage;
-    const di = coverageDivInfo.dividerIndex;
+    const cov = angleDivInfo.angles;
+    const di = angleDivInfo.dividerIndex;
     const prev = cov[di - 1];
     const curr = cov[di];
     newTime = Math.max(prev.start + 0.2, Math.min(curr.end - 0.2, newTime));
@@ -1519,21 +1519,21 @@ document.addEventListener('mousemove', (e) => {
       SCENE.shots[j].cameras.forEach((cam, ci) => {
         cam.keyframes.forEach((kf, ki) => { kf.time = snap.cameraTimes[j][ci][ki] + delta; });
       });
-      if (SCENE.shots[j].coverage) {
-        SCENE.shots[j].coverage.forEach((seg, si) => {
-          const orig = snap.coverageTimes[j][si];
+      if (SCENE.shots[j].angles) {
+        SCENE.shots[j].angles.forEach((seg, si) => {
+          const orig = snap.angleTimes[j][si];
           if (orig) { seg.start = orig.start + delta; seg.end = orig.end + delta; }
         });
       }
     }
     if (!e.shiftKey) {
       SCENE.tracks.forEach((track, ti) => {
-        track.keyframes.forEach((kf, ki) => { const ot = snap.objectTimes[ti][ki]; kf.time = ot >= snap.origBoundary ? ot + delta : ot; });
+        track.keyframes.forEach((kf, ki) => { const ot = snap.elementTimes[ti][ki]; kf.time = ot >= snap.origBoundary ? ot + delta : ot; });
         (track.linkedPeriods||[]).forEach((lp, li) => { const ol = snap.linkedPeriods[ti][li]; lp.start = ol.start >= snap.origBoundary ? ol.start+delta : ol.start; lp.end = ol.end >= snap.origBoundary ? ol.end+delta : ol.end; });
       });
     } else {
       SCENE.tracks.forEach((track, ti) => {
-        track.keyframes.forEach((kf, ki) => { kf.time = snap.objectTimes[ti][ki]; });
+        track.keyframes.forEach((kf, ki) => { kf.time = snap.elementTimes[ti][ki]; });
         (track.linkedPeriods||[]).forEach((lp, li) => { const ol = snap.linkedPeriods[ti][li]; lp.start = ol.start; lp.end = ol.end; });
       });
     }
@@ -1556,18 +1556,18 @@ document.addEventListener('mousemove', (e) => {
     const dx = e.clientX-zoomDragStartX; const w = zoomBar.clientWidth;
     const d = viewEnd-viewStart; viewStart = zoomDragStartViewStart + (dx/w)*SCENE.totalDuration; viewEnd = viewStart+d; clampView(); render(); return;
   }
-  if (minimapDragging) { handleMinimapClick(e); return; }
+  if (overviewDragging) { handleOverviewClick(e); return; }
 });
 
 document.addEventListener('mouseup', () => {
   if (timelineResizing) timelineResizing = false;
   if (panelDragInfo) panelDragInfo = null;
-  if (coverageDivDragging) { coverageDivDragging = false; coverageDivInfo = null; }
+  if (angleDivDragging) { angleDivDragging = false; angleDivInfo = null; }
   if (kfDragging) { kfDragging = false; kfDragInfo = null; }
   if (boundaryDragging) { boundaryDragging = false; boundaryIndex = -1; boundarySnapshot = null; resizeLabel.style.display = 'none'; }
   trackDragging = false;
   rulerDragging = false;
-  minimapDragging = false;
+  overviewDragging = false;
   if (panDragging) { panDragging = false; trackArea.style.cursor = 'crosshair'; shotBar.style.cursor = 'pointer'; }
   zoomDragging = false;
 });
@@ -1613,7 +1613,7 @@ if (addShotBtn) {
         { time: ns, pos: [0,1.5,0], rot: [0,0,0], focal: 50 },
         { time: ne-0.5, pos: [0,1.5,0], rot: [0,0,0], focal: 50 },
       ]}],
-      coverage: [{ camera: 0, start: ns, end: ne }],
+      angles: [{ camera: 0, start: ns, end: ne }],
     });
     SCENE.totalDuration = ne;
     activeCameraPerShot[SCENE.shots.length-1] = 0;
@@ -1623,12 +1623,12 @@ if (addShotBtn) {
 }
 
 // Minimap
-minimapEl.addEventListener('mousedown', (e) => {
+overviewEl.addEventListener('mousedown', (e) => {
   if (e.button !== 0) return;
-  minimapDragging = true; previewCamera = null; handleMinimapClick(e);
+  overviewDragging = true; previewCamera = null; handleOverviewClick(e);
 });
-function handleMinimapClick(e) {
-  const rect = minimapEl.getBoundingClientRect();
+function handleOverviewClick(e) {
+  const rect = overviewEl.getBoundingClientRect();
   const t = ((e.clientX-rect.left)/rect.width)*SCENE.totalDuration;
   const d = viewEnd-viewStart;
   viewStart = t-d/2; viewEnd = viewStart+d; clampView();
@@ -1638,7 +1638,7 @@ function handleMinimapClick(e) {
 trackArea.addEventListener('auxclick', (e) => e.preventDefault());
 ruler.addEventListener('auxclick', (e) => e.preventDefault());
 shotBar.addEventListener('auxclick', (e) => e.preventDefault());
-minimapEl.addEventListener('auxclick', (e) => e.preventDefault());
+overviewEl.addEventListener('auxclick', (e) => e.preventDefault());
 
 // ── Keyboard ──
 document.addEventListener('keydown', (e) => {
@@ -1648,7 +1648,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') { playhead = Math.min(SCENE.totalDuration, playhead + 1/SCENE.fps); render(); return; }
   if (e.key === '\\') { viewStart = 0; viewEnd = SCENE.totalDuration; render(); return; }
 
-  if (feat('tool-mode')) {
+  if (feat('active-tool')) {
     const mi = TOOL_MODES.findIndex(m => m.key === e.key.toUpperCase());
     if (mi !== -1 && !e.shiftKey) { currentToolMode = mi; render(); return; }
   }
@@ -1657,7 +1657,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'End') { e.preventDefault(); playhead = SCENE.totalDuration; render(); return; }
     const u = e.key.toUpperCase();
     if (u === 'G') { guidesVisible = !guidesVisible; applyFeatureVisibility(); return; }
-    if (u === 'H') { hudVisible = !hudVisible; applyFeatureVisibility(); return; }
+    if (u === 'H') { cameraInfoVisible = !cameraInfoVisible; applyFeatureVisibility(); return; }
     if (u === 'P' && feat('camera-path')) { cameraPathVisible = !cameraPathVisible; applyFeatureVisibility(); return; }
     if (u === 'D' && feat('director-view')) { directorView = !directorView; applyFeatureVisibility(); return; }
     if (u === 'A' && feat('aspect-ratio')) { currentAspectIndex = (currentAspectIndex+1)%ASPECT_RATIOS.length; updateAspectMasks(); return; }
@@ -1696,9 +1696,9 @@ function animLoop() {
 let currentLayout = 1;
 
 const VIEW_PLACEHOLDERS = {
-  '3d': { icon: '🎥', label: '3D Viewport', hint: 'Camera view would render here' },
-  '2d': { icon: '✏️', label: '2D Designer', hint: 'Top-down scene layout and blocking' },
-  'director': { icon: '🎬', label: 'Director Mode', hint: 'Storyboard overview with shot thumbnails' },
+  '3d': { icon: '🎥', label: 'Camera View', hint: 'Camera view would render here' },
+  '2d': { icon: '✏️', label: 'Designer View', hint: 'Top-down scene layout and blocking' },
+  'director': { icon: '🎬', label: 'Director View', hint: 'Free utility camera decoupled from the timeline' },
 };
 
 function setLayout(layout) {

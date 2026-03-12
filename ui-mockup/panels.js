@@ -3,28 +3,28 @@
 
 // ── Panel state ──
 const panelVisible = {
-  objects: false,
+  elements: false,
   assets: false,
   timeline: true,
   overview: true,
 };
 
-// ── Link data (3.3.3) ──
+// ── Link data (6.3.3) ──
 const LINK_DATA = {
   'Evidence Folder': { parent: 'Detective', slot: 'lap' },
 };
 
 // ── Sample data ──
-const OBJECTS = [
+const ELEMENTS = [
   { name: 'Camera', icon: '◇', tag: 'cam', selected: true },
-  { name: 'Detective', icon: '○', tag: 'actor', children: [
+  { name: 'Detective', icon: '○', tag: 'character', children: [
     { name: 'Body', icon: '│', tag: 'mesh' },
     { name: 'Face_Rig', icon: '│', tag: 'rig' },
   ]},
-  { name: 'Witness', icon: '○', tag: 'actor' },
+  { name: 'Witness', icon: '○', tag: 'character' },
   { name: 'Evidence Folder', icon: '◇', tag: 'prop' },
   { name: 'Table', icon: '□', tag: 'prop' },
-  { name: 'Room_Set', icon: '■', tag: 'set' },
+  { name: 'Room_Set', icon: '■', tag: 'environment' },
   { name: 'Key Light', icon: '☆', tag: 'light' },
   { name: 'Fill Light', icon: '☆', tag: 'light' },
 ];
@@ -33,53 +33,53 @@ const ASSETS = [
   { name: 'Detective', icon: '🕵️', type: 'character' },
   { name: 'Witness', icon: '🧍', type: 'character' },
   { name: 'Officer', icon: '👮', type: 'character' },
-  { name: 'Revolver', icon: '🔫', type: 'prop' },
-  { name: 'Notebook', icon: '📓', type: 'prop' },
-  { name: 'Flashlight', icon: '🔦', type: 'prop' },
-  { name: 'Radio', icon: '📻', type: 'prop' },
-  { name: 'Badge', icon: '🪙', type: 'prop' },
-  { name: 'Coffee Cup', icon: '☕', type: 'prop' },
-  { name: 'File Folder', icon: '📁', type: 'prop' },
-  { name: 'Office Set', icon: '🏢', type: 'set' },
-  { name: 'Alley Set', icon: '🏙️', type: 'set' },
+  { name: 'Revolver', icon: '🔫', type: 'object' },
+  { name: 'Notebook', icon: '📓', type: 'object' },
+  { name: 'Flashlight', icon: '🔦', type: 'object' },
+  { name: 'Radio', icon: '📻', type: 'object' },
+  { name: 'Badge', icon: '🪙', type: 'object' },
+  { name: 'Coffee Cup', icon: '☕', type: 'object' },
+  { name: 'File Folder', icon: '📁', type: 'object' },
+  { name: 'Office Set', icon: '🏢', type: 'environment' },
+  { name: 'Alley Set', icon: '🏙️', type: 'environment' },
 ];
 
 // ── Populate panels ──
 
-function populateObjects() {
-  const list = document.getElementById('objects-list');
+function populateElements() {
+  const list = document.getElementById('elements-list');
   list.innerHTML = '';
-  const nonLights = OBJECTS.filter(o => o.tag !== 'light');
-  const lights = OBJECTS.filter(o => o.tag === 'light');
+  const nonLights = ELEMENTS.filter(o => o.tag !== 'light');
+  const lights = ELEMENTS.filter(o => o.tag === 'light');
 
-  nonLights.forEach(obj => {
-    list.appendChild(makeObjectItem(obj, false));
-    if (obj.children) {
-      obj.children.forEach(child => list.appendChild(makeObjectItem(child, true)));
+  nonLights.forEach(item => {
+    list.appendChild(makeElementItem(item, false));
+    if (item.children) {
+      item.children.forEach(child => list.appendChild(makeElementItem(child, true)));
     }
   });
 
   if (feat('lights-section') && lights.length > 0) {
     const header = document.createElement('div');
-    header.className = 'objects-section-header';
+    header.className = 'elements-section-header';
     header.textContent = 'Lights';
     list.appendChild(header);
   }
-  lights.forEach(obj => list.appendChild(makeObjectItem(obj, false)));
+  lights.forEach(item => list.appendChild(makeElementItem(item, false)));
 }
 
-function makeObjectItem(obj, isChild) {
+function makeElementItem(item, isChild) {
   const el = document.createElement('div');
-  el.className = 'object-item' + (obj.selected ? ' selected' : '') + (isChild ? ' child' : '');
-  let html = `<span class="obj-icon">${obj.icon}</span><span class="obj-name">${obj.name}</span>`;
-  if (feat('link-indicators') && LINK_DATA[obj.name]) {
-    const link = LINK_DATA[obj.name];
-    html += `<span class="obj-link" title="Linked to ${link.parent} (${link.slot})">→ ${link.parent}</span>`;
+  el.className = 'element-item' + (item.selected ? ' selected' : '') + (isChild ? ' child' : '');
+  let html = `<span class="el-icon">${item.icon}</span><span class="el-name">${item.name}</span>`;
+  if (feat('link-indicators') && LINK_DATA[item.name]) {
+    const link = LINK_DATA[item.name];
+    html += `<span class="el-link" title="Linked to ${link.parent} (${link.slot})">→ ${link.parent}</span>`;
   }
-  html += `<span class="obj-tag">${obj.tag}</span>`;
+  html += `<span class="el-tag">${item.tag}</span>`;
   el.innerHTML = html;
   el.addEventListener('click', () => {
-    document.querySelectorAll('.object-item.selected').forEach(s => s.classList.remove('selected'));
+    document.querySelectorAll('.element-item.selected').forEach(s => s.classList.remove('selected'));
     el.classList.add('selected');
   });
   return el;
@@ -102,18 +102,18 @@ function populateAssets() {
 // ── Panel toggle logic ──
 
 function togglePanel(panelId) {
-  if (panelId === 'objects' && !panelVisible.objects) panelVisible.assets = false;
-  else if (panelId === 'assets' && !panelVisible.assets) panelVisible.objects = false;
+  if (panelId === 'elements' && !panelVisible.elements) panelVisible.assets = false;
+  else if (panelId === 'assets' && !panelVisible.assets) panelVisible.elements = false;
   panelVisible[panelId] = !panelVisible[panelId];
   applyPanelState();
 }
 
 function applyPanelState() {
   const mapping = {
-    objects: document.getElementById('objects-panel'),
+    elements: document.getElementById('elements-panel'),
     assets: document.getElementById('assets-panel'),
     timeline: document.getElementById('timeline-section'),
-    overview: document.getElementById('minimap-container'),
+    overview: document.getElementById('overview-container'),
   };
   for (const [id, el] of Object.entries(mapping)) {
     if (!el) continue;
@@ -137,18 +137,18 @@ document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   const upper = e.key.toUpperCase();
   switch (upper) {
-    case 'O': togglePanel('objects'); break;
+    case 'O': togglePanel('elements'); break;
     case 'A':
       if (!feat('full-shortcuts')) togglePanel('assets');
       break;
     case 'T': togglePanel('timeline'); break;
     case 'TAB':
       e.preventDefault();
-      const allHidden = !panelVisible.objects && !panelVisible.assets && !panelVisible.timeline && !panelVisible.overview;
+      const allHidden = !panelVisible.elements && !panelVisible.assets && !panelVisible.timeline && !panelVisible.overview;
       if (allHidden) {
         panelVisible.timeline = true; panelVisible.overview = true;
       } else {
-        panelVisible.objects = false; panelVisible.assets = false;
+        panelVisible.elements = false; panelVisible.assets = false;
         panelVisible.timeline = false; panelVisible.overview = false;
       }
       applyPanelState();
@@ -157,6 +157,6 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ── Initialize ──
-populateObjects();
+populateElements();
 populateAssets();
 applyPanelState();

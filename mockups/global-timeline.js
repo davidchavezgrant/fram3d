@@ -533,6 +533,18 @@ const SUB_TRACK_HEIGHT = 22;
 
 const CAMERA_PROPS = ['Position X', 'Position Y', 'Position Z', 'Pan', 'Tilt', 'Roll', 'Focal Length'];
 const OBJECT_PROPS = ['Position X', 'Position Y', 'Position Z', 'Scale', 'Rotation X', 'Rotation Y', 'Rotation Z'];
+
+// Grouped sub-track definitions (combined tuples instead of separate X/Y/Z)
+const CAMERA_SUB_TRACKS = [
+  { name: 'Position', prop: 'pos' },
+  { name: 'Rotation', prop: 'rot' },
+  { name: 'Focal Length', prop: 'focal' },
+];
+const OBJECT_SUB_TRACKS = [
+  { name: 'Position', prop: 'pos' },
+  { name: 'Rotation', prop: 'rot' },
+  { name: 'Scale', prop: 'scale' },
+];
 const INTERP_CURVES = ['linear', 'ease-in', 'ease-out', 'ease-in-out', 'bezier'];
 const INTERP_SYMBOLS = { 'linear': '─', 'ease-in': '⌒', 'ease-out': '⌓', 'ease-in-out': '~', 'bezier': '∿' };
 
@@ -590,6 +602,7 @@ let directorView = false;
 let cameraPathVisible = false;
 let currentAspectIndex = 0; // 2.39:1 default
 let guidesVisible = false;
+let hudVisible = true;
 let kfDragging = false;
 let kfDragInfo = null;
 let coverageDivDragging = false;
@@ -615,7 +628,6 @@ const shotTooltip = document.getElementById('shot-tooltip');
 // ── Feature visibility ──
 function applyFeatureVisibility() {
   const featureElements = {
-    'hud': ['viewport-hud'],
     'tool-mode': ['tool-mode-badge'],
     'shot-management': ['shot-mgmt-buttons'],
     'coverage-track': ['coverage-container'],
@@ -627,6 +639,9 @@ function applyFeatureVisibility() {
       if (el) el.style.display = show ? '' : 'none';
     });
   }
+  // HUD, guides, director badge, camera path — all use tracked visibility flags
+  const hudEl = document.getElementById('viewport-hud');
+  if (hudEl) hudEl.style.display = (feat('hud') && hudVisible) ? '' : 'none';
   const dirBadge = document.getElementById('director-badge');
   if (dirBadge) dirBadge.style.display = (feat('director-view') && directorView) ? '' : 'none';
   const pathBadge = document.getElementById('camera-path-badge');
@@ -974,10 +989,16 @@ function renderTracks() {
   yOffset += TRACK_ROW_HEIGHT;
 
   if (feat('track-expand') && trackExpanded['cam']) {
-    CAMERA_PROPS.forEach((prop, pi) => {
+    CAMERA_SUB_TRACKS.forEach((sub, pi) => {
       const subLabel = document.createElement('div');
       subLabel.className = 'track-label sub-track-label';
-      subLabel.innerHTML = `<div class="name">${prop}</div>`;
+      // Live interpolated value in label
+      let valStr = '';
+      if (display.cam) {
+        const val = interpolateTrack(display.cam.keyframes, playhead, sub.prop);
+        if (val != null) valStr = Array.isArray(val) ? ` (${fmtTuple(val)})` : ` ${val.toFixed(1)}`;
+      }
+      subLabel.innerHTML = `<div class="name">${sub.name}<span style="color:#555;font-size:8px">${valStr}</span></div>`;
       trackLabels.appendChild(subLabel);
       const subRow = document.createElement('div');
       subRow.className = 'track-row sub-track-row';
@@ -986,29 +1007,25 @@ function renderTracks() {
       trackArea.appendChild(subRow);
       if (display.cam) {
         const shotKfs = display.cam.keyframes.filter(kf => kf.time >= currentShot.start && kf.time <= currentShot.end);
-        shotKfs.forEach((kf, ki) => {
-          if (ki % CAMERA_PROPS.length === pi || pi < 3) {
-            const el = document.createElement('div');
-            el.className = 'keyframe';
-            el.style.left = timeToX(kf.time) + 'px';
-            el.style.background = currentShot.color;
-            el.style.width = '7px'; el.style.height = '7px';
-            subRow.appendChild(el);
-          }
+        shotKfs.forEach(kf => {
+          const el = document.createElement('div');
+          el.className = 'keyframe';
+          el.style.left = timeToX(kf.time) + 'px';
+          el.style.background = currentShot.color;
+          el.style.width = '7px'; el.style.height = '7px';
+          subRow.appendChild(el);
         });
         if (feat('interp-curves') && shotKfs.length > 1) {
           for (let k = 0; k < shotKfs.length - 1; k++) {
-            if (k % CAMERA_PROPS.length === pi || pi < 3) {
-              const x1 = timeToX(shotKfs[k].time);
-              const x2 = timeToX(shotKfs[k+1].time);
-              if (x2 - x1 > 30) {
-                const ct = INTERP_CURVES[(k+pi)%INTERP_CURVES.length];
-                const ind = document.createElement('div');
-                ind.className = 'interp-indicator';
-                ind.style.left = ((x1+x2)/2) + 'px';
-                ind.textContent = INTERP_SYMBOLS[ct];
-                subRow.appendChild(ind);
-              }
+            const x1 = timeToX(shotKfs[k].time);
+            const x2 = timeToX(shotKfs[k+1].time);
+            if (x2 - x1 > 30) {
+              const ct = INTERP_CURVES[(k+pi)%INTERP_CURVES.length];
+              const ind = document.createElement('div');
+              ind.className = 'interp-indicator';
+              ind.style.left = ((x1+x2)/2) + 'px';
+              ind.textContent = INTERP_SYMBOLS[ct];
+              subRow.appendChild(ind);
             }
           }
         }
@@ -1038,25 +1055,27 @@ function renderTracks() {
     yOffset += TRACK_ROW_HEIGHT;
 
     if (feat('track-expand') && trackExpanded['obj-'+ti]) {
-      OBJECT_PROPS.forEach((prop, pi) => {
+      OBJECT_SUB_TRACKS.forEach((sub, pi) => {
         const subLabel = document.createElement('div');
         subLabel.className = 'track-label sub-track-label';
-        subLabel.innerHTML = `<div class="name">${prop}</div>`;
+        // Live interpolated value in label
+        const val = interpolateTrack(track.keyframes, playhead, sub.prop);
+        let valStr = '';
+        if (val != null) valStr = Array.isArray(val) ? ` (${fmtTuple(val)})` : ` ${val.toFixed(1)}`;
+        subLabel.innerHTML = `<div class="name">${sub.name}<span style="color:#555;font-size:8px">${valStr}</span></div>`;
         trackLabels.appendChild(subLabel);
         const subRow = document.createElement('div');
         subRow.className = 'track-row sub-track-row';
         subRow.style.top = yOffset + 'px';
         subRow.style.height = SUB_TRACK_HEIGHT + 'px';
         trackArea.appendChild(subRow);
-        track.keyframes.forEach((kf, ki) => {
-          if (ki % OBJECT_PROPS.length === pi || pi < 3) {
-            const el = document.createElement('div');
-            el.className = 'keyframe';
-            el.style.left = timeToX(kf.time) + 'px';
-            el.style.background = track.color;
-            el.style.width = '7px'; el.style.height = '7px';
-            subRow.appendChild(el);
-          }
+        track.keyframes.forEach(kf => {
+          const el = document.createElement('div');
+          el.className = 'keyframe';
+          el.style.left = timeToX(kf.time) + 'px';
+          el.style.background = track.color;
+          el.style.width = '7px'; el.style.height = '7px';
+          subRow.appendChild(el);
         });
         SCENE.shots.forEach(shot => { if (shot.start > 0) { const l = document.createElement('div'); l.className='shot-boundary'; l.style.left=timeToX(shot.start)+'px'; subRow.appendChild(l); }});
         yOffset += SUB_TRACK_HEIGHT;
@@ -1568,7 +1587,14 @@ zoomBar.addEventListener('click', (e) => {
 // Transport play
 document.getElementById('transport-play').addEventListener('click', () => {
   playing = !playing;
-  if (playing) animLoop();
+  if (playing) {
+    lastTime = null;
+    animLoop();
+  } else if (animFrame) {
+    cancelAnimationFrame(animFrame);
+    animFrame = null;
+    lastTime = null;
+  }
   render();
 });
 
@@ -1631,7 +1657,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'End') { e.preventDefault(); playhead = SCENE.totalDuration; render(); return; }
     const u = e.key.toUpperCase();
     if (u === 'G') { guidesVisible = !guidesVisible; applyFeatureVisibility(); return; }
-    if (u === 'H') { const h = document.getElementById('viewport-hud'); if (h) h.style.display = h.style.display==='none'?'':'none'; return; }
+    if (u === 'H') { hudVisible = !hudVisible; applyFeatureVisibility(); return; }
     if (u === 'P' && feat('camera-path')) { cameraPathVisible = !cameraPathVisible; applyFeatureVisibility(); return; }
     if (u === 'D' && feat('director-view')) { directorView = !directorView; applyFeatureVisibility(); return; }
     if (u === 'A' && feat('aspect-ratio')) { currentAspectIndex = (currentAspectIndex+1)%ASPECT_RATIOS.length; updateAspectMasks(); return; }

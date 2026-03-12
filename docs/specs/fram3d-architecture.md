@@ -31,17 +31,49 @@
 
 ---
 
-## 3. Anti-patterns from Vismatic Studio
+## 3. Patterns to Reuse
 
-**God object state classes.** The old `TimelineState` held shot list, current/selected/previous indices, current time, IsEvaluating flag, duration editing state, thumbnail references, AND keyframe marker dictionaries — all in one class. This is the natural gravity in Unity: start with one state class, keep adding fields. The aggregate design (Scene, ShotSetup, Project) exists to prevent this. If a class starts accumulating unrelated state, it's becoming a god object.
+Good patterns from Vismatic Studio worth carrying forward.
 
-**Routing internal operations through the command pattern.** The old system made `ScrubTime`, `EvaluateShotAtTime`, `RefreshThumbnails`, `RefreshKeyframeEditor`, `ReorderThumbnails`, and `UpdateTimeline` into `ICommand` implementations. None of these are user actions. None should be undoable. They should be plain method calls. The command pattern is exclusively for user-initiated state changes (the list in spec 2.1.1). Everything else is just a function call.
+**`ICameraState` interface isolating Cinemachine.** The interface exposes only `Position`, `Rotation`, `FieldOfView`, `Forward`, `Right`, `Translate()`, `RotateAround()`. The concrete `CinemachineCameraState` is a 49-line adapter. Every controller depends on the interface — Cinemachine is never imported outside the adapter. This is the cleanest boundary in the old codebase.
+
+**`VirtualCameraRig` as a unified facade.** Four sub-controllers (Movement, Lens, Focus, Shake) behind a single facade that exposes named cinema operations: `Dolly()`, `Pan()`, `Tilt()`, `Orbit()`, `Crane()`, `Roll()`, `DollyZoom()`, `Zoom()`, `FocusOn()`. No caller reaches into sub-controllers directly.
+
+**`CameraAspectRatio` — closed type hierarchy.** Abstract class with private constructor and sealed nested subclasses instead of an enum. Each value carries `DisplayName` and `Value`, supports `GetNext()` cycling and implicit float conversion. No switch statements needed.
+
+**`KeyframeManager<T>` — dual storage.** Maintains both a `List<T>` (ordered, for iteration/evaluation) and a `Dictionary<KeyframeId, T>` (for O(1) lookup). `AddKeyframe()` removes any existing keyframe at the same time before inserting.
+
+**`AnimationFrameTracker` — frame boundary sentinel.** Records `Time.frameCount` when animation is applied; trackers check it to distinguish animation-driven movement from user-driven movement. 9 lines, no polling or delta comparison.
+
+**`CompositeAnimationCurveSet` — extensible multi-track curves.** `RebuildCurves()` iterates an array of `IAnimationCurveSet` implementations and populates them from keyframes. Adding a new animated property = implement the interface, add to the array. Clean extension point.
+
+**Value objects with validation.** `KeyframeId` wraps `Guid`, rejects `Guid.Empty` at construction, implements full equality. `TimePosition` rejects negative values, provides `Add()`/`Subtract()` (clamps to zero), `ToFrames(frameRate)`, comparison operators. Prevents raw-float time bugs.
 
 ---
 
-## 4. Tuned Constants
+## 4. Anti-patterns from Vismatic Studio
 
-Values from the previous iteration (Vismatic Studio) that were empirically tuned. Starting points — expect to re-tune.
+**God object state classes.** `TimelineState` held shot list, selection indices, current time, IsEvaluating flag, duration editing state, thumbnail references, AND keyframe marker dictionaries — all in one class. The aggregate design (Scene, ShotSetup, Project) exists to prevent this.
+
+**Routing internal operations through the command pattern.** `ScrubTime`, `EvaluateShotAtTime`, `RefreshThumbnails`, `RefreshKeyframeEditor`, `ReorderThumbnails`, and `UpdateTimeline` were all `ICommand` implementations. None are user actions. None should be undoable. Commands are exclusively for user-initiated state changes (the list in spec 2.1.1). Everything else is a plain method call.
+
+**`FindObjectOfType` for dependency resolution.** `TimelineState.EvaluateShot()` called `Object.FindObjectOfType<ApplicationController>()` to reach back into the scene graph — domain model depending on the Unity scene. `SceneElement.Awake()` made four separate `FindObjectOfType` calls. Dependencies should be injected at construction or wiring time, not scraped from the scene at runtime.
+
+**UI references in the domain model.** `TimelineState` stored `Dictionary<AnimationKeyframe, KeyframeMarker>` where `KeyframeMarker` is a UI element. This means the domain can't be tested without Unity UI. The mapping between domain objects and their visual representation belongs in the UI layer.
+
+**Transient command objects allocated every `Update()`.** `new TimelineInteractionHandler(...).Execute()` and `new UpdateTimeline(...).Execute()` were called every frame, allocating heap objects that immediately die. These are stateless procedures dressed as objects — they should be reused instances or static methods.
+
+**Mixed input systems.** The project uses the New Input System (`Keyboard.current` / `Mouse.current`) in `UserInputDriver`, but `UpdateTimeline`, `TimelineInteractionHandler`, and `CameraInfoView` use legacy `UnityEngine.Input.GetKeyDown()`. Pick one input system and use it everywhere.
+
+**Rotation shake drift.** Position shake is applied as an additive offset and reverted each frame. Rotation shake compounds via `Rotation *= Quaternion.Euler(...)` without reverting. The camera slowly drifts in orientation while shake is enabled. Both must use the revert-then-apply pattern.
+
+**Side effects in predicates.** `ScreenState.HasStateChanged()` updates internal `_last*` cache fields when called. Calling it twice in one frame returns `true` then `false`. Predicates should be pure — separate the query from the cache update.
+
+---
+
+## 5. Tuned Constants
+
+Values from Vismatic Studio that were empirically tuned. Starting points — expect to re-tune.
 
 **Camera movement speeds:**
 - `DollyScrollSpeed`: 0.01
@@ -62,21 +94,36 @@ Values from the previous iteration (Vismatic Studio) that were empirically tuned
 - Default amplitude: 0.1, frequency: 1.0
 - Position scale: 0.01
 - Rotation scale: 0.5 (X/Y only, no Z roll)
+- Rotation time offset for decorrelation: 100.0
+
+**Lens:**
+- Default focal length: 35mm
+- Common focal lengths: {14, 18, 24, 35, 50, 85, 100, 135, 200}
+- Focal length adjustment multiplier: 0.5 per scroll unit
+- Dolly zoom speed: 0.5
+- Lens smoothing lerp speed: 10
 
 **Auto-keyframing thresholds:**
 - Near existing keyframe: 0.1 seconds. If near: update existing. If not: create new.
 - Camera change detection: position 0.001 units, rotation 0.01 degrees, focal length 0.01mm
 - Object change detection: position 0.001, rotation 0.01, scale 0.001
 
+**Timeline:**
+- Default shot duration: 5.0 seconds
+- Minimum shot duration: 0.1 seconds
+- Keyframe time tolerance (same-time conflict): 0.01 seconds
+
 **Input sensitivities:**
 - Drag sensitivity: 0.2
 - Scroll sensitivity: 0.02
+- Scroll deadzone: 0.01
+- Sideways movement threshold: 0.01
 
 **Undo coalescing:** 1000ms inactivity timeout for scroll gestures.
 
 ---
 
-## 5. Implementation Details
+## 6. Implementation Details
 
 **Keyframe interaction rules:**
 - Moving a main keyframe moves all child property keyframes
@@ -94,9 +141,9 @@ Values from the previous iteration (Vismatic Studio) that were empirically tuned
 
 ---
 
-## 6. Architecture Considerations
+## 7. Architecture Considerations
 
-### 5.1 Scene Serialization & Lazy Loading
+### 7.1 Scene Serialization & Lazy Loading
 
 **Source**: Multi-Scene Project Structure spec — unlimited scenes, lazy load/lazy render
 
@@ -110,7 +157,7 @@ Scenes must be independently loadable without pulling in sibling scene data. Onl
 
 **Resolve before Save/Load spec (Milestone 2.2).**
 
-### 5.2 Infrastructure to Build Early
+### 7.2 Infrastructure to Build Early
 
 Cross-cutting systems that multiple downstream features depend on. Build during Project 2 timeframe to avoid reimplementing for each feature.
 
@@ -119,11 +166,11 @@ Cross-cutting systems that multiple downstream features depend on. Build during 
 
 ---
 
-## 7. Domain Modeling Approach
+## 8. Domain Modeling Approach
 
 DDD-informed, not DDD-orthodox. The cinema domain is rich enough to warrant modeling discipline; Unity is opinionated enough that full layered architecture would fight the engine.
 
-### 6.1 What We Use
+### 8.1 What We Use
 
 **Ubiquitous language.** Cinema terminology is consistent from roadmap to spec to class name to method name. Dolly, crane, truck, coverage, blocking, stopwatch — these terms mean the same thing everywhere. This is the single highest-value DDD concept.
 
@@ -164,7 +211,7 @@ If Characters can't reference Camera internals, you physically can't create the 
 
 **Command pattern.** `ICommand` with `Execute()` / `Undo()` / `Redo()` for all user actions. Enables undo stack and action replay.
 
-### 6.2 What We Skip
+### 8.2 What We Skip
 
 **Repositories.** Unity manages object lifecycles through `MonoBehaviour`, `Instantiate`, `Destroy`, and scene serialization. Wrapping that in repositories duplicates what the engine already does.
 
@@ -172,7 +219,7 @@ If Characters can't reference Camera internals, you physically can't create the 
 
 **Full layered architecture** (domain → application → infrastructure → presentation). Unity blurs these layers by design. `MonoBehaviour` is simultaneously presentation, infrastructure, and sometimes domain logic.
 
-### 6.3 The Split Model
+### 8.3 The Split Model
 
 The key architectural pattern: **pure C# for domain logic, thin MonoBehaviour wrappers for scene graph integration.**
 

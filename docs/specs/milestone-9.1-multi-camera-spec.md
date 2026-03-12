@@ -284,6 +284,12 @@
     - Switching the active camera during playback triggers two simultaneous effects: (1) the viewport switches to the new camera, and (2) a coverage split is automatically created at the current playhead position (see 9.1.4 for coverage split behavior)
     - If the shot has only one camera, the active camera is always Camera A and cannot be changed
 
+    **Shot bar multi-camera interaction:**
+    - The shot bar displays one row per camera within each shot. Shot bar height auto-adjusts based on the maximum camera count across all shots.
+    - **Single-click** a camera row = preview that camera (dimmed display, non-destructive — does not change the active camera)
+    - **Double-click** a camera row = activate that camera AND zoom the timeline to that shot (with 8% padding on each side)
+    - Preview mode is transient — navigating to a different shot clears the preview
+
     **Expected behavior:**
     ``` python
       # default active camera
@@ -321,6 +327,22 @@
           <== Camera A is still ACTIVE -- sequence playback will use Camera A
           <== Camera B's preview shows selected highlight
           <== Camera A's preview shows active indicator
+
+      # shot bar single-click preview
+      .if a shot has Camera A (active) and Camera B
+      ||> .if user single-clicks Camera B's row in the shot bar >>
+          <== Camera B is shown in preview mode (dimmed display)
+          <== Camera B is NOT activated — sequence playback still uses Camera A
+          <== the timeline editor shows Camera B's keyframes for quick inspection
+      ||> .if user navigates to a different shot >>
+          <== preview mode clears
+
+      # shot bar double-click activate + zoom
+      .if a shot has Camera A (active) and Camera B
+      ||> .if user double-clicks Camera B's row in the shot bar >>
+          <== Camera B becomes the active camera
+          <== the timeline zooms to show the shot's time range (with 8% padding)
+          <== preview mode clears
 
       # sequence playback uses active camera
       .if Shot_01 has Camera A (active) and Camera B

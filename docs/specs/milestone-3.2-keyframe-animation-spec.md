@@ -32,12 +32,15 @@
     - The time ruler shows second markers and subdivisions, scaled to the shot duration
     - The time ruler rescales dynamically when the shot duration changes
     - The user can manually zoom/scale the time ruler (scroll wheel or pinch) to focus on a region of interest
-    - A Premiere-style zoom scroll bar sits below the timeline area. It contains a draggable thumb representing the visible time range. Dragging the thumb edges resizes the visible range (zoom). Dragging the thumb body pans. A playhead position indicator within the zoom bar shows the current time relative to the full shot duration.
+    - A Premiere-style zoom scroll bar sits below the timeline area. It contains a draggable thumb representing the visible time range. Dragging the thumb edges resizes the visible range (zoom). Dragging the thumb body pans. A playhead position indicator within the zoom bar shows the current time relative to the full shot duration. Clicking the zoom bar (not on the thumb) navigates to that position.
     - Timecode format: non-drop-frame (`:` separator) for 24/25/30fps projects, drop-frame (`;` separator) for 29.97/59.94fps projects. Format determined by the project frame rate setting.
+    - **Dual timecode display**: the transport bar shows shot-local elapsed / duration. A separate viewport overlay shows sequence-global timecode. Format: semicolon-separated `HH;MM;SS;FF`.
     - The playhead is a vertical red line spanning every track, indicating the current time
     - The status bar displays contextual keyboard shortcut hints based on current state and selection
     - The timeline editor is always visible when a shot is selected
     - The timeline editor updates its contents when the user switches between shots
+    - **Timeline resize**: a vertical drag handle between the viewport and the timeline allows the user to resize the timeline height. Min 80px, max 80vh.
+    - **Timeline input mappings**: scroll wheel zooms at cursor position. Shift+scroll pans horizontally. Middle-click drag pans the track area and shot bar. `\` key zooms to fit the full timeline. Home/End keys jump to start/end of timeline.
 
     **Expected behavior:**
     ``` python
@@ -123,7 +126,7 @@
     - A selected keyframe is highlighted using a distinct color (cyan)
     - Selecting a keyframe on one track deselects any keyframe on every other track — only one keyframe is selected at a time
     - The viewport reflects the state at the selected keyframe's time
-    - Each property sub-track row displays the current value of that property at the playhead position
+    - Each property sub-track row displays the **live interpolated value** of that property at the playhead position (e.g., `Position (1.2, 0.9, -1.5)`). Values update in real time during scrub and playback.
 
     **Expected behavior:**
     ``` python
@@ -703,6 +706,14 @@
     - Playback can be started and stopped using the Space key or the transport bar play button
     - During playback, the user cannot select or drag keyframes
     - The current time display within the transport bar updates continuously during playback
+    - **Playback auto-scroll**: if the playhead exits the visible range during playback, the view shifts to follow while maintaining the current zoom level
+
+    **Keyframe interpolation shapes (AE-style):**
+    - Three keyframe shapes indicating interpolation type: **diamond** (linear), **circle** (smooth), **square** (hold)
+    - Alt+click a keyframe marker to cycle through shapes
+    - Default shape heuristic: camera keyframes default to smooth, single-keyframe elements default to hold, multi-keyframe elements default to linear
+    - On expanded sub-tracks, between-keyframe **curve indicators** show the interpolation curve type: `─` linear, `⌒` ease-in, `⌓` ease-out, `~` ease-in-out, `∿` bezier
+    - Curve indicators are only shown when there is enough horizontal space between keyframes (>30px)
 
     > **Design note — slow motion:** Variable playback speed (e.g., 0.5x, 0.25x for slow motion review) is a desired future capability. Not in scope for this milestone, but the playback system should not assume a fixed 1:1 time ratio in its architecture.
 

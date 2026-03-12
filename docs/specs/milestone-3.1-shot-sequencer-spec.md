@@ -271,6 +271,55 @@ Each shot is an independent camera animation over shared world-space objects. A 
       <== thumbnail does not change (duration change does not affect the t=0 frame)
 ```
 
+### Shot Boundary Dragging (Ripple Editing)
+
+- The boundary between two adjacent shots is a draggable handle
+- Dragging a boundary adjusts the end time of the left shot and shifts all downstream content:
+  - All subsequent shots (start and end times)
+  - All camera keyframes in subsequent shots
+  - All angle segments in subsequent shots
+  - All element keyframes at or after the boundary on the global timeline
+  - All linked periods at or after the boundary
+- Hold **Shift** to resize shots only — element keyframes on the global timeline stay in place (useful for tightening or loosening a shot without disrupting blocking)
+- Boundary position snaps to frame boundaries (nearest `1/fps` increment)
+- During drag, a resize tooltip follows the cursor showing: shot name, new duration (seconds + frames), and ripple mode indicator (`[ripple]` or `[shots only]`)
+- Minimum shot duration of 0.1s is enforced during drag — the boundary cannot be dragged past the previous shot's start + 0.1s
+
+``` python
+  .if >> user drags the boundary between Shot_01 and Shot_02 rightward by 1 second
+      <== Shot_01 duration increases by 1 second
+      <== Shot_02 start shifts right by 1 second
+      <== Shot_02 end shifts right by 1 second
+      <== all subsequent shots shift right by 1 second
+      <== all element keyframes at or after the original boundary shift right by 1 second
+      <== total project duration increases by 1 second
+
+  .if >> user holds Shift and drags the boundary rightward by 1 second
+      <== Shot_01 duration increases by 1 second
+      <== Shot_02 and all subsequent shots shift right by 1 second
+      !== element keyframes shift — they stay at their original global times
+      <== this allows "loosening" a shot (giving the camera more time) without disturbing character blocking
+
+  .if >> user drags a boundary and the resize tooltip is visible
+      <== tooltip shows: "WIDE ESTABLISHING: 4.0s (96f) [ripple]"
+      <== tooltip updates in real time during drag
+```
+
+### Shot Hover Tooltip
+
+- Hovering over a shot in the shot bar displays a tooltip with metadata
+- Tooltip shows: shot name, camera name, duration (seconds + frame count), and keyframe count
+- Tooltip follows the cursor position
+- Tooltip disappears on mouse leave
+
+``` python
+  .if >> user hovers over a shot bar camera row
+      <== tooltip appears showing "WIDE ESTABLISHING\nCam A · 3.0s (72f) · 2 kf"
+      <== tooltip follows the cursor
+  .if >> user moves the cursor off the shot
+      <== tooltip disappears
+```
+
 ### Shot Boundary Playback
 
 ``` python

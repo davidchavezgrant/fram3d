@@ -4,17 +4,17 @@ Every milestone and feature mapped to its primary bounded context (Assembly Defi
 
 ## Context Summary
 
-| Context | Assembly | Description |
-|---------|----------|-------------|
-| Camera | `Fram3d.Camera` | Camera rig, lens, focus, shake, DOF, overlays, follow/watch, snorricam, multi-camera |
-| Sequencing | `Fram3d.Sequencing` | Shot model, keyframe timeline, tracks, playback, slow-motion |
-| Scene | `Fram3d.Scene` | Scene elements, selection, gizmos, lighting, element linking, set builder |
-| Viewport | `Fram3d.Viewport` | Panel layouts, views, Designer View |
-| Characters | `Fram3d.Characters` | Mannequins, posing, expressions, costume generation |
-| Persistence | `Fram3d.Persistence` | Undo/redo, save/load, project files, script import |
-| Assets | `Fram3d.Assets` | Model import, asset library, set decoration, premade environments, LiDAR |
-| Export | `Fram3d.Export` | Image, video, storyboard, NLE export, style grading |
-| AI | `Fram3d.AI` | NL shot description, automatic blocking, camera suggestions, prop generation |
+| Context     | Assembly             | Description                                                                          |
+| ----------- | -------------------- | ------------------------------------------------------------------------------------ |
+| Camera      | `Fram3d.Camera`      | Camera rig, lens, focus, shake, DOF, overlays, follow/watch, snorricam, multi-camera |
+| Sequencing  | `Fram3d.Sequencing`  | Shot model, keyframe timeline, tracks, playback, slow-motion                         |
+| Scene       | `Fram3d.Scene`       | Scene elements, selection, gizmos, lighting, element linking, set builder            |
+| Viewport    | `Fram3d.Viewport`    | Panel layouts, views, Designer View                                                  |
+| Characters  | `Fram3d.Characters`  | Mannequins, posing, expressions, costume generation                                  |
+| Persistence | `Fram3d.Persistence` | Undo/redo, save/load, project files, script import                                   |
+| Assets      | `Fram3d.Assets`      | Model import, asset library, set decoration, premade environments, LiDAR             |
+| Export      | `Fram3d.Export`      | Image, video, storyboard, NLE export, style grading                                  |
+| AI          | `Fram3d.AI`          | NL shot description, automatic blocking, camera suggestions, prop generation         |
 
 ## Feature Map
 

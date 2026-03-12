@@ -27,8 +27,16 @@
       - **Three-panel**: One large panel on top, two smaller panels below (or one large left, two stacked right — follow mockup)
     - Each panel has a dropdown selector in its top bar for choosing the view mode
     - Layout choice persists across session (saved with project)
-    - Panel sizes are fixed ratios per layout — no user-resizable splits in v1
+    - Side panels (Elements, Assets) have horizontal drag edges for resizing. Min 150px, max 500px.
     - Switching layouts preserves each panel's view mode where possible (e.g., switching from 2-panel to 1-panel keeps the first panel's view mode)
+
+    **Gutter-based panel toggles:**
+    - JetBrains-style vertical label strips on left and right workspace edges
+    - Left gutter: Overview toggle
+    - Right gutter: Elements panel, Assets panel toggles
+    - Clicking a gutter tab toggles the associated panel open/closed
+    - **Mutual exclusion**: opening Elements closes Assets and vice versa (they occupy the same space)
+    - Keyboard shortcuts: O = Elements panel, T = timeline, Tab = toggle all panels simultaneously
 
     **Expected behavior:**
     ``` python
@@ -67,7 +75,9 @@
     - **2D Designer**: Top-down orthographic view (see 8.2). Objects shown as icons/silhouettes, cameras as frustums with FOV cones, lights as standard symbols. Fully interactive — drag objects to reposition. Available as a panel mode even before the full 8.2 spec is implemented (can start as a simple orthographic camera).
     - **Director Mode**: Free utility camera decoupled from the shot timeline (see 2.1.5). Navigating this view never creates camera keyframes. The shot camera is visible as a frustum wireframe. Object manipulation still creates keyframes when stopwatches are on.
     - Any view mode can be assigned to any panel via the dropdown selector in the panel's top bar
-    - Multiple panels can show the same view mode (e.g., two 3D Viewports at different zoom levels — though this is unusual)
+    - **Camera View is a single movable instance** — only one panel can show Camera View at a time
+    - When a panel is reassigned to Camera View, the panel that previously held Camera View receives the reassigning panel's old view type (**smart swap**)
+    - Camera View must always exist in exactly one panel — it cannot be removed
     - View mode selection is per-panel and persists until changed
     - All panels share the same scene data and timeline state — changes in one panel are immediately reflected in all others
 
@@ -90,4 +100,25 @@
         ||> .if user scrubs the timeline >>
             <== both panels update to show the scene state at the new time
             <== the shot camera frustum in Director Mode animates to its keyframed position
+
+      # Camera View smart swap
+      .if panel 0 shows Camera View and panel 1 shows Director View >>
+        ||> .if user selects "Camera View" from panel 1's dropdown >>
+            <== panel 1 now shows Camera View
+            <== panel 0 receives Director View (the view that panel 1 had)
+            !== Camera View exists in two panels simultaneously
+
+      # gutter panel mutual exclusion
+      .if Elements panel is open >>
+        ||> .if user clicks Assets gutter tab >>
+            <== Assets panel opens
+            <== Elements panel closes
+            !== both panels open simultaneously
+
+      # Tab toggles all panels
+      .if Elements panel and timeline are visible >>
+        ||> .if user presses Tab >>
+            <== all panels close (Elements, Assets, timeline, overview)
+        ||> .if user presses Tab again >>
+            <== timeline and overview reopen
     ```

@@ -1,0 +1,493 @@
+# Milestone 4.4: Export --- Specification
+
+**Date**: 2026-03-10
+**Milestone**: 4.4
+**Status**: Draft
+
+---
+
+- ### 4.4. Export (Milestone)
+
+  Getting work out of Fram3d and into the rest of the production pipeline. Export is not one feature --- it is four distinct workflows, each serving a different audience and purpose on a real production.
+
+  A director emails a single frame to the DP: "this is the framing I want for the interrogation scene." A producer drops a rendered sequence into a pitch deck for investors. A 1st AD prints storyboard sheets and tapes them to the wall by the monitors. An editor imports camera data and cut points into their NLE to begin the offline edit. Each of these workflows has different format requirements, different metadata needs, and different tolerance for fidelity loss.
+
+  Export must produce deliverable output --- not screen captures, not viewport grabs. The rendered output matches the active aspect ratio and camera settings exactly as composed. What you see in the viewport is what you get in the file.
+
+  *Blocked by: 3.2 (keyframe animation --- need playback to render video)*
+
+  - ##### 4.4.1. Image export (Feature)
+
+    ***Export the current viewport frame as a still image at the active aspect ratio, with optional inclusion of overlays, DOF effect, and shaken camera position in the exported frame.***
+
+    **Functional requirements:**
+    - The exported image captures the 3D scene exactly as framed by the current camera position, rotation, and focal length
+    - The image is cropped to the active aspect ratio --- no black bars. The output resolution is derived from the project resolution, which is determined by the selected camera body's native resolution (set at project creation time via the Project Creation Wizard, configurable in project settings).
+    - Two format options: PNG (lossless) and JPEG (lossy, quality configurable)
+    - The default output resolution is the project resolution (set at project creation)
+    - The user can specify a custom output resolution; the aspect ratio is preserved regardless of resolution choice
+    - Standard resolution presets are available: 1920x1080 (HD), 2560x1440 (QHD), 3840x2160 (4K UHD), 4096x2160 (DCI 4K)
+    - Optionally include overlays, DOF effect, and shaken camera position in the exported frame
+    - The user can independently toggle inclusion of each overlay layer in the exported image:
+      - Aspect ratio mask bars (off by default --- the image is cropped to the ratio instead)
+      - Frame guides (rule of thirds, center cross, safe zones)
+      - Camera info HUD
+      - DOF (depth of field) effect (on by default if DOF is active in viewport)
+      - Camera shake offset (on by default if shake is active in viewport)
+    - Remembers last-used export directory across ALL projects (not per-project, global preference)
+    - The default file name follows the pattern: `{ProjectName}_{ShotName}_{FrameNumber}.{ext}`
+    - The user can choose the save location via a system file picker
+    - JPEG quality is configurable from 1--100, defaulting to 90
+    - The export captures the scene at the current playhead position --- if the user is scrubbed to a specific frame, that frame is exported
+
+    **Expected behavior:**
+    ``` python
+      # basic image export
+      .if the user initiates image export >>
+          <== a file picker dialog appears with the default file name pre-filled
+          <== the default format is PNG
+          <== the default resolution matches the viewport dimensions at the active aspect ratio
+          <== the file picker opens to the last-used export directory (if one exists)
+
+      # exported image matches the viewport
+      .if the user exports the current frame >>
+          <== the exported image shows the same framing as the viewport
+          <== the image is cropped to the active aspect ratio
+          !== mask bars appear in the exported image (unless explicitly included)
+          !== UI elements appear in the exported image (unless explicitly included)
+
+      # custom resolution preserves aspect ratio
+      .if the user selects 3840x2160 as the output resolution
+      .if the active aspect ratio is 2.39:1 >>
+          <== the exported image is 3840 pixels wide
+          <== the exported image height is calculated from 2.39:1 (approximately 1607 pixels)
+          !== the image is stretched or distorted to fill 3840x2160
+
+      # overlay inclusion
+      .if the user enables "include frame guides" for export
+      .if rule of thirds is active in the viewport >>
+          <== the exported image contains the rule of thirds grid
+          <== the grid is positioned identically to the viewport
+
+      .if the user enables "include HUD" for export >>
+          <== the exported image contains the camera info HUD
+          <== focal length, body, lens preset are visible in the image
+
+      .if the user enables "include mask bars" for export >>
+          <== the exported image includes the full viewport with black bars
+          <== the image dimensions match the full viewport, not the cropped ratio
+
+      # DOF inclusion
+      .if DOF is active in the viewport
+      .if the user exports with "include DOF" enabled (default) >>
+          <== the exported image includes the depth of field effect
+          <== foreground and background blur matches the viewport DOF settings
+      ||> .if the user disables "include DOF" for export >>
+          <== the exported image shows all objects in focus
+          !== DOF blur appears in the exported image
+
+      # camera shake inclusion
+      .if camera shake is active in the viewport
+      .if the user exports with "include camera shake" enabled (default) >>
+          <== the exported image captures the camera at its shaken position at the current frame
+          <== the framing reflects the shake offset applied at the playhead time
+      ||> .if the user disables "include camera shake" for export >>
+          <== the exported image shows the camera at its base keyframed position
+          !== shake offset is applied to the framing
+
+      # JPEG quality
+      .if the user selects JPEG format
+      .if the user sets quality to 50 >>
+          <== the exported file is JPEG
+          <== the file size is noticeably smaller than quality 90
+          <== the image dimensions are identical regardless of quality setting
+
+      # export from a scrubbed position
+      .if the user scrubs to 2.5 seconds into a shot
+      .if the user exports the current frame >>
+          <== the exported image shows the scene state at 2.5 seconds
+          <== camera position and all object positions reflect interpolated values at t=2.5s
+
+      # remembered export directory
+      .if the user exports an image and saves to /Users/example/exports/
+      .if the user later opens a different project
+      .if the user initiates image export >>
+          <== the file picker opens to /Users/example/exports/
+          !== the file picker defaults to the project directory or the system default
+    ```
+
+    **Error cases:**
+    ``` python
+      # export path with special characters
+      .if the user saves to a path containing spaces or unicode characters >>
+          <== the file is saved successfully at the specified path
+          !== the application crashes or truncates the path
+
+      # export with no shot selected
+      .if the sequence contains no shots
+      .if the user initiates image export >>
+          <== the current viewport is exported as-is
+          !== the application crashes or shows an empty image
+
+      # disk full during export
+      .if the disk runs out of space during image write >>
+          <== the user is shown an error message indicating insufficient disk space
+          <== no partial or corrupted file is left on disk
+          !== the application crashes
+
+      # cancelled export
+      .if the user cancels the file picker dialog >>
+          <== no file is written
+          <== the application returns to normal operation
+    ```
+
+  - ##### 4.4.2. Video export (Feature)
+
+    ***Offline render of a shot or full sequence at a specified resolution and frame rate, producing a video file suitable for pitch decks, client review, and VFX editorial. Modal blocking render for v1 --- user cannot interact with the application during render.***
+
+    **Functional requirements:**
+    - Three render scopes: single shot, current scene, or full project (all scenes)
+    - When rendering a scene or full project, shots are concatenated in sequencer order with hard cuts only --- no dissolves, fades, or transitions
+    - When rendering the full project, scenes are rendered in tab order with scene dividers (brief black frame or configurable separator)
+    - Rendering is offline --- each frame is rendered and captured independently, decoupled from real-time playback speed
+    - Modal blocking render for v1 --- user cannot interact with the application during render
+    - Camera shake is baked into keyframe data during render (shake becomes part of the final animation, not a real-time overlay)
+    - The output frame rate is configurable: 23.976, 24, 25, 29.97, 30, 48, 60 frames per second
+    - The default frame rate is 24fps
+    - Output resolution presets: 1280x720 (720p), 1920x1080 (HD), 2560x1440 (QHD), 3840x2160 (4K UHD), 4096x2160 (DCI 4K)
+    - Custom resolution entry is supported; aspect ratio is derived from the active aspect ratio setting
+    - Output container formats: MP4, MOV
+    - The user can select a codec profile:
+      - High quality (visually lossless, larger files --- suitable for editorial and VFX)
+      - Standard quality (good visual quality, moderate file size --- suitable for review and sharing)
+      - Draft quality (lower quality, small files --- suitable for quick previews)
+    - The video is cropped to the camera's configured resolution (the project resolution, no black bars) by default
+    - Overlay inclusion options match image export: mask bars, frame guides, HUD --- all off by default
+    - Shot name can optionally be burned into each frame as a text overlay (slate mode)
+    - A progress indicator shows: current frame, total frames, estimated time remaining, and a cancel button
+    - The user can cancel rendering at any point; already-rendered output up to the cancellation point is preserved as a valid, playable file
+    - The default file name follows the pattern: `{ProjectName}_{ShotName|"FullSequence"}_{Resolution}_{FPS}fps.{ext}`
+    - Audio is not supported in this milestone
+
+    **Expected behavior:**
+    ``` python
+      # single shot render
+      .if the user selects "render current shot"
+      .if the shot duration is 5 seconds
+      .if the frame rate is 24fps >>
+          <== 120 frames are rendered (5 x 24)
+          <== each frame reflects the interpolated camera and object state at that time
+          <== the output video plays back at 24fps
+          <== total video duration is exactly 5 seconds
+
+      # scene render with hard cuts
+      .if the user selects "render current scene"
+      .if the scene contains 3 shots of 5, 3, and 7 seconds >>
+          <== total output duration is 15 seconds
+          <== shots are concatenated in sequencer order with hard cuts
+          !== there are black frames or gaps between shots
+          !== dissolves, fades, or transitions appear between shots
+          <== object positions at the start of each shot match the shot's initial state
+
+      # full project render (multiple scenes)
+      .if the user selects "render full project"
+      .if the project contains 2 scenes with 3 and 2 shots respectively >>
+          <== all 5 shots are rendered across both scenes
+          <== scenes are rendered in tab order
+          <== a scene divider separates the scenes in the output
+
+      # modal blocking during render
+      .if the user initiates a video render >>
+          <== the application UI is blocked and non-interactive during rendering
+          <== only the progress indicator and cancel button are accessible
+          !== the user can modify the scene, scrub the timeline, or switch shots during render
+
+      # camera shake baked into render
+      .if a shot has camera shake enabled
+      .if the user renders the shot >>
+          <== each rendered frame includes the shake offset applied to the camera position
+          <== the shake is deterministic and consistent with what was visible during playback
+          !== shake is recalculated with different random values during render
+
+      # resolution and aspect ratio
+      .if the user selects 3840x2160 output
+      .if the active aspect ratio is 2.39:1 >>
+          <== the video is 3840 pixels wide
+          <== the video height is calculated from 2.39:1
+          !== the video contains black bars unless the user explicitly includes mask bars
+
+      # frame-accurate rendering
+      .if a camera keyframe moves the camera from position A to position B over 2 seconds
+      .if the frame rate is 24fps >>
+          <== 48 frames are rendered for that 2-second span
+          <== intermediate frames show smoothly interpolated camera positions
+          !== frames are duplicated or dropped
+
+      # progress and cancellation
+      .if rendering begins on a 600-frame sequence >>
+          <== a progress indicator appears showing frame count and percentage
+          <== estimated time remaining updates as frames are rendered
+      ||> .if the user presses cancel at frame 300 >>
+          <== rendering stops
+          <== a valid video file containing the first 300 frames is saved
+          <== the user is informed that the export was partially completed
+          <== the application UI is unblocked and interactive again
+
+      # slate mode
+      .if the user enables "burn-in shot names"
+      .if the sequence contains shots named "INT_OFFICE_01" and "EXT_ALLEY_02" >>
+          <== the shot name is rendered as text overlay on each frame
+          <== the name changes when the rendered frame crosses a shot boundary
+
+      # overlay inclusion
+      .if the user enables "include frame guides" for video export >>
+          <== every rendered frame includes the active frame guides
+          <== guide positions are recalculated per frame if the aspect ratio or viewport changes
+    ```
+
+    **Error cases:**
+    ``` python
+      # shot with no keyframes
+      .if the user renders a shot that has only one camera keyframe (no animation) >>
+          <== the output video shows a static frame for the shot duration
+          !== the application crashes or produces an empty file
+
+      # disk full during render
+      .if the disk runs out of space mid-render >>
+          <== rendering stops
+          <== the user is shown an error message indicating insufficient disk space
+          <== frames rendered before the error are preserved in a valid output file if possible
+          !== the application crashes
+
+      # very long sequence
+      .if the sequence total duration exceeds 30 minutes >>
+          <== rendering proceeds without running out of memory
+          <== the progress indicator remains accurate
+          !== the application accumulates memory unboundedly
+
+      # export during playback
+      .if the user initiates export while playback is active >>
+          <== playback stops before rendering begins
+          <== the render uses offline evaluation, not real-time playback state
+          !== rendered output is affected by real-time frame drops
+    ```
+
+  - ##### 4.4.3. Storyboard export (Feature)
+
+    ***Export all shots as a contact sheet grid with shot names, durations, and frame thumbnails --- replacing hand-drawn storyboards with camera-accurate frames. No free-text annotation on storyboard frames.***
+
+    **Functional requirements:**
+    - Every shot in the sequence is represented by a single frame thumbnail
+    - The thumbnail frame is captured at the first frame of each shot by default
+    - The user can choose to capture at a specific time within each shot: first frame, last frame, or midpoint
+    - Each thumbnail includes:
+      - Shot name (e.g., "Shot_01")
+      - Duration (e.g., "5.0s")
+      - Focal length (e.g., "50mm")
+    - No free-text annotation on storyboard frames --- thumbnails show metadata labels only, not user-written notes
+    - Two output formats: PDF and PNG
+    - The grid layout is configurable:
+      - Columns per row: 2, 3, 4, or 6
+      - The default is 3 columns per row
+    - User-configurable rows per page (controls how many shots appear per PDF page)
+    - Supports two-column layout (side-by-side shot comparison, useful for shot/reverse-shot)
+    - Rows are filled left-to-right, top-to-bottom in sequencer order
+    - Scene dividers appear between groups of shots from different scenes (horizontal rule with scene name)
+    - If the final row has fewer shots than columns, the remaining cells are empty
+    - Page size for PDF output: US Letter (8.5 x 11 in) and A4 --- default is US Letter
+    - PDF output paginates automatically --- if the grid exceeds one page, subsequent pages are added
+    - Each page includes a header with: project name, date, and page number
+    - Thumbnail aspect ratio matches the active aspect ratio setting
+    - PNG output produces a single image regardless of shot count (no pagination)
+    - The default file name follows the pattern: `{ProjectName}_Storyboard_{Date}.{ext}`
+    - The thumbnails are rendered at sufficient resolution to be legible when printed at the chosen page size
+
+    **Expected behavior:**
+    ``` python
+      # basic storyboard export
+      .if the user initiates storyboard export
+      .if the sequence contains 9 shots
+      .if the layout is 3 columns >>
+          <== the output contains a 3x3 grid of shot thumbnails
+          <== each thumbnail shows the first frame of its shot
+          <== each thumbnail is labeled with shot name, duration, and focal length
+          <== shots appear in sequencer order, left-to-right, top-to-bottom
+          !== free-text annotations appear on any thumbnail
+
+      # user-configurable rows per page
+      .if the user sets rows per page to 4
+      .if the layout is 3 columns
+      .if the sequence contains 20 shots >>
+          <== each PDF page contains up to 12 thumbnails (3 columns x 4 rows)
+          <== the PDF contains 2 pages (12 + 8 thumbnails)
+          <== each page has a header with project name, date, and page number
+
+      # pagination in PDF
+      .if the sequence contains 20 shots
+      .if the layout is 3 columns
+      .if the page fits 9 shots per page (3x3) >>
+          <== the PDF contains 3 pages
+          <== page 1 has 9 thumbnails, page 2 has 9 thumbnails, page 3 has 2 thumbnails
+          <== each page has a header with project name, date, and page number
+
+      # two-column layout for shot/reverse-shot
+      .if the user selects 2 columns
+      .if the sequence contains shots alternating between two camera angles >>
+          <== each row shows two shots side-by-side
+          <== the layout facilitates visual comparison of shot/reverse-shot pairs
+          <== thumbnails are wider than in a 3 or 4 column layout
+
+      # aspect ratio in thumbnails
+      .if the active aspect ratio is 2.39:1 >>
+          <== each thumbnail has a 2.39:1 aspect ratio
+          <== the grid layout adjusts cell dimensions to accommodate the wider thumbnails
+
+      # midpoint capture
+      .if the user selects "midpoint" as the capture time
+      .if a shot is 6 seconds long >>
+          <== the thumbnail shows the scene state at t=3.0s
+          <== camera and object positions reflect interpolated values at midpoint
+
+      # PNG output with many shots
+      .if the output format is PNG
+      .if the sequence contains 30 shots >>
+          <== a single PNG image is produced containing all 30 thumbnails
+          !== multiple PNG files are produced
+
+      # configurable columns
+      .if the user selects 2 columns
+      .if the sequence contains 5 shots >>
+          <== the grid has 2 columns and 3 rows
+          <== the last row contains 1 thumbnail and 1 empty cell
+
+      # no annotation capability
+      .if the user exports a storyboard >>
+          !== text input fields appear for adding notes to thumbnails
+          !== any user-written text is rendered on the storyboard frames
+          <== only shot name, duration, and focal length labels appear on each thumbnail
+    ```
+
+    **Error cases:**
+    ``` python
+      # single shot
+      .if the sequence contains only 1 shot >>
+          <== the storyboard contains a single thumbnail
+          <== the layout is valid even with one cell populated
+
+      # shot with no keyframes
+      .if a shot has no camera keyframes >>
+          <== the thumbnail shows the default camera position for that shot
+          !== the thumbnail is blank or missing
+
+      # empty sequence
+      .if the sequence contains no shots >>
+          <== the user is informed that there are no shots to export
+          !== the application produces an empty file or crashes
+    ```
+
+  - ##### 4.4.4. NLE export (Feature)
+
+    ***Export timeline data and rendered media for import into non-linear editing systems --- transferring shot structure, edit points, and full per-frame camera metadata into the editor's workflow. EDL (Edit Decision List) timeline format. Avid is not a target workflow --- no AAF support.***
+
+    **Functional requirements:**
+    - The export produces two outputs:
+      1. Individual video files, one per shot, rendered at the specified resolution and frame rate
+      2. A timeline interchange file that references the rendered clips and preserves edit structure
+    - Timeline interchange format: EDL (Edit Decision List, CMX 3600 format) --- the universal lowest-common-denominator format supported by every professional NLE
+    - Avid is not a target workflow --- no AAF support
+    - The EDL includes:
+      - One event per shot, in sequencer order
+      - Source clip file name (matching the rendered video file names)
+      - Source in/out timecodes (full shot duration)
+      - Record in/out timecodes (sequential placement on the master timeline)
+      - Timecode format matches the selected frame rate (e.g., 24fps timecode for 24fps renders)
+    - Per-shot video files are named: `{ProjectName}_{ShotName}.{ext}`
+    - All per-shot video files are saved to a single output directory chosen by the user
+    - The EDL file is saved alongside the video files in the same output directory
+    - Video render settings (resolution, frame rate, quality, format) are shared with video export (4.4.2) and configured in the same way
+    - Embed full camera metadata in the export (per-frame keyframe data including position, rotation, focal length --- useful for VFX pipelines):
+      - Per-frame camera position (x, y, z)
+      - Per-frame camera rotation (euler angles or quaternion)
+      - Per-frame focal length
+      - Camera body and lens preset names
+      - Aspect ratio
+      - Shot duration
+    - Camera metadata is exported as a sidecar file per shot (JSON or CSV format, one row per frame)
+    - The render uses the same offline rendering pipeline as video export (4.4.2)
+    - Overlay and burn-in options match video export (4.4.2)
+
+    **Expected behavior:**
+    ``` python
+      # basic NLE export
+      .if the user initiates NLE export
+      .if the sequence contains 3 shots named Shot_01, Shot_02, Shot_03 >>
+          <== the user selects an output directory
+          <== 3 video files are rendered: {ProjectName}_Shot_01, {ProjectName}_Shot_02, {ProjectName}_Shot_03
+          <== 1 EDL file is created: {ProjectName}.edl
+          <== the EDL references the 3 video files in sequence order
+
+      # EDL timecode accuracy
+      .if Shot_01 is 5 seconds, Shot_02 is 3 seconds, Shot_03 is 7 seconds
+      .if the frame rate is 24fps >>
+          <== Shot_01 record timecode: 00:00:00:00 to 00:00:05:00
+          <== Shot_02 record timecode: 00:00:05:00 to 00:00:08:00
+          <== Shot_03 record timecode: 00:00:08:00 to 00:00:15:00
+          <== each event's source in/out spans the full shot duration
+
+      # full camera metadata per frame
+      .if Shot_01 is 5 seconds at 24fps
+      .if the camera animates from position A to position B
+      .if focal length animates from 35mm to 85mm >>
+          <== a sidecar metadata file is created for Shot_01
+          <== the sidecar contains 120 rows (one per frame)
+          <== each row includes camera position (x, y, z), rotation, and focal length
+          <== the metadata includes camera body and lens preset names
+          <== the metadata includes the active aspect ratio
+
+      # camera metadata with static shot
+      .if Shot_02 has no camera animation
+      .if the camera is fixed at position (0, 1.7, -5) with focal length 50mm >>
+          <== the sidecar for Shot_02 contains identical position and focal length values for every frame
+          <== the metadata is still exported (not omitted for static shots)
+
+      # EDL format is CMX 3600
+      .if the user opens the exported EDL in a text editor >>
+          <== the file conforms to CMX 3600 EDL format
+          <== each event has an event number, reel name, track type, transition type, and timecodes
+          !== AAF, XML, or any Avid-specific format is produced
+
+      # progress during multi-shot render
+      .if the sequence contains 10 shots >>
+          <== progress indicator shows which shot is currently being rendered (e.g., "Rendering Shot 3 of 10")
+          <== overall progress reflects total frames across all shots
+
+      # cancellation during multi-shot render
+      .if the user cancels during rendering of Shot 5 of 10 >>
+          <== shots 1 through 4 are fully rendered and saved
+          <== shot 5 is partially rendered and saved as a valid file if possible
+          <== the EDL reflects only the successfully completed shots
+          <== sidecar metadata files are created for all completed shots
+          <== the user is informed which shots were completed
+    ```
+
+    **Error cases:**
+    ``` python
+      # output directory with existing files
+      .if the output directory already contains files with the same names >>
+          <== the user is prompted to overwrite or choose a different directory
+          !== existing files are silently overwritten
+
+      # single shot sequence
+      .if the sequence contains only 1 shot >>
+          <== 1 video file, 1 sidecar metadata file, and 1 EDL are produced
+          <== the EDL contains a single event
+          <== the export is valid and importable
+
+      # shot with zero-length duration
+      .if a shot has the minimum duration (0.1 seconds)
+      .if the frame rate is 24fps >>
+          <== at least 2 frames are rendered for that shot (ceil of 0.1 x 24)
+          <== the EDL timecodes are valid for the resulting duration
+          <== the sidecar metadata contains entries for each rendered frame
+          !== the shot is skipped or produces an empty file
+    ```

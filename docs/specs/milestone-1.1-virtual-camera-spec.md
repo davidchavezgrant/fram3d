@@ -1,8 +1,8 @@
 # Milestone 1.1: Virtual Camera
 
 **Date**: 2026-03-10
-**Parent**: Project 1 -- Core previsualization tool
-**Companion to**: `2026-03-10-fram3d-roadmap.md`
+**Parent**: Phase 1 — The Camera
+**Companion to**: `fram3d-roadmap.md`
 
 ---
 
@@ -15,7 +15,7 @@
   - ##### 1.1.1. Camera movement (Feature)
     ***Pan, tilt, dolly, truck, crane, roll, orbit, dolly zoom, and reset -- the full vocabulary of physical camera movement, mapped to mouse and modifier keys.***
 
-    *Related: 1.6.1 Mouse controls, 1.6.2 Keyboard shortcuts*
+    *Related: 2.2.1 Mouse controls, 2.2.2 Keyboard shortcuts*
 
     **Functional requirements:**
     - Pan rotates the camera horizontally around a vertical axis through the camera's position. Positive pan rotates rightward.
@@ -111,7 +111,7 @@
     - Switching camera body (and therefore sensor size) while keeping the same focal length results in a different FOV. A 50mm on a Super 35mm body looks different from a 50mm on a full-frame body, just as it would on set.
     - Common focal length presets are available for quick selection: 14, 18, 21, 24, 28, 35, 50, 65, 75, 85, 100, 135, 150, 200, 300, 400mm.
     - The current focal length is displayed in millimeters on the HUD and updates in real time during transitions.
-    - Focal length is a keyframeable property. It is recorded when the track's stopwatch is on (Animate mode, see 1.5.3) and interpolated during playback.
+    - Focal length is a keyframeable property. It is recorded when the track's stopwatch is on (Animate mode, see 3.2.3) and interpolated during playback.
     - **Anamorphic lenses**: Squeeze factors (1.33x, 1.5x, 1.8x, 2x) are supported. FOV is computed from the squeeze factor and sensor dimensions. Aspect ratio is auto-locked to the computed delivery format when an anamorphic lens is active (see 1.2.1). Oval bokeh is deferred to future polish.
 
     **Design constraints:**
@@ -237,7 +237,7 @@
   - ##### 1.1.4. Focus (Feature)
     ***Click an object, and the camera smoothly pulls focus to it -- calculating the right distance to frame the subject with breathing room, like a 1st AC executing a rack focus.***
 
-    *Related: 1.3.1 Scene elements (requires selectable objects)*
+    *Related: 2.1.1 Scene elements (requires selectable objects)*
 
     **Functional requirements:**
     - The user triggers focus on a target object. The camera smoothly transitions to frame the subject.

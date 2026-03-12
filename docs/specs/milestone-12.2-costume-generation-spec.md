@@ -27,7 +27,7 @@
 		Clothing-on-mannequin keeps all systems working (posing, body regions, walk cycles, expressions, snorricam, follow cam) because the skeleton never changes.
 
 		**Pipeline:**
-		1. User selects a character, opens "Appearance" panel in inspector
+		1. User selects a character, opens "Appearance" in the property editor
 		2. Types a costume description: "detective trench coat," "scrubs," "medieval armor"
 		3. AI generates clothing mesh geometry (jacket mesh, pants mesh, hat mesh)
 		4. Meshes auto-bound to mannequin's known skeleton (automatic skinning weights — tractable because we control the target skeleton)

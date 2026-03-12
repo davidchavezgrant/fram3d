@@ -30,8 +30,8 @@
      └→ 4.3 Asset Import
          └→ 5.2 Set Decoration Library
          └→ 5.3 Premade Environments
- └→ 2.2 Viewport Panel System (extends 2.1.5 Director View)
-     └→ 8.2 Designer View (panel mode)
+ └→ 2.2 View System (extends 2.1.5 Director View)
+     └→ 8.2 Designer View
          └→ 10.1 Set Builder (uses Designer View)
  └→ 8.3 Script Import (needs 3.1.4 multi-scene + 6.1 characters)
  └→ 11.x AI features (need 3.2 + 6.1)
@@ -143,10 +143,10 @@
 | # | Milestone | Rationale |
 |---|-----------|-----------|
 | 19 | **8.1 Selection Refinements** | Multi-select, grid snapping, custom interpolation curves. Scenes are getting complex — multi-select is needed. Bezier curves make animations professional. |
-| 20 | **8.2 Designer View** | Top-down orthographic view. Directors have drawn overhead blocking diagrams for a century. Now it's a view. |
+| 20 | **8.2 Designer View** | Top-down orthographic view. Directors have drawn overhead blocking diagrams for a century. Now it's a first-class view. |
 | 21 | **8.3 Script Import** | Final Draft / Fountain parsing. Auto-create scenes, character placeholders, dialogue library. Depends on characters (6.1) and multi-scene (3.1.4). |
 | 22 | **8.4 Slow-motion** | Per-shot speed factor. Nice-to-have, not core. Simple implementation (playback-time transform). |
-| 23 | **3.1.5 Timeline Overview** | Overview navigation. Useful once projects have many shots, but not essential. |
+| 23 | **3.1.5 Timeline Overview** | Timeline overview navigation. Useful once projects have many shots, but not essential. |
 
 **Exit criteria:** The tool is polished enough for production use. Multi-select, precision placement, professional animation curves, overhead view, script-to-previs workflow, slow-motion.
 
@@ -157,7 +157,7 @@
 
 | # | Milestone | Rationale |
 |---|-----------|-----------|
-| 24 | **9.1 Multi-camera** | Up to 4 cameras per shot, active angle editing. Builds on mature keyframe and shot track foundations. The professional previs capstone. |
+| 24 | **9.1 Multi-camera** | Up to 4 cameras per shot, active angle editing. Builds on mature keyframe and shot track foundations. Professional previs capstone. |
 
 ---
 
@@ -204,10 +204,10 @@
 | **5.3 Premade Environments** | Phase 12 | Phase 5 (after lighting) | Solves the blank canvas / new user onboarding problem. Code is trivial; content creation runs in parallel. |
 | **6.3 Element Linking** | After 7.2 Snorricam | Phase 6 (right after characters) | Prop holding is core blocking. A character needs to carry a briefcase before they need facial expressions. |
 | **7.1 Facial Expressions** | Right after 6.1 | Phase 7 (after camera follow + linking) | Enhancement, not core. Blocking precedes performance. |
-| **2.2 Viewport Panels** | Phase 8 (original plan) | Phase 2 (moved up) | Split-view is immediately useful once Camera View + Director View exist. Don't defer what's already natural. |
+| **2.2 View System** | Phase 8 (original plan) | Phase 2 (moved up) | Split views are immediately useful once Camera View + Director View exist. Don't defer what's already natural. |
 | **8.4 Slow-motion** | Phase 8 | Phase 8 | Nice-to-have. Not blocking any workflow. |
 | **8.3 Script Import** | Phase 8 | Phase 8 | Needs characters (6.1) and multi-scene (3.1.4) to be useful. Once those exist, this is a high-value workflow accelerator. |
-| **3.1.5 Overview** | Phase 3 (3.1) | Phase 8 | Useful once projects are complex, not needed early. |
+| **3.1.5 Timeline Overview** | Phase 3 (3.1) | Phase 8 | Useful once projects are complex, not needed early. |
 | **8.1 Selection Refinements** | After 5.2 | Phase 8 (before multi-camera) | Multi-select becomes important as scenes grow, but not needed during early development. Comes before multi-camera so the tool is more capable when multi-cam complexity arrives. |
 
 ## Unchanged (already correct)

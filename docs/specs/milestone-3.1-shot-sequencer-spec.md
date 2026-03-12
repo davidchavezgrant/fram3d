@@ -92,10 +92,13 @@ Each shot is an independent camera animation over shared world-space elements. A
 
 ### Layout
 
-- The shot track occupies a horizontal strip along the bottom edge of the view
-- Height: 140px from the bottom of the screen
-- Background: dark, semi-transparent (distinct from the 3D view above and the keyframe editor below)
-- Contains: shot thumbnails, an "Add Shot" button, aggregate duration display, scrollbar (when needed)
+- The shot track is a horizontal bar integrated into the timeline section, positioned between the ruler and the active angle track/track area
+- Left 140px: label column reading "SHOTS" (consistent with all timeline label columns — see `ui-layout-spec.md` §4.1 for the full timeline component stack)
+- Right side: horizontally scrollable strip of shot blocks, each rendered as a colored rectangle sized proportionally to the shot's duration within the visible time range
+- Contains: shot blocks (one row per camera in multi-camera shots), an "Add Shot" button (in the label column), aggregate duration display, shot boundary drag handles
+- Shot bar height: 20px per camera row, auto-adjusts to the maximum camera count across all shots (e.g., 22px for single-camera, 42px for two-camera). See also 9.1.3 for multi-camera shot bar states.
+
+> **Note:** The roadmap originally described shot thumbnails (120x100px cards with preview images). The mockup evolved to a timeline-style horizontal bar where shots are colored blocks proportional to duration. The timeline bar approach provides better spatial context for shot timing and integrates naturally with the ruler, tracks, and zoom bar. The thumbnail preview approach (for a shot list/overview context) may be revisited as a separate panel.
 
 ### Aggregate Duration
 
@@ -328,6 +331,37 @@ Each shot is an independent camera animation over shared world-space elements. A
       !== crossfade, wipe, or other transition effect applied
       !== visual marker or flash shown at the boundary
 ```
+
+---
+
+## 3.1.5 Timeline Overview *(Deferred to Phase 8)*
+
+***A collapsible bird's-eye view of the full timeline showing all shots, all tracks, and the current view window. Provides at-a-glance context for where you are in the sequence.***
+
+> **Note**: This feature is deferred to Phase 8 per the roadmap. The UI specification and mockup prototype include it for layout reference. See `ui-layout-spec.md` §5 for full details.
+
+### Layout
+
+- 48px-tall strip positioned above the view area (below the top gutter, above the Camera View)
+- Left 140px: label column reading "OVERVIEW" (consistent with all timeline label columns)
+- Right side split into two vertical regions:
+  - **Top 16px**: Shot blocks — one small colored rectangle per shot, labeled with shot name
+  - **Bottom**: Track rows with miniature keyframe dots and linked-period region indicators
+- Collapsible via the left gutter tab or keyboard shortcut
+
+### Visual Elements
+
+- **Shot blocks**: Colored to match shot color. Current shot at full opacity; other shots at 0.6 opacity.
+- **Track rows**: One row per element track. Height adapts to fit within the available space.
+- **Keyframe dots**: 3px diamond markers matching track color.
+- **Link regions**: Semi-transparent grey bars for linked periods.
+- **View window**: White-bordered rectangle showing the currently visible time range `[viewStart, viewEnd]`. Hidden when the entire timeline is visible.
+- **Playhead**: 1px red line at the current playback position.
+
+### Interactions
+
+- **Click**: Move playhead to the clicked position and recenter the view window
+- **Drag**: Continuously update playhead position (same as scrubbing)
 
 ---
 

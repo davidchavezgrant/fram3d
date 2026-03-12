@@ -9,26 +9,26 @@
 
 - ### 2.2. Viewport panel system (Milestone)
 
-  Multi-panel viewport with configurable layouts. The viewport area can display one, two, or three panels simultaneously, each showing an independent view of the scene. This replaces the single-viewport model and enables workflows like 3D camera view alongside a Director Mode overview, or a 2D Designer next to the camera view.
+  Multi-panel viewport with configurable layouts. The viewport area can display one, two, or three views simultaneously, each showing an independent view of the scene. This replaces the single-viewport model and enables workflows like Camera View alongside a Director View overview, or a 2D Designer next to the Camera View.
 
-  The design follows the mockup: a layout chooser in the bottom-right of the viewport area, and a per-panel dropdown selector for the view mode. The panel-based approach was chosen over a single-viewport toggle model (like Blender's Numpad 0) because it avoids the #1 complaint across every 3D tool — accidentally moving the shot camera while navigating. With separate panels, each view is independent and cannot accidentally affect another.
+  The design follows the mockup: a layout chooser in the bottom-right of the viewport area, and a per-view dropdown selector for the view type. The panel-based approach was chosen over a single-viewport toggle model (like Blender's Numpad 0) because it avoids the #1 complaint across every 3D tool — accidentally moving the shot camera while navigating. With separate views, each view is independent and cannot accidentally affect another.
 
-  *Blocked by: 2.1 (scene management — Director Mode requires scene elements and gizmos), 3.2 (keyframe animation — timeline context needed)*
+  *Blocked by: 2.1 (scene management — Director View requires elements and gizmos), 3.2 (keyframe animation — timeline context needed)*
 
   ---
 
   - ##### 2.2.1. Panel layouts (Feature)
-    ***Three layout options: single panel, side-by-side, and one-large-two-small. Each panel independently assignable to any view mode.***
+    ***Three layout options: single view, side-by-side, and one-large-two-small. Each view independently assignable to any view type.***
 
     **Functional requirements:**
     - Three layout configurations, selected via layout chooser buttons in the bottom-right corner of the viewport area:
-      - **Single** (default): One panel fills the viewport area
-      - **Side-by-side**: Two panels of equal width, arranged horizontally
-      - **Three-panel**: One large panel on top, two smaller panels below (or one large left, two stacked right — follow mockup)
-    - Each panel has a dropdown selector in its top bar for choosing the view mode
+      - **Single** (default): One view fills the viewport area
+      - **Side-by-side**: Two views of equal width, arranged horizontally
+      - **Three-view**: One large view on top, two smaller views below (or one large left, two stacked right — follow mockup)
+    - Each view has a dropdown selector in its top bar for choosing the view type
     - Layout choice persists across session (saved with project)
     - Side panels (Elements, Assets) have horizontal drag edges for resizing. Min 150px, max 500px.
-    - Switching layouts preserves each panel's view mode where possible (e.g., switching from 2-panel to 1-panel keeps the first panel's view mode)
+    - Switching layouts preserves each view's type where possible (e.g., switching from 2-view to 1-view keeps the first view's type)
 
     **Gutter-based panel toggles:**
     - JetBrains-style vertical label strips on left and right workspace edges
@@ -42,71 +42,73 @@
     ``` python
       # default state
       .if the application starts >>
-          <== single-panel layout active
-          <== panel 0 shows 3D Viewport
-          <== layout chooser shows single-panel button highlighted
+          <== single-view layout active
+          <== view 0 shows Camera View
+          <== layout chooser shows single-view button highlighted
 
       # switching to side-by-side
       .if user clicks the side-by-side layout button >>
-          <== two panels appear, each with its own view selector
-          <== panel 0 retains its previous view mode
-          <== panel 1 defaults to Director Mode
+          <== two views appear, each with its own view type selector
+          <== view 0 retains its previous view type
+          <== view 1 defaults to Director View
 
-      # switching to three-panel
-      .if user clicks the three-panel layout button >>
-          <== three panels appear
-          <== panel 0 (large) retains its previous view mode
-          <== panel 1 defaults to Director Mode
-          <== panel 2 defaults to 2D Designer
+      # switching to three-view
+      .if user clicks the three-view layout button >>
+          <== three views appear
+          <== view 0 (large) retains its previous view type
+          <== view 1 defaults to Director View
+          <== view 2 defaults to 2D Designer
 
       # switching back to single
-      .if user clicks the single-panel layout button >>
-          <== only panel 0 remains visible
-          <== panel 0 retains its view mode
+      .if user clicks the single-view layout button >>
+          <== only view 0 remains visible
+          <== view 0 retains its view type
     ```
 
   ---
 
-  - ##### 2.2.2. View modes (Feature)
-    ***Three view modes assignable to any panel: 3D Viewport, 2D Designer, Director Mode.***
+  - ##### 2.2.2. View types (Feature)
+    ***Three view types assignable to any view: Camera View, 2D Designer, Director View.***
 
     **Functional requirements:**
-    - **3D Viewport**: Looks through the virtual camera rig (shot camera). Shows the scene as framed by the current shot's camera position. This is the primary working view — aspect ratio masks, frame guides, HUD, and subtitles render here. Camera movements in this view create keyframes when the stopwatch is on.
-    - **2D Designer**: Top-down orthographic view (see 8.2). Objects shown as icons/silhouettes, cameras as frustums with FOV cones, lights as standard symbols. Fully interactive — drag objects to reposition. Available as a panel mode even before the full 8.2 spec is implemented (can start as a simple orthographic camera).
-    - **Director Mode**: Free utility camera decoupled from the shot timeline (see 2.1.5). Navigating this view never creates camera keyframes. The shot camera is visible as a frustum wireframe. Object manipulation still creates keyframes when stopwatches are on.
-    - Any view mode can be assigned to any panel via the dropdown selector in the panel's top bar
-    - **Camera View is a single movable instance** — only one panel can show Camera View at a time
-    - When a panel is reassigned to Camera View, the panel that previously held Camera View receives the reassigning panel's old view type (**smart swap**)
-    - Camera View must always exist in exactly one panel — it cannot be removed
-    - View mode selection is per-panel and persists until changed
-    - All panels share the same scene data and timeline state — changes in one panel are immediately reflected in all others
+    - **Camera View**: Looks through the virtual camera rig (shot camera). Shows the scene as framed by the current shot's camera position. This is the primary working view. Camera movements in this view create keyframes when the stopwatch is on.
+      - The Camera View frame maintains a 16:9 aspect ratio inside its container, centered with black letterbox surround.
+      - **Camera View overlays** (see `ui-layout-spec.md` §2.3 for z-ordering and positions): aspect ratio masks, composition guides (1.2), shot label (top-left), sequence timecode (bottom-center), camera info (top-right, 1.2.3), active tool badge (bottom-left, 2.1.2), Director View badge (top-center, 2.1.5), camera path badge (bottom-right, 3.2.6), subtitles (bottom-center, 1.2.4).
+    - **2D Designer**: Top-down orthographic view (see 8.2). Elements shown as icons/silhouettes, cameras as frustums with FOV cones, lights as standard symbols. Fully interactive — drag elements to reposition. Available as a view type even before the full 8.2 spec is implemented (can start as a simple orthographic camera).
+    - **Director View**: Free utility camera decoupled from the shot timeline (see 2.1.5). Navigating this view never creates camera keyframes. The shot camera is visible as a frustum wireframe. Element manipulation still creates keyframes when stopwatches are on.
+    - Any view type can be assigned to any view via the dropdown selector in the view's top bar
+    - **Camera View is a single movable instance** — only one view can show Camera View at a time
+    - When a view is reassigned to Camera View, the view that previously held Camera View receives the reassigning view's old view type (**smart swap**)
+    - Camera View must always exist in exactly one view — it cannot be removed
+    - View type selection is per-view and persists until changed
+    - All views share the same scene data and timeline state — changes in one view are immediately reflected in all others
 
     **Expected behavior:**
     ``` python
-      # changing a panel's view mode
-      .if panel 1 is showing Director Mode >>
-        ||> .if user selects "2D Designer" from panel 1's dropdown >>
-            <== panel 1 switches to the 2D Designer view
-            <== other panels are unaffected
+      # changing a view's type
+      .if view 1 is showing Director View >>
+        ||> .if user selects "2D Designer" from view 1's dropdown >>
+            <== view 1 switches to the 2D Designer
+            <== other views are unaffected
 
-      # panels share scene state
-      .if panel 0 shows 3D Viewport and panel 1 shows Director Mode >>
-        ||> .if user moves an object via gizmo in panel 1 (Director Mode) >>
-            <== the object moves in both panels simultaneously
-            <== panel 0 (3D Viewport) reflects the new position through the shot camera
+      # views share scene state
+      .if view 0 shows Camera View and view 1 shows Director View >>
+        ||> .if user moves an element via gizmo in view 1 (Director View) >>
+            <== the element moves in both views simultaneously
+            <== view 0 (Camera View) reflects the new position through the shot camera
 
-      # timeline interaction across panels
-      .if panel 0 shows 3D Viewport and panel 1 shows Director Mode >>
+      # timeline interaction across views
+      .if view 0 shows Camera View and view 1 shows Director View >>
         ||> .if user scrubs the timeline >>
-            <== both panels update to show the scene state at the new time
-            <== the shot camera frustum in Director Mode animates to its keyframed position
+            <== both views update to show the scene state at the new time
+            <== the shot camera frustum in Director View animates to its keyframed position
 
       # Camera View smart swap
-      .if panel 0 shows Camera View and panel 1 shows Director View >>
-        ||> .if user selects "Camera View" from panel 1's dropdown >>
-            <== panel 1 now shows Camera View
-            <== panel 0 receives Director View (the view that panel 1 had)
-            !== Camera View exists in two panels simultaneously
+      .if view 0 shows Camera View and view 1 shows Director View >>
+        ||> .if user selects "Camera View" from view 1's dropdown >>
+            <== view 1 now shows Camera View
+            <== view 0 receives Director View (the view type that view 1 had)
+            !== Camera View exists in two views simultaneously
 
       # gutter panel mutual exclusion
       .if Elements panel is open >>

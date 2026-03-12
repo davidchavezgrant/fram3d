@@ -29,7 +29,7 @@
 		| Transition (CUT TO:, DISSOLVE TO:) | Scene boundary marker |
 
 		**What does NOT get imported (v1):**
-		- Action lines do NOT auto-place objects or characters (that's Phase 11 — AI blocking)
+		- Action lines do NOT auto-place elements or characters (that's Phase 11 — AI blocking)
 		- Parentheticals do NOT affect character poses
 		- No environment generation from scene headings (future: "INT. OFFICE" → suggest office environment)
 

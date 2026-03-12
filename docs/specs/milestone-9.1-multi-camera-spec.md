@@ -2,15 +2,15 @@
 
 **Date**: 2026-03-10
 **Status**: Draft
-**Blocked by**: 3.2 (Keyframe animation), 3.1 (Shot sequencer), 6.3 (Object linking — cameras are scene entities)
+**Blocked by**: 3.2 (Keyframe animation), 3.1 (Shot track), 6.3 (Element linking — cameras are scene entities)
 
 ---
 
 - ### 9.1. Multi-camera (Milestone)
 
-  Up to four cameras per shot with independent keyframe timelines, shared object animation, and a coverage splitting track for editing camera cuts within a setup.
+  Up to four cameras per shot with independent keyframe timelines, shared element animation, and an active angle track for editing camera cuts within a setup.
 
-  This milestone is the capstone of production features. It requires mature keyframe, sequencer, and scene management foundations. The design reflects how real multi-camera productions work: multiple cameras roll simultaneously on the same action, and the editor decides which angle to use moment by moment.
+  This milestone is the capstone of production features. It requires mature keyframe, shot track, and scene management foundations. The design reflects how real multi-camera productions work: multiple cameras roll simultaneously on the same action, and the editor decides which angle to use moment by moment.
 
   The single-camera model from Milestone 1.1 remains the default. A shot with one camera works exactly as it always did. Multi-camera features surface only when the user adds additional cameras to a shot.
 
@@ -34,32 +34,32 @@
     - Cameras are renameable: right-click a camera preview element -> rename. Default names are A, B, C, D — the application does not prompt for a name on creation
     - Cameras are reorderable: the user can drag camera preview elements to rearrange their order
     - Keyboard shortcuts (Shift+1/2/3/4) correspond to camera position (first, second, third, fourth), not the camera's name. Keybindings are user-configurable, but defaults should not require configuration
-    - When a shot has more than one camera, camera preview elements appear above the current shot in the sequencer area
+    - When a shot has more than one camera, camera preview elements appear above the current shot in the shot track area
     - Each camera preview element shows a static snapshot thumbnail of that camera's current view (not a live-updating render). These previews are exact UI duplicates of shot preview thumbnails — same rendering approach, same update behavior
     - Camera preview elements are labeled with the camera letter and bordered with the camera's color
     - Left-clicking a camera preview element switches to that camera's keyframe timeline in the timeline editor
     - The currently-selected camera's preview element has a visually distinct highlight (thicker border, brighter color)
     - Adding a camera does not affect other shots -- camera count is per-shot, not project-wide
     - When a user creates a new camera, a **modal dialog** prompts for camera body and lens choice, with an option to copy settings from the active camera or any other camera in the shot. This same prompt also applies at initial project creation — the user picks a camera body and lens when creating a new project. The dialog has sensible defaults so the user can dismiss it quickly.
-    - A newly added camera is positioned at a slight world-space offset from the active camera (so they are not stacked), and inherits the current viewport rotation and focal length as its initial state (unless overridden by the creation prompt)
+    - A newly added camera is positioned at a slight world-space offset from the active camera (so they are not stacked), and inherits the current view rotation and focal length as its initial state (unless overridden by the creation prompt)
     - The user can remove any camera except Camera A. Camera A cannot be removed -- at least one camera must always exist per shot
     - Removing a camera that is the active camera (9.1.3) causes Camera A to become active
-    - Removing a camera that has coverage segments assigned (9.1.4) deletes those segments and follows the standard segment deletion procedure: the neighboring segment absorbs the deleted segment's duration (left neighbor absorbs; if the deleted segment is the first segment, the right neighbor absorbs). If this results in a single remaining segment, the coverage track remains. If all segments are removed, the coverage track is removed entirely.
+    - Removing a camera that has active angle segments assigned (9.1.4) deletes those segments and follows the standard segment deletion procedure: the neighboring segment absorbs the deleted segment's duration (left neighbor absorbs; if the deleted segment is the first segment, the right neighbor absorbs). If this results in a single remaining segment, the active angle track remains. If all segments are removed, the active angle track is removed entirely.
 
     **Expected behavior:**
     ``` python
       # initial state -- single camera
       .if a shot is selected >>
           <== one camera exists: Camera A
-          <== no camera preview elements visible in the sequencer area
+          <== no camera preview elements visible in the shot track area
           <== timeline editor shows Camera A's keyframe timeline
 
       # adding a second camera
       .if a shot has Camera A only
       ||> .if user adds a camera >>
           <== Camera B is created
-          <== Camera B's initial position, rotation, and focal length match the current viewport state
-          <== two camera preview elements appear above the shot in the sequencer area
+          <== Camera B's initial position, rotation, and focal length match the current view state
+          <== two camera preview elements appear above the shot in the shot track area
           <== Camera A preview shows Camera A's view, Camera B preview shows Camera B's view
           <== each preview is labeled (A, B) and color-coded
           <== timeline editor switches to Camera B's keyframe timeline
@@ -84,7 +84,7 @@
           <== timeline editor switches to Camera B's keyframe timeline
           <== Camera B's preview element is highlighted as selected
           <== Camera A's preview element loses its selected highlight
-          <== viewport switches to show Camera B's perspective
+          <== view switches to show Camera B's perspective
 
       # camera colors
       .if a shot has Camera A (blue) and Camera B (red) >>
@@ -97,7 +97,7 @@
       .if user changes Camera B's color from red to orange >>
           <== Camera B's preview element border updates to orange
           <== Camera B's keyframe markers update to orange
-          <== Camera B's coverage segments (if any) update to orange
+          <== Camera B's active angle segments (if any) update to orange
 
       # per-shot independence
       .if Shot_01 has Camera A and Camera B
@@ -121,7 +121,7 @@
       ||> .if user removes Camera B >>
           <== Camera A becomes the active camera
           <== timeline editor switches to Camera A's keyframe timeline
-          <== viewport switches to Camera A's perspective
+          <== view switches to Camera A's perspective
 
       # cannot remove Camera A
       .if a shot has only Camera A
@@ -153,25 +153,25 @@
 
   - ##### 9.1.2. Multi-camera timelines (Feature)
 
-    ***Each camera has its own independent keyframe timeline for camera motion. Object keyframe timelines are shared across all cameras in the same shot -- the actors do the same thing regardless of which camera is rolling.***
+    ***Each camera has its own independent keyframe timeline for camera motion. Element keyframe timelines are shared across all cameras in the same shot -- the characters do the same thing regardless of which camera is rolling.***
 
     *Related:
-    - 3.2.2 (tracks and keyframes -- camera and object track model)
+    - 3.2.2 (tracks and keyframes -- camera and element track model)
     - 3.2.3 (per-track stopwatch -- keyframes created when stopwatch is on)*
 
     **Functional requirements:**
     - Each camera within a shot has its own independent camera keyframe timeline
     - Camera keyframe timelines store: position, rotation, and focal length -- the same data as single-camera mode
     - Camera A can have a dolly move while Camera B is locked off while Camera C has a pan -- each timeline is fully independent
-    - Object keyframe timelines are SHARED across all cameras in the same shot
-    - There is exactly one set of object keyframes per shot, regardless of how many cameras exist
-    - When the user views any camera's timeline, the object tracks display the same keyframes
-    - Editing an object keyframe while viewing Camera B's timeline affects the same object keyframe data that Camera A, C, and D also reference
+    - Element keyframe timelines are SHARED across all cameras in the same shot
+    - There is exactly one set of element keyframes per shot, regardless of how many cameras exist
+    - When the user views any camera's timeline, the element tracks display the same keyframes
+    - Editing an element keyframe while viewing Camera B's timeline affects the same element keyframe data that Camera A, C, and D also reference
     - This shared model reflects real production: multiple cameras cover the same action simultaneously -- actors perform the same blocking regardless of which camera is rolling
-    - When the user moves the camera (pan, tilt, dolly, etc.) with the camera stopwatch on (Animate mode), the keyframe is created on the CURRENTLY SELECTED camera's timeline only
-    - When the user moves an object with the object's stopwatch on (Animate mode), the keyframe is created on the shared object timeline (visible from all camera views)
+    - When the user moves the camera (pan, tilt, dolly, etc.) with the camera stopwatch recording, the keyframe is created on the CURRENTLY SELECTED camera's timeline only
+    - When the user moves an element with the element's stopwatch on (recording), the keyframe is created on the shared element timeline (visible from all camera views)
     - The timeline editor visually distinguishes which camera's keyframe track is displayed (using the camera's color)
-    - When switching between camera timelines, the camera track row updates to show the selected camera's keyframes; the object track rows remain unchanged
+    - When switching between camera timelines, the camera track row updates to show the selected camera's keyframes; the element track rows remain unchanged
 
     **Expected behavior:**
     ``` python
@@ -185,18 +185,18 @@
           <== Camera B's camera track shows only the default keyframe at t=0 (no dolly move)
           <== Camera A's three keyframes are unaffected
 
-      # shared object keyframes
+      # shared element keyframes
       .if a shot has Camera A and Camera B
-      .if an actor "CharacterA" is present in the scene
+      .if a character "CharacterA" is present in the scene
       .if user selects Camera A's timeline
       ||> .if user moves CharacterA and creates a keyframe at t=1.0 >>
-          <== CharacterA's object track shows a keyframe at t=1.0
+          <== CharacterA's element track shows a keyframe at t=1.0
       ||> .if user clicks Camera B's preview element >>
           <== Camera B's camera track is now displayed
-          <== CharacterA's object track STILL shows the keyframe at t=1.0
-          <== the object keyframe is the same data, not a copy
+          <== CharacterA's element track STILL shows the keyframe at t=1.0
+          <== the element keyframe is the same data, not a copy
 
-      # editing shared object keyframe from any camera view
+      # editing shared element keyframe from any camera view
       .if a shot has Camera A and Camera B
       .if CharacterA has a keyframe at t=1.0 (position X=5)
       .if user is viewing Camera B's timeline
@@ -206,15 +206,15 @@
           <== CharacterA's keyframe at t=1.0 shows X=10
           <== the edit made from Camera B's view is reflected everywhere
 
-      # Animate mode targets the correct timeline
+      # Recording targets the correct timeline
       .if a shot has Camera A and Camera B
-      .if the camera stopwatch is on (Animate mode)
+      .if the camera stopwatch is recording
       .if Camera B is selected
       ||> .if user moves the camera (dolly forward) >>
           <== a keyframe is created on Camera B's camera track
           !== keyframe created on Camera A's camera track
-      ||> .if user moves an object >>
-          <== a keyframe is created on the shared object track
+      ||> .if user moves an element >>
+          <== a keyframe is created on the shared element track
           <== this keyframe is visible from Camera A's view and Camera B's view
 
       # visual distinction between camera timelines
@@ -225,23 +225,23 @@
       ||> .if user switches to Camera B's timeline >>
           <== camera track header shows "Camera B" in red
           <== camera keyframe markers are red
-          <== object track headers and keyframe markers remain unchanged (green)
+          <== element track headers and keyframe markers remain unchanged (green)
 
       # playback uses the selected camera's motion
       .if a shot has Camera A (dolly move) and Camera B (locked off)
       .if Camera A is selected
       ||> .if user plays the shot >>
-          <== viewport shows Camera A's dolly move
+          <== view shows Camera A's dolly move
       ||> .if user stops, selects Camera B, and plays again >>
-          <== viewport shows Camera B's static framing
-          <== objects animate identically in both cases (shared object keyframes)
+          <== view shows Camera B's static framing
+          <== elements animate identically in both cases (shared element keyframes)
 
       # four cameras, all independent
       .if a shot has Camera A, B, C, D
       .if Camera A has a dolly, Camera B is locked, Camera C has a pan, Camera D has a crane move >>
           <== each camera's timeline shows its own distinct keyframe pattern
           <== switching between them shows completely different camera track data
-          <== object tracks are identical across all four views
+          <== element tracks are identical across all four views
     ```
 
     **Error cases:**
@@ -250,13 +250,13 @@
       .if Camera B has 10 camera keyframes
       ||> .if user removes Camera B >>
           <== Camera B's camera keyframe data is discarded
-          <== object keyframe data is unaffected (it is shared, not owned by Camera B)
-          !== object keyframes deleted when a camera is removed
+          <== element keyframe data is unaffected (it is shared, not owned by Camera B)
+          !== element keyframes deleted when a camera is removed
 
       # single camera -- degenerate case
       .if a shot has only Camera A >>
           <== camera track shows Camera A's keyframes
-          <== object tracks show shared object keyframes
+          <== element tracks show shared element keyframes
           <== behavior is identical to pre-multi-camera single-camera mode
           <== no change in workflow or data model from the user's perspective
     ```
@@ -265,11 +265,11 @@
 
   - ##### 9.1.3. Active camera and switching (Feature)
 
-    ***One camera per shot is "active" -- the camera used during sequence playback. The director can switch the active camera at any time. Switching during playback auto-creates a coverage split.***
+    ***One camera per shot is "active" -- the camera used during sequence playback. The director can switch the active camera at any time. Switching during playback auto-creates an active angle split.***
 
     *Related:
     - 9.1.1 (per-shot camera addition -- active camera must be one of the shot's cameras)
-    - 9.1.4 (coverage splitting -- switching during playback creates coverage splits)*
+    - 9.1.4 (active angle splitting -- switching during playback creates active angle splits)*
 
     **Functional requirements:**
     - Each shot designates exactly one camera as "active"
@@ -279,16 +279,27 @@
     - Keyboard shortcuts: Shift+1 (Camera A), Shift+2 (Camera B), Shift+3 (Camera C), Shift+4 (Camera D)
     - The active camera's preview element displays a visual indicator (e.g., a small icon or badge distinguishing it from the "selected" highlight)
     - "Active" and "selected" are independent states: the selected camera determines which timeline is shown in the editor; the active camera determines which camera renders during sequence playback
-    - If a coverage track exists (9.1.4), the coverage track overrides the active camera designation -- the coverage track determines which camera renders at each moment during playback
-    - If no coverage track exists, the active camera renders for the entire shot duration during playback
-    - Switching the active camera during playback triggers two simultaneous effects: (1) the viewport switches to the new camera, and (2) a coverage split is automatically created at the current playhead position (see 9.1.4 for coverage split behavior)
+    - If an active angle track exists (9.1.4), the active angle track overrides the active camera designation -- the active angle track determines which camera renders at each moment during playback
+    - If no active angle track exists, the active camera renders for the entire shot duration during playback
+    - Switching the active camera during playback triggers two simultaneous effects: (1) the view switches to the new camera, and (2) an active angle split is automatically created at the current playhead position (see 9.1.4 for active angle split behavior)
     - If the shot has only one camera, the active camera is always Camera A and cannot be changed
 
     **Shot bar multi-camera interaction:**
-    - The shot bar displays one row per camera within each shot. Shot bar height auto-adjusts based on the maximum camera count across all shots.
-    - **Single-click** a camera row = preview that camera (dimmed display, non-destructive — does not change the active camera)
-    - **Double-click** a camera row = activate that camera AND zoom the timeline to that shot (with 8% padding on each side)
+    - The shot bar displays one row per camera within each shot (20px per camera row). Shot bar height auto-adjusts based on the maximum camera count across all shots.
+    - **Single-click** a camera row = preview that camera (non-destructive — does not change the active camera)
+    - **Double-click** a camera row (within 350ms) = activate that camera AND zoom the timeline to that shot (with 8% padding on each side)
     - Preview mode is transient — navigating to a different shot clears the preview
+
+    **Shot bar visual states** (see `ui-layout-spec.md` §4.5 for exact colors):
+    - Each shot × camera block is a colored rectangle labeled with the camera letter and shot name (e.g., "A: WIDE ESTABLISHING")
+    - Four visual states communicate camera status at a glance:
+
+    | State | Condition | Appearance |
+    |-------|-----------|------------|
+    | **Active camera** | This is the active camera in the current shot | Bright border, high brightness, high text opacity |
+    | **Previewed** | Single-clicked for comparison, not yet activated | White text, slightly dimmed |
+    | **Dimmed** | Other cameras in the same (current) shot | Reduced brightness and opacity |
+    | **Inactive** | Cameras in non-current shots | Very low brightness and opacity |
 
     **Expected behavior:**
     ``` python
@@ -357,18 +368,18 @@
       .if shot is playing back
       .if playhead is at t=2.0
       ||> .if user presses Shift+2 (switch to Camera B) >>
-          <== viewport immediately switches to Camera B's perspective
+          <== view immediately switches to Camera B's perspective
           <== Camera B becomes the active camera
-          <== a coverage track is automatically created (if not already present)
-          <== the coverage track shows: Camera A from t=0 to t=2.0, Camera B from t=2.0 to end
+          <== an active angle track is automatically created (if not already present)
+          <== the active angle track shows: Camera A from t=0 to t=2.0, Camera B from t=2.0 to end
           <== playback continues uninterrupted from Camera B's perspective
 
-      # switching active during playback, coverage track already exists
+      # switching active during playback, active angle track already exists
       .if a shot has Camera A and Camera B
-      .if a coverage track exists showing Camera A for the full duration
+      .if an active angle track exists showing Camera A for the full duration
       .if shot is playing back at t=3.0
       ||> .if user presses Shift+2 >>
-          <== the coverage track splits at t=3.0
+          <== the active angle track splits at t=3.0
           <== Camera A covers t=0 to t=3.0, Camera B covers t=3.0 to end
           <== playback continues from Camera B
 
@@ -381,150 +392,151 @@
 
   ---
 
-  - ##### 9.1.4. Coverage splitting (Feature)
+  - ##### 9.1.4. Active angle splitting (Feature)
 
     ***A timeline track that represents which camera is "on air" at each moment. The director splits the shot into segments, each assigned to a camera, creating the editing effect of cutting between angles within a single shot.***
 
     *Blocked by:
-    - 9.1.1 (per-shot camera addition -- coverage requires multiple cameras)
-    - 9.1.3 (active camera -- coverage overrides the active camera during playback)*
+    - 9.1.1 (per-shot camera addition -- active angle track requires multiple cameras)
+    - 9.1.3 (active camera -- active angle track overrides the active camera during playback)*
 
     *Related:
-    - 3.2.1 (timeline editor -- coverage track lives in the timeline)*
+    - 3.2.1 (timeline editor -- active angle track lives in the timeline)*
 
     **Functional requirements:**
-    - The user can toggle a "coverage" track row in the timeline editor
-    - The coverage track is available only when the shot has more than one camera
-    - When enabled, the coverage track appears as a horizontal bar spanning the full shot duration
-    - By default, the coverage track shows a single segment colored and labeled with the active camera's color and letter, spanning the full shot duration
-    - Right-click on the coverage track -> "Split coverage" creates a split point at the click position (snapped to the nearest frame boundary)
-    - After splitting, the user is prompted or given a UI to select which camera to assign to the new right-side segment. The left-side segment retains its current camera assignment
+    - The user can toggle an "active angle" track row in the timeline editor
+    - The active angle track is available only when the shot has more than one camera
+    - When enabled, the active angle track appears as a horizontal bar spanning the full shot duration
+    - By default, the active angle track shows a single segment colored and labeled with the active camera's color and letter, spanning the full shot duration
+    - Two ways to split:
+      - **Right-click → "Split angle"**: Creates a split point at the click position (snapped to the nearest frame boundary). The user is prompted to select which camera to assign to the new right-side segment. The left-side segment retains its current camera assignment.
+      - **Alt+click** (quick split): Creates a split point at the click position (snapped to frame). The new right-side segment automatically cycles to the next camera: `(currentCamera + 1) % cameraCount`. No prompt — optimized for rapid cutting. Minimum 0.2s per segment after split.
     - Each segment displays its assigned camera's color and letter label
-    - Division points (split boundaries) between segments are draggable -- the user clicks and drags horizontally to adjust where the cut happens
-    - Dragging a division point snaps to frame boundaries (1/24th of a second increments at 24fps)
+    - Cut points (split boundaries) between segments are draggable -- the user clicks and drags horizontally to adjust where the cut happens
+    - Dragging a cut point snaps to frame boundaries (1/24th of a second increments at 24fps)
     - Minimum segment duration: 1 frame (1/24th of a second at 24fps)
-    - A division point cannot be dragged past an adjacent division point -- segments cannot overlap or have zero duration below 1 frame
+    - A cut point cannot be dragged past an adjacent cut point -- segments cannot overlap or have zero duration below 1 frame
     - The user can delete a segment by right-clicking it -> "Delete segment"
     - When a segment is deleted, the neighboring segment to the LEFT absorbs the deleted segment's duration
     - Exception: if the FIRST (leftmost) segment is deleted, the SECOND segment absorbs its duration (expands leftward to t=0)
-    - If all segments are deleted (or only one remains and is deleted), the coverage track is removed and playback reverts to using the active camera designation (9.1.3)
+    - If all segments are deleted (or only one remains and is deleted), the active angle track is removed and playback reverts to using the active camera designation (9.1.3)
     - The user can reassign a segment's camera: right-click segment -> "Assign camera" -> select from available cameras
-    - During playback, the coverage track determines which camera renders at each moment
-    - At a division point during playback, the viewport performs an instantaneous hard cut to the next segment's camera -- no blending, no transition
-    - The coverage track is per-shot data. Each shot can have its own independent coverage track
+    - During playback, the active angle track determines which camera renders at each moment
+    - At a cut point during playback, the view performs an instantaneous cut to the next segment's camera -- no blending, no transition
+    - The active angle track is per-shot data. Each shot can have its own independent active angle track
 
     **Expected behavior:**
     ``` python
-      # enabling the coverage track
+      # enabling the active angle track
       .if a shot has Camera A and Camera B
-      ||> .if user toggles the coverage track on >>
-          <== a coverage track row appears in the timeline editor
-          <== the coverage track shows a single segment spanning the full shot duration
+      ||> .if user toggles the active angle track on >>
+          <== an active angle track row appears in the timeline editor
+          <== the active angle track shows a single segment spanning the full shot duration
           <== the segment is colored with Camera A's color (the active camera) and labeled "A"
 
-      # splitting coverage
-      .if coverage track shows a single segment (Camera A, full duration)
+      # splitting active angle
+      .if active angle track shows a single segment (Camera A, full duration)
       .if shot duration is 5.0 seconds
-      ||> .if user right-clicks the coverage track at t=2.5 and selects "Split coverage" >>
+      ||> .if user right-clicks the active angle track at t=2.5 and selects "Split angle" >>
           <== two segments now exist
           <== left segment: Camera A, t=0 to t=2.5
           <== right segment: user selects a camera (e.g., Camera B)
           <== right segment: Camera B, t=2.5 to t=5.0
-          <== a visible division point appears at t=2.5
+          <== a visible cut point appears at t=2.5
 
       # multiple splits
-      .if coverage track has two segments (A: 0-2.5, B: 2.5-5.0)
-      ||> .if user right-clicks at t=4.0 within Camera B's segment and selects "Split coverage" >>
+      .if active angle track has two segments (A: 0-2.5, B: 2.5-5.0)
+      ||> .if user right-clicks at t=4.0 within Camera B's segment and selects "Split angle" >>
           <== three segments: A (0-2.5), B (2.5-4.0), user-assigned camera (4.0-5.0)
-          <== two division points visible: t=2.5 and t=4.0
+          <== two cut points visible: t=2.5 and t=4.0
 
-      # dragging a division point
-      .if coverage track has segments A (0-2.5) and B (2.5-5.0)
-      ||> .if user clicks and drags the division point from t=2.5 to t=3.0 >>
+      # dragging a cut point
+      .if active angle track has segments A (0-2.5) and B (2.5-5.0)
+      ||> .if user clicks and drags the cut point from t=2.5 to t=3.0 >>
           <== segment A now spans t=0 to t=3.0
           <== segment B now spans t=3.0 to t=5.0
-          <== division point snaps to frame boundaries during drag
+          <== cut point snaps to frame boundaries during drag
 
       # dragging constrained by minimum segment duration
-      .if coverage track has segments A (0-2.5), B (2.5-4.0), C (4.0-5.0)
-      ||> .if user drags the first division point rightward toward t=4.0 >>
-          <== the division point stops at t=3.958... (1 frame before the second division point at t=4.0)
+      .if active angle track has segments A (0-2.5), B (2.5-4.0), C (4.0-5.0)
+      ||> .if user drags the first cut point rightward toward t=4.0 >>
+          <== the cut point stops at t=3.958... (1 frame before the second cut point at t=4.0)
           <== segment B cannot be reduced below 1 frame duration
-          !== division point passes through or overlaps the second division point
+          !== cut point passes through or overlaps the second cut point
 
       # deleting a middle segment
-      .if coverage track has segments A (0-2.0), B (2.0-3.5), C (3.5-5.0)
+      .if active angle track has segments A (0-2.0), B (2.0-3.5), C (3.5-5.0)
       ||> .if user right-clicks segment B and selects "Delete segment" >>
           <== segment B is removed
           <== segment A absorbs B's duration: A now spans t=0 to t=3.5
           <== segment C remains t=3.5 to t=5.0
-          <== one division point remains at t=3.5
+          <== one cut point remains at t=3.5
 
       # deleting the first segment
-      .if coverage track has segments A (0-2.0), B (2.0-3.5), C (3.5-5.0)
+      .if active angle track has segments A (0-2.0), B (2.0-3.5), C (3.5-5.0)
       ||> .if user right-clicks segment A (the leftmost) and selects "Delete segment" >>
           <== segment A is removed
           <== segment B absorbs A's duration: B now spans t=0 to t=3.5
           <== segment C remains t=3.5 to t=5.0
 
       # deleting the last remaining segment
-      .if coverage track has a single segment (Camera A, full duration)
+      .if active angle track has a single segment (Camera A, full duration)
       ||> .if user right-clicks the segment and selects "Delete segment" >>
-          <== the coverage track is removed entirely
+          <== the active angle track is removed entirely
           <== playback reverts to using the active camera (9.1.3)
 
       # deleting down to one segment
-      .if coverage track has segments A (0-2.5) and B (2.5-5.0)
+      .if active angle track has segments A (0-2.5) and B (2.5-5.0)
       ||> .if user deletes segment B >>
           <== segment A absorbs B's duration: A now spans t=0 to t=5.0
-          <== only one segment remains, coverage track still visible
+          <== only one segment remains, active angle track still visible
       ||> .if user deletes segment A >>
-          <== coverage track is removed entirely
+          <== active angle track is removed entirely
 
       # reassigning a segment's camera
-      .if coverage track has segments A (0-2.5) and B (2.5-5.0)
+      .if active angle track has segments A (0-2.5) and B (2.5-5.0)
       ||> .if user right-clicks segment A and selects "Assign camera" -> "Camera C" >>
           <== segment A is now assigned to Camera C
           <== segment A's color and label update to Camera C's color and "C"
 
-      # playback with coverage track
-      .if coverage track has segments A (0-2.0), B (2.0-3.5), A (3.5-5.0)
+      # playback with active angle track
+      .if active angle track has segments A (0-2.0), B (2.0-3.5), A (3.5-5.0)
       ||> .if user plays the shot from the beginning >>
-          <== t=0 to t=2.0: viewport renders from Camera A
-          <== at t=2.0: hard cut, viewport switches to Camera B
-          <== t=2.0 to t=3.5: viewport renders from Camera B
-          <== at t=3.5: hard cut, viewport switches back to Camera A
-          <== t=3.5 to t=5.0: viewport renders from Camera A
+          <== t=0 to t=2.0: view renders from Camera A
+          <== at t=2.0: cut, view switches to Camera B
+          <== t=2.0 to t=3.5: view renders from Camera B
+          <== at t=3.5: cut, view switches back to Camera A
+          <== t=3.5 to t=5.0: view renders from Camera A
           !== any blending, crossfade, or transition between cameras
 
-      # coverage track unavailable for single camera
+      # active angle track unavailable for single camera
       .if a shot has only Camera A >>
-          <== coverage track toggle is disabled or hidden
-          !== coverage track shown for a single-camera shot
+          <== active angle track toggle is disabled or hidden
+          !== active angle track shown for a single-camera shot
 
-      # scrubbing through coverage track
-      .if coverage track has segments A (0-2.0) and B (2.0-5.0)
+      # scrubbing through active angle track
+      .if active angle track has segments A (0-2.0) and B (2.0-5.0)
       ||> .if user drags the playhead from t=1.0 to t=3.0 >>
-          <== viewport switches from Camera A to Camera B as the playhead crosses t=2.0
-          <== the switch is immediate at the division point
+          <== view switches from Camera A to Camera B as the playhead crosses t=2.0
+          <== the switch is immediate at the cut point
     ```
 
     **Error cases:**
     ``` python
-      # removing a camera that has coverage segments
-      .if coverage track has segments A (0-2.0), B (2.0-3.5), A (3.5-5.0)
+      # removing a camera that has active angle segments
+      .if active angle track has segments A (0-2.0), B (2.0-3.5), A (3.5-5.0)
       ||> .if user removes Camera B from the shot (9.1.1) >>
           <== Camera B's segment (2.0-3.5) is deleted
           <== the left neighbor (segment A, 0-2.0) absorbs the deleted segment's duration
-          <== coverage track now shows: A (0-3.5), A (3.5-5.0)
+          <== active angle track now shows: A (0-3.5), A (3.5-5.0)
           <== adjacent segments with the same camera MAY be automatically merged: A (0-5.0)
 
       # split at exact start or end of shot
-      .if user right-clicks the coverage track at t=0.0 and selects "Split coverage" >>
+      .if user right-clicks the active angle track at t=0.0 and selects "Split angle" >>
           <== split is rejected (cannot create a zero-duration segment at the start)
           !== crash or invalid state
 
-      .if user right-clicks the coverage track at the last frame and selects "Split coverage" >>
+      .if user right-clicks the active angle track at the last frame and selects "Split angle" >>
           <== split is rejected (cannot create a zero-duration segment at the end)
     ```
 
@@ -532,52 +544,52 @@
 
   - ##### 9.1.5. Multi-split (Feature)
 
-    ***Rapidly divide the coverage track into evenly-spaced segments. "Split every 12 frames" creates a rhythmic cutting pattern that the director can then assign cameras to.***
+    ***Rapidly divide the active angle track into evenly-spaced segments. "Split every 12 frames" creates a rhythmic cutting pattern that the director can then assign cameras to.***
 
     *Blocked by:
-    - 9.1.4 (coverage splitting -- multi-split creates coverage splits)*
+    - 9.1.4 (active angle splitting -- multi-split creates active angle splits)*
 
     **Functional requirements:**
-    - Right-click the coverage track -> "Multi-split" opens a prompt
+    - Right-click the active angle track -> "Multi-split" opens a prompt
     - The prompt asks: "Split every {n} frames" where the user enters a positive integer
-    - Multi-split creates evenly-spaced division points every n frames across the full shot duration
+    - Multi-split creates evenly-spaced cut points every n frames across the full shot duration
     - If the shot duration is not evenly divisible by n, the final segment is shorter than n frames (the remainder)
     - By default, all segments created by multi-split are assigned to the SAME camera as the active camera -- no visual change until the user assigns different cameras to individual segments
-    - Multi-split replaces any existing coverage segments -- it is a destructive operation on the coverage track
-    - The user is warned before multi-split if existing coverage segments will be overwritten: "This will replace your current coverage layout. Continue?"
+    - Multi-split replaces any existing active angle segments -- it is a destructive operation on the active angle track
+    - The user is warned before multi-split if existing active angle segments will be overwritten: "This will replace your current active angle layout. Continue?"
     - Minimum value for n: 1 (every frame is a cut -- extreme but valid)
     - Maximum value for n: total shot duration in frames (results in a single segment, effectively no splits)
     - If the user enters 0 or a negative number, the input is rejected
-    - After multi-split, the user can drag division points, delete segments, and reassign cameras using the standard coverage editing tools (9.1.4)
+    - After multi-split, the user can drag cut points, delete segments, and reassign cameras using the standard active angle editing tools (9.1.4)
 
     **Expected behavior:**
     ``` python
       # basic multi-split
       .if a shot is 5.0 seconds (120 frames at 24fps)
-      .if coverage track is enabled
-      ||> .if user right-clicks coverage track -> "Multi-split" -> enters 24 >>
+      .if active angle track is enabled
+      ||> .if user right-clicks active angle track -> "Multi-split" -> enters 24 >>
           <== 5 segments are created, each 24 frames (1 second) long
           <== all segments are assigned to the active camera (e.g., Camera A)
-          <== 4 division points visible at t=1.0, t=2.0, t=3.0, t=4.0
+          <== 4 cut points visible at t=1.0, t=2.0, t=3.0, t=4.0
 
       # multi-split with remainder
       .if a shot is 100 frames
       ||> .if user multi-splits every 30 frames >>
           <== 4 segments: 30 frames, 30 frames, 30 frames, 10 frames
-          <== 3 division points visible
+          <== 3 cut points visible
           <== the final segment is 10 frames (the remainder)
 
-      # multi-split replaces existing coverage
-      .if coverage track has segments A (0-2.0) and B (2.0-5.0) with manual edits
+      # multi-split replaces existing active angle layout
+      .if active angle track has segments A (0-2.0) and B (2.0-5.0) with manual edits
       ||> .if user triggers multi-split >>
-          <== warning: "This will replace your current coverage layout. Continue?"
+          <== warning: "This will replace your current active angle layout. Continue?"
       ||> .if user confirms >>
           <== existing segments are replaced with the new evenly-spaced segments
           !== old segments preserved or merged
 
       .if user cancels the warning >>
           <== multi-split is aborted
-          <== existing coverage segments are unchanged
+          <== existing active angle segments are unchanged
 
       # assigning cameras after multi-split
       .if multi-split created 5 segments, all Camera A
@@ -590,7 +602,7 @@
       .if a shot is 120 frames
       ||> .if user multi-splits every 1 frame >>
           <== 120 segments, each 1 frame long
-          <== 119 division points
+          <== 119 cut points
           <== all segments assigned to the active camera
           <== this is extreme but valid -- useful for experimentation
 
@@ -598,14 +610,14 @@
       .if a shot is 120 frames
       ||> .if user multi-splits every 120 frames >>
           <== 1 segment spanning the full duration
-          <== no division points
-          <== effectively resets coverage to single-segment default
+          <== no cut points
+          <== effectively resets active angle track to single-segment default
 
       # invalid input
       .if user enters 0 in the multi-split prompt >>
           <== input is rejected
           <== prompt remains open or shows an error message
-          !== coverage track modified
+          !== active angle track modified
 
       .if user enters -5 in the multi-split prompt >>
           <== input is rejected
@@ -630,7 +642,7 @@
    ``` python
      .if user adds a camera >>
          <== Camera B is created
-         <== two camera preview elements appear above Shot_01 in the sequencer area
+         <== two camera preview elements appear above Shot_01 in the shot track area
          <== Camera A preview shows its view, Camera B preview shows its view
          <== previews are labeled A and B with distinct colors
    ```
@@ -659,17 +671,17 @@
      .if user left-clicks Camera B's preview element >>
          <== timeline editor switches to Camera B's keyframe timeline
          <== Camera B's preview is highlighted as selected
-         <== viewport shows Camera B's perspective
+         <== view shows Camera B's perspective
    ```
 
 6. User left-clicks Camera D's preview element
    ``` python
      .if user left-clicks Camera D's preview element >>
          <== timeline editor switches to Camera D's keyframe timeline
-         <== viewport shows Camera D's perspective
+         <== view shows Camera D's perspective
    ```
 
-### Object Keyframes Shared, Camera Keyframes Independent
+### Element Keyframes Shared, Camera Keyframes Independent
 
 7. User selects Camera A's timeline and creates a dolly move with 4 keyframes
    ``` python
@@ -684,16 +696,16 @@
          <== Camera A's dolly keyframes are not visible on Camera B's camera track
    ```
 
-9. User moves an object (CharacterA) while viewing Camera B's timeline
+9. User moves an element (CharacterA) while viewing Camera B's timeline
    ``` python
-     .if user moves an object (CharacterA) while viewing Camera B's timeline >>
-         <== object keyframe appears on CharacterA's track
+     .if user moves an element (CharacterA) while viewing Camera B's timeline >>
+         <== element keyframe appears on CharacterA's track
    ```
 
 10. User switches back to Camera A's timeline
     ``` python
       .if user switches back to Camera A's timeline >>
-          <== CharacterA's object track shows the same keyframe created in step 9
+          <== CharacterA's element track shows the same keyframe created in step 9
           <== Camera A's dolly keyframes are still present on the camera track
     ```
 
@@ -713,25 +725,25 @@
           <== next playback uses Camera A
     ```
 
-### Coverage Splitting Workflow
+### Active Angle Splitting Workflow
 
-13. User enables the coverage track on a two-camera shot
+13. User enables the active angle track on a two-camera shot
     ``` python
-      .if user enables the coverage track on a two-camera shot >>
-          <== coverage track appears in the timeline
+      .if user enables the active angle track on a two-camera shot >>
+          <== active angle track appears in the timeline
           <== single segment spanning full duration, colored with the active camera's color
     ```
 
-14. User right-clicks coverage track at t=2.0 and selects "Split coverage", assigns Camera B to the right segment
+14. User right-clicks active angle track at t=2.0 and selects "Split angle", assigns Camera B to the right segment
     ``` python
-      .if user right-clicks coverage track at t=2.0 and selects "Split coverage", assigns Camera B to the right segment >>
+      .if user right-clicks active angle track at t=2.0 and selects "Split angle", assigns Camera B to the right segment >>
           <== two segments: Camera A (0-2.0), Camera B (2.0-5.0)
-          <== division point visible at t=2.0
+          <== cut point visible at t=2.0
     ```
 
-15. User drags the division point from t=2.0 to t=3.0
+15. User drags the cut point from t=2.0 to t=3.0
     ``` python
-      .if user drags the division point from t=2.0 to t=3.0 >>
+      .if user drags the cut point from t=2.0 to t=3.0 >>
           <== segment A expands to 0-3.0, segment B contracts to 3.0-5.0
     ```
 
@@ -747,18 +759,18 @@
           <== first segment A absorbs: A (0-4.0), A (4.0-5.0)
     ```
 
-18. User plays the shot with coverage track active
+18. User plays the shot with active angle track active
     ``` python
-      .if user plays the shot with coverage track active >>
-          <== viewport renders from the camera assigned to each coverage segment at each moment
-          <== hard cuts at division points, no transitions
+      .if user plays the shot with active angle track active >>
+          <== view renders from the camera assigned to each active angle segment at each moment
+          <== cuts at cut points, no transitions
     ```
 
 ### Multi-Split Workflow
 
-19. User right-clicks coverage track -> "Multi-split" -> enters 12
+19. User right-clicks active angle track -> "Multi-split" -> enters 12
     ``` python
-      .if user right-clicks coverage track -> "Multi-split" -> enters 12 >>
+      .if user right-clicks active angle track -> "Multi-split" -> enters 12 >>
           <== evenly-spaced segments every 12 frames (0.5 seconds at 24fps)
           <== all segments assigned to the active camera
     ```
@@ -766,40 +778,40 @@
 20. User assigns alternating cameras: A, B, A, B, A, B...
     ``` python
       .if user assigns alternating cameras: A, B, A, B, A, B... >>
-          <== coverage track shows alternating colors
+          <== active angle track shows alternating colors
           <== playback cuts between Camera A and Camera B every 0.5 seconds
     ```
 
-### Switching Cameras During Playback Auto-Creating Coverage Split
+### Switching Cameras During Playback Auto-Creating Active Angle Split
 
-21. User plays a shot with Camera A active and no coverage track
+21. User plays a shot with Camera A active and no active angle track
     ``` python
-      .if user plays a shot with Camera A active and no coverage track >>
+      .if user plays a shot with Camera A active and no active angle track >>
           <== shot renders from Camera A
     ```
 
 22. User presses Shift+2 at t=2.5 during playback
     ``` python
       .if user presses Shift+2 at t=2.5 during playback >>
-          <== viewport switches to Camera B immediately
-          <== coverage track is automatically created
-          <== coverage shows: Camera A (0-2.5), Camera B (2.5-end)
+          <== view switches to Camera B immediately
+          <== active angle track is automatically created
+          <== active angle track shows: Camera A (0-2.5), Camera B (2.5-end)
           <== playback continues from Camera B
     ```
 
 23. User presses Shift+1 at t=4.0 during continued playback
     ``` python
       .if user presses Shift+1 at t=4.0 during continued playback >>
-          <== viewport switches back to Camera A
-          <== coverage track adds another split: A (0-2.5), B (2.5-4.0), A (4.0-end)
+          <== view switches back to Camera A
+          <== active angle track adds another split: A (0-2.5), B (2.5-4.0), A (4.0-end)
     ```
 
 ### Edge Cases
 
-24. User removes Camera B from a shot that has coverage segments assigned to Camera B
+24. User removes Camera B from a shot that has active angle segments assigned to Camera B
     ``` python
-      .if user removes Camera B from a shot that has coverage segments assigned to Camera B >>
-          <== Camera B's coverage segments are deleted; neighbor segments absorb the duration (standard delete procedure)
+      .if user removes Camera B from a shot that has active angle segments assigned to Camera B >>
+          <== Camera B's active angle segments are deleted; neighbor segments absorb the duration (standard delete procedure)
           <== adjacent segments with the same camera may be merged automatically
     ```
 
@@ -808,13 +820,13 @@
       .if user removes Camera B from a shot where Camera B is the active camera >>
           <== Camera A becomes the active camera
           <== Camera B's keyframe data is discarded
-          <== object keyframe data is unaffected
+          <== element keyframe data is unaffected
     ```
 
-26. Single-camera shot: coverage track toggle is disabled
+26. Single-camera shot: active angle track toggle is disabled
     ``` python
-      .if single-camera shot: coverage track toggle is disabled >>
-          <== user cannot enable coverage track with only one camera
+      .if single-camera shot: active angle track toggle is disabled >>
+          <== user cannot enable active angle track with only one camera
           <== timeline editor shows Camera A's keyframes exactly as in pre-multi-camera behavior
     ```
 
@@ -824,12 +836,12 @@
           <== no error, no crash, active camera remains Camera A
     ```
 
-28. User creates a shot with 4 cameras, animates all 4 camera timelines independently, sets up complex coverage, then removes Camera C
+28. User creates a shot with 4 cameras, animates all 4 camera timelines independently, sets up complex active angle splits, then removes Camera C
     ``` python
-      .if user creates a shot with 4 cameras, animates all 4 camera timelines independently, sets up complex coverage, then removes Camera C >>
+      .if user creates a shot with 4 cameras, animates all 4 camera timelines independently, sets up complex active angle splits, then removes Camera C >>
           <== Camera C's camera keyframes are discarded
-          <== Camera C's coverage segments are reassigned to Camera A
+          <== Camera C's active angle segments are reassigned to Camera A
           <== Camera A, B, and D's camera keyframes are unaffected
-          <== shared object keyframes are unaffected
-          <== coverage track remains functional with remaining cameras
+          <== shared element keyframes are unaffected
+          <== active angle track remains functional with remaining cameras
     ```

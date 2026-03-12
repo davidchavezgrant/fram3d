@@ -12,7 +12,7 @@
 
   The target is at least FrameForge-level character manipulation with a substantially better interaction model. FrameForge proved that directors will pose mannequins to plan blocking -- but its interface makes even simple tasks tedious. A director should be able to drop a person into a scene, apply a pose, nudge a hand, keyframe it, and move on. Every second spent wrestling with joint controls is a second not spent on the creative decision.
 
-  Characters are scene elements (2.1). They respond to selection, gizmos, duplication, object continuity, and keyframe animation using the same systems that handle tables and chairs. But they also introduce an entirely new interaction layer: skeletal posing. The skeleton is internal complexity that the user must never feel. They are posing a person, not operating a rig.
+  Characters are scene elements (2.1). They respond to selection, gizmos, duplication, element continuity, and keyframe animation using the same systems that handle tables and chairs. But they also introduce an entirely new interaction layer: skeletal posing. The skeleton is internal complexity that the user must never feel. They are posing a person, not operating a rig.
 
   This is the complexity cliff of the entire product. Inverse kinematics, pose interpolation, rig mapping, and locomotion each carry more technical risk than any feature in Projects 1 or 2 combined.
 
@@ -20,30 +20,30 @@
 
   ---
 
-  - ##### 6.1.1. Mannequin Placement (Feature)
+  - ##### 6.1.1. Character Placement (Feature)
 
-    ***Drop humanoid mannequins into the scene. Generic figures at real human proportions, varied by body type. Position and rotate using the same gizmo system as every other scene element.***
+    ***Drop humanoid characters into the scene. Generic figures at real human proportions, varied by body type. Position and rotate using the same gizmo system as every other scene element.***
 
     *Related:
-    - 2.1.1 (scene elements -- mannequins are scene elements)
-    - 2.1.2 (transform gizmos -- mannequins use standard translate/rotate/scale)
-    - 2.1.4 (object duplication -- Ctrl+D duplicates a mannequin with its current pose)
-    - 6.1.2 (pose library -- mannequins spawn in default standing pose)*
+    - 2.1.1 (scene elements -- characters are scene elements)
+    - 2.1.2 (transform gizmos -- characters use standard translate/rotate/scale)
+    - 2.1.4 (element duplication -- Ctrl+D duplicates a character with its current pose)
+    - 6.1.2 (pose library -- characters spawn in default standing pose)*
 
     **Character Set**
 
-    The built-in character set provides mannequins with male/female body type selection and continuous height and build sliders, so directors can represent the actual cast of a scene rather than staging with identical figures. Every mannequin is a featureless humanoid -- no facial features, no clothing detail. These are blocking figures, not digital actors.
+    The built-in character set provides characters with male/female body type selection and continuous height and build sliders, so directors can represent the actual cast of a scene rather than staging with identical figures. Every character is a featureless humanoid -- no facial features, no clothing detail. These are blocking figures, not digital doubles.
 
     - Users pick a male or female base, then adjust height and build on continuous sliders:
       - Height slider: continuous range from short (155cm / 5'1") to tall (195cm / 6'5")
       - Build slider: continuous range from slim to heavy
-    - Male and female bases differ in proportional silhouette (shoulder-to-hip ratio, torso length, limb proportions) but remain featureless mannequins
-    - Every mannequin is proportionally correct for its body type at any slider position
+    - Male and female bases differ in proportional silhouette (shoulder-to-hip ratio, torso length, limb proportions) but remain featureless characters
+    - Every character is proportionally correct for its body type at any slider position
       - Head-to-body ratio appropriate for an adult human
       - Shoulder width, hip width, limb length scaled proportionally to height and build
-    - Mannequin visual style: featureless humanoid. Smooth surface, uniform matte material, no facial features, no fingers (mitten hands), no toes
+    - Character visual style: featureless humanoid. Smooth surface, uniform matte material, no facial features, no fingers (mitten hands), no toes
       - Visually distinguishable from scene geometry (distinct silhouette, slightly different material treatment)
-      - Body type visually apparent at a glance -- a short slim mannequin and a tall heavy mannequin should read as obviously different people from across a room
+      - Body type visually apparent at a glance -- a short slim character and a tall heavy character should read as obviously different people from across a room
     - Character models must be multi-object, grouped by body region: head, torso, arms, hands, legs, feet. This grouping supports per-region selection, material assignment, and future customization. The regions are internal structure — the user still selects and moves the character as a single unit unless joint indicators are active (double-click to pose).
     - Characters are color-tintable -- the user can apply a tint color to distinguish characters visually (e.g., red character vs blue character for blocking)
     - Default color: neutral gray. Tint color overrides the default when set
@@ -51,78 +51,78 @@
     - No limit on number of characters -- as many as the user adds. Performance concerns deferred
 
     ``` python
-    .if >> user creates a new mannequin
+    .if >> user creates a new character
       ||> .if >> user selects male or female base
-        <== mannequin displays the selected base body shape
+        <== character displays the selected base body shape
         <== height and build sliders appear at default middle values
-        !== mannequin shape identical between male and female at the same slider values
+        !== character shape identical between male and female at the same slider values
 
     .if >> user adjusts the height slider
-      <== mannequin height changes continuously in real-time as the slider moves
+      <== character height changes continuously in real-time as the slider moves
       <== proportions update smoothly -- limbs, torso, and head scale proportionally
       !== discrete jumps between height values
 
     .if >> user adjusts the build slider
-      <== mannequin build changes continuously in real-time as the slider moves
+      <== character build changes continuously in real-time as the slider moves
       <== shoulder width, hip width, and overall mass adjust smoothly
       !== discrete jumps between build values
 
-    .if >> user applies a tint color to a mannequin
-      <== mannequin's entire surface displays the selected tint color
-      <== tint color is preserved across shots (object continuity)
-      <== tint color is visible in both viewport and rendered output
-      !== tint color affects other mannequins in the scene
+    .if >> user applies a tint color to a character
+      <== character's entire surface displays the selected tint color
+      <== tint color is preserved across shots (element continuity)
+      <== tint color is visible in both view and rendered output
+      !== tint color affects other characters in the scene
 
-    .if >> user places multiple mannequins without setting tint colors
-      <== all mannequins display the default neutral gray
-      <== mannequins are still distinguishable by position and body type
+    .if >> user places multiple characters without setting tint colors
+      <== all characters display the default neutral gray
+      <== characters are still distinguishable by position and body type
     ```
 
     **Placement**
 
-    - Mannequins are placed into the scene from a character panel or menu
-    - Placement deposits the mannequin at the scene's ground level (Y=0), feet on the ground plane
+    - Characters are placed into the scene from a character panel or menu
+    - Placement deposits the character at the scene's ground level (Y=0), feet on the ground plane
     - Default placement position: center of the current camera view projected onto the ground plane, or a fixed distance in front of the camera if the camera is aimed above the horizon
 
     ``` python
-    .if >> user places a mannequin into the scene
-      <== mannequin appears standing at ground level, feet touching the ground plane
-      <== mannequin faces toward the camera (front of body toward the camera's position at time of placement)
-      <== mannequin is in the default standing pose (6.1.2)
-      <== mannequin is immediately selected
-      <== translate gizmo appears on the mannequin
-      !== mannequin floating above or embedded in the ground
+    .if >> user places a character into the scene
+      <== character appears standing at ground level, feet touching the ground plane
+      <== character faces toward the camera (front of body toward the camera's position at time of placement)
+      <== character is in the default standing pose (6.1.2)
+      <== character is immediately selected
+      <== translate gizmo appears on the character
+      !== character floating above or embedded in the ground
 
-    .if >> user places a second mannequin while the first is still selected
-      <== second mannequin appears at a distinct position (not overlapping the first)
-      <== second mannequin becomes the selected element
-      <== first mannequin loses selection
+    .if >> user places a second character while the first is still selected
+      <== second character appears at a distinct position (not overlapping the first)
+      <== second character becomes the selected element
+      <== first character loses selection
     ```
 
     **Scene Element Behavior**
 
-    Mannequins inherit all scene element behaviors from 2.1:
+    Characters inherit all scene element behaviors from 2.1:
 
     ``` python
-    .if >> user clicks a mannequin
-      <== mannequin is selected (2.1.1 selection rules apply)
-      <== gizmo appears at mannequin's root position (feet/ground contact point)
+    .if >> user clicks a character
+      <== character is selected (2.1.1 selection rules apply)
+      <== gizmo appears at character's root position (feet/ground contact point)
 
-    .if >> user drags the translate gizmo on a mannequin
-      <== entire mannequin moves as a unit -- pose is preserved during translation
-      <== mannequin maintains ground contact unless explicitly lifted on Y axis
+    .if >> user drags the translate gizmo on a character
+      <== entire character moves as a unit -- pose is preserved during translation
+      <== character maintains ground contact unless explicitly lifted on Y axis
       !== individual joints move during whole-body translation
 
-    .if >> user rotates a mannequin via the rotate gizmo
-      <== entire mannequin rotates around its vertical axis (Y)
+    .if >> user rotates a character via the rotate gizmo
+      <== entire character rotates around its vertical axis (Y)
       <== pose is preserved during rotation
 
-    .if >> user scales a mannequin via the scale gizmo
-      <== mannequin scales uniformly -- proportions are preserved
+    .if >> user scales a character via the scale gizmo
+      <== character scales uniformly -- proportions are preserved
       !== non-uniform scale applied (no stretching a person wider without taller)
 
-    .if >> user presses Ctrl+D with a mannequin selected
-      <== duplicate mannequin appears with the same body type and current pose
+    .if >> user presses Ctrl+D with a character selected
+      <== duplicate character appears with the same body type and current pose
       <== duplicate is an independent character -- posing one does not affect the other
       <== duplicate receives an auto-generated name ("Character_01 (1)", etc.)
     ```
@@ -132,30 +132,30 @@
     - Auto-naming follows: "Character_NN" where NN is zero-padded sequential (Character_01, Character_02, etc.)
     - User can rename via the same mechanism as shot naming (double-click, inline edit)
 
-    **Object Continuity**
+    **Element Continuity**
 
-    Mannequins participate in the shot sequencer's object continuity system (3.1.3):
+    Characters participate in the shot track's element continuity system (3.1.3):
 
     ``` python
-    .if >> user creates a new shot while a mannequin exists in the previous shot
-      <== mannequin's full state is inherited: position, rotation, scale, and current pose
+    .if >> user creates a new shot while a character exists in the previous shot
+      <== character's full state is inherited: position, rotation, scale, and current pose
       <== pose joints carry forward -- a character sitting at the end of Shot 1 is sitting at the start of Shot 2
 
     .if >> user navigates backward to a previous shot
-      <== mannequin restores to that shot's stored state, including pose
+      <== character restores to that shot's stored state, including pose
     ```
 
     **Error Cases**
 
     ``` python
-    .if >> user places a mannequin while the camera is inside an enclosed space with no visible ground plane
-      <== mannequin placed at a default distance in front of the camera at Y=0
-      !== mannequin placed inside geometry
+    .if >> user places a character while the camera is inside an enclosed space with no visible ground plane
+      <== character placed at a default distance in front of the camera at Y=0
+      !== character placed inside geometry
       !== placement fails silently
 
-    .if >> user scales a mannequin to an extreme size (very small or very large)
+    .if >> user scales a character to an extreme size (very small or very large)
       <== scale clamps to a reasonable range (minimum ~50% of original, maximum ~200%)
-      <== mannequin remains usable for posing at any valid scale
+      <== character remains usable for posing at any valid scale
     ```
 
   ---
@@ -165,7 +165,7 @@
     ***Preset poses that apply with one click. Standing, sitting, walking, running, pointing, conversation, lying down -- and enough variations within each to block a real scene. Poses are starting points, not final positions.***
 
     *Related:
-    - 6.1.1 (mannequin placement -- mannequins spawn in default standing pose)
+    - 6.1.1 (character placement -- characters spawn in default standing pose)
     - 6.1.3 (custom posing -- library poses serve as starting points for manual adjustment)
     - 6.1.4 (character animation -- poses are keyframeable states)*
 
@@ -194,29 +194,29 @@
     **Applying Poses**
 
     ``` python
-    .if >> user selects a mannequin
+    .if >> user selects a character
       ||> .if >> user clicks a pose from the library panel
-        <== mannequin transitions to the selected pose
-        <== transition is immediate (no animated blend in the viewport -- the pose snaps on)
-        <== mannequin's position and rotation are preserved -- only the skeletal pose changes
-        <== if the pose is a sitting pose, the mannequin's vertical position adjusts so the figure appears seated at a natural height (hips at approximately seat height)
-        !== mannequin teleports to a different location
-        !== mannequin's facing direction changes
+        <== character transitions to the selected pose
+        <== transition is immediate (no animated blend in the view -- the pose snaps on)
+        <== character's position and rotation are preserved -- only the skeletal pose changes
+        <== if the pose is a sitting pose, the character's vertical position adjusts so the figure appears seated at a natural height (hips at approximately seat height)
+        !== character teleports to a different location
+        !== character's facing direction changes
 
-    .if >> user applies a sitting pose to a mannequin standing next to a chair
-      <== mannequin assumes the sitting pose at its current ground position
-      <== user repositions the mannequin onto the chair manually using the translate gizmo
-      !== mannequin automatically snaps to the nearest chair
+    .if >> user applies a sitting pose to a character standing next to a chair
+      <== character assumes the sitting pose at its current ground position
+      <== user repositions the character onto the chair manually using the translate gizmo
+      !== character automatically snaps to the nearest chair
 
-    .if >> user applies a pose to a mannequin that was previously custom-posed (6.1.3)
+    .if >> user applies a pose to a character that was previously custom-posed (6.1.3)
       <== library pose completely replaces the custom pose
       <== no residual joint offsets from the previous custom pose
       !== blend between the custom pose and the library pose
 
-    .if >> no mannequin is selected
+    .if >> no character is selected
       ||> .if >> user clicks a pose from the library panel
         <== nothing happens
-        !== pose applied to the most recently selected mannequin
+        !== pose applied to the most recently selected character
         !== error dialog shown
     ```
 
@@ -225,25 +225,25 @@
     User-extensible: users can save custom poses to the library for reuse across projects. Custom poses are saved locally and persist across sessions.
 
     ``` python
-    .if >> user has a mannequin in a desired pose
+    .if >> user has a character in a desired pose
       ||> .if >> user triggers "Save Pose" (via button while joint indicators are visible, or via library panel)
         <== a dialog prompts the user for a pose name and optional category
         <== the current full skeletal pose (all joint rotations + hand shapes) is saved to the user's local pose library
         <== the saved pose appears in the library panel alongside built-in poses
-        !== the mannequin's world position or rotation is saved -- only the skeletal pose
+        !== the character's world position or rotation is saved -- only the skeletal pose
 
     .if >> user saves a custom pose with a name that already exists
       <== the system prompts to overwrite or rename
       !== silent overwrite of the existing pose
 
-    .if >> user applies a custom pose to a mannequin
+    .if >> user applies a custom pose to a character
       <== the custom pose behaves identically to a built-in library pose
-      <== the pose adapts to the mannequin's body type (same adaptation rules as built-in poses)
+      <== the pose adapts to the character's body type (same adaptation rules as built-in poses)
       <== the pose can be further modified via custom posing (6.1.3)
 
     .if >> user deletes a custom pose from the library
       <== the pose is removed from the library panel
-      <== mannequins currently holding that pose are unaffected -- they retain their current joint state
+      <== characters currently holding that pose are unaffected -- they retain their current joint state
       !== built-in poses can be deleted
 
     .if >> user opens Fram3d on a different session after saving custom poses
@@ -273,25 +273,25 @@
     - Thumbnails grouped by category with category headers
     - Custom poses appear in a "Custom" category (or in user-specified categories)
     - Panel is searchable by pose name (searches both built-in and custom poses)
-    - Panel is collapsible/closeable -- it does not permanently consume viewport space
+    - Panel is collapsible/closeable -- it does not permanently consume view space
     - Hovering over a pose thumbnail shows the pose name as a tooltip
 
     ``` python
-    .if >> user hovers over a pose thumbnail while a mannequin is selected
+    .if >> user hovers over a pose thumbnail while a character is selected
       <== tooltip shows pose name
-      !== live preview on the mannequin (hover preview is a future enhancement, not required)
+      !== live preview on the character (hover preview is a future enhancement, not required)
     ```
 
     **Pose Adaptation Across Body Types**
 
     ``` python
-    .if >> user applies "Sitting Relaxed" to a Tall Slim mannequin
+    .if >> user applies "Sitting Relaxed" to a Tall Slim character
       <== pose adapts proportionally -- longer limbs, adjusted joint angles
       <== the pose reads as the same posture on the different body type
       !== limbs clip through each other due to proportion mismatch
       !== the pose looks identical (ignoring body shape) to the Average Medium version -- it should look natural for the body type
 
-    .if >> user applies a running pose to a Short Slim mannequin
+    .if >> user applies a running pose to a Short Slim character
       <== stride length and limb positions scale proportionally
       <== the pose remains recognizable as running
     ```
@@ -300,11 +300,11 @@
 
     ``` python
     .if >> user applies a pose and then immediately undoes (Cmd+Z, per 4.1)
-      <== mannequin reverts to its previous pose
+      <== character reverts to its previous pose
       <== undo restores the complete prior joint state
 
     .if >> user applies the same pose that is already active
-      <== no visible change -- mannequin stays in the same pose
+      <== no visible change -- character stays in the same pose
       <== this does not create an undo entry
     ```
 
@@ -312,27 +312,27 @@
 
   - ##### 6.1.3. Custom Posing (Feature)
 
-    ***Manipulate individual body parts to achieve specific poses. Grab a hand, the arm follows naturally via inverse kinematics. Select a joint directly for precise rotation. The 20% of poses the library cannot cover.***
+    ***Manipulate individual body parts to achieve specific poses. Grab a hand and the arm follows naturally. Select a joint directly for precise rotation. The 20% of poses the library cannot cover.***
 
     *Blocked by:
-    - 6.1.1 (mannequin placement -- must have a character to pose)
+    - 6.1.1 (character placement -- must have a character to pose)
     - 6.1.2 (pose library -- custom posing builds on top of library poses as starting points)*
 
     *Related:
-    - 2.1.2 (transform gizmos -- custom posing uses a distinct joint gizmo, not the standard object gizmos)
+    - 2.1.2 (transform gizmos -- custom posing uses a distinct joint gizmo, not the standard element gizmos)
     - 6.1.4 (character animation -- custom poses are keyframeable)*
 
-    Custom posing is for moments the library cannot anticipate: an actor reaching for a specific doorknob, two people shaking hands at a particular angle, a character bracing against a wall. The interaction model must make simple adjustments trivial (tilt the head, raise an arm) while supporting complex poses for users willing to invest the time.
+    Custom posing is for moments the library cannot anticipate: a character reaching for a specific doorknob, two people shaking hands at a particular angle, a character bracing against a wall. The interaction model must make simple adjustments trivial (tilt the head, raise an arm) while supporting complex poses for users willing to invest the time.
 
     **Pose Context (Selection-Based, Not Modal)**
 
     Posing is a selection context, not a dedicated mode. Double-clicking a character reveals its joint indicators; clicking away dismisses them. There is no "enter pose mode" button. This follows the Maya/DAZ/Cascadeur pattern where posing is just what happens when you select rig controls. Camera orbit, timeline scrubbing, and panel interaction remain fully available while posing.
 
-    *Decision: Selection context chosen over hard mode (Blender) or soft mode (Unity). See "UX Research — Pose Mode Interaction Scope" for the full analysis. Key rationale: 9 of 11 tools studied allow camera orbit during posing; 8 of 11 allow selecting other objects. The filmmaker should never feel trapped.*
+    *Decision: Selection context chosen over hard mode (Blender) or soft mode (Unity). See "UX Research — Pose Mode Interaction Scope" for the full analysis. Key rationale: 9 of 11 tools studied allow camera orbit during posing; 8 of 11 allow selecting other elements. The filmmaker should never feel trapped.*
 
     ``` python
-    .if >> user double-clicks a mannequin
-      <== mannequin displays visible joint indicators at all manipulable joint locations
+    .if >> user double-clicks a character
+      <== character displays visible joint indicators at all manipulable joint locations
       <== standard transform gizmo (translate/rotate/scale) is replaced by the posing interface
       <== joint indicators appear at: head, neck, upper spine, lower spine, left/right shoulder, left/right elbow, left/right wrist, left/right hip, left/right knee, left/right ankle
       <== total manipulable joints: 16
@@ -341,13 +341,13 @@
 
     .if >> user clicks empty space while joint indicators are visible
       <== joint indicators disappear
-      <== standard gizmo reappears on the mannequin (if still selected)
+      <== standard gizmo reappears on the character (if still selected)
       <== the current pose is preserved
 
     .if >> user selects a different scene element while joint indicators are visible
-      <== joint indicators disappear on the current mannequin
+      <== joint indicators disappear on the current character
       <== new element is selected normally
-      <== the current mannequin's pose is preserved
+      <== the current character's pose is preserved
 
     .if >> user orbits/pans/zooms the camera while joint indicators are visible
       <== camera navigation works normally
@@ -356,13 +356,13 @@
 
     .if >> user scrubs the timeline while joint indicators are visible
       <== timeline scrubbing works normally
-      <== mannequin updates to the interpolated pose at the scrub position
+      <== character updates to the interpolated pose at the scrub position
       <== joint indicators remain visible at the new pose
     ```
 
     **Joint Hierarchy**
 
-    The mannequin skeleton follows a simplified humanoid hierarchy:
+    The character skeleton follows a simplified humanoid hierarchy:
 
     ```
     Root (hips)
@@ -387,9 +387,9 @@
     - Child joints inherit parent rotation -- rotating the upper spine tilts the head and both arms
     - The root (hips) controls whole-skeleton offset while posing -- moving the hips raises/lowers the entire body (crouch, jump)
 
-    **Inverse Kinematics (IK)**
+    **Connected Joints (move a hand and the arm follows naturally)**
 
-    IK is the primary interaction method for limbs. When the user grabs an end effector (hand or foot), the intermediate joints (elbow/shoulder or knee/hip) solve automatically to maintain a natural chain.
+    Connected joint solving is the primary interaction method for limbs. When the user grabs an end effector (hand or foot), the intermediate joints (elbow/shoulder or knee/hip) solve automatically to maintain a natural chain.
 
     ``` python
     .if >> user grabs a wrist joint indicator and drags
@@ -405,7 +405,7 @@
       !== the knee bends backward
     ```
 
-    **IK Reach Limits**
+    **Reach Limits**
 
     ``` python
     .if >> user drags a wrist beyond the arm's fully extended reach
@@ -421,9 +421,9 @@
       !== the character falls over or ragdolls
     ```
 
-    **IK Pole Targets (Elbow/Knee Direction)**
+    **Elbow/Knee Direction**
 
-    Elbow and knee direction during IK solving is a common source of unnatural results. The system must maintain plausible joint orientation.
+    Elbow and knee direction during joint solving is a common source of unnatural results. The system must maintain plausible joint orientation.
 
     ``` python
     .if >> user moves a wrist such that the elbow direction becomes ambiguous (e.g., arm fully extended then bent again)
@@ -433,12 +433,12 @@
 
     .if >> user needs to override elbow/knee direction
       <== user can directly select and rotate the elbow or knee joint to set the preferred bend direction
-      <== subsequent IK solving on that limb respects the user's elbow/knee preference as a hint
+      <== subsequent joint solving on that limb respects the user's elbow/knee preference as a hint
     ```
 
-    **Direct Joint Rotation (FK)**
+    **Direct Joint Rotation**
 
-    For joints where IK is not applicable or where the user wants precise control, direct rotation (forward kinematics) is available.
+    For joints where connected solving is not applicable or where the user wants precise control, direct rotation is available.
 
     ``` python
     .if >> user clicks a joint indicator (not an end effector)
@@ -484,7 +484,7 @@
 
     **Spine Posing**
 
-    The spine is neither a pure IK chain nor a single joint. It requires a blended approach so the torso can assume natural curves (leaning forward, twisting, arching back) without requiring the user to individually rotate each vertebra.
+    The spine is neither a pure connected chain nor a single joint. It requires a blended approach so the torso can assume natural curves (leaning forward, twisting, arching back) without requiring the user to individually rotate each vertebra.
 
     ``` python
     .if >> user grabs the upper spine and drags
@@ -494,12 +494,12 @@
       !== only the upper spine segment rotates while the lower spine stays rigid (this looks robotic)
 
     .if >> user wants an asymmetric spine bend (twist to look over shoulder)
-      <== user can individually rotate each spine segment via FK for full control
+      <== user can individually rotate each spine segment via direct rotation for full control
     ```
 
     **Finger Posing**
 
-    Fingers are deliberately excluded from individual joint control. The mannequin uses mitten hands (6.1.1). However, basic hand shapes are needed for silhouette reads.
+    Fingers are deliberately excluded from individual joint control. The character uses mitten hands (6.1.1). However, basic hand shapes are needed for silhouette reads.
 
     - The system provides a small set of hand shape presets:
       - Open (fingers extended)
@@ -519,17 +519,17 @@
 
     **Prop Holding**
 
-    Characters can hold objects. Prop attachment uses the **linking system** (6.3.1): the user links a prop to a character's hand body region. The prop follows the hand during posing and animation. Finger alignment is not precise — the object attaches to the hand area without detailed finger posing.
+    Characters can hold elements. Prop attachment uses the **linking system** (6.3.1): the user links a prop to a character's hand body region. The prop follows the hand during posing and animation. Finger alignment is not precise — the element attaches to the hand area without detailed finger posing.
 
-    The prop's **anchor point** (6.3.1) determines where on the prop the hand grips. For a sword, the anchor should be set to the handle. For a coffee cup, the grip area. The anchor point is set in the prop's inspector panel as an XYZ offset.
+    The prop's **anchor point** (6.3.1) determines where on the prop the hand grips. For a sword, the anchor should be set to the handle. For a coffee cup, the grip area. The anchor point is set in the prop's properties sidebar as an XYZ offset.
 
     ``` python
-    .if >> user links a prop to a character's hand (via viewport drag or panel pickwhip — see 6.3.1)
+    .if >> user links a prop to a character's hand (via view drag or panel link tool — see 6.3.1)
       <== the prop links to the hand body region on the global timeline
       <== the prop snaps to the hand position, offset by the prop's anchor point
       <== the hand shape automatically switches to "Grip" (unless the user overrides)
-      !== the object snaps precisely into individual fingers
-      !== the object affects the IK solving of the arm
+      !== the element snaps precisely into individual fingers
+      !== the element affects the joint solving of the arm
 
     .if >> user unlinks a prop from a character's hand (via right-click → Unlink — see 6.3.1)
       <== the prop becomes independent on the global timeline from that point forward
@@ -569,14 +569,14 @@
 
     | Body Part | Primary Method | Fallback Method |
     |-----------|---------------|-----------------|
-    | Wrist/Hand | IK (drag) | FK (rotate shoulder, elbow, wrist individually) |
-    | Ankle/Foot | IK (drag) | FK (rotate hip, knee, ankle individually) |
-    | Elbow | IK hint (set bend direction) | FK (direct rotate) |
-    | Knee | IK hint (set bend direction) | FK (direct rotate) |
-    | Head | FK (direct rotate) | -- |
-    | Neck | FK (direct rotate) | -- |
-    | Spine (upper/lower) | Drag (distributed bend) | FK (per-segment rotate) |
-    | Hips/Root | Translate (move whole body up/down/forward) | FK (rotate pelvis tilt) |
+    | Wrist/Hand | Connected drag (move hand, arm follows) | Direct rotate (shoulder, elbow, wrist individually) |
+    | Ankle/Foot | Connected drag (move foot, leg follows) | Direct rotate (hip, knee, ankle individually) |
+    | Elbow | Bend direction hint | Direct rotate |
+    | Knee | Bend direction hint | Direct rotate |
+    | Head | Direct rotate | -- |
+    | Neck | Direct rotate | -- |
+    | Spine (upper/lower) | Drag (distributed bend) | Direct rotate (per-segment) |
+    | Hips/Root | Translate (move whole body up/down/forward) | Direct rotate (pelvis tilt) |
     | Hands | Preset shapes | -- |
 
     **Edge Cases**
@@ -588,19 +588,19 @@
         <== Character_02 is selected normally (single-click selects, double-click opens its joint indicators)
         <== Character_01 retains its pose
 
-    .if >> two mannequins overlap and the user clicks in the overlapping region while joint indicators are visible
-      <== the click resolves to the nearest joint indicator, not the other mannequin
-      <== if no joint indicator is near the click, joint indicators disappear and the frontmost mannequin is selected
+    .if >> two characters overlap and the user clicks in the overlapping region while joint indicators are visible
+      <== the click resolves to the nearest joint indicator, not the other character
+      <== if no joint indicator is near the click, joint indicators disappear and the frontmost character is selected
 
-    .if >> user poses a limb such that it clips through the mannequin's own body (e.g., arm through torso)
+    .if >> user poses a limb such that it clips through the character's own body (e.g., arm through torso)
       <== the pose is allowed -- the system does not enforce self-collision avoidance
       !== the system prevents the pose or snaps the limb to the body surface
     ```
       - Rationale: collision prevention would fight the user. Clipping is preferable to being unable to achieve a desired pose. The director can see the clip and adjust.
 
     ``` python
-    .if >> user poses a mannequin such that a hand clips through a scene object (table, wall)
-      <== the pose is allowed -- no collision enforcement between characters and objects
+    .if >> user poses a character such that a hand clips through a scene element (table, wall)
+      <== the pose is allowed -- no collision enforcement between characters and elements
       <== the user adjusts manually if the clip is unacceptable
 
     .if >> user triggers undo (Cmd+Z) while joint indicators are visible
@@ -618,27 +618,27 @@
 
     *Blocked by:
     - 3.2 (keyframe animation -- character animation lives on the timeline)
-    - 6.1.1 (mannequin placement -- must have characters to animate)
+    - 6.1.1 (character placement -- must have characters to animate)
     - 6.1.3 (custom posing -- the poses being keyframed come from the posing system)*
 
     *Related:
-    - 3.1.3 (object continuity -- character animation state carries across shots)
+    - 3.1.3 (element continuity -- character animation state carries across shots)
     - 3.2.2 (tracks and keyframes -- characters get their own tracks)
     - 3.2.3 (per-track stopwatch -- posing a character creates/updates keyframes when the stopwatch is on)*
 
-    Character animation extends the existing keyframe system (3.2) to handle pose data. Where object keyframes store position/rotation/scale (6 channels), character keyframes store position/rotation/scale plus the full skeletal pose (all joint rotations plus hand shapes). This is the hardest interpolation problem in the product.
+    Character animation extends the existing keyframe system (3.2) to handle pose data. Where element keyframes store position/rotation/scale (6 channels), character keyframes store position/rotation/scale plus the full skeletal pose (all joint rotations plus hand shapes). This is the hardest interpolation problem in the product.
 
     **Character Tracks**
 
     ``` python
-    .if >> user creates a keyframe on a mannequin (manually or via stopwatch Animate mode)
+    .if >> user creates a keyframe on a character (manually or via stopwatch recording)
       <== a character track appears in the keyframe editor
-      <== character tracks are visually distinct from object tracks and camera tracks (unique color -- suggested: orange or purple, distinct from camera yellow and object green)
+      <== character tracks are visually distinct from element tracks and camera tracks (unique color -- suggested: orange or purple, distinct from camera yellow and element green)
       <== the track is labeled with the character's name
 
-    .if >> a mannequin has no keyframes in the current shot
-      <== no character track appears for that mannequin
-      <== the mannequin holds its initial state for the shot (per 3.1.3)
+    .if >> a character has no keyframes in the current shot
+      <== no character track appears for that character
+      <== the character holds its initial state for the shot (per 3.1.3)
     ```
 
     **Character Keyframes**
@@ -651,7 +651,7 @@
     - Hand shapes (left and right, each an enum value)
 
     ``` python
-    .if >> user poses a mannequin while the shot is at time t
+    .if >> user poses a character while the shot is at time t
       <== a character keyframe is created (or updated) at time t containing the full current state
       <== stopwatch rules from 3.2.3 apply: near existing keyframe (0.1s) updates it, otherwise creates new
 
@@ -670,11 +670,11 @@
     ``` python
     .if >> timeline has two character keyframes (e.g., standing at t=0, sitting at t=2)
       ||> .if >> playhead moves to t=1 (midpoint)
-        <== the mannequin displays an interpolated pose between standing and sitting
+        <== the character displays an interpolated pose between standing and sitting
         <== every joint rotation is interpolated individually (spherical interpolation, not linear Euler)
         <== world position is interpolated smoothly
         <== the interpolated pose looks plausible -- no joints inverted, no limbs passing through the body in ways worse than the keyframes themselves
-        !== the mannequin snaps between keyframes with no in-between
+        !== the character snaps between keyframes with no in-between
         !== joints interpolate via the long arc (e.g., a 10-degree rotation should not travel 350 degrees the other way)
 
     .if >> three or more keyframes exist for a character within a shot
@@ -723,7 +723,7 @@
       - Run
       - Jog
     - Walk cycles support custom gaits: limping, sneaking, running, etc. (gait presets available from standard animation libraries)
-    - Foot sliding: minimal visible sliding is acceptable for v1. Perfect foot-contact IK is not required
+    - Foot sliding: minimal visible sliding is acceptable for v1. Perfect foot-contact solving is not required
 
     ``` python
     .if >> user assigns a locomotion cycle to a character
@@ -770,27 +770,27 @@
 
     ``` python
     .if >> user presses play (Space) and the shot contains character keyframes
-      <== characters animate in real-time alongside camera and object animations
+      <== characters animate in real-time alongside camera and element animations
       <== all tracks evaluate synchronously at each frame
 
     .if >> user scrubs the timeline with character keyframes present
-      <== the mannequin updates to the interpolated pose at the scrub position
+      <== the character updates to the interpolated pose at the scrub position
       <== scrubbing is responsive -- pose evaluation does not cause visible lag
     ```
 
-    **Animate Mode (Stopwatch) for Characters**
+    **Recording (Stopwatch) for Characters**
 
     ``` python
-    .if >> the character track's stopwatch is on (Animate mode)
+    .if >> the character track's stopwatch is on (recording)
     .if >> user adjusts a joint (via joint indicators) while the shot is not playing
       <== stopwatch rules (3.2.3) apply to the full character state
       <== if near an existing character keyframe (within 0.1s): the existing keyframe is updated with the new joint rotation
       <== if not near an existing keyframe: a new character keyframe is created at the current time
       <== the new/updated keyframe captures the complete pose, not just the modified joint
 
-    .if >> the character track's stopwatch is on (Animate mode)
-    .if >> user translates a mannequin (whole-body move via gizmo)
-      <== Animate mode creates/updates a keyframe with the new position
+    .if >> the character track's stopwatch is on (recording)
+    .if >> user translates a character (whole-body move via gizmo)
+      <== recording creates/updates a keyframe with the new position
       <== the skeletal pose at the new keyframe matches the current pose
     ```
 
@@ -811,8 +811,8 @@
       <== the user can pose the joint at the paused frame
       <== after releasing the joint, the user can resume playback to check the result
 
-    .if >> user duplicates (Ctrl+D) a mannequin that has character keyframes in the current shot
-      <== the duplicate mannequin has no keyframes (per 2.1.4 -- animation not copied)
+    .if >> user duplicates (Ctrl+D) a character that has character keyframes in the current shot
+      <== the duplicate character has no keyframes (per 2.1.4 -- animation not copied)
       <== the duplicate holds its current pose as a static initial state
       !== the duplicate inherits the original's animation
 
@@ -829,12 +829,12 @@
 
     *Blocked by:
     - 4.3.1 (model import -- FBX import pipeline must exist)
-    - 6.1.1 (mannequin placement -- the built-in character system must exist before custom characters extend it)
+    - 6.1.1 (character placement -- the built-in character system must exist before custom characters extend it)
     - 6.1.3 (custom posing -- imported characters must work with the same posing interface)*
 
     *Related:
     - 6.1.2 (pose library -- imported characters should support the same pose library)
-    - 6.1.4 (character animation -- imported characters animate identically to built-in mannequins)*
+    - 6.1.4 (character animation -- imported characters animate identically to built-in characters)*
 
     Custom character import is the bridge between Fram3d and production pipelines. A director working with a concept artist or a studio with established character models should be able to bring those characters into the previs tool. The fundamental challenge is rig mapping: every rigging artist names bones differently, structures hierarchies differently, and makes different assumptions about bind poses and axis conventions.
 
@@ -844,7 +844,7 @@
     .if >> user imports an FBX file containing a rigged humanoid model
       <== the system analyzes the rig to determine if it is a valid humanoid skeleton
       <== if the rig is recognized as humanoid: the character appears in the scene and is immediately usable with the pose system
-      <== if the rig cannot be mapped: the model imports as a static object (per 4.3.1), not as a poseable character, and the user is notified
+      <== if the rig cannot be mapped: the model imports as a static element (per 4.3.1), not as a poseable character, and the user is notified
 
     .if >> the imported rig uses non-standard bone names (e.g., "L_arm_upper" instead of "LeftUpperArm")
       <== the system attempts automatic mapping based on hierarchy structure, bone positions, and common naming conventions
@@ -866,11 +866,11 @@
     .if >> user completes the rig mapping and confirms
       <== the character is added to the scene as a fully poseable character
       <== all pose library poses work on the imported character
-      <== all custom posing (IK, FK) works on the imported character
+      <== all custom posing (connected drag, direct rotate) works on the imported character
       <== all character animation features work on the imported character
 
     .if >> user cancels the rig mapping
-      <== the model imports as a static (non-poseable) object
+      <== the model imports as a static (non-poseable) element
       <== no character track is created for it
     ```
 
@@ -944,8 +944,8 @@
     ``` python
     .if >> user imports a non-humanoid rig (quadruped, mechanical, abstract)
       <== automatic humanoid mapping fails
-      <== the model imports as a static object
-      <== user is notified: "This model could not be recognized as a humanoid character. It has been imported as a static object."
+      <== the model imports as a static element
+      <== user is notified: "This model could not be recognized as a humanoid character. It has been imported as a static element."
       !== the system attempts to force-fit a non-humanoid skeleton into the humanoid template
 
     .if >> user imports an FBX with multiple rigged characters in one file
@@ -955,7 +955,7 @@
     .if >> user imports a character with extremely non-standard proportions (e.g., a caricature with an oversized head)
       <== the rig mapping still works based on skeleton structure, not proportions
       <== pose library poses may look unusual on extreme proportions but should not break
-      <== IK reach limits adapt to the actual bone lengths of the imported character
+      <== reach limits adapt to the actual bone lengths of the imported character
 
     .if >> user imports a character and then the source FBX file is moved or deleted
       <== the character remains in the scene -- the import is a copy, not a reference
@@ -966,63 +966,63 @@
 
 ## Acceptance Criteria
 
-### Mannequin Placement
+### Character Placement
 
-1. User places three mannequins with different body configurations (varying base, height slider, build slider) into a scene.
+1. User places three characters with different body configurations (varying base, height slider, build slider) into a scene.
    ``` python
-   <== three visually distinct mannequins visible at ground level
+   <== three visually distinct characters visible at ground level
    <== each is selectable and movable via translate gizmo
    <== heights and builds are visually and measurably different
    <== male and female bases produce distinct silhouettes
    ```
 
-2. User duplicates a posed mannequin (Ctrl+D).
+2. User duplicates a posed character (Ctrl+D).
    ``` python
    <== duplicate has the same body type, slider values, tint color, and pose
    <== duplicate is offset from the original
    <== posing one does not affect the other
    ```
 
-3. User applies a tint color to a mannequin.
+3. User applies a tint color to a character.
    ``` python
-   <== mannequin displays the selected tint color
-   <== other mannequins remain their original color
+   <== character displays the selected tint color
+   <== other characters remain their original color
    <== tint color persists across shots
    ```
 
 ### Pose Library
 
-4. User selects a mannequin and applies "Sitting Relaxed" from the library.
+4. User selects a character and applies "Sitting Relaxed" from the library.
    ``` python
-   <== mannequin assumes sitting pose immediately
-   <== mannequin's ground position is preserved
+   <== character assumes sitting pose immediately
+   <== character's ground position is preserved
    <== pose looks natural (no stiff limbs, no floating)
    ```
 
-5. User applies "Walking Mid-stride" to one mannequin and "Conversation Listening" to another.
+5. User applies "Walking Mid-stride" to one character and "Conversation Listening" to another.
    ``` python
-   <== each mannequin holds its respective pose
+   <== each character holds its respective pose
    <== applying a pose to one does not affect the other
    ```
 
 6. User applies a pose, then presses Cmd+Z.
    ``` python
-   <== mannequin reverts to its previous pose
+   <== character reverts to its previous pose
    ```
 
-7. User custom-poses a mannequin, saves the pose to the library, closes and reopens the application.
+7. User custom-poses a character, saves the pose to the library, closes and reopens the application.
    ``` python
    <== custom pose appears in the library panel under "Custom" category
    <== custom pose persists after application restart
-   <== applying the custom pose to a different mannequin works identically to built-in poses
+   <== applying the custom pose to a different character works identically to built-in poses
    ```
 
 ### Custom Posing
 
-8. User double-clicks a mannequin, grabs a wrist, and drags it to a new position.
+8. User double-clicks a character, grabs a wrist, and drags it to a new position.
    ``` python
    <== joint indicators appear on double-click
-   <== arm follows naturally via IK -- elbow bends, shoulder rotates
+   <== arm follows naturally -- elbow bends, shoulder rotates
    <== rest of body is unaffected
    ```
 
@@ -1037,7 +1037,7 @@
     <== legs remain planted
     ```
 
-11. User poses an arm through the mannequin's torso.
+11. User poses an arm through the character's torso.
     ``` python
     <== pose is allowed (no collision enforcement -- self-collision skipped for v1)
     <== the clipping is visible and the user can adjust
@@ -1050,11 +1050,11 @@
     <== standard gizmo reappears
     ```
 
-13. User attaches a scene object (e.g., a cup) to a character's hand.
+13. User attaches a scene element (e.g., a cup) to a character's hand.
     ``` python
-    <== the object follows the hand during posing and animation
-    <== the object can be offset relative to the hand for alignment
-    <== detaching the object returns it to an independent scene element
+    <== the element follows the hand during posing and animation
+    <== the element can be offset relative to the hand for alignment
+    <== detaching the element returns it to an independent scene element
     ```
 
 ### Character Animation
@@ -1109,17 +1109,17 @@
 
 21. User imports a non-humanoid model (e.g., a car).
     ``` python
-    <== model imports as a static object
+    <== model imports as a static element
     <== user receives clear notification
     !== application error or crash
     ```
 
 ### Cross-Feature
 
-22. User places a mannequin in Shot_01, poses it sitting, creates Shot_02.
+22. User places a character in Shot_01, poses it sitting, creates Shot_02.
     ``` python
-    <== mannequin in Shot_02 inherits the sitting pose
-    <== navigating back to Shot_01 shows the mannequin in Shot_01's original state
+    <== character in Shot_02 inherits the sitting pose
+    <== navigating back to Shot_01 shows the character in Shot_01's original state
     ```
 
 23. User has a scene with 5 characters, each with 3 pose keyframes across a 10-second shot.
@@ -1131,5 +1131,5 @@
 24. User imports a custom character, applies a library pose, adjusts via custom posing, keyframes the result.
     ``` python
     <== the full pipeline works: import -> library pose -> custom adjustment -> keyframe
-    <== the imported character behaves identically to a built-in mannequin throughout this workflow
+    <== the imported character behaves identically to a built-in character throughout this workflow
     ```

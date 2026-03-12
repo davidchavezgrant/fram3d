@@ -12,13 +12,13 @@
 
   A director emails a single frame to the DP: "this is the framing I want for the interrogation scene." A producer drops a rendered sequence into a pitch deck for investors. A 1st AD prints storyboard sheets and tapes them to the wall by the monitors. An editor imports camera data and cut points into their NLE to begin the offline edit. Each of these workflows has different format requirements, different metadata needs, and different tolerance for fidelity loss.
 
-  Export must produce deliverable output --- not screen captures, not viewport grabs. The rendered output matches the active aspect ratio and camera settings exactly as composed. What you see in the viewport is what you get in the file.
+  Export must produce deliverable output --- not screen captures, not view grabs. The rendered output matches the active aspect ratio and camera settings exactly as composed. What you see in the view is what you get in the file.
 
   *Blocked by: 3.2 (keyframe animation --- need playback to render video)*
 
   - ##### 4.4.1. Image export (Feature)
 
-    ***Export the current viewport frame as a still image at the active aspect ratio, with optional inclusion of overlays, DOF effect, and shaken camera position in the exported frame.***
+    ***Export the current view frame as a still image at the active aspect ratio, with optional inclusion of overlays, DOF effect, and shaken camera position in the exported frame.***
 
     **Functional requirements:**
     - The exported image captures the 3D scene exactly as framed by the current camera position, rotation, and focal length
@@ -30,10 +30,10 @@
     - Optionally include overlays, DOF effect, and shaken camera position in the exported frame
     - The user can independently toggle inclusion of each overlay layer in the exported image:
       - Aspect ratio mask bars (off by default --- the image is cropped to the ratio instead)
-      - Frame guides (rule of thirds, center cross, safe zones)
-      - Camera info HUD
-      - DOF (depth of field) effect (on by default if DOF is active in viewport)
-      - Camera shake offset (on by default if shake is active in viewport)
+      - Composition guides (rule of thirds, center cross, safe zones)
+      - Camera info overlay
+      - DOF (depth of field) effect (on by default if DOF is active in view)
+      - Camera shake offset (on by default if shake is active in view)
     - Remembers last-used export directory across ALL projects (not per-project, global preference)
     - The default file name follows the pattern: `{ProjectName}_{ShotName}_{FrameNumber}.{ext}`
     - The user can choose the save location via a system file picker
@@ -46,12 +46,12 @@
       .if the user initiates image export >>
           <== a file picker dialog appears with the default file name pre-filled
           <== the default format is PNG
-          <== the default resolution matches the viewport dimensions at the active aspect ratio
+          <== the default resolution matches the view dimensions at the active aspect ratio
           <== the file picker opens to the last-used export directory (if one exists)
 
-      # exported image matches the viewport
+      # exported image matches the view
       .if the user exports the current frame >>
-          <== the exported image shows the same framing as the viewport
+          <== the exported image shows the same framing as the view
           <== the image is cropped to the active aspect ratio
           !== mask bars appear in the exported image (unless explicitly included)
           !== UI elements appear in the exported image (unless explicitly included)
@@ -64,30 +64,30 @@
           !== the image is stretched or distorted to fill 3840x2160
 
       # overlay inclusion
-      .if the user enables "include frame guides" for export
-      .if rule of thirds is active in the viewport >>
+      .if the user enables "include composition guides" for export
+      .if rule of thirds is active in the view >>
           <== the exported image contains the rule of thirds grid
-          <== the grid is positioned identically to the viewport
+          <== the grid is positioned identically to the view
 
-      .if the user enables "include HUD" for export >>
-          <== the exported image contains the camera info HUD
+      .if the user enables "include camera info" for export >>
+          <== the exported image contains the camera info overlay
           <== focal length, body, lens preset are visible in the image
 
       .if the user enables "include mask bars" for export >>
-          <== the exported image includes the full viewport with black bars
-          <== the image dimensions match the full viewport, not the cropped ratio
+          <== the exported image includes the full view with black bars
+          <== the image dimensions match the full view, not the cropped ratio
 
       # DOF inclusion
-      .if DOF is active in the viewport
+      .if DOF is active in the view
       .if the user exports with "include DOF" enabled (default) >>
           <== the exported image includes the depth of field effect
-          <== foreground and background blur matches the viewport DOF settings
+          <== foreground and background blur matches the view DOF settings
       ||> .if the user disables "include DOF" for export >>
-          <== the exported image shows all objects in focus
+          <== the exported image shows all elements in focus
           !== DOF blur appears in the exported image
 
       # camera shake inclusion
-      .if camera shake is active in the viewport
+      .if camera shake is active in the view
       .if the user exports with "include camera shake" enabled (default) >>
           <== the exported image captures the camera at its shaken position at the current frame
           <== the framing reflects the shake offset applied at the playhead time
@@ -106,7 +106,7 @@
       .if the user scrubs to 2.5 seconds into a shot
       .if the user exports the current frame >>
           <== the exported image shows the scene state at 2.5 seconds
-          <== camera position and all object positions reflect interpolated values at t=2.5s
+          <== camera position and all element positions reflect interpolated values at t=2.5s
 
       # remembered export directory
       .if the user exports an image and saves to /Users/example/exports/
@@ -126,7 +126,7 @@
       # export with no shot selected
       .if the sequence contains no shots
       .if the user initiates image export >>
-          <== the current viewport is exported as-is
+          <== the current view is exported as-is
           !== the application crashes or shows an empty image
 
       # disk full during export
@@ -147,7 +147,7 @@
 
     **Functional requirements:**
     - Three render scopes: single shot, current scene, or full project (all scenes)
-    - When rendering a scene or full project, shots are concatenated in sequencer order with hard cuts only --- no dissolves, fades, or transitions
+    - When rendering a scene or full project, shots are concatenated in shot track order with cuts only --- no dissolves, fades, or transitions
     - When rendering the full project, scenes are rendered in tab order with scene dividers (brief black frame or configurable separator)
     - Rendering is offline --- each frame is rendered and captured independently, decoupled from real-time playback speed
     - Modal blocking render for v1 --- user cannot interact with the application during render
@@ -162,8 +162,8 @@
       - Standard quality (good visual quality, moderate file size --- suitable for review and sharing)
       - Draft quality (lower quality, small files --- suitable for quick previews)
     - The video is cropped to the camera's configured resolution (the project resolution, no black bars) by default
-    - Overlay inclusion options match image export: mask bars, frame guides, HUD --- all off by default
-    - Shot name can optionally be burned into each frame as a text overlay (slate mode)
+    - Overlay inclusion options match image export: mask bars, composition guides, camera info --- all off by default
+    - Shot name can optionally be burned into each frame as a text overlay (burn-in)
     - A progress indicator shows: current frame, total frames, estimated time remaining, and a cancel button
     - The user can cancel rendering at any point; already-rendered output up to the cancellation point is preserved as a valid, playable file
     - The default file name follows the pattern: `{ProjectName}_{ShotName|"FullSequence"}_{Resolution}_{FPS}fps.{ext}`
@@ -176,18 +176,18 @@
       .if the shot duration is 5 seconds
       .if the frame rate is 24fps >>
           <== 120 frames are rendered (5 x 24)
-          <== each frame reflects the interpolated camera and object state at that time
+          <== each frame reflects the interpolated camera and element state at that time
           <== the output video plays back at 24fps
           <== total video duration is exactly 5 seconds
 
-      # scene render with hard cuts
+      # scene render with cuts
       .if the user selects "render current scene"
       .if the scene contains 3 shots of 5, 3, and 7 seconds >>
           <== total output duration is 15 seconds
-          <== shots are concatenated in sequencer order with hard cuts
+          <== shots are concatenated in shot track order with cuts
           !== there are black frames or gaps between shots
           !== dissolves, fades, or transitions appear between shots
-          <== object positions at the start of each shot match the shot's initial state
+          <== element positions at the start of each shot match the shot's initial state
 
       # full project render (multiple scenes)
       .if the user selects "render full project"
@@ -233,16 +233,16 @@
           <== the user is informed that the export was partially completed
           <== the application UI is unblocked and interactive again
 
-      # slate mode
+      # burn-in
       .if the user enables "burn-in shot names"
       .if the sequence contains shots named "INT_OFFICE_01" and "EXT_ALLEY_02" >>
           <== the shot name is rendered as text overlay on each frame
           <== the name changes when the rendered frame crosses a shot boundary
 
       # overlay inclusion
-      .if the user enables "include frame guides" for video export >>
-          <== every rendered frame includes the active frame guides
-          <== guide positions are recalculated per frame if the aspect ratio or viewport changes
+      .if the user enables "include composition guides" for video export >>
+          <== every rendered frame includes the active composition guides
+          <== guide positions are recalculated per frame if the aspect ratio or view changes
     ```
 
     **Error cases:**
@@ -291,7 +291,7 @@
       - The default is 3 columns per row
     - User-configurable rows per page (controls how many shots appear per PDF page)
     - Supports two-column layout (side-by-side shot comparison, useful for shot/reverse-shot)
-    - Rows are filled left-to-right, top-to-bottom in sequencer order
+    - Rows are filled left-to-right, top-to-bottom in shot track order
     - Scene dividers appear between groups of shots from different scenes (horizontal rule with scene name)
     - If the final row has fewer shots than columns, the remaining cells are empty
     - Page size for PDF output: US Letter (8.5 x 11 in) and A4 --- default is US Letter
@@ -311,7 +311,7 @@
           <== the output contains a 3x3 grid of shot thumbnails
           <== each thumbnail shows the first frame of its shot
           <== each thumbnail is labeled with shot name, duration, and focal length
-          <== shots appear in sequencer order, left-to-right, top-to-bottom
+          <== shots appear in shot track order, left-to-right, top-to-bottom
           !== free-text annotations appear on any thumbnail
 
       # user-configurable rows per page
@@ -346,7 +346,7 @@
       .if the user selects "midpoint" as the capture time
       .if a shot is 6 seconds long >>
           <== the thumbnail shows the scene state at t=3.0s
-          <== camera and object positions reflect interpolated values at midpoint
+          <== camera and element positions reflect interpolated values at midpoint
 
       # PNG output with many shots
       .if the output format is PNG
@@ -396,7 +396,7 @@
     - Timeline interchange format: EDL (Edit Decision List, CMX 3600 format) --- the universal lowest-common-denominator format supported by every professional NLE
     - Avid is not a target workflow --- no AAF support
     - The EDL includes:
-      - One event per shot, in sequencer order
+      - One event per shot, in shot track order
       - Source clip file name (matching the rendered video file names)
       - Source in/out timecodes (full shot duration)
       - Record in/out timecodes (sequential placement on the master timeline)

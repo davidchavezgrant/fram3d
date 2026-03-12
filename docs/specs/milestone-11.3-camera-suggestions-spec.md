@@ -20,14 +20,14 @@ This milestone depends on two capabilities from earlier milestones: the ability 
 
 ## 11.3.1 Coverage Suggestions
 
-***Given a blocked scene with characters in known positions, suggest a standard set of camera angles that provide adequate coverage -- master, over-the-shoulders, close-ups -- and generate each as a separate shot in the sequencer.***
+***Given a blocked scene with characters in known positions, suggest a standard set of camera angles that provide adequate coverage -- master, over-the-shoulders, close-ups -- and generate each as a separate shot in the shot track.***
 
 *Requires: characters placed in scene (from 11.2 or manual placement), shot creation (3.1), camera positioning (11.1)*
 
 ### Scene Analysis
 
-- The system examines the current scene to determine: how many characters are present, where each character is positioned, which characters face each other (approximate facing direction), and what objects exist between or around them.
-- Character identification uses whatever character/mannequin system exists from milestone 6.1. Characters must be distinguishable from props and set pieces.
+- The system examines the current scene to determine: how many characters are present, where each character is positioned, which characters face each other (approximate facing direction), and what elements exist between or around them.
+- Character identification uses whatever character system exists from milestone 6.1. Characters must be distinguishable from props and set pieces.
 
 ``` python
 .if >> scene contains exactly zero characters
@@ -56,9 +56,9 @@ The system recognizes scene configurations and applies appropriate coverage patt
         Over-the-shoulder B: camera behind Character B's shoulder, Character A in frame, medium or medium close-up
         Close-up A: Character A fills the frame, shot size between medium close-up and close-up
         Close-up B: Character B fills the frame, shot size between medium close-up and close-up
-    <== each suggestion is generated as a separate shot in the sequencer
+    <== each suggestion is generated as a separate shot in the shot track
     <== shots are named descriptively: "Master Wide", "OTS on [Character B]", "CU [Character A]", etc.
-    <== shot order in the sequencer follows a conventional shooting order: master first, then OTS pair, then CU pair
+    <== shot order in the shot track follows a conventional shooting order: master first, then OTS pair, then CU pair
     <== camera height defaults to approximately eye level for OTS and CU shots
     <== the master shot uses a wider focal length than the close-ups
 ```
@@ -101,13 +101,13 @@ The system recognizes scene configurations and applies appropriate coverage patt
 ### Camera Placement
 
 - Every generated camera position must satisfy these constraints:
-  - Camera does not clip through any scene object (wall, furniture, character)
+  - Camera does not clip through any scene element (wall, furniture, character)
   - Camera is not inside any character's bounding volume
-  - The target character(s) are actually visible from the camera position (not occluded by walls or large objects)
+  - The target character(s) are actually visible from the camera position (not occluded by walls or large elements)
   - Camera height is physically plausible (not underground, not floating at ceiling height -- unless the scene geometry requires it)
 
 ``` python
-.if >> an ideal camera position would clip through a wall or object
+.if >> an ideal camera position would clip through a wall or element
     <== camera position adjusts to the nearest valid position that maintains approximately the same framing
     <== if no valid position exists that preserves the intended framing, that shot is omitted from the suggestion set with a note explaining why
 ```
@@ -216,12 +216,12 @@ User-configurable maximum shots per generation request (default 3). Users can re
 
 ``` python
 .if >> user triggers coverage suggestion
-    <== system generates shots and appends them to the sequencer after the current last shot
+    <== system generates shots and appends them to the shot track after the current last shot
     <== existing shots are not modified or removed
     !== existing shot sequence is cleared or overwritten
     <== generated shots include camera movement keyframes when movement is enabled (see Camera Movement above)
     <== generated shot duration defaults to 5.0 seconds (matching the system default)
-    <== object states in generated shots reflect the current scene blocking
+    <== element states in generated shots reflect the current scene blocking
 ```
 
 ``` python
@@ -252,9 +252,9 @@ User-configurable maximum shots per generation request (default 3). Users can re
 
 ## 11.3.2 Shot List Generation
 
-***Given a scene description or script excerpt in plain text, generate a complete sequence of shots -- blocked characters, positioned cameras, ordered in the sequencer as a rough cut. The user types a paragraph and gets a previs scene.***
+***Given a scene description or script excerpt in plain text, generate a complete sequence of shots -- blocked characters, positioned cameras, ordered in the shot track as a rough cut. The user types a paragraph and gets a previs scene.***
 
-*Requires: scene-from-text (11.2.1), shot-from-text (11.1.1), coverage suggestions (11.3.1), sequencer (3.1)*
+*Requires: scene-from-text (11.2.1), shot-from-text (11.1.1), coverage suggestions (11.3.1), shot track (3.1)*
 
 This is the most ambitious feature in the product. It chains together blocking, camera placement, and coverage into a single operation. The quality of the output depends on every upstream system performing adequately. Expect this to be the feature most likely to produce disappointing results on first release, and most likely to improve dramatically as upstream capabilities mature.
 
@@ -305,7 +305,7 @@ Shot list reuses existing characters by matching character names from the scene 
 ``` python
 .if >> the AI system receives a prompt referencing a character by name (e.g., "close-up of Alice")
     <== the system matches the name against existing scene characters (case-insensitive)
-    <== if "Alice" exists in the scene, the existing Alice object is used as the camera target
+    <== if "Alice" exists in the scene, the existing Alice character is used as the camera target
     !== the system creates a new character or ignores the existing one
 ```
 
@@ -330,7 +330,7 @@ Shot list reuses existing characters by matching character names from the scene 
 
 ``` python
 .if >> user triggers shot list generation with valid input
-    <== system first blocks the scene: places characters and objects as described, using 11.2 capabilities
+    <== system first blocks the scene: places characters and elements as described, using 11.2 capabilities
     ||> .if >> blocking is complete
         <== system then generates a shot sequence covering the blocked scene
         <== shot sequence follows dramatic logic: establish the space first, then move to coverage of the action
@@ -363,11 +363,11 @@ Shot list reuses existing characters by matching character names from the scene 
     <== system-generated coverage fills in around the explicitly requested shots
 ```
 
-### Sequencer Output
+### Shot Track Output
 
 ``` python
 .if >> shot list generation completes successfully
-    <== all generated shots appear in the sequencer in dramatic sequence order
+    <== all generated shots appear in the shot track in dramatic sequence order
     <== shots are named descriptively based on their content: "Wide Establishing - Kitchen", "OTS on Sarah", "CU Michael - Reaction", etc.
     <== each shot has the camera positioned and framed for its described content
     <== character positions and poses reflect the described blocking for each shot's moment in the scene
@@ -381,10 +381,10 @@ Shot list reuses existing characters by matching character names from the scene 
 ```
 
 ``` python
-.if >> scene already contains characters/objects before generation
-    <== the user is warned that generation will add new characters and objects
+.if >> scene already contains characters/elements before generation
+    <== the user is warned that generation will add new characters and elements
     <== existing scene content is preserved (new content is additive)
-    !== existing objects are silently moved or deleted
+    !== existing elements are silently moved or deleted
 ```
 
 ### Character Continuity Across Generated Shots
@@ -418,7 +418,7 @@ Shot list reuses existing characters by matching character names from the scene 
 
 ``` python
 .if >> user cancels mid-generation
-    <== shots generated so far are kept in the sequencer
+    <== shots generated so far are kept in the shot track
     <== partially placed characters remain in the scene
     <== system returns to an interactive state
     !== cancellation rolls back all generated content (user might want to keep what was generated)
@@ -457,10 +457,10 @@ This section documents known limitations that should be communicated to users ra
 
 ### Coverage Suggestions -- Two-Person Dialogue
 
-1. Scene contains two mannequins facing each other across a table. User triggers coverage suggestion.
+1. Scene contains two characters facing each other across a table. User triggers coverage suggestion.
 ``` python
    <== 5 shots generated: Master Wide, OTS on Character A, OTS on Character B, CU Character A, CU Character B
-   <== all shots appear in the sequencer after any existing shots
+   <== all shots appear in the shot track after any existing shots
    <== each shot's camera is positioned at a plausible height and distance
    <== master shot uses a wider focal length than close-ups
    <== OTS shots show the back of one character's head/shoulder with the other character in frame
@@ -478,7 +478,7 @@ This section documents known limitations that should be communicated to users ra
 
 ### Coverage Suggestions -- Single Character
 
-4. Scene contains one mannequin. User triggers coverage suggestion.
+4. Scene contains one character. User triggers coverage suggestion.
 ``` python
    <== 3 shots generated: wide establishing, medium shot, close-up
    !== OTS shots generated
@@ -507,7 +507,7 @@ This section documents known limitations that should be communicated to users ra
 7. User enters: "INT. KITCHEN - DAY. Sarah sits at the table reading a letter. Michael enters through the door and sits across from her."
 ``` python
    <== characters are placed in the scene: Sarah at a table, Michael near a door then at the table
-   <== 5-10 shots are generated in the sequencer
+   <== 5-10 shots are generated in the shot track
    <== first shot is a wide establishing shot of the kitchen
    <== sequence includes coverage of both characters
    <== shots are named descriptively
@@ -527,7 +527,7 @@ This section documents known limitations that should be communicated to users ra
 
 9. User triggers shot list generation and cancels after 3 shots have been generated.
 ``` python
-   <== the 3 generated shots remain in the sequencer
+   <== the 3 generated shots remain in the shot track
    <== any placed characters remain in the scene
    <== system returns to normal interactive state
 ```
@@ -559,13 +559,13 @@ This section documents known limitations that should be communicated to users ra
     !== first set is overwritten
 ```
 
-13. Scene contains two characters but one is completely occluded behind a large object.
+13. Scene contains two characters but one is completely occluded behind a large element.
 ``` python
     <== system attempts coverage but may omit shots where the occluded character cannot be framed
     !== system generates shots pointing at the back of a bookshelf
 ```
 
-14. User triggers shot list generation while existing shots are in the sequencer.
+14. User triggers shot list generation while existing shots are in the shot track.
 ``` python
     <== generated shots are appended after existing shots
     <== user is not asked "delete existing shots?" -- existing work is always preserved

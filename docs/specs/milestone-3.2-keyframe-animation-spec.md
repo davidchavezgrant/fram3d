@@ -18,7 +18,7 @@
 
   Camera rotation is expressed in cinematic terms — pan, tilt, and roll in degrees — not quaternions. A director says "pan left 45 degrees" or "tilt up 10." The UI displays and accepts pan/tilt/roll in degrees, but **internally all rotation is stored and interpolated as quaternions**. This is an implementation detail that prevents gimbal lock without any user-visible limitation. At the 90-degree tilt edge case (looking straight up or down), pan and roll become mathematically equivalent — quaternion interpolation handles this transparently, producing smooth motion through the singularity. The user never encounters gimbal lock artifacts.
 
-  *Blocked by: 3.1 (shot sequencer — keyframes exist within shots)*
+  *Blocked by: 3.1 (shot track — keyframes exist within shots)*
 
   - ##### 3.2.1. Timeline editor (Feature)
 
@@ -28,19 +28,31 @@
     - The timeline editor sits directly above the shot track
     - The editor is divided into three horizontal regions: transport bar (top), track area (middle), status bar (bottom)
     - The transport bar contains: play/pause button, current time display (seconds.tenths), shot duration display, and a shot name label
-    - The timeline area contains: a horizontal time ruler, vertical track lanes, keyframe markers, and a playhead
+    - The track area contains: a horizontal time ruler, vertical track lanes, keyframe markers, and a playhead
     - The time ruler shows second markers and subdivisions, scaled to the shot duration
     - The time ruler rescales dynamically when the shot duration changes
     - The user can manually zoom/scale the time ruler (scroll wheel or pinch) to focus on a region of interest
-    - A Premiere-style zoom scroll bar sits below the timeline area. It contains a draggable thumb representing the visible time range. Dragging the thumb edges resizes the visible range (zoom). Dragging the thumb body pans. A playhead position indicator within the zoom bar shows the current time relative to the full shot duration. Clicking the zoom bar (not on the thumb) navigates to that position.
+    - A Premiere-style zoom scroll bar sits below the track area. It contains a draggable thumb representing the visible time range. Dragging the thumb edges resizes the visible range (zoom). Dragging the thumb body pans. A playhead position indicator within the zoom bar shows the current time relative to the full shot duration. Clicking the zoom bar (not on the thumb) navigates to that position.
     - Timecode format: non-drop-frame (`:` separator) for 24/25/30fps projects, drop-frame (`;` separator) for 29.97/59.94fps projects. Format determined by the project frame rate setting.
-    - **Dual timecode display**: the transport bar shows shot-local elapsed / duration. A separate viewport overlay shows sequence-global timecode. Format: semicolon-separated `HH;MM;SS;FF`.
+    - **Dual timecode display**: the transport bar shows shot-local elapsed / duration. A separate overlay shows sequence-global timecode. Format: semicolon-separated `HH;MM;SS;FF`.
+    - **Camera View overlays** (see `ui-layout-spec.md` §2.3 for full layout):
+      - **Shot label** (top-left): Shows shot number, camera letter, name, and duration. Example: "Shot 3A: OTS DET→WIT (3.5s)". Updates on shot/camera changes.
+      - **Sequence timecode** (bottom-center): Shows the global timecode position across all shots. Updates every frame during playback and scrubbing.
     - The playhead is a vertical red line spanning every track, indicating the current time
     - The status bar displays contextual keyboard shortcut hints based on current state and selection
     - The timeline editor is always visible when a shot is selected
     - The timeline editor updates its contents when the user switches between shots
-    - **Timeline resize**: a vertical drag handle between the viewport and the timeline allows the user to resize the timeline height. Min 80px, max 80vh.
-    - **Timeline input mappings**: scroll wheel zooms at cursor position. Shift+scroll pans horizontally. Middle-click drag pans the track area and shot bar. `\` key zooms to fit the full timeline. Home/End keys jump to start/end of timeline.
+    - **Timeline resize**: a vertical drag handle (5px) between the view area and the timeline allows the user to resize the timeline height. Default 320px. Min 80px, max 80vh.
+    - **Timeline layout constants** (see `ui-layout-spec.md` for full visual details):
+      - All timeline rows share a 140px left label column for track names, consistent across ruler, shot track, active angle track, track area, and zoom bar
+      - Main track rows: 28px height
+      - Sub-track rows (expanded properties): 22px height
+      - Ruler: 22px height
+      - Active angle track: 24px height
+      - Zoom bar: 18px height
+      - Scene tabs: 26px height
+      - Transport bar: 28px height
+    - **Timeline input mappings**: scroll wheel zooms at cursor position. Shift+scroll pans horizontally. Middle-click drag pans the track area and shot track. `\` key zooms to fit the full timeline. Home/End keys jump to start/end of timeline.
 
     **Expected behavior:**
     ``` python
@@ -48,7 +60,7 @@
       .if a shot is selected
       .if the timeline editor is visible >>
           <== the transport bar shows shot name, current time 0.0, and shot duration
-          <== the timeline area shows the camera track with at least one main keyframe
+          <== the track area shows the camera track with at least one main keyframe
           <== the playhead is positioned at time 0.0
           <== the status bar shows relevant keyboard hints
 
@@ -87,13 +99,13 @@
 
   - ##### 3.2.2. Tracks and keyframes (Feature)
 
-    ***Camera track (yellow) always present, object tracks (green) per animated object. Each track is collapsible, revealing per-property sub-tracks. Camera properties: position XYZ, pan, tilt, roll, focal length (zoom lenses only). Object properties: position XYZ, scale, rotation XYZ. Collapsed view shows unified main keyframes; expanded view shows individual property keyframes.***
+    ***Camera track (yellow) always present, element tracks (green) per animated element. Each track is collapsible, revealing per-property sub-tracks. Camera properties: position XYZ, pan, tilt, roll, focal length (zoom lenses only). Element properties: position XYZ, scale, rotation XYZ. Collapsed view shows unified main keyframes; expanded view shows individual property keyframes.***
 
     **Functional requirements:**
     - Every shot has exactly one camera track, displayed using yellow keyframe markers
-    - Object tracks are displayed using green keyframe markers, one track per animated object
-    - Object tracks appear only when an object has at least one keyframe within the current shot
-    - Each track displays its name: "Camera" for the camera track, the object's name for object tracks
+    - Element tracks are displayed using green keyframe markers, one track per animated element
+    - Element tracks appear only when an element has at least one keyframe within the current shot
+    - Each track displays its name: "Camera" for the camera track, the element's name for element tracks
     - Each track has a collapsible dropdown arrow that toggles between collapsed and expanded views
     - Tracks are collapsed by default
 
@@ -108,7 +120,7 @@
     - Focus Distance — distance to focus target in meters. Enables rack focus (keyframing focus transitions between subjects). Updates automatically when focus-on-object is used (1.1.4).
     - Aperture — f-stop value (f/1.4, f/2, f/2.8, etc.). Controls depth of field when DOF preview is active (1.1.5).
 
-    **Object property sub-tracks (visible when object track is expanded):**
+    **Element property sub-tracks (visible when element track is expanded):**
     - Position X — current value displayed
     - Position Y — current value displayed
     - Position Z — current value displayed
@@ -122,10 +134,10 @@
     - A **property keyframe** (child) is a marker on an individual property sub-track. Each main keyframe has one child per property.
     - When collapsed: only main keyframe markers are visible — one dot per time position
     - When expanded: each property sub-track row shows its own keyframe markers independently
-    - When the stopwatch is on (Animate mode), manipulations create main keyframes containing all changed property values at that moment. Only changed properties get keyframed.
+    - When the track is recording, manipulations create main keyframes containing all changed property values at that moment. Only changed properties get keyframed.
     - A selected keyframe is highlighted using a distinct color (cyan)
     - Selecting a keyframe on one track deselects any keyframe on every other track — only one keyframe is selected at a time
-    - The viewport reflects the state at the selected keyframe's time
+    - The view reflects the state at the selected keyframe's time
     - Each property sub-track row displays the **live interpolated value** of that property at the playhead position (e.g., `Position (1.2, 0.9, -1.5)`). Values update in real time during scrub and playback.
 
     **Expected behavior:**
@@ -154,32 +166,32 @@
           <== the property sub-track rows are hidden
           <== only the main keyframe markers are visible on the camera track
 
-      # object track appears on first animation
-      .if no object tracks exist
-      .if the user moves an object while the track's stopwatch is on (Animate mode) >>
-          <== an object track appears labeled with the object's name
-          <== the object track has a green main keyframe marker at the current time
+      # element track appears on first animation
+      .if no element tracks exist
+      .if the user moves an element while the track is recording >>
+          <== an element track appears labeled with the element's name
+          <== the element track has a green main keyframe marker at the current time
 
-      # expanding an object track
-      .if the user clicks an object track's dropdown arrow >>
-          <== the object track expands to show: Position X, Position Y, Position Z, Scale, Rotation X, Rotation Y, Rotation Z
+      # expanding an element track
+      .if the user clicks an element track's dropdown arrow >>
+          <== the element track expands to show: Position X, Position Y, Position Z, Scale, Rotation X, Rotation Y, Rotation Z
           <== each sub-track row shows keyframe markers at the times corresponding to main keyframes
 
-      # object track removal
-      .if an object track has keyframes
+      # element track removal
+      .if an element track has keyframes
       .if the user deletes every keyframe on that track >>
-          <== the object track is removed from the timeline
+          <== the element track is removed from the timeline
 
       # single selection across tracks
       .if a camera keyframe is selected
-      .if the user clicks an object keyframe >>
-          <== the object keyframe becomes selected (cyan)
+      .if the user clicks an element keyframe >>
+          <== the element keyframe becomes selected (cyan)
           <== the camera keyframe is deselected (returns to yellow)
           <== only one keyframe is selected across every track
 
       # selecting a main keyframe shows its state
       .if the user clicks a camera main keyframe at time 2.0 >>
-          <== the viewport shows the camera at the position, pan, tilt, roll, and focal length stored within that keyframe
+          <== the view shows the camera at the position, pan, tilt, roll, and focal length stored within that keyframe
           <== the playhead moves to time 2.0
 
       # selecting a property keyframe
@@ -187,7 +199,7 @@
       .if the user clicks the Pan property keyframe at time 2.0 >>
           <== the property keyframe is highlighted cyan
           <== the playhead moves to time 2.0
-          <== the viewport shows the full scene state at time 2.0 (not just the pan value)
+          <== the view shows the full scene state at time 2.0 (not just the pan value)
 
       # main keyframe data fidelity
       .if the camera is at position (1, 2, 3) with pan 45, tilt -10, roll 0, and focal length 50mm
@@ -233,19 +245,19 @@
 
   - ##### 3.2.3. Per-track stopwatch (Feature)
 
-    ***Each track has a stopwatch toggle controlling whether manipulations create keyframes (Animate mode) or just change values (Setup mode). After Effects / Premiere model. Defaults to off. This replaces "always-on" auto-keyframing with explicit per-track control — the director decides when to start recording animation.***
+    ***Each track has a stopwatch toggle controlling whether manipulations create keyframes (recording) or just change values (not recording). After Effects / Premiere model. Defaults to off. This replaces "always-on" recording with explicit per-track control — the director decides when to start recording animation.***
 
     **Functional requirements:**
-    - Each track (camera and every object track) has a stopwatch icon in the track header
+    - Each track (camera and every element track) has a stopwatch icon in the track header
     - The stopwatch toggles between two states:
-      - **Off (Setup mode)**: Manipulations change property values without creating or modifying keyframes. The director is positioning things, not animating.
-      - **On (Animate mode)**: Manipulations create or update keyframes at the current playhead time. The director is recording animation.
+      - **Off (not recording)**: Manipulations change property values without creating or modifying keyframes. The director is positioning things, not animating.
+      - **On (recording)**: Manipulations create or update keyframes at the current playhead time. The director is recording animation.
     - All stopwatches default to off when the application starts and when a new shot is created
     - Clicking the top-level track stopwatch enables/disables the stopwatch for ALL child property sub-tracks on that track
     - Individual property sub-track stopwatches can be toggled independently when the track is expanded
     - If any child property stopwatch is on, the parent track stopwatch shows as on (partial state indicator if not all children are on)
 
-    **Animate mode — keyframe creation behavior (stopwatch on):**
+    **Recording — keyframe creation behavior (stopwatch on):**
     - The first manipulation after turning the stopwatch on creates an initial keyframe at the playhead position, capturing all current property values
     - Subsequent manipulations create main keyframes containing only the changed property values
     - If the current time is within 0.1 seconds of an existing keyframe on the same track, that keyframe is updated with the new values instead of creating a new keyframe
@@ -258,16 +270,16 @@
       - Pan/Tilt/Roll: rotation greater than 0.01 degrees
       - Focal length: change greater than 0.01mm
       - Scale: change greater than 0.001 units
-      - Object rotation: change greater than 0.01 degrees (per axis)
-    - When Animate mode creates the first keyframe on an object track, the track appears in the timeline
+      - Element rotation: change greater than 0.01 degrees (per axis)
+    - When recording creates the first keyframe on an element track, the track appears in the timeline
 
-    **Setup mode — no keyframes (stopwatch off):**
-    - Manipulations change the live property values in the viewport
+    **Not recording — no keyframes (stopwatch off):**
+    - Manipulations change the live property values in the view
     - No keyframes are created or modified
     - Existing keyframes on the track are unaffected — the director can scrub and see them, but moving the camera or objects doesn't record anything
-    - Setup mode is for positioning, framing, and experimentation before committing to animation
+    - Not recording is for positioning, framing, and experimentation before committing to animation
 
-    **Turning the stopwatch off (disabling Animate mode):**
+    **Turning the stopwatch off (disabling recording):**
     - If the track has existing keyframes, a confirmation dialog warns: "Turning off the stopwatch will delete all keyframes on this track. Continue?"
     - If confirmed, ALL keyframes on that track are deleted
     - If cancelled, the stopwatch remains on
@@ -277,8 +289,8 @@
     ``` python
       # default state — stopwatch off
       .if a new shot is created >>
-          <== the camera track stopwatch is off (Setup mode)
-          <== manipulating the camera changes the viewport without creating keyframes
+          <== the camera track stopwatch is off (not recording)
+          <== manipulating the camera changes the view without creating keyframes
 
       # turning stopwatch on — first manipulation creates initial keyframe
       .if the camera stopwatch is off
@@ -309,19 +321,19 @@
       # stopwatch off — no keyframes created
       .if the camera stopwatch is off
       .if the user dollies, pans, and tilts the camera >>
-          <== the viewport updates to reflect the camera movement
+          <== the view updates to reflect the camera movement
           !== any keyframes are created or modified
           !== any markers appear on the timeline
 
-      # object track stopwatch
-      .if an object's stopwatch is off
-      .if the user moves the object >>
-          <== the object moves in the viewport
+      # element track stopwatch
+      .if an element's stopwatch is off
+      .if the user moves the element >>
+          <== the element moves in the view
           !== a keyframe is created
-      ||> .if the user turns the object's stopwatch on
-          .if the user moves the object >>
-          <== an object main keyframe is created at the current time
-          <== a green marker appears on the object's track
+      ||> .if the user turns the element's stopwatch on
+          .if the user moves the element >>
+          <== an element main keyframe is created at the current time
+          <== a green marker appears on the element's track
 
       # turning stopwatch off — warning and deletion
       .if the camera stopwatch is on
@@ -330,7 +342,7 @@
           <== a confirmation dialog appears: "Turning off the stopwatch will delete all keyframes on this track. Continue?"
       ||> .if the user confirms >>
           <== all 5 camera keyframes are deleted
-          <== the stopwatch is now off (Setup mode)
+          <== the stopwatch is now off (not recording)
       ||> .if the user cancels >>
           <== the stopwatch remains on
           <== all keyframes are preserved
@@ -354,14 +366,14 @@
       .if the camera track is expanded
       .if the top-level stopwatch is on (all children on)
       .if the user turns off just the Pan sub-track stopwatch >>
-          <== the Pan sub-track enters Setup mode (pan changes don't create keyframes)
-          <== all other sub-tracks remain in Animate mode
+          <== the Pan sub-track stops recording (pan changes don't create keyframes)
+          <== all other sub-tracks remain recording
           <== the top-level stopwatch shows a partial state indicator
 
-      # first object keyframe creates track
-      .if no object track exists for "Chair"
+      # first element keyframe creates track
+      .if no element track exists for "Chair"
       .if the user turns on "Chair"'s stopwatch and moves it >>
-          <== an object track labeled "Chair" appears in the timeline
+          <== an element track labeled "Chair" appears in the timeline
           <== a green main keyframe marker appears at the current time
     ```
 
@@ -379,7 +391,7 @@
       .if the user presses C >>
           !== a camera keyframe is created
       .if the user presses V >>
-          !== an object keyframe is created
+          !== an element keyframe is created
       <== playback continues without interruption
 
       # all keyframe creation suppressed during playback
@@ -399,7 +411,7 @@
       # selecting a keyframe does not create keyframes
       .if the camera stopwatch is on
       .if the user clicks a keyframe at time 1.0
-      .if the viewport updates to show the state at time 1.0 >>
+      .if the view updates to show the state at time 1.0 >>
           !== a new keyframe is created at time 1.0
           !== the clicked keyframe's values are overwritten
 
@@ -410,7 +422,7 @@
 
       # switching shots does not create keyframes
       .if the user switches from Shot_01 to Shot_02
-      .if the viewport updates to show Shot_02's initial state >>
+      .if the view updates to show Shot_02's initial state >>
           !== keyframes are created in either shot
     ```
 
@@ -432,7 +444,7 @@
           <== a keyframe is created or updated
 
       # mouse hover or accidental brush does not trigger
-      .if the user's mouse moves across the viewport without holding any modifier key >>
+      .if the user's mouse moves across the view without holding any modifier key >>
           !== a keyframe is created
           !== the camera position changes
     ```
@@ -466,9 +478,9 @@
           <== the same keyframe is updated both times
           !== two separate keyframes are created
 
-      # object deselected mid-movement — keyframe still committed
-      .if an object's stopwatch is on
-      .if the user is dragging the object
+      # element deselected mid-movement — keyframe still committed
+      .if an element's stopwatch is on
+      .if the user is dragging the element
       .if the user clicks empty space (deselecting) before releasing the drag >>
           <== the keyframe for the drag-in-progress is still committed
           !== the partial movement is lost
@@ -526,7 +538,7 @@
 
     **Functional requirements:**
     - Clicking a keyframe marker selects it
-    - Clicking empty space within the timeline area (not on a keyframe) scrubs the playhead to that time
+    - Clicking empty space within the track area (not on a keyframe) scrubs the playhead to that time
     - Dragging a selected keyframe repositions it in time along its track
     - Dragged keyframes snap to 0.1-second intervals
     - A keyframe cannot be dragged before time 0.0 or beyond the shot duration
@@ -534,7 +546,7 @@
     - The selected keyframe can be deleted using the Delete key
     - The last remaining camera keyframe cannot be deleted — every shot must have at least one camera keyframe
     - The user can manually add a camera keyframe at the current playhead time using a keyboard shortcut (C key)
-    - The user can manually add an object keyframe for the selected object at the current playhead time using a keyboard shortcut (V key)
+    - The user can manually add an element keyframe for the selected element at the current playhead time using a keyboard shortcut (V key)
     - When a keyframe is dragged, the timeline updates the keyframe's time position in real time during the drag
 
     **Parent/child keyframe interaction rules:**
@@ -556,9 +568,9 @@
           <== the playhead moves to that keyframe's time
 
       # click to scrub
-      .if the user clicks empty space within the timeline area at the 1.5 second mark >>
+      .if the user clicks empty space within the track area at the 1.5 second mark >>
           <== the playhead moves to time 1.5
-          <== the viewport shows the interpolated state at time 1.5
+          <== the view shows the interpolated state at time 1.5
           !== any keyframe becomes selected
 
       # drag main keyframe — children follow
@@ -651,12 +663,12 @@
           <== the keyframe stores all current camera property values (position, pan, tilt, roll, focal length if zoom lens)
           <== child property keyframes are created for all properties
 
-      # manual object keyframe creation
-      .if an object is selected within the scene
+      # manual element keyframe creation
+      .if an element is selected within the scene
       .if the user presses the V key >>
-          <== a new object main keyframe appears at the current time on that object's track
+          <== a new element main keyframe appears at the current time on that element's track
           <== the keyframe stores all current property values (position, scale, rotation)
-          <== .if no track exists for that object >> a new object track is created
+          <== .if no track exists for that element >> a new element track is created
 
       # C and V keys during playback — no effect
       .if playback is active
@@ -667,8 +679,8 @@
 
     **Error cases:**
     ``` python
-      # no object selected for object keyframe
-      .if no object is selected within the scene
+      # no element selected for element keyframe
+      .if no element is selected within the scene
       .if the user presses V >>
           !== a keyframe is created
           !== the application produces an error
@@ -692,15 +704,15 @@
     - Roll interpolation uses shortest-path through the 360/0 degree boundary, same as pan
     - **360-degree rotation / revolutions**: rotation keyframes include an explicit "revolutions" field (After Effects approach). When the start and end rotation values are identical, the revolutions field specifies full turns (e.g., "1 revolution clockwise"). This allows the user to animate a full 360-degree spin — or multiple full spins — without ambiguity. Without the revolutions field, interpolation would take the shortest path (zero movement for identical start/end values).
     - Focal length interpolates smoothly between keyframe values (zoom lenses only)
-    - Scale interpolates smoothly between keyframe values (object tracks, always positive)
-    - Object rotation (X, Y, Z in degrees) interpolates using shortest-path through 360/0 per axis
+    - Scale interpolates smoothly between keyframe values (element tracks, always positive)
+    - Element rotation (X, Y, Z in degrees) interpolates using shortest-path through 360/0 per axis
     - When only one keyframe exists on a track, the value is held constant (no interpolation needed)
     - When the playhead is before the first keyframe, the first keyframe's values are held
     - When the playhead is after the last keyframe, the last keyframe's values are held
     - Per-property interpolation: each property sub-track interpolates independently between its own keyframes. If Pan has keyframes at times 0.0 and 2.0, but Tilt has keyframes at times 0.0 and 3.0, each interpolates along its own timeline.
     - The project frame rate is user-configurable, defaulting to 24fps. Common options: 24, 25, 30, 48, 60fps. The frame rate applies project-wide (all shots share the same frame rate).
     - Playback advances time at real-time speed (1 second of playback = 1 second of shot time)
-    - During playback, every track (camera and every object track) is evaluated each frame at the project frame rate
+    - During playback, every track (camera and every element track) is evaluated each frame at the project frame rate
     - Playback stops when the playhead reaches the shot duration
     - The playhead stays at the shot duration when playback completes — it does NOT return to time 0.0
     - Playback can be started and stopped using the Space key or the transport bar play button
@@ -759,7 +771,7 @@
       .if camera focal length keyframe B is 85mm at time 2.0
       .if the playhead is at time 1.0 >>
           <== the camera focal length is between 24mm and 85mm
-          <== the viewport field of view changes smoothly
+          <== the view's field of view changes smoothly
 
       # per-property independent interpolation
       .if Pan has keyframes at time 0.0 (pan=0) and time 2.0 (pan=90)
@@ -785,8 +797,8 @@
       # real-time playback
       .if the user presses play >>
           <== the playhead advances at real-time speed
-          <== the viewport updates smoothly showing the animated result
-          <== every camera and object track are evaluated simultaneously
+          <== the view updates smoothly showing the animated result
+          <== every camera and element track are evaluated simultaneously
           <== the transport bar time display updates continuously
 
       # playback stops at shot end — playhead stays
@@ -812,7 +824,7 @@
 
       # multi-track evaluation
       .if the camera track has keyframes
-      .if two object tracks have keyframes
+      .if two element tracks have keyframes
       .if the user presses play >>
           <== the camera animates along its keyframed path
           <== both objects animate along their keyframed paths
@@ -859,12 +871,13 @@
     - Each node displays a **frustum indicator** showing the camera's look direction at that keyframe — a small wireframe frustum or cone extending from the node in the direction the camera faces (based on pan, tilt, roll at that keyframe)
     - The frustum indicator size is proportional to the focal length at that keyframe (wider frustum for wide-angle, narrower for telephoto) — or a fixed small size if the lens is a prime
     - The path shows the direction of camera travel (e.g., arrow indicators or graduated opacity)
-    - The path is visible within the 3D viewport, rendered in world space (not a UI overlay)
+    - The path is visible within the 3D view, rendered in world space (not a UI overlay)
     - The path updates in real time as keyframes are added, moved, or deleted
-    - The path updates in real time as the stopwatch (Animate mode) creates or modifies keyframes
+    - The path updates in real time as recording creates or modifies keyframes
     - Frustum indicators update in real time when camera rotation or focal length changes at a keyframe
-    - Path visibility is toggled by the user (keyboard shortcut or UI button)
+    - Path visibility is toggled by the user (keyboard shortcut `P` or UI button)
     - The path is hidden by default
+    - **Camera path badge**: When the camera path is visible, a badge reading "PATH" appears in the bottom-right corner of the Camera View frame in amber/gold color. This provides a persistent visual cue that path visualization is active. See `ui-layout-spec.md` §3.6.
     - When visible, the path does not obscure critical scene elements (rendered using semi-transparency or a thin line)
     - The path represents the camera's position trajectory — frustum indicators additionally communicate rotation and field of view at each keyframe
     - When only one camera keyframe exists, no path is drawn (a single node with frustum indicator is shown)
@@ -874,7 +887,7 @@
     ``` python
       # toggling visibility
       .if the user enables camera path visualization >>
-          <== a smooth curve appears within the 3D viewport connecting camera keyframe positions
+          <== a smooth curve appears within the 3D view connecting camera keyframe positions
           <== nodes appear at each keyframe position along the curve
           <== each node shows a frustum indicator displaying the camera's look direction at that keyframe
       ||> .if the user disables it >>
@@ -904,7 +917,7 @@
 
       # real-time update on keyframe change
       .if the path is visible
-      .if the user creates a new camera keyframe (stopwatch on, Animate mode) >>
+      .if the user creates a new camera keyframe (stopwatch on, recording) >>
           <== the path immediately updates to include the new keyframe position
           <== a new node with frustum indicator appears at the keyframe position
 

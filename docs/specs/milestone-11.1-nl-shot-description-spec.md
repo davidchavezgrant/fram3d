@@ -312,7 +312,7 @@ Cinematographers do not always use the textbook terms. The system recognizes com
 - "Two-shot" = MS or MLS framing two subjects
 - "Over-the-shoulder" / "OTS" = MS or MCU from behind one subject's shoulder, facing another
 - "Single" = any shot size framing one subject
-- "Insert" = ECU or CU of an object (not a person)
+- "Insert" = ECU or CU of an element (not a person)
 - "Establishing shot" = ELS or LS with emphasis on environment
 
 ``` python
@@ -385,7 +385,7 @@ The system recognizes vertical camera angle descriptions. Each maps to a camera 
 
 ### Spatial Positioning
 
-Descriptions often specify where the camera sits relative to the subject in the horizontal plane. Directional references are relative to camera: "actor on the left" means camera-left (the actor appears on the left side of the frame).
+Descriptions often specify where the camera sits relative to the subject in the horizontal plane. Directional references are relative to camera: "character on the left" means camera-left (the character appears on the left side of the frame).
 
 | Term | Meaning |
 |---|---|
@@ -409,7 +409,7 @@ Descriptions often specify where the camera sits relative to the subject in the 
       <== subject is seen from the side
 
   # directional references are camera-relative
-  .if description is "CU of the actor on the left" with multiple characters in scene >>
+  .if description is "CU of the character on the left" with multiple characters in scene >>
       <== "left" is interpreted from the camera's perspective
       <== the character who appears on the left side of the current frame is selected as subject
       !== system interprets "left" as stage-left or world-space left
@@ -438,8 +438,8 @@ The system recognizes movement vocabulary for future use but does not execute mo
 
 ``` python
   # movement recognized but not executed
-  .if description is "medium shot, slow dolly in toward the actor" >>
-      <== system positions camera at the starting framing (medium shot of the actor)
+  .if description is "medium shot, slow dolly in toward the character" >>
+      <== system positions camera at the starting framing (medium shot of the character)
       <== system acknowledges the dolly instruction in feedback
       <== camera does not actually dolly
       <== movement metadata is stored with the shot for potential future use
@@ -632,7 +632,7 @@ These are decisions that may need resolution during development or after user te
 
 1. **Confidence thresholds**: At what confidence level should the system refuse to act versus attempt its best guess? Refusing too often makes the feature feel broken. Guessing too often produces wrong results.
 
-2. ~~**Multi-shot descriptions**: Should "OTS from Alice to Bob, then reverse" create two shots in the sequencer, or is this milestone strictly single-shot?~~ **Resolved**: Compound descriptions create multiple shots in the sequencer (see 11.1.1 Compound Descriptions).
+2. ~~**Multi-shot descriptions**: Should "OTS from Alice to Bob, then reverse" create two shots in the shot track, or is this milestone strictly single-shot?~~ **Resolved**: Compound descriptions create multiple shots in the shot track (see 11.1.1 Compound Descriptions).
 
 3. **Learning from corrections**: If the director manually adjusts every AI-positioned shot by moving the camera 6 inches to the right, should the system learn this preference? This is a future consideration but affects data capture decisions now.
 

@@ -21,7 +21,7 @@
 
 		**Behavior:**
 		- Scan imported as a placeable, rotatable static mesh
-		- Display-only — not editable, not selectable as a scene object (it's a backdrop)
+		- Display-only — not editable, not selectable as an element (it's a backdrop)
 		- Objects, characters, and cameras placed on top of the scan
 		- Scale calibration: LiDAR scans are real-world scale (1 unit = 1 meter matches our convention)
 		- Toggle scan visibility (sometimes useful to hide it)

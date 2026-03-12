@@ -8,25 +8,32 @@
 
 - ### 1.2. Camera overlays (Milestone)
 
-  Composition aids that sit on top of the 3D viewport. These are the director's framing tools — the black bars that define the frame, the guide lines that help place subjects within it, and subtitle text for dialogue and description.
+  Composition aids that sit on top of the 3D view. These are the director's framing tools — the black bars that define the frame, the guide lines that help place subjects within it, and subtitle text for dialogue and description.
 
-  Aspect ratio masks are not decorative. They define the deliverable image. Everything outside the mask is invisible to the audience, and the director needs to see that boundary at all times while composing. Frame guides provide the geometric scaffolding that cinematographers use instinctively — thirds lines, center marks, and safe zones for broadcast compliance. Subtitles let the director place dialogue and descriptive text directly into the frame for storyboard review and export. All overlay types must feel like they are part of the camera, not part of the UI.
+  Aspect ratio masks are not decorative. They define the deliverable image. Everything outside the mask is invisible to the audience, and the director needs to see that boundary at all times while composing. Composition guides provide the geometric scaffolding that cinematographers use instinctively — thirds lines, center marks, and safe zones for broadcast compliance. Subtitles let the director place dialogue and descriptive text directly into the frame for storyboard review and export. All overlay types must feel like they are part of the camera, not part of the UI.
 
-  *Blocked by: 1.1 (virtual camera — overlays need a viewport to overlay on)*
+  **Overlay z-index ordering** (see `ui-layout-spec.md` §2.3 for full details):
+  1. Aspect ratio masks (above scene content)
+  2. Composition guides (above masks)
+  3. Shot label, timecode, camera info, active tool badge, Director View badge, camera path badge (above guides)
+
+  All overlays render inside the Camera View frame. Masks and guides are compositional; the others are informational and positioned at the edges/corners of the frame to avoid interfering with framing.
+
+  *Blocked by: 1.1 (virtual camera — overlays need a view to overlay on)*
 
   - ##### 1.2.1. Aspect ratio masks (Feature)
 
-    ***Letterbox and pillarbox bars that crop the viewport to the selected delivery format, showing exactly what the audience will see.***
+    ***Letterbox and pillarbox bars that crop the view to the selected delivery format, showing exactly what the audience will see.***
 
     **Functional requirements:**
     - The system provides eight aspect ratio options: Full Screen (matches window), 16:9, 16:10, 1.85:1, 2.35:1, 2.39:1, 2:1, 4:3
     - The default aspect ratio is 16:9
-    - When the selected ratio is wider than the viewport, horizontal bars appear on top and bottom (letterbox)
-    - When the selected ratio is narrower than the viewport, vertical bars appear on left and right (pillarbox)
+    - When the selected ratio is wider than the view, horizontal bars appear on top and bottom (letterbox)
+    - When the selected ratio is narrower than the view, vertical bars appear on left and right (pillarbox)
     - When "Full Screen" is selected, no bars are displayed regardless of window dimensions
     - Mask bars are opaque black — they completely obscure the 3D scene behind them
     - The user can cycle through aspect ratios or select one directly
-    - A key cycles aspect ratios forward through the list. Shift+A cycles backward.
+    - `A` key cycles aspect ratios forward through the list. `Shift+A` cycles backward.
     - The selected aspect ratio persists until the user changes it
     - The active aspect ratio is displayed within the camera info HUD (1.2.3)
     - When an anamorphic lens is active, the aspect ratio is auto-locked to the computed delivery format based on the squeeze factor. The user cannot manually change the aspect ratio while an anamorphic lens is selected.
@@ -37,7 +44,7 @@
       .if the application starts >>
           <== aspect ratio is set to 16:9
           <== mask bars are visible
-          <== the unmasked area is centered within the viewport
+          <== the unmasked area is centered within the view
 
       # switching aspect ratio
       .if the user selects 2.39:1 >>
@@ -46,7 +53,7 @@
           <== the unmasked area is centered vertically
 
       # narrower ratio than window creates pillarbox
-      .if the viewport is landscape
+      .if the view is landscape
       .if the user selects 4:3 >>
           <== vertical bars appear on left and right
           <== the unmasked area has a 4:3 ratio
@@ -55,7 +62,7 @@
       # full screen removes bars
       .if the user selects Full Screen >>
           <== no mask bars are visible
-          <== the entire viewport is unmasked
+          <== the entire view is unmasked
 
       # cycling forward through aspect ratios
       .if aspect ratio is set to 16:9
@@ -94,7 +101,7 @@
           <== letterbox bars appear on top and bottom
 
       # masks render above the 3D scene
-      .if objects exist near the edges of the frame >>
+      .if elements exist near the edges of the frame >>
           <== mask bars draw over any 3D content behind them
           !== 3D content bleeds through the mask bars
     ```
@@ -107,14 +114,14 @@
           !== the application crashes or produces rendering artifacts
     ```
 
-  - ##### 1.2.2. Frame guides (Feature)
+  - ##### 1.2.2. Composition guides (Feature)
 
     ***Rule of thirds grid, center cross, and broadcast safe zone rectangles — toggled independently, drawn within the unmasked area.***
 
     **Functional requirements:**
     - Three guide types are available: rule of thirds, center cross, and safe zones
     - Every guide type starts hidden by default
-    - Each guide type is toggled independently (on/off)
+    - Each guide type is toggled independently (on/off). `G` key toggles all composition guides on/off as a group.
     - Guide visibility state is global, not per-shot — changing guides in one shot changes them everywhere
     - Guides are drawn only within the unmasked area defined by the current aspect ratio mask
     - Rule of thirds draws two horizontal and two vertical lines, dividing the frame into a 3x3 grid
@@ -126,7 +133,7 @@
     - Safe zone percentages are configurable with defaults (title safe 90%, action safe 93%)
     - Guide lines are semi-transparent so they do not obscure the scene
     - Guides render above the 3D scene but do not extend into the mask bars
-    - Safe zone percentages are relative to the unmasked area, not the full viewport
+    - Safe zone percentages are relative to the unmasked area, not the full view
 
     **Expected behavior:**
     ``` python
@@ -179,7 +186,7 @@
           <== title safe rectangle is 90% of the 2.35:1 unmasked area
           <== action safe rectangle is 93% of the 2.35:1 unmasked area
           <== both rectangles are centered within the unmasked area
-          !== safe zone percentages are calculated from the full viewport
+          !== safe zone percentages are calculated from the full view
 
       # configurable safe zone percentages
       .if the user changes title safe to 85%
@@ -198,7 +205,7 @@
       # full screen aspect ratio
       .if aspect ratio is set to Full Screen
       .if rule of thirds is enabled >>
-          <== the thirds grid spans the entire viewport
+          <== the thirds grid spans the entire view
           <== guide positions update if the window is resized
 
       # toggling off
@@ -212,17 +219,17 @@
 
     ***An overlay showing the data a DP would read off an on-set monitor: focal length, camera height, angle of view, aspect ratio, body, lens preset, and squeeze factor (if anamorphic). Toggleable via shortcut, glanceable, not intrusive. Counts as an overlay for export purposes.***
 
-    > **Note**: Full specification is in the Virtual Camera spec (1.1.7, relocated here). This section establishes the HUD's identity as a camera overlay. See the 1.1 spec for complete functional requirements, expected behavior, and error cases.
+    > **Note**: Full specification is in the Virtual Camera spec (1.1.7, relocated here). This section establishes the camera info's identity as a camera overlay. See the 1.1 spec for complete functional requirements, expected behavior, and error cases.
 
     **Key requirements:**
-    - Non-interactive overlay positioned at top-left of viewport
-    - Toggleable via keyboard shortcut
+    - Non-interactive overlay positioned at top-right of Camera View (see `ui-layout-spec.md` §3.3)
+    - Toggleable via keyboard shortcut (`H`)
     - Displays: focal length (mm), camera height (m), horizontal angle of view (degrees), aspect ratio name, camera body name, lens set name
     - When DOF preview is active, additionally displays aperture (f-stop)
     - When an anamorphic lens is active, additionally displays squeeze factor
     - Counts as an overlay for export purposes — renders into exported output when visible
     - Always legible regardless of scene behind it (subtle background panel)
-    - A global HUD toggle controls visibility of all viewport HUD elements (light icons, camera frustum wireframes, gizmo indicators) — but NOT camera overlays (aspect ratio masks, frame guides, subtitle overlay). This toggle is separate from the camera info HUD toggle.
+    - A global overlay toggle controls visibility of all view overlay elements (light icons, camera frustum wireframes, active tool indicators) — but NOT camera overlays (aspect ratio masks, composition guides, subtitle overlay). This toggle is separate from the camera info toggle.
 
   - ##### 1.2.4. Subtitle overlay (Feature)
 
@@ -265,7 +272,7 @@
       .if a subtitle layer is selected
       .if the user changes the font size to 24 >>
           <== the subtitle renders at font size 24
-          <== the change is visible immediately in the viewport
+          <== the change is visible immediately in the view
       ||> .if the user changes the color to yellow >>
           <== the subtitle renders in yellow
       ||> .if the user changes the font family to Courier >>
@@ -317,7 +324,7 @@
       .if a subtitle is visible at a given frame
       .if the user exports that frame >>
           <== the exported image includes the subtitle text
-          <== the subtitle appears at the same position and style as in the viewport
+          <== the subtitle appears at the same position and style as in the view
 
       # deleting a subtitle
       .if a subtitle layer is selected
@@ -343,7 +350,7 @@
       # empty subtitle text
       .if the user clears the subtitle text to an empty string >>
           <== the subtitle layer still exists in the list
-          <== nothing is rendered in the viewport for that subtitle
+          <== nothing is rendered in the view for that subtitle
           !== the application crashes or errors
 
       # subtitle on zero-duration shot

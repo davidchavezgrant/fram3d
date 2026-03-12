@@ -258,7 +258,7 @@
 		``` python
 			# adjusting intensity
 			.if user selects a point light
-			.if user sets intensity to 2.0 in the inspector >>
+			.if user sets intensity to 2.0 in the properties sidebar >>
 				<== light appears brighter in the scene
 				<== intensity field shows 2.0
 
@@ -266,7 +266,7 @@
 			.if user selects a spot light
 			.if user picks a blue color via the RGB picker >>
 				<== spot light casts blue illumination
-				<== color swatch in inspector shows blue
+				<== color swatch in properties sidebar shows blue
 				<== Kelvin field updates to the nearest equivalent color temperature
 
 			# adjusting color via Kelvin field
@@ -289,21 +289,21 @@
 
 			# adjusting range
 			.if user selects a point light
-			.if user increases range via inspector >>
+			.if user increases range via properties sidebar >>
 				<== light reaches farther into the scene
-				<== objects previously outside the range become illuminated
+				<== elements previously outside the range become illuminated
 
-			# adjusting cone angle via inspector
+			# adjusting cone angle via properties sidebar
 			.if user selects a spot light
 			.if user sets cone angle to 60 degrees >>
 				<== beam widens to 60 degrees
-				<== cone wireframe in viewport updates to show wider angle
+				<== cone wireframe in view updates to show wider angle
 
 			# adjusting cone angle via direct manipulation
 			.if user selects a spot light
 			.if user drags the edge of the cone wireframe outward >>
 				<== cone angle increases
-				<== inspector value updates to match
+				<== properties sidebar value updates to match
 				<== beam widens in real time
 
 			# cone wireframe visibility
@@ -324,23 +324,23 @@
 			# turning a light off
 			.if user sets intensity to 0 >>
 				<== light produces no illumination
-				<== viewport icon remains visible and selectable
+				<== view icon remains visible and selectable
 				!== light is deleted
-				!== viewport icon disappears
+				!== view icon disappears
 
-			# lights in hierarchy panel
-			.if scene contains two point lights and three objects >>
-				<== hierarchy panel shows a "Lights" section with the two lights
-				<== hierarchy panel shows objects in a separate section
-				!== lights and objects are interleaved in the same list
+			# lights in Elements panel
+			.if scene contains two point lights and three elements >>
+				<== Elements panel shows a "Lights" section with the two lights
+				<== Elements panel shows elements in a separate section
+				!== lights and elements are interleaved in the same list
 
-			# global HUD toggle hides all HUD elements
-			.if user toggles the global HUD visibility off >>
-				<== all HUD elements are hidden: light viewport icons, gizmos, grid, etc.
-				<== camera overlays (aspect ratio masks, safe zones) remain visible — they are NOT affected by the HUD toggle
-				<== lights still exist and illuminate the scene — only the visual HUD elements are hidden
-				||> .if user toggles the global HUD visibility back on >>
-					<== all HUD elements reappear
+			# global overlay toggle hides all overlay elements
+			.if user toggles the global overlay visibility off >>
+				<== all overlay elements are hidden: light view icons, gizmos, grid, etc.
+				<== camera overlays (aspect ratio masks, safe zones) remain visible — they are NOT affected by the overlay toggle
+				<== lights still exist and illuminate the scene — only the visual overlay elements are hidden
+				||> .if user toggles the global overlay visibility back on >>
+					<== all overlay elements reappear
 		```
 
 		**Error cases:**
@@ -383,25 +383,25 @@
 		- 5.1.2 (light properties — must have properties to keyframe)*
 
 		*Related:
-		- 3.2.2 (tracks and keyframes — light tracks appear alongside camera and object tracks)
+		- 3.2.2 (tracks and keyframes — light tracks appear alongside camera and element tracks)
 		- 3.2.5 (interpolation and playback — light keyframes interpolate and evaluate during playback)
 		- 3.2.3 (per-track stopwatch — light property changes create keyframes when the stopwatch is on)*
 
 		**Functional requirements:**
 		- Light properties are keyframeable on the timeline: intensity, color, position (point, spot), rotation/direction (directional, spot), range (point, spot), cone angle (spot)
 		- Each animated light has its own track in the keyframe editor
-			- Light tracks are visually distinct from camera tracks (yellow) and object tracks (green)
+			- Light tracks are visually distinct from camera tracks (yellow) and element tracks (green)
 			- Light track color: a warm color that reads as "light" (e.g., orange or amber)
 		- A light keyframe captures the full state of the light at that moment: intensity, color, position, rotation, range, cone angle (as applicable to the light type)
-		- Adding a keyframe to a light follows the same interaction model as camera and object keyframes:
+		- Adding a keyframe to a light follows the same interaction model as camera and element keyframes:
 			- Manual: user presses the add-keyframe shortcut while a light is selected
-			- Animate mode (stopwatch on): changing a light property while the timeline is at a specific time creates or updates a keyframe at that time (same near-keyframe logic as objects, per 3.2.3)
-		- Interpolation between light keyframes is smooth (same curve-based interpolation as camera and object animation)
+			- Recording (stopwatch on): changing a light property while the timeline is at a specific time creates or updates a keyframe at that time (same near-keyframe logic as elements, per 3.2.3)
+		- Interpolation between light keyframes is smooth (same curve-based interpolation as camera and element animation)
 			- Intensity interpolates linearly
 			- Color interpolates through a perceptually smooth path (no unexpected hue jumps)
-			- Position and rotation interpolate the same way as object transforms
+			- Position and rotation interpolate the same way as element transforms
 			- Range and cone angle interpolate linearly
-		- During playback, light keyframes are evaluated each frame alongside camera and object keyframes
+		- During playback, light keyframes are evaluated each frame alongside camera and element keyframes
 			- Light state updates smoothly as the playhead advances
 		- Scrubbing the timeline updates light state in real time
 		- Lights with no keyframes maintain their static properties throughout the shot — they are not affected by the timeline
@@ -438,9 +438,9 @@
 					<== light color transitions smoothly from warm orange to neutral white
 					!== color jumps or flickers during transition
 
-			# Animate mode (stopwatch on)
+			# Recording (stopwatch on)
 			.if a point light is selected
-			.if the light track's stopwatch is on (Animate mode)
+			.if the light track's stopwatch is on (recording)
 			.if user changes the light's intensity at t=2.0 >>
 				<== a keyframe is created or updated at t=2.0 on the light's track
 				<== keyframe captures current light state
@@ -452,8 +452,8 @@
 				<== cone wireframe updates to show 45-degree angle
 
 			# light track visibility
-			.if scene has a camera, two objects, and one animated light >>
-				<== keyframe editor shows: camera track (yellow), two object tracks (green), one light track (amber/orange)
+			.if scene has a camera, two elements, and one animated light >>
+				<== keyframe editor shows: camera track (yellow), two element tracks (green), one light track (amber/orange)
 				<== light track is visually distinguishable from other track types
 
 			# static light unaffected by timeline
@@ -500,7 +500,7 @@
 - ### Default scene lighting
 
 	**When the scene has zero user-placed lights:**
-	- The scene is illuminated by a default ambient light so that objects remain visible
+	- The scene is illuminated by a default ambient light so that elements remain visible
 	- The default ambient provides flat, non-directional illumination — enough to see geometry and color, but with no mood or contrast
 	- The moment the user adds their first light, the default ambient reduces instantly to a low level so user-placed lights dominate the scene — this is not a gradual fade, it is an immediate change
 	- If the user deletes all lights, the default ambient returns instantly to its full level
@@ -508,7 +508,7 @@
 	``` python
 		# empty scene
 		.if scene has zero lights >>
-			<== objects are visible under default ambient illumination
+			<== elements are visible under default ambient illumination
 			<== no directional shadows or contrast
 			!== scene is completely black
 
@@ -524,6 +524,6 @@
 		.if scene has one light
 		.if user deletes that light >>
 			<== default ambient returns instantly to full level
-			<== objects remain visible
+			<== elements remain visible
 			!== scene goes black
 	```

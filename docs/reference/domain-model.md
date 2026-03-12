@@ -2,13 +2,19 @@
 
 DDD-informed, not DDD-orthodox. The cinema domain is rich enough to warrant modeling discipline; Unity is opinionated enough that full layered architecture would fight the engine.
 
+This doc describes the modeling **concepts** we draw from and how they apply to Fram3d. It is not a prescription for specific class hierarchies — those emerge during implementation.
+
 ---
 
-## What We Use
+## Ubiquitous Language
 
-**Ubiquitous language.** Cinema terminology is consistent from roadmap to spec to class name to method name. Dolly, crane, truck, angle, blocking, stopwatch — these terms mean the same thing everywhere. This is the single highest-value DDD concept.
+Cinema terminology is consistent from roadmap to spec to class name to method name. Dolly, crane, truck, angle, blocking, stopwatch — these terms mean the same thing everywhere. This is the single highest-value DDD concept. See `domain-language.md` for the full glossary.
 
-**Bounded contexts via Assembly Definitions.** Each context is a separate `.asmdef`, enforcing boundaries at compile time:
+---
+
+## Bounded Contexts via Assembly Definitions
+
+Each context is a separate `.asmdef`, enforcing boundaries at compile time:
 
 | Context | Core Concepts | Assembly | Milestones |
 |---------|--------------|----------|------------|
@@ -24,29 +30,35 @@ DDD-informed, not DDD-orthodox. The cinema domain is rich enough to warrant mode
 
 If Characters can't reference Camera internals, you physically can't create the wrong coupling.
 
-**Aggregates.** Domain objects with clear ownership boundaries:
+---
 
-| Aggregate Root | Owns |
-|---------------|------|
-| `ShotSetup` | `CameraAnimation`, `ShotObjectManager`, per-object `ObjectAnimation` instances |
-| `Character` | Pose state, expression state, skeleton mapping, customization |
-| `Scene` | Elements, shots, lighting, timelines |
-| `Project` | Scenes, character definitions, settings |
+## Modeling Concepts
 
-**Value objects.** Immutable types that carry meaning without identity:
+### Aggregates
 
-- `ShotId`, `KeyframeId` — GUID-based identity
-- `CameraKeyframeState`, `ObjectState` — state snapshots
-- `FocalLength`, `AspectRatio`, `SensorDimensions` — typed domain values
-- `Pose`, `Expression` — character state snapshots
+An aggregate is a cluster of domain objects with a single root that controls access. External code only touches the root — never reaches inside to manipulate children directly. This prevents tangled state and makes ownership clear.
 
-**Domain events.** Cross-context communication without coupling:
+*Example*: A shot owns its camera animations. Code that wants to add a keyframe goes through the shot, not directly to the animation object. The shot enforces rules like "at least one camera keyframe must exist."
 
-- Shot-level: `DurationChanged`, `KeyframeAdded`, `KeyframeRemoved`, `KeyframeMoved`
-- Selection: `ElementSelected`, `SelectionCleared`
-- Scene-level: events for element add/remove, lighting changes
+Aggregate boundaries should emerge during implementation. The prior codebase's `TimelineState` was a cautionary tale — it owned everything and enforced nothing.
 
-**Command pattern.** `ICommand` with `Execute()` / `Undo()` / `Redo()` for all user actions. Enables undo stack and action replay.
+### Value Objects
+
+Immutable types that carry meaning without identity. Two value objects with the same data are equal. They prevent primitive obsession — passing raw floats for focal lengths, raw strings for IDs.
+
+*Examples*: A focal length isn't just a float — it has a valid range (14–400mm). A keyframe ID isn't just a GUID — it rejects `Guid.Empty`. A time position isn't just a double — it can't be negative. Wrapping these in value objects catches bugs at construction time instead of at runtime.
+
+*From the prior codebase*: `KeyframeId` (wraps GUID, rejects empty) and `TimePosition` (rejects negative, provides `Add()`/`Subtract()` with clamping) worked well and should be carried forward.
+
+### Domain Events
+
+Cross-context communication without coupling. When something happens in one context that another context cares about, fire an event rather than creating a direct dependency.
+
+*Example*: When a shot's duration changes, the timeline UI needs to update, the overview needs to redraw, and the export system's cached frame count is stale. The shot doesn't know about any of these — it fires `DurationChanged` and each subscriber handles its own update.
+
+### Command Pattern
+
+`ICommand` with `Execute()` / `Undo()` / `Redo()` for all user-initiated state changes. Enables the undo stack and potential action replay. Commands are exclusively for user actions — internal operations (scrubbing, evaluating, refreshing) are plain method calls, not commands. See `prior-codebase-lessons.md` for the anti-pattern this prevents.
 
 ---
 
@@ -64,7 +76,7 @@ If Characters can't reference Camera internals, you physically can't create the 
 
 The key architectural pattern: **pure C# for domain logic, thin MonoBehaviour wrappers for scene graph integration.**
 
-- **Pure C# domain layer**: `ShotSetup`, `CameraAnimation`, `KeyframeManager<T>`, `Character`, `Pose`, value objects. No Unity dependencies. Testable with standard xUnit without Unity's test runner.
-- **MonoBehaviour integration layer**: `SceneElement`, `VirtualCameraRig`, `ApplicationController`. Thin wrappers that delegate to the domain layer. These need Unity to run but contain minimal logic.
+- **Pure C# domain layer**: Domain types with no Unity dependencies. Testable with standard xUnit without Unity's test runner.
+- **MonoBehaviour integration layer**: Thin wrappers that bridge domain types to Unity's scene graph. These need Unity to run but contain minimal logic.
 
 This gives testability without the ceremony of formal DDD layering.

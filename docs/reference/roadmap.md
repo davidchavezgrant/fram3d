@@ -434,5 +434,4 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 	4. **AI features are speculative.** Phase 11 depends on LLM capabilities that may or may not work well enough. Build the tool so it's great without AI — AI is upside, not the product.
 	5. **Don't build a 3D editor.** Every feature should pass the test: "does a director need this to plan a shot?" If the answer is "only a 3D artist would use this," cut it.
 	6. **Multi-camera is a capstone.** Get single-camera workflow polished before introducing multi-cam complexity. Active angle editing builds on mature keyframe and shot track foundations.
-
 	7. **Camera rigs depend on characters.** Camera follow, watch, and snorricam all require animated characters to be meaningful. They belong after 6.1, not before.

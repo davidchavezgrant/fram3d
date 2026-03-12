@@ -10,7 +10,7 @@
 
   Every user action that changes the state of the project must be reversible. Undo is not a convenience feature — it is the safety net that lets directors experiment freely. Without reliable undo, users develop anxiety about every click, and the tool becomes adversarial instead of creative.
 
-  Undo in an animation tool is fundamentally harder than undo in a text editor or drawing app. Actions have temporal context (which shot, which time on the timeline), spatial context (which object, which axis), and cascading side effects (the stopwatch's Animate mode creates keyframes as a consequence of manipulation). The undo system must handle all of these correctly, or it will destroy trust faster than any missing feature.
+  Undo in an animation tool is fundamentally harder than undo in a text editor or drawing app. Actions have temporal context (which shot, which time on the timeline), spatial context (which element, which axis), and cascading side effects (the stopwatch's recording creates keyframes as a consequence of manipulation). The undo system must handle all of these correctly, or it will destroy trust faster than any missing feature.
 
   The existing codebase has an `ICommand` interface with `Execute()` / `Undo()` / `Redo()` methods scaffolded across all timeline commands. None of the `Undo()` or `Redo()` implementations are wired up — they throw `NotImplementedException`. This milestone completes that infrastructure and connects it to a functioning undo manager.
 
@@ -28,13 +28,13 @@
     - The undo stack records every user-initiated state change (see "Undoable actions" below)
     - The redo stack is cleared whenever the user performs a new action after undoing
     - The undo stack has a maximum depth (minimum 100 actions) — oldest entries are discarded when the limit is exceeded
-    - Undo and redo update all affected UI immediately: viewport, timeline, sequencer, keyframe editor, camera info HUD
+    - Undo and redo update all affected UI immediately: view, timeline, shot track, keyframe editor, camera info overlay
     - When the stack is empty, Cmd+Z does nothing (no error, no feedback beyond the action being unavailable)
     - When the redo stack is empty, Cmd+Shift+Z does nothing
     - Undo stack survives save — saving does not clear the stack. After saving, Cmd+Z still undoes the most recent action.
     - Cross-shot undo does not auto-switch the active shot. If the user is in Shot 3 and undoes an action from Shot 1, the undo applies but the view stays on Shot 3.
-    - Animate mode keyframe + object movement is one compound undo step. Undoing a move that created a keyframe (via the stopwatch) removes both the position change and the keyframe in one step.
-    - Object selection and deselection are NOT undoable. They do not appear in the undo stack.
+    - Recording keyframe + element movement is one compound undo step. Undoing a move that created a keyframe (via the stopwatch) removes both the position change and the keyframe in one step.
+    - Element selection and deselection are NOT undoable. They do not appear in the undo stack.
     - Restoring a deleted shot via undo does NOT switch the active shot to the restored one.
 
     **Undoable actions — the complete list:**
@@ -48,19 +48,19 @@
     - Changing focal length (one scroll gesture or one preset selection = one step)
     - Resetting camera to default position
 
-    *Object manipulation:*
-    - Moving an object via gizmo (one complete drag = one step)
-    - Rotating an object via gizmo (one complete drag = one step)
-    - Scaling an object via gizmo (one complete drag = one step)
-    - Duplicating an object
+    *Element manipulation:*
+    - Moving an element via gizmo (one complete drag = one step)
+    - Rotating an element via gizmo (one complete drag = one step)
+    - Scaling an element via gizmo (one complete drag = one step)
+    - Duplicating an element
 
     *Keyframe operations:*
     - Adding a camera keyframe (manual)
-    - Adding an object keyframe (manual)
+    - Adding an element keyframe (manual)
     - Deleting a keyframe
     - Dragging a keyframe to a new time (one complete drag = one step)
-    - Animate mode keyframe creation (each keyframe created via stopwatch is its own step — see "Animate mode and undo" below)
-    - Animate mode keyframe update (updating an existing keyframe's values via the stopwatch is one step)
+    - Recording keyframe creation (each keyframe created via stopwatch is its own step — see "Recording and undo" below)
+    - Recording keyframe update (updating an existing keyframe's values via the stopwatch is one step)
 
     *Shot operations:*
     - Adding a shot
@@ -69,13 +69,13 @@
     - Changing shot duration
 
     *Not undoable (navigation and view state):*
-    - Switching between shots (selecting a different shot in the sequencer)
+    - Switching between shots (selecting a different shot on the shot track)
     - Scrubbing the timeline (moving the playhead)
     - Starting or stopping playback
-    - Toggling overlays, frame guides, or camera shake
+    - Toggling overlays, composition guides, or camera shake
     - Changing aspect ratio
-    - Selecting or deselecting objects
-    - Changing gizmo mode (translate/rotate/scale)
+    - Selecting or deselecting elements
+    - Changing active tool (translate/rotate/scale)
 
     **Expected behavior:**
     ``` python
@@ -83,14 +83,14 @@
       .if the user moves the camera
       .if the user presses Cmd+Z >>
           <== the camera returns to its position before the move
-          <== the viewport updates immediately
+          <== the view updates immediately
 
       # basic redo
       .if the user moves the camera
       .if the user presses Cmd+Z
       .if the user presses Cmd+Shift+Z >>
           <== the camera returns to the moved position
-          <== the viewport updates immediately
+          <== the view updates immediately
 
       # redo stack clears on new action
       .if the user moves the camera to position A
@@ -139,24 +139,24 @@
           <== the active shot remains Shot 3
           !== the view switches to Shot 1
 
-      # Animate mode keyframe + object movement is one compound undo step
-      .if the object track's stopwatch is on (Animate mode)
-      .if the user moves an object via gizmo
-      .if the system creates a keyframe for the object >>
+      # recording keyframe + element movement is one compound undo step
+      .if the element track's stopwatch is on (recording)
+      .if the user moves an element via gizmo
+      .if the system creates a keyframe for the element >>
           <== one undo step is recorded
-          <== that step encompasses both the object position change and the new keyframe
+          <== that step encompasses both the element position change and the new keyframe
       ||> .if the user presses Cmd+Z >>
-          <== the object returns to its previous position
-          <== the keyframe created by Animate mode is removed
+          <== the element returns to its previous position
+          <== the keyframe created by recording is removed
           !== the keyframe remains after the position is undone
           !== two separate Cmd+Z presses are required
 
       # selection and deselection are not undoable
-      .if the user selects Object_A
-      .if the user moves Object_A
-      .if the user deselects Object_A
+      .if the user selects Element_A
+      .if the user moves Element_A
+      .if the user deselects Element_A
       .if the user presses Cmd+Z >>
-          <== the move is undone (Object_A returns to its previous position)
+          <== the move is undone (Element_A returns to its previous position)
           !== the deselection is undone (selection is not in the undo stack)
           !== two Cmd+Z presses are required to reach the move
 
@@ -166,7 +166,7 @@
       .if the user is now viewing Shot_01
       .if the user presses Cmd+Z >>
           <== Shot_02 is restored to its original position between Shot_01 and Shot_03
-          <== the sequencer UI updates to show all three shots
+          <== the shot track UI updates to show all three shots
           <== the active shot remains Shot_01
           !== the active shot switches to Shot_02
     ```
@@ -180,9 +180,9 @@
     - Each command captures the prior state necessary to reverse itself at the moment of execution
     - Undo restores the exact prior state — not an approximation, not a recalculation
     - Redo re-applies the exact change — not a re-execution that might produce different results
-    - Commands that affect the viewport (camera moves, object transforms) restore the visual state immediately on undo/redo
+    - Commands that affect the view (camera moves, element transforms) restore the visual state immediately on undo/redo
     - Commands that affect the timeline (keyframe add/remove/move, shot add/delete) restore the timeline UI state immediately on undo/redo
-    - Commands that affect the sequencer (shot add/delete/reorder/duration) restore the sequencer UI state immediately on undo/redo
+    - Commands that affect the shot track (shot add/delete/reorder/duration) restore the shot track UI state immediately on undo/redo
     - Scroll gesture coalescing: rapid scroll inputs within a configurable inactivity timeout (1000ms) are coalesced into a single undo step. After 1000ms of no scroll events, the undo system treats the scroll as complete. The intent is to allow undoing from where the user "settles" — not from arbitrary mid-scroll positions.
 
     **Expected behavior:**
@@ -222,21 +222,21 @@
           <== the timeline UI updates to show the keyframe at 1.0s
           <== the animation evaluates correctly with the keyframe at 1.0s
 
-      # undo object duplication removes the duplicate
-      .if the scene has objects A and B
+      # undo element duplication removes the duplicate
+      .if the scene has elements A and B
       .if the user selects A and presses Ctrl+D
       .if the user presses Cmd+Z >>
-          <== the duplicated object is removed from the scene
-          <== the scene has only objects A and B
-          !== the original object A is affected
+          <== the duplicated element is removed from the scene
+          <== the scene has only elements A and B
+          !== the original element A is affected
 
       # undo focal length change restores previous value
       .if the focal length is 50mm
       .if the user changes focal length to 85mm
       .if the user presses Cmd+Z >>
           <== the focal length returns to 50mm
-          <== the camera info HUD shows 50mm
-          <== the viewport FOV matches 50mm
+          <== the camera info overlay shows 50mm
+          <== the view FOV matches 50mm
     ```
 
 ---
@@ -249,20 +249,20 @@ These are the scenarios where undo systems typically break. Each one must be han
 
 ***A single drag or scroll gesture produces one undo step, not hundreds.***
 
-When the user drags an object, each frame of the drag updates the object's position. If each frame update were recorded as a separate undo step, a simple drag-and-drop would consume dozens of undo slots and require dozens of Cmd+Z presses to reverse. The same applies to camera movements driven by mouse drag or scroll wheel.
+When the user drags an element, each frame of the drag updates the element's position. If each frame update were recorded as a separate undo step, a simple drag-and-drop would consume dozens of undo slots and require dozens of Cmd+Z presses to reverse. The same applies to camera movements driven by mouse drag or scroll wheel.
 
 The boundary of a gesture is defined by its input events: mouse-down to mouse-up for drags, first scroll tick to last scroll tick (with a 1000ms inactivity timeout) for scroll gestures.
 
 ``` python
   # drag coalesces into one step
-  .if the user clicks an object and drags it across the screen
+  .if the user clicks an element and drags it across the screen
   .if the drag involves 60 frames of position updates
   .if the user releases the mouse >>
       <== exactly one undo step is recorded for the entire drag
       !== 60 undo steps are recorded
   ||> .if the user presses Cmd+Z >>
-      <== the object returns to its position before the drag started
-      !== the object moves back by one frame of the drag
+      <== the element returns to its position before the drag started
+      !== the element moves back by one frame of the drag
 
   # scroll coalesces into one step
   .if the user scrolls the mouse wheel to dolly the camera
@@ -273,22 +273,22 @@ The boundary of a gesture is defined by its input events: mouse-down to mouse-up
       <== a new, separate undo step is recorded for the second gesture
 
   # interrupted drag still records one step
-  .if the user begins dragging an object
+  .if the user begins dragging an element
   .if the drag is interrupted (e.g., window loses focus, Escape pressed) >>
       <== one undo step is recorded capturing the movement up to the interruption point
       !== the drag is silently discarded without recording
       !== two partial undo steps are created
 ```
 
-### Animate mode (stopwatch) and undo
+### Recording (stopwatch) and undo
 
-***The stopwatch's Animate mode is the most dangerous interaction with undo because the system creates keyframes as a consequence of manipulation, not by explicit user request.***
+***The stopwatch's recording is the most dangerous interaction with undo because the system creates keyframes as a consequence of manipulation, not by explicit user request.***
 
-When Animate mode creates or updates a keyframe as a side effect of moving the camera or an object, the movement and the keyframe are causally linked. When the user moves the camera with the stopwatch on, two things happen: (1) the camera moves, and (2) a keyframe is created or updated. These are recorded as a single compound undo step — undoing reverses both the movement and the keyframe, because the keyframe only exists as a consequence of the movement.
+When recording creates or updates a keyframe as a side effect of moving the camera or an element, the movement and the keyframe are causally linked. When the user moves the camera with the stopwatch on, two things happen: (1) the camera moves, and (2) a keyframe is created or updated. These are recorded as a single compound undo step — undoing reverses both the movement and the keyframe, because the keyframe only exists as a consequence of the movement.
 
 ``` python
-  # Animate mode keyframe created during camera move — single compound undo
-  .if the camera stopwatch is on (Animate mode)
+  # recording keyframe created during camera move — single compound undo
+  .if the camera stopwatch is on (recording)
   .if the user dollies the camera forward
   .if the system creates a keyframe at the current time >>
       <== one undo step is recorded
@@ -298,8 +298,8 @@ When Animate mode creates or updates a keyframe as a side effect of moving the c
       <== the keyframe is removed
       <== the timeline UI no longer shows that keyframe
 
-  # Animate mode updated existing keyframe — single compound undo
-  .if the camera stopwatch is on (Animate mode)
+  # recording updated existing keyframe — single compound undo
+  .if the camera stopwatch is on (recording)
   .if a camera keyframe already exists at the current time
   .if the user pans the camera >>
       <== one undo step is recorded
@@ -310,7 +310,7 @@ When Animate mode creates or updates a keyframe as a side effect of moving the c
       !== the keyframe is deleted (it existed before the action)
 
   # multiple sequential keyframes from separate gestures
-  .if the camera stopwatch is on (Animate mode)
+  .if the camera stopwatch is on (recording)
   .if the user dollies the camera (gesture completes, keyframe A created)
   .if the user pans the camera (gesture completes, keyframe B created or A updated) >>
       <== two separate undo steps are recorded
@@ -320,8 +320,8 @@ When Animate mode creates or updates a keyframe as a side effect of moving the c
   ||> .if the user presses Cmd+Z again >>
       <== the first gesture and keyframe A are undone
 
-  # Animate mode near existing keyframe updates it — undo restores original values
-  .if the camera stopwatch is on (Animate mode)
+  # recording near existing keyframe updates it — undo restores original values
+  .if the camera stopwatch is on (recording)
   .if a keyframe exists at t=1.0s with position (0, 1.6, -5)
   .if the playhead is at t=1.05s (within the 0.1s near-keyframe threshold)
   .if the user moves the camera to (0, 1.6, -3) >>
@@ -341,7 +341,7 @@ When Animate mode creates or updates a keyframe as a side effect of moving the c
   .if the user presses Cmd+Z >>
       <== playback stops immediately
       <== the most recent action is undone
-      <== the viewport shows the result of the undo at the current playhead position
+      <== the view shows the result of the undo at the current playhead position
       !== playback continues with corrupted state
       !== the undo is silently ignored
 
@@ -350,7 +350,7 @@ When Animate mode creates or updates a keyframe as a side effect of moving the c
   .if the user presses Cmd+Shift+Z >>
       <== playback stops immediately
       <== the most recent undo is redone
-      <== the viewport shows the result of the redo at the current playhead position
+      <== the view shows the result of the redo at the current playhead position
 ```
 
 ### Undo across shots
@@ -383,7 +383,7 @@ This means the user can be viewing Shot 3, press Cmd+Z, and undo an action they 
   .if the user is now viewing Shot_01
   .if the user presses Cmd+Z >>
       <== Shot_02 is restored to its original position between Shot_01 and Shot_03
-      <== the sequencer UI updates to show all three shots
+      <== the shot track UI updates to show all three shots
       <== the active shot remains Shot_01
       !== the active shot switches to Shot_02
 
@@ -396,12 +396,12 @@ This means the user can be viewing Shot 3, press Cmd+Z, and undo an action they 
       <== the user remains on Shot_01 (it was not affected by the undo)
 ```
 
-### Undo and the global object timeline
+### Undo and the global element timeline
 
-***Object keyframes live on a single global timeline (3.1.3). Undoing an object edit affects every shot whose time range includes that keyframe or is affected by its interpolation.***
+***Element keyframes live on a single global timeline (3.1.3). Undoing an element edit affects every shot whose time range includes that keyframe or is affected by its interpolation.***
 
 ``` python
-  # undo object move affects all shots through interpolation
+  # undo element move affects all shots through interpolation
   .if the user keyframes a table at (5, 0, 0) at t=5s on the global timeline
   .if this keyframe affects the interpolation visible in Shot_01 (0–5s) and Shot_02 (5–10s)
   .if the user presses Cmd+Z >>
@@ -433,26 +433,26 @@ This means the user can be viewing Shot 3, press Cmd+Z, and undo an action they 
       !== the keyframes at t=7s and t=9s are permanently lost
 ```
 
-### Undo when undo stack contains commands for deleted objects
+### Undo when undo stack contains commands for deleted elements
 
-***If an object is deleted and later undo steps reference that object, those steps must handle the missing object gracefully.***
+***If an element is deleted and later undo steps reference that element, those steps must handle the missing element gracefully.***
 
 ``` python
   # undo past a deletion
-  .if the user moves Object_A to position (3, 0, 0)
-  .if the user deletes Object_A
+  .if the user moves Element_A to position (3, 0, 0)
+  .if the user deletes Element_A
   .if the user presses Cmd+Z >>
-      <== Object_A is restored (the deletion is undone)
+      <== Element_A is restored (the deletion is undone)
   ||> .if the user presses Cmd+Z >>
-      <== the move is undone, Object_A returns to its original position
+      <== the move is undone, Element_A returns to its original position
       <== both undos work correctly in sequence
 
   # redo deletion after undoing it
-  .if the user moves Object_A to position (3, 0, 0)
-  .if the user deletes Object_A
-  .if the user presses Cmd+Z (restores Object_A)
-  .if the user presses Cmd+Shift+Z (re-deletes Object_A) >>
-      <== Object_A is deleted again
+  .if the user moves Element_A to position (3, 0, 0)
+  .if the user deletes Element_A
+  .if the user presses Cmd+Z (restores Element_A)
+  .if the user presses Cmd+Shift+Z (re-deletes Element_A) >>
+      <== Element_A is deleted again
       <== the scene state matches what it was after the original deletion
 ```
 
@@ -467,12 +467,12 @@ This means the user can be viewing Shot 3, press Cmd+Z, and undo an action they 
       <== exactly 5 actions are undone, in reverse order
       !== actions are skipped due to input debouncing
       !== the same action is undone twice
-      <== the viewport updates after each undo (not just after the sequence)
+      <== the view updates after each undo (not just after the sequence)
 
   # held Cmd+Z (key repeat)
   .if the user holds Cmd+Z and the OS generates key repeat events >>
       <== each key repeat event undoes one additional action
-      <== the viewport updates smoothly as actions are unwound
+      <== the view updates smoothly as actions are unwound
 ```
 
 ---
@@ -501,7 +501,7 @@ This means the user can be viewing Shot 3, press Cmd+Z, and undo an action they 
       !== floating point drift accumulates across undo/redo cycles
       !== keyframes are lost, duplicated, or shifted in time
       !== shot order is different
-      !== object positions have drifted
+      !== element positions have drifted
 ```
 
 ---

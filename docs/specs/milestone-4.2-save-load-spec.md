@@ -32,7 +32,7 @@
 
   - ##### 4.2.2. Project file format (Feature)
 
-    ***Serialize full project state: scene objects, shot sequence, all keyframe data, camera settings, overlay configuration, and HUD state — everything needed to reconstruct the project exactly as it was.***
+    ***Serialize full project state: scene elements, shot sequence, all keyframe data, camera settings, overlay configuration, and camera info state — everything needed to reconstruct the project exactly as it was.***
 
     **Functional requirements:**
     - A project file captures the complete state required to reopen the project indistinguishably from when it was saved
@@ -48,56 +48,56 @@
     - Human-readable format preferred (for git diffing). If binary/compressed would be significantly better for performance or file size, document the tradeoff.
     - Version-tolerant loading: older project files load in newer versions of the application. Conversion happens automatically if needed. The app should not refuse to open an older file.
     - The following state is saved:
-      - Scene objects: type, position, rotation, scale, name, material/appearance properties, embedded asset geometry
+      - Scene elements: type, position, rotation, scale, name, material/appearance properties, embedded asset geometry
       - Shot sequence: ordered list of shots, each with name, duration, shot ID
       - Camera animation per shot: all camera keyframes per-property (time, position x/y/z, pan, tilt, roll, focal length)
-      - Object animation per shot: all object keyframes per-property (time, position x/y/z, rotation x/y/z, scale) and initial object state
+      - Element animation per shot: all element keyframes per-property (time, position x/y/z, rotation x/y/z, scale) and initial element state
       - Camera settings: current focal length, camera body preset, lens preset, sensor dimensions
-      - Camera position and rotation (current viewport state)
-      - Overlay state: selected aspect ratio, frame guide visibility (thirds, center cross, safe zones)
-      - HUD state: camera info HUD visibility
+      - Camera position and rotation (current view state)
+      - Overlay state: selected aspect ratio, composition guide visibility (thirds, center cross, safe zones)
+      - Camera info state: camera info overlay visibility
       - Camera shake settings per shot: enabled/disabled, amplitude, frequency
       - Depth of field settings: enabled/disabled, aperture, focus distance
       - Selected shot index and current time within shot
       - Camera path visualization: enabled/disabled
     - The following state is NOT saved:
       - Window position and dimensions
-      - Scroll position within the shot sequencer
+      - Scroll position within the shot track
       - Scroll position within the keyframe editor
-      - Object selection state (which object is selected)
-      - Gizmo mode (translate/rotate/scale)
+      - Element selection state (which element is selected)
+      - Active tool (translate/rotate/scale)
       - Playback state (playing/paused)
       - Undo/redo history
       - Drag operation state
       - Hover/highlight state
-    - Object identity is preserved across save/load — references between objects (e.g., keyframe-to-object mappings) survive serialization
+    - Element identity is preserved across save/load — references between elements (e.g., keyframe-to-element mappings) survive serialization
     - Shot IDs are preserved across save/load — the same shot maintains its identity
     - Keyframe IDs are preserved across save/load
 
     **Expected behavior:**
     ``` python
       # round-trip fidelity
-      .if the user has a project with scene objects, shots, keyframes, and camera settings
+      .if the user has a project with scene elements, shots, keyframes, and camera settings
       .if the user saves the project
       .if the user closes and reopens the project >>
-          <== every scene object is at its saved position, rotation, and scale
-          <== every shot appears in the sequencer in the same order
+          <== every scene element is at its saved position, rotation, and scale
+          <== every shot appears on the shot track in the same order
           <== every keyframe is at its saved time with its saved values
           <== the camera is at its saved position, rotation, and focal length
           <== the selected aspect ratio is restored
-          <== frame guide visibility matches the saved state
+          <== composition guide visibility matches the saved state
           <== camera shake settings are restored
-          <== the camera info HUD visibility is restored
+          <== the camera info overlay visibility is restored
 
       # embedded assets are self-contained (when bundling is enabled)
       .if the user has selected "Yes (everything)" for asset bundling
-      .if the user adds objects to the scene
+      .if the user adds elements to the scene
       .if the user saves the project
       .if the user moves the project file to a different machine >>
           <== the project opens successfully
-          <== all scene objects appear with their correct geometry
+          <== all scene elements appear with their correct geometry
           !== the application reports missing asset files
-          !== any object appears as a placeholder or error shape
+          !== any element appears as a placeholder or error shape
 
       # referenced assets require original paths
       .if the user has selected "No" for asset bundling
@@ -120,11 +120,11 @@
           <== shot B has camera shake disabled
 
       # ephemeral state is not restored
-      .if the user had an object selected before saving
+      .if the user had an element selected before saving
       .if the user reopens the project >>
-          <== no object is selected
+          <== no element is selected
           <== the gizmo is not visible
-          !== the previously selected object appears selected
+          !== the previously selected element appears selected
 
       # playback state is not restored
       .if playback was running when the user saved
@@ -133,7 +133,7 @@
           <== the playhead is at the saved time position
 
       # empty project
-      .if the user saves a project with no shots and no added objects >>
+      .if the user saves a project with no shots and no added elements >>
           <== the file is created successfully
       ||> .if the user reopens it >>
           <== the project loads to the default state
@@ -231,7 +231,7 @@
       # new project resets state
       .if the user creates a new project >>
           <== the scene is cleared to the default state
-          <== the sequencer is empty
+          <== the shot track is empty
           <== the camera returns to its default position and focal length
           <== the title bar shows "Untitled" (or equivalent)
           <== overlay settings return to defaults
@@ -294,7 +294,7 @@
           !== any timer or background operation runs
 
       # auto-save during drag operation
-      .if the user is in the middle of a drag operation (moving an object, dragging a keyframe)
+      .if the user is in the middle of a drag operation (moving an element, dragging a keyframe)
       .if the auto-save timer fires >>
           <== the auto-save is deferred until the drag operation completes
           !== the drag is interrupted
@@ -333,10 +333,10 @@
     - The title bar displays an asterisk (*) after the project name when there are unsaved changes
     - A project starts clean (no asterisk) when opened or newly created
     - After an explicit save, the project returns to clean state (asterisk removed)
-    - Creating a New Project resets overlay/HUD settings to defaults (does not preserve user preferences from previous project)
+    - Creating a New Project resets overlay/camera info settings to defaults (does not preserve user preferences from previous project)
     - The following actions mark the project as dirty:
-      - Adding, removing, or moving a scene object
-      - Changing an object's properties (scale, rotation)
+      - Adding, removing, or moving a scene element
+      - Changing an element's properties (scale, rotation)
       - Adding, deleting, or reordering a shot
       - Changing a shot's name or duration
       - Adding, deleting, or moving a keyframe
@@ -344,20 +344,20 @@
       - Changing focal length outside of playback
       - Changing the camera body or lens preset
       - Changing the aspect ratio
-      - Toggling frame guides (thirds, center cross, safe zones)
-      - Toggling the camera info HUD
+      - Toggling composition guides (thirds, center cross, safe zones)
+      - Toggling the camera info overlay
       - Changing camera shake settings
       - Changing depth of field settings
-      - Duplicating an object
+      - Duplicating an element
       - Toggling camera path visualization
     - The following actions do NOT mark the project as dirty:
-      - Scrolling the shot sequencer
+      - Scrolling the shot track
       - Scrolling the keyframe editor timeline
       - Scrubbing the playhead (moving current time)
       - Playing/pausing playback
-      - Selecting or deselecting an object
-      - Hovering over an object
-      - Switching gizmo mode (translate/rotate/scale)
+      - Selecting or deselecting an element
+      - Hovering over an element
+      - Switching active tool (translate/rotate/scale)
       - Resizing the window
       - Camera movement during playback (playback is evaluating, not authoring)
       - Undo/redo that returns to the last saved state (see below)
@@ -373,7 +373,7 @@
 
       # dirty after modification
       .if the project is clean
-      .if the user moves a scene object >>
+      .if the user moves a scene element >>
           <== the title bar shows an asterisk after the project name
           <== the project is in a dirty state
 
@@ -383,26 +383,26 @@
           <== the asterisk is removed from the title bar
           <== the project is in a clean state
 
-      # new project resets overlay/HUD to defaults
+      # new project resets overlay/camera info to defaults
       .if the user has a project open with custom overlay settings (e.g., thirds enabled, specific aspect ratio)
       .if the user creates a new project >>
           <== overlay settings are reset to defaults
-          <== HUD settings are reset to defaults
-          !== overlay or HUD settings from the previous project carry over
+          <== camera info settings are reset to defaults
+          !== overlay or camera info settings from the previous project carry over
 
       # non-dirtying actions
       .if the project is clean
       .if the user scrubs the playhead >>
           <== the title bar remains without an asterisk
           !== the project becomes dirty
-      ||> .if the user selects an object >>
+      ||> .if the user selects an element >>
           <== the title bar remains without an asterisk
-      ||> .if the user scrolls the sequencer >>
+      ||> .if the user scrolls the shot track >>
           <== the title bar remains without an asterisk
 
       # undo restores clean state
       .if the project is clean (just saved)
-      .if the user moves an object (project becomes dirty)
+      .if the user moves an element (project becomes dirty)
       .if the user undoes the move >>
           <== the project returns to clean state
           <== the asterisk is removed
@@ -509,16 +509,16 @@
 
   - ##### 4.2.5. Multi-scene project structure (Feature)
 
-    ***A project contains one or more scenes. Each scene is a self-contained unit with its own objects, environment, lighting, shots, and timelines. Scene tab bar for switching. Characters are project-level definitions; character state (pose, position) is scene-level.***
+    ***A project contains one or more scenes. Each scene is a self-contained unit with its own elements, environment, lighting, shots, and timelines. Scene tab bar for switching. Characters are project-level definitions; character state (pose, position) is scene-level.***
 
     > **Note**: Full specification is in the Multi-Scene Project Structure spec. This section establishes the feature's position in the save/load milestone. See the dedicated spec for complete functional requirements, expected behavior, and error cases.
 
     **Key requirements:**
     - A project contains one or more scenes
-    - Each scene is fully self-contained: its own objects, environment, lighting, shots, and timelines
+    - Each scene is fully self-contained: its own elements, environment, lighting, shots, and timelines
     - Scene tab bar at the top for switching between scenes
     - Scenes are fully independent — changing one does not affect another
-    - Duplicate scene creates a precise copy (all objects, shots, keyframes, camera settings)
+    - Duplicate scene creates a precise copy (all elements, shots, keyframes, camera settings)
     - Character definitions are project-level (name, appearance, customization)
     - Character state (pose, position, keyframes) is scene-level
     - Unlimited scenes with lazy loading (only the active scene is fully loaded in memory)

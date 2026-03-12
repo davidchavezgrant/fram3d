@@ -431,14 +431,14 @@
     ```
 
   - ##### 1.1.7. Camera info HUD (Feature) — *Relocated to 1.2.3*
-    > **Note**: The camera info HUD has been moved to milestone 1.2 (Camera Overlays) as feature 1.2.3, since it is an overlay. The specification below is retained for reference but the canonical location is the Camera Overlays spec. The HUD now also displays squeeze factor when an anamorphic lens is active.
+    > **Note**: The camera info HUD has been moved to milestone 1.2 (Camera Overlays) as feature 1.2.3, since it is an overlay. The specification below is retained for reference but the canonical location is the Camera Overlays spec. The camera info now also displays squeeze factor when an anamorphic lens is active.
 
     ***An overlay showing the data a DP would read off an on-set monitor: focal length, camera height, angle of view, aspect ratio, body, and lens set. Toggleable via shortcut, glanceable, not intrusive.***
 
     *Blocked by: 1.1.2 Lens system, 1.1.3 Camera body and lens presets, 1.2.1 Aspect ratio masks*
 
     **Functional requirements:**
-    - The camera info is a non-interactive overlay positioned at the top-left of the view.
+    - The camera info is a non-interactive overlay positioned at the top-right of the Camera View. See `ui-layout-spec.md` §3.3 for layout details.
     - The camera info is toggleable via a keyboard shortcut. It is not always visible -- the user can show or hide it as needed.
     - The camera info counts as an overlay for export purposes. When visible during export, it renders into the exported output. When hidden, it does not.
     - The camera info displays the following information, updated every frame:
@@ -458,51 +458,51 @@
 
     **Expected behavior:**
     ``` python
-      # HUD toggle
-      .if HUD is hidden
-      ||> .if user presses HUD toggle shortcut >>
-          <== HUD becomes visible at the top-left of the viewport
+      # camera info toggle
+      .if camera info is hidden
+      ||> .if user presses camera info toggle shortcut >>
+          <== camera info becomes visible at the top-right of the Camera View
           <== all camera info fields are displayed and updating
-      .if HUD is visible
-      ||> .if user presses HUD toggle shortcut >>
-          <== HUD is hidden
+      .if camera info is visible
+      ||> .if user presses camera info toggle shortcut >>
+          <== camera info is hidden
           <== no camera info is displayed on screen
 
-      # HUD updates in real time
-      .if HUD is visible
+      # camera info updates in real time
+      .if camera info is visible
       ||> .if user adjusts focal length from 35mm to 85mm smoothly >>
-          <== HUD focal length display updates continuously during transition
+          <== camera info focal length display updates continuously during transition
           <== angle of view display updates continuously during transition
 
       # camera height reflects vertical position
-      .if HUD is visible
+      .if camera info is visible
       ||> .if user cranes camera upward from 1.6m to 4.0m >>
-          <== HUD height display changes from "1.6m" to "4.0m" progressively
+          <== camera info height display changes from "1.6m" to "4.0m" progressively
       .if user cranes camera below the ground plane >>
-          <== HUD height displays a negative value (e.g., "-0.5m")
+          <== camera info height displays a negative value (e.g., "-0.5m")
 
       # body and lens set update on selection
-      .if HUD is visible
+      .if camera info is visible
       ||> .if user selects RED V-Raptor body and Zeiss Master Prime lens set >>
-          <== HUD displays "RED V-Raptor" for body
-          <== HUD displays "Zeiss Master Prime" for lens set
+          <== camera info displays "RED V-Raptor" for body
+          <== camera info displays "Zeiss Master Prime" for lens set
           <== angle of view recalculates for V-Raptor sensor dimensions
 
       # aperture shown conditionally
-      .if HUD is visible and DOF preview is off >>
-          <== HUD does not display aperture
-      .if HUD is visible and DOF preview is turned on >>
-          <== HUD begins displaying current aperture value (e.g., "f/5.6")
+      .if camera info is visible and DOF preview is off >>
+          <== camera info does not display aperture
+      .if camera info is visible and DOF preview is turned on >>
+          <== camera info begins displaying current aperture value (e.g., "f/5.6")
 
-      # HUD visible over any scene content
-      .if HUD is visible and scene behind HUD area is very bright (white wall, sky) >>
-          <== HUD text remains legible due to background panel
-      .if HUD is visible and scene behind HUD area is very dark >>
-          <== HUD text remains legible
+      # camera info visible over any scene content
+      .if camera info is visible and scene behind camera info area is very bright (white wall, sky) >>
+          <== camera info text remains legible due to background panel
+      .if camera info is visible and scene behind camera info area is very dark >>
+          <== camera info text remains legible
 
-      # HUD as export overlay
-      .if HUD is visible during export >>
-          <== HUD renders into the exported frames
-      .if HUD is hidden during export >>
-          <== exported frames contain no HUD overlay
+      # camera info as export overlay
+      .if camera info is visible during export >>
+          <== camera info renders into the exported frames
+      .if camera info is hidden during export >>
+          <== exported frames contain no camera info overlay
     ```

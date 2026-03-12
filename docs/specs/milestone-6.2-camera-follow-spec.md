@@ -1,21 +1,21 @@
-# Milestone 6.2: Camera Follow and Look-At
+# Milestone 6.2: Camera Follow and Watch
 
 **Date**: 2026-03-11
 **Status**: Resolved
-**Milestone**: 6.2 — Camera follow and look-at
+**Milestone**: 6.2 — Camera follow and watch
 **Phase**: 6 — Characters
-**Blocked by**: 6.1 (Characters — follow/look-at requires animated targets to be meaningful)
+**Blocked by**: 6.1 (Characters — follow/watch requires animated targets to be meaningful)
 
 ---
 
-- ### 6.2. Camera follow and look-at (Milestone)
+- ### 6.2. Camera follow and watch (Milestone)
 	*Camera maintains spatial relationship with a target. Timeline relationship model — not a mode to enter/exit. Implemented after characters (6.1), before snorricam.*
 
 	- ##### 6.2.1. Camera follow (Feature)
 		*Persistent relationship (like prop locking). Creates non-keyframeable segment on timeline. Follow distance, height offset, lateral offset are separately keyframeable.*
 
 		**Setup:**
-		- Select a character or object
+		- Select a character or element
 		- Right-click → "Follow" (or keybind, e.g. Shift+F)
 		- A non-keyframeable segment appears on the camera's timeline (like greyed-out linking segments for props)
 		- Segment extends to end of shot by default, adjustable by user
@@ -42,12 +42,12 @@
 		- Timeline shows: [Follow Target A] → [blend] → [Follow Target B]
 
 		**Multi-target follow:**
-		- Group multiple characters/objects, then activate follow on the group
+		- Group multiple characters/elements, then activate follow on the group
 		- Camera follows the midpoint of the group
 		- Reuses existing group system — no special multi-target feature
 
 		**Manual offset adjustment:**
-		- During a follow segment, user can adjust camera rotation in the viewport
+		- During a follow segment, user can adjust camera rotation in the view
 		- This adjusts the lateral/vertical offset parameters
 		- Offsets are keyframeable — allows framing the subject off-center
 
@@ -61,25 +61,25 @@
 		- Camera shake (1.1.6): Stacks with follow. Follow provides position, shake adds rotational noise.
 		- Snorricam (7.2): Mutually exclusive. Snorricam is rigidly attached; follow maintains dynamic spatial relationship.
 		- Multi-camera (9.1): A follow cam can be one camera in a multi-cam setup.
-		- Shot sequencer (3.1): Follow is per-shot.
+		- Shot track (3.1): Follow is per-shot.
 		- Export (4.4): Follow motion baked to keyframes during export (like camera shake).
 
-	- ##### 6.2.2. Look-at tracking (Feature)
+	- ##### 6.2.2. Watch tracking (Feature)
 		*Camera stays in position, rotates to track target. Like a camera operator panning/tilting on a tripod or crane to follow a moving subject.*
 
 		**Setup:**
-		- Right-click object or character → "Look At"
+		- Right-click element or character → "Watch"
 		- Camera position is locked (tripod, crane arm at fixed extension)
 		- Camera rotation automatically adjusts to keep target centered
 		- Creates a timeline segment (not a mode to enter/exit)
 
 		**Separate from follow:**
 		- Follow = camera moves to maintain spatial relationship
-		- Look-at = camera stays put, rotates to track
+		- Watch = camera stays put, rotates to track
 		- Both available independently
 
 		**Deferred (flagged for later):**
-		- Follow + look-at on different targets simultaneously (e.g., camera follows Character A's position but looks at Character B — POV-style shot). Not v1.
+		- Follow + watch on different targets simultaneously (e.g., camera follows Character A's position but watches Character B — POV-style shot). Not v1.
 
 	**What this is NOT:**
 	- Not a mode to enter and exit (it's a timeline relationship)

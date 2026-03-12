@@ -15,7 +15,7 @@
 		*Text prompt generates a 3D model suitable for previs. Low-poly, consistent visual style. Auto-generates collider. Saved to asset library for reuse.*
 
 		**Workflow:**
-		1. User opens asset library or presses shortcut
+		1. User opens Assets panel or presses shortcut
 		2. Types a description: "wooden baseball bat," "vintage rotary phone," "hospital gurney"
 		3. System calls a 3D generation API (Meshy, Tripo, or best available at implementation time)
 		4. Generated model appears in the scene at camera look-point

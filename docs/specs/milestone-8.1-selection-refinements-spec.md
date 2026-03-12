@@ -258,17 +258,17 @@
 
 			# Snap with multi-select
 			.if snapping enabled with 0.5m grid >>
-				.if three objects are selected >>
+				.if three elements are selected >>
 					||> .if user drags translate gizmo along X >>
 						<== gizmo position snaps to 0.5m grid
-						<== all three objects move by the same snapped offset
-						<== relative positions between objects preserved exactly
+						<== all three elements move by the same snapped offset
+						<== relative positions between elements preserved exactly
 		```
 
 	---
 
 	- ##### 8.1.3. Custom interpolation curves (Feature)
-		***Control how the camera and objects ease between keyframes. Per-property easing lets each animated property -- position, rotation, focal length -- have its own interpolation curve independently. The difference between a camera that mechanically slides from A to B and one that gently accelerates, glides, then settles into position -- the way a dolly grip actually pushes a dolly.***
+		***Control how the camera and elements ease between keyframes. Per-property easing lets each animated property -- position, rotation, focal length -- have its own interpolation curve independently. The difference between a camera that mechanically slides from A to B and one that gently accelerates, glides, then settles into position -- the way a dolly grip actually pushes a dolly.***
 
 		*Blocked by:
 		- 3.2.5 (interpolation and playback -- the current system uses a single interpolation mode)*
@@ -282,6 +282,12 @@
 			- Properties are independent: position, rotation, and focal length can each have different easing curves on the same keyframe
 			- The curve defines the easing behavior for the outgoing segment (from this keyframe to the next)
 			- The last keyframe in a track has no outgoing curve (there is no next keyframe to transition to)
+		- **Keyframe shape convention** (After Effects style): The shape of the keyframe marker on collapsed tracks communicates its interpolation type at a glance. See `ui-layout-spec.md` §4.8 for visual details.
+			- **Diamond** (sharp corners): Linear interpolation
+			- **Circle** (rounded): Smooth/bezier interpolation
+			- **Square** (non-rotated): Hold/constant interpolation
+			- Alt+clicking a keyframe cycles through these three types: linear → smooth → hold → linear
+			- Default shapes by track type: camera keyframes default to smooth (circle), multi-keyframe element tracks default to linear (diamond), single-keyframe element tracks default to hold (square)
 		- Five curve presets:
 			- **Linear**: constant speed from keyframe to keyframe. No acceleration, no deceleration. This is the default for new keyframes.
 			- **Ease in**: starts slow, accelerates to full speed. The camera gathers momentum. Like a dolly beginning its push.
@@ -463,27 +469,27 @@
 
 ### Multi-select
 
-1. User clicks object A, then Shift-clicks objects B and C.
+1. User clicks element A, then Shift-clicks elements B and C.
    ``` python
-   <== three objects selected, gizmo at their bounding box center
+   <== three elements selected, gizmo at their bounding box center
    <== all three show selection highlight
    ```
 
-2. User drags a marquee that partially intersects five objects in a furniture cluster.
+2. User drags a marquee that partially intersects five elements in a furniture cluster.
    ``` python
    <== all five selected in one operation (crossing/partial intersection)
-   !== only fully enclosed objects selected
+   !== only fully enclosed elements selected
    ```
 
 3. User translates the multi-selection via gizmo.
    ``` python
-   <== all selected objects move uniformly
-   <== relative positions between objects preserved
+   <== all selected elements move uniformly
+   <== relative positions between elements preserved
    ```
 
 4. User rotates a multi-selection around the selection center.
    ``` python
-   <== objects orbit the center point, not their individual origins
+   <== elements orbit the center point, not their individual origins
    ```
 
 5. User Ctrl+D duplicates a multi-selection.
@@ -494,14 +500,14 @@
 
 ### Grid snapping
 
-6. User enables snapping with 0.5m grid and translates an object.
+6. User enables snapping with 0.5m grid and translates an element.
    ``` python
-   <== object position jumps in 0.5m increments during drag
+   <== element position jumps in 0.5m increments during drag
    ```
 
 7. User holds Alt while dragging with snapping enabled.
    ``` python
-   <== object moves freely, ignoring the grid
+   <== element moves freely, ignoring the grid
    ```
 
 8. User changes grid size from 0.5m to 1.0m.
@@ -511,7 +517,7 @@
    <== grid size selector shows only fixed presets (0.1m, 0.25m, 0.5m, 1.0m, 2.0m)
    ```
 
-9. User enables rotation snapping at 15 degrees (default, user-configurable) and rotates an object.
+9. User enables rotation snapping at 15 degrees (default, user-configurable) and rotates an element.
    ``` python
    <== rotation jumps in 15-degree increments
    ```

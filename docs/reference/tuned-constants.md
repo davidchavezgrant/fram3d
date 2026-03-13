@@ -46,6 +46,7 @@ Values from the prior codebase that were empirically tuned. Starting points — 
 
 - Default shot duration: 5.0 seconds
 - Minimum shot duration: 0.1 seconds
+- Keyframe snap: frame boundaries (1/fps — e.g., 1/24 = 0.04167s at 24fps)
 - Keyframe time tolerance (same-time conflict): 0.01 seconds
 
 ## Input Sensitivities
@@ -58,3 +59,13 @@ Values from the prior codebase that were empirically tuned. Starting points — 
 ## Undo
 
 - Coalescing timeout: 1000ms inactivity for scroll gestures
+
+## Performance Budgets
+
+- Editor target: 60fps with < 50 elements, 30fps acceptable with 50–200 elements
+- Max elements per scene: 500 (soft limit — show performance warning)
+- Max keyframes per track: 1,000
+- Max total keyframes per scene: 10,000
+- Export render: offline (no frame rate target), < 1s per frame at 1080p
+- Startup to interactive: < 5s on Apple Silicon
+- Project load: < 3s for typical project (< 50MB)

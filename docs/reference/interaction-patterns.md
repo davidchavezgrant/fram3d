@@ -57,7 +57,7 @@ UI/UX interaction rules, input mappings, and behavioral specifications.
 - Deleting a main keyframe deletes all children
 - Deleting all children deletes the main keyframe
 - Dragging onto an existing keyframe silently merges
-- Snap to 0.1s during drag
+- Snap to frame boundaries during drag (1/fps — e.g., 1/24s at 24fps)
 
 ## Keyframe Interpolation Shapes (AE-style)
 
@@ -90,7 +90,7 @@ UI/UX interaction rules, input mappings, and behavioral specifications.
 ## Timecode Display
 
 - Transport bar: shot-local elapsed / duration
-- Viewport overlay: sequence-global timecode
+- View overlay: sequence-global timecode
 - Format: semicolon-separated `HH;MM;SS;FF`
 
 ## Playback Auto-scroll
@@ -103,8 +103,8 @@ UI/UX interaction rules, input mappings, and behavioral specifications.
 
 - Three layouts: single, side-by-side, three-view (top-wide + two bottom)
 - Camera View is a single movable instance — only one exists
-- When reassigning Camera View to a new panel, the old panel receives the displaced view type (smart swap)
-- Camera View must always exist in exactly one panel
+- When reassigning Camera View to a new view, the old view receives the displaced view type (smart swap)
+- Camera View must always exist in exactly one view
 
 ## Panel System (Gutters)
 
@@ -116,8 +116,23 @@ UI/UX interaction rules, input mappings, and behavioral specifications.
 
 ## Timeline and Panel Resize
 
-- Vertical drag handle between viewport and timeline. Min 80px, max 80vh.
+- Vertical drag handle between the view area and timeline. Min 80px, max 80vh.
 - Side panels have horizontal drag edges. Min 150px, max 500px.
+
+---
+
+## Properties Panel
+
+- Contextual sidebar showing editable properties for the selected element
+- Content changes based on selection type:
+  - Element: name, position, rotation, scale
+  - Character: all element properties + body type, height, build, tint, pose, expression, eye direction
+  - Camera: focal length, aperture, focus distance, camera body, lens set, shake settings
+  - Light: intensity, color (RGB + Kelvin), range, cone angle (spot), inner cone angle (spot)
+  - Link: anchor point XYZ (visible only when element has been linked at least once)
+- Dockable to left or right side of the workspace
+- Appears when an element is selected, collapses when nothing is selected
+- Keyboard shortcut: I (for "info" — unused key)
 
 ---
 

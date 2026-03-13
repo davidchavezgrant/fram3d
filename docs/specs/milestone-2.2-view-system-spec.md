@@ -1,4 +1,4 @@
-# Milestone 2.2: Viewport Panel System — Specification
+# Milestone 2.2: View System — Specification
 
 **Date**: 2026-03-12
 **Milestone**: 2.2
@@ -7,11 +7,11 @@
 
 ---
 
-- ### 2.2. Viewport panel system (Milestone)
+- ### 2.2. View system (Milestone)
 
-  Multi-panel viewport with configurable layouts. The viewport area can display one, two, or three views simultaneously, each showing an independent view of the scene. This replaces the single-viewport model and enables workflows like Camera View alongside a Director View overview, or a 2D Designer next to the Camera View.
+  Configurable view layouts. The workspace can display one, two, or three views simultaneously, each showing an independent view of the scene. This replaces the single-view model and enables workflows like Camera View alongside a Director View, or a Designer View next to the Camera View.
 
-  The design follows the mockup: a layout chooser in the bottom-right of the viewport area, and a per-view dropdown selector for the view type. The panel-based approach was chosen over a single-viewport toggle model (like Blender's Numpad 0) because it avoids the #1 complaint across every 3D tool — accidentally moving the shot camera while navigating. With separate views, each view is independent and cannot accidentally affect another.
+  The design follows the mockup: a layout chooser in the bottom-right of the workspace, and a per-view dropdown selector for the view type. The multi-view approach was chosen over a single-view toggle model (like Blender's Numpad 0) because it avoids the #1 complaint across every 3D tool — accidentally moving the shot camera while navigating. With separate views, each view is independent and cannot accidentally affect another.
 
   *Blocked by: 2.1 (scene management — Director View requires elements and gizmos), 3.2 (keyframe animation — timeline context needed)*
 
@@ -21,8 +21,8 @@
     ***Three layout options: single view, side-by-side, and one-large-two-small. Each view independently assignable to any view type.***
 
     **Functional requirements:**
-    - Three layout configurations, selected via layout chooser buttons in the bottom-right corner of the viewport area:
-      - **Single** (default): One view fills the viewport area
+    - Three layout configurations, selected via layout chooser buttons in the bottom-right corner of the workspace:
+      - **Single** (default): One view fills the workspace
       - **Side-by-side**: Two views of equal width, arranged horizontally
       - **Three-view**: One large view on top, two smaller views below (or one large left, two stacked right — follow mockup)
     - Each view has a dropdown selector in its top bar for choosing the view type

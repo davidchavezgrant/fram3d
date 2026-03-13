@@ -266,7 +266,9 @@ The library holds assets. The scene holds elements. When you place an asset, it 
 
 ## Recording, not modes
 
-"Mode" is overloaded and vague. Fram3d has no modes. Instead:
+"Mode" is overloaded and vague. Fram3d minimizes modes — prefer seamless interaction contexts over hard mode switches. When the user's available actions change (entering posing context, activating recording, editing inside a group), always provide a clear visual indicator. The user should never wonder "why isn't this working?" because they're in an unlabeled context.
+
+Avoid mode terminology in UI and specs:
 
 | Instead of | Say |
 |-----------|-----|

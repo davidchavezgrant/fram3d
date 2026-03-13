@@ -42,7 +42,7 @@
       - **"Yes (everything)"** — all assets embedded in the project file. Projects are fully self-contained and portable.
       - **"Yes (up to X MB)"** — assets up to the specified size are embedded; larger assets are stored by reference. Default threshold: 5MB per asset, 50MB project total.
     - This preference is configurable in the Settings/Preferences panel and can be changed at any time.
-    - When the bundling mode changes, the system auto-migrates existing assets to match the new setting (embedding referenced assets or extracting embedded assets to references) on the next save.
+    - When the bundling mode changes, the system auto-migrates existing assets to match the new setting (embedding referenced assets or extracting embedded assets to references) on the next save. Before migration, the system shows the estimated file size impact (e.g., "Embedding all assets will increase project size from 2MB to ~480MB. Proceed?"). The user can confirm or cancel.
     - All keyframe data is saved per-property (position x/y/z, pan, tilt, roll, focal length, scale, rotation x/y/z)
     - Camera shake per-shot state (enabled/disabled, amplitude, frequency) is saved
     - Human-readable format preferred (for git diffing). If binary/compressed would be significantly better for performance or file size, document the tradeoff.

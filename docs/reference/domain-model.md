@@ -12,23 +12,30 @@ Cinema terminology is consistent from roadmap to spec to class name to method na
 
 ---
 
-## Bounded Contexts via Assembly Definitions
+## Assembly Structure
 
-Each context is a separate `.asmdef`, enforcing boundaries at compile time:
+Four assemblies, layered. Each references only downward. See `architecture.md` for the full graph and design-sessions/01 for the design rationale.
 
-| Context | Core Concepts | Assembly | Milestones |
-|---------|--------------|----------|------------|
-| Camera | Rig, lens, focus, shake, DOF | `Fram3d.Camera` | 1.1, 1.2, 6.2, 7.2, 9.1 |
-| Sequencing | Shot, keyframe, track, playback, stopwatch | `Fram3d.Sequencing` | 3.1, 3.2, 8.4 |
-| Scene | Element, selection, gizmo, ground plane | `Fram3d.Scene` | 2.1, 5.1, 6.3, 8.1, 10.1 |
-| Viewport | Panel system, layout, views | `Fram3d.Viewport` | 2.2, 8.2 |
-| Characters | Mannequin, pose, expression, skeleton | `Fram3d.Characters` | 6.1, 7.1, 12.2 |
-| Persistence | Project, scene file, asset bundle | `Fram3d.Persistence` | 4.1, 4.2, 8.3 |
-| Assets | Import, library, environments | `Fram3d.Assets` | 4.3, 5.2, 5.3, 12.3 |
-| Export | Renderer, storyboard, EDL | `Fram3d.Export` | 4.4 |
-| AI | Shot description, blocking, suggestions | `Fram3d.AI` | 11.1, 11.2, 11.3, 12.1 |
+| Assembly | Layer | Description |
+|----------|-------|-------------|
+| `Fram3d.Core` | Domain | Pure C#. The 3D world and everything it needs — camera, characters, scene, shots, timeline, assets. Testable with xUnit. |
+| `Fram3d.Services` | Orchestration | Pure C#. Cross-domain features that touch the whole domain — AI, serialization, export logic, script import. |
+| `Fram3d.Engine` | Integration | Unity. MonoBehaviour wrappers, evaluation pipeline, asset loading, rendering. Can't reference UI. |
+| `Fram3d.UI` | Presentation | Unity. UI Toolkit panels, overlays, input handling. Top of the stack. |
 
-If Characters can't reference Camera internals, you physically can't create the wrong coupling.
+### Core Namespaces
+
+`Fram3d.Core` is organized by namespace. All namespaces are in one assembly — natural domain couplings (camera reads character positions, linking reads bone transforms) are allowed. Discipline enforced via `internal` access modifiers on type internals.
+
+| Namespace | What it owns | References within Core |
+|-----------|-------------|----------------------|
+| `Core.Common` | Element base class, identity types, commands, registries, value objects, project/settings | Nothing |
+| `Core.Timeline` | Keyframe<T>, tracks, interpolation, GlobalTimeline, Playhead | Common |
+| `Core.Assets` | AssetEntry, AssetLibrary, EnvironmentTemplate | Common |
+| `Core.Camera` | CameraElement, lens, focus, DOF, shake, follow, watch, snorricam | Common, Timeline |
+| `Core.Character` | CharacterElement, skeleton, pose, IK, expression, walk cycles | Common, Timeline |
+| `Core.Shot` | Shot, Angle, ActiveAngleTrack, Subtitle | Common, Timeline, Camera |
+| `Core.Scene` | LightElement, selection, linking, grouping, walls, snap | Common, Timeline, Character |
 
 ---
 
@@ -40,6 +47,8 @@ An aggregate is a cluster of domain objects with a single root that controls acc
 
 *Example*: A shot owns its camera animations. Code that wants to add a keyframe goes through the shot, not directly to the animation object. The shot enforces rules like "at least one camera keyframe must exist."
 
+*Example*: `CharacterElement` is the aggregate root for character data. Camera and Scene code calls `CharacterElement.GetBoneWorldPosition("head")` — they never reference `Skeleton`, `Joint`, or `IKSolver` directly. Those types are `internal` to the Character namespace.
+
 Aggregate boundaries should emerge during implementation. The prior codebase's `TimelineState` was a cautionary tale — it owned everything and enforced nothing.
 
 ### Value Objects
@@ -50,25 +59,21 @@ Immutable types that carry meaning without identity. Two value objects with the 
 
 *From the prior codebase*: `KeyframeId` (wraps GUID, rejects empty) and `TimePosition` (rejects negative, provides `Add()`/`Subtract()` with clamping) worked well and should be carried forward.
 
-### Domain Events
+### Registries
 
-Cross-context communication without coupling. When something happens in one context that another context cares about, fire an event rather than creating a direct dependency.
+Typed collections of domain objects with query methods and `IObservable` change streams. `ElementRegistry` and `ShotRegistry` in `Core.Common` for shared data. Context-private data uses plain collections internally.
 
-*Example*: When a shot's duration changes, the timeline UI needs to update, the overview needs to redraw, and the export system's cached frame count is stale. The shot doesn't know about any of these — it fires `DurationChanged` and each subscriber handles its own update.
+Registries are the cross-context communication mechanism — subscribers react to `Added`/`Removed`/`Reordered` events via `IObservable<T>`. No central event bus.
 
 ### Command Pattern
 
-`ICommand` with `Execute()` / `Undo()` / `Redo()` for all user-initiated state changes. Enables the undo stack and potential action replay. Commands are exclusively for user actions — internal operations (scrubbing, evaluating, refreshing) are plain method calls, not commands. See `prior-codebase-lessons.md` for the anti-pattern this prevents.
+`ICommand` with `Execute()` / `Undo()` / `Redo()` for all user-initiated state changes. `ICommand`, `CommandStack`, and `CompoundCommand` live in `Core.Common`. Each namespace defines its own command types. Commands are exclusively for user actions — internal operations (scrubbing, evaluating, refreshing) are plain method calls, not commands. See `prior-codebase-lessons.md` for the anti-pattern this prevents.
 
 ---
 
 ## What We Skip
 
-**Repositories.** Unity manages object lifecycles through `MonoBehaviour`, `Instantiate`, `Destroy`, and scene serialization. Wrapping that in repositories duplicates what the engine already does.
-
-**Application services / use case classes.** The `ApplicationController.Update()` frame loop is inherently imperative. Routing every frame tick through application service abstractions adds indirection in a hot path.
-
-**Full layered architecture** (domain → application → infrastructure → presentation). Unity blurs these layers by design. `MonoBehaviour` is simultaneously presentation, infrastructure, and sometimes domain logic.
+**Full layered architecture** (domain → application → infrastructure → presentation). The four-assembly structure provides the meaningful boundaries (pure C# vs Unity, domain vs orchestration vs integration vs presentation) without the ceremony. Unity blurs traditional layers by design.
 
 ---
 
@@ -76,7 +81,8 @@ Cross-context communication without coupling. When something happens in one cont
 
 The key architectural pattern: **pure C# for domain logic, thin MonoBehaviour wrappers for scene graph integration.**
 
-- **Pure C# domain layer**: Domain types with no Unity dependencies. Testable with standard xUnit without Unity's test runner.
-- **MonoBehaviour integration layer**: Thin wrappers that bridge domain types to Unity's scene graph. These need Unity to run but contain minimal logic.
+- **`Fram3d.Core` + `Fram3d.Services`**: Pure C# domain and orchestration layers. No Unity dependencies. Testable with standard xUnit. Use `System.Numerics` for math types.
+- **`Fram3d.Engine`**: Thin MonoBehaviour wrappers that bridge domain types to Unity's scene graph. Contains the evaluation pipeline (`SceneEvaluator`) that runs each frame. Minimal logic — calls into Core for all computation.
+- **`Fram3d.UI`**: UI Toolkit presentation layer. Reads domain state, renders UI, routes user input to domain commands.
 
-This gives testability without the ceremony of formal DDD layering.
+If a Core or Services type needs `using UnityEngine;`, something is wrong.

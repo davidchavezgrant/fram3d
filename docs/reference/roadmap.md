@@ -237,7 +237,7 @@ Reading order = build order. Phases are numbered in the sequence they should be 
 			*Manipulate individual joints — head, arms, torso, legs. connected joints for natural limb movement. Direct joint selection and rotation. Prop holding: character holds element without precise finger alignment. Body region composition (bone-defined regions on single mesh) for v1.*
 
 		- ##### 6.1.4. Character animation
-			*Keyframe character poses on the timeline. Interpolate between poses for blocking animation. Walk cycles with custom gaits (limping, sneaking).*
+			*Keyframe character poses on the timeline. Interpolate between poses for blocking animation. Pre-baked walk cycle presets with gait variants (limping, sneaking) — not procedural locomotion.*
 
 		- ##### 6.1.5. Custom character import
 			*Import rigged humanoid models (FBX). Automatic rig mapping to Fram3d's pose/animation system. If model has blend shapes with standard naming, auto-map to expression system.*

@@ -450,42 +450,15 @@ This model matches how directors think: block the scene first (animate elements 
 
 ---
 
-## 3.1.4 Slow-motion
+> **Note**: Slow-motion (per-shot speed factor) was previously section 3.1.4 in this spec. It has been moved to its own spec at Milestone 8.4. Multi-scene project structure has moved to Milestone 4.2.5.
 
-***Per-shot speed factor. Slow-mo is a playback presentation layer — no keyframes are modified. The global element timeline plays at a different rate.***
+---
 
-> **Note**: Multi-scene project structure (scenes containing shots) has moved to milestone 4.2.5. See the Save / Load spec for the scene model, scene switching, scene creation, and scene deletion.
+## Shot Reordering and the Global Element Timeline
 
-### Speed Model
+When shots are reordered via drag-and-drop, the shots swap time ranges on the global timeline. Camera keyframes travel with their shot (they are per-shot data). Element keyframes stay at their original positions on the global timeline — they are scene-wide blocking, not per-shot data.
 
-- Each shot has a speed factor (default 1.0 = normal speed)
-- Playback-time transform: `globalTime = shotStart + (localTime * speedFactor)`
-- No keyframes are modified — slow-mo is purely a playback transformation
-- A speed factor of 0.5 means the shot plays at half speed (and lasts twice as long in wall-clock time)
-- A speed factor of 0.25 means quarter speed (four times as long)
-
-### UI
-
-- Speed percentage display on the shot track (e.g., "50%" for speedFactor 0.5)
-- Playback duration readout shows the wall-clock duration (shot duration / speed factor)
-
-``` python
-  .if >> shot has duration 5.0s and speed factor 0.5
-      <== playback takes 10 seconds of wall-clock time
-      <== the global timeline advances 5 seconds of animation time
-      <== keyframe positions are unchanged — interpolation is evaluated at the transformed time
-
-  .if >> shot has duration 5.0s and speed factor 1.0 (normal)
-      <== playback takes 5 seconds
-      <== no transformation applied
-```
-
-### Interaction with other systems
-
-- **Global element timeline (3.1.3)**: Elements animate at the slowed rate. The global timeline position is computed from the speed-adjusted time.
-- **Camera keyframes**: Camera animation plays at the slowed rate. No keyframe modification needed.
-- **Export (4.4)**: Rendered at the slowed rate — more frames are produced for the same animation content.
-- **Camera shake (1.1.6)**: Shake plays at the slowed rate (cosmetic overlay on top of the slowed playback).
+This means reordering shots changes the camera coverage order but not the element blocking. The director reorders which angles they see and when, but the characters keep doing the same thing at the same times. If the director wants to reblock for the new order, they do it manually. This matches how real film editing works: you reorder coverage, the action stays the same.
 
 ---
 

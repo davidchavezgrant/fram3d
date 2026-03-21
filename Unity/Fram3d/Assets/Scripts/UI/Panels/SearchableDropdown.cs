@@ -287,10 +287,19 @@ namespace Fram3d.UI.Panels
             this._filteredItems.Clear();
 
             if (string.IsNullOrEmpty(search))
+            {
                 this._filteredItems.AddRange(this._browseItems);
+            }
             else
+            {
+                // Split query into words — all words must appear somewhere in the item name
+                // e.g., "sony fx3" matches "Sony — FX3" because both "sony" and "fx3" are found
+                var words = search.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
                 this._filteredItems.AddRange(
-                    this._allItems.Where(item => item.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0));
+                    this._allItems.Where(item =>
+                        words.All(word => item.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0)));
+            }
 
             this._highlightedIndex = this._filteredItems.Count > 0 ? 0 : -1;
             this.RebuildListItems();

@@ -186,9 +186,18 @@ namespace Fram3d.UI.Panels
             this.RebuildBodyDropdown();
 
             var showAllToggle = new Toggle("Show all cameras");
-            showAllToggle.style.fontSize  = 10;
+            showAllToggle.style.fontSize  = 9;
             showAllToggle.style.marginTop = 4;
-            showAllToggle.style.color     = new Color(0.6f, 0.6f, 0.6f);
+            showAllToggle.style.color     = new Color(0.75f, 0.75f, 0.75f);
+
+            // Shrink the checkbox itself
+            var checkmark = showAllToggle.Q(className: "unity-toggle__checkmark");
+
+            if (checkmark != null)
+            {
+                checkmark.style.width  = 12;
+                checkmark.style.height = 12;
+            }
             showAllToggle.value           = this._showAllBodies;
 
             showAllToggle.RegisterValueChangedCallback(evt =>

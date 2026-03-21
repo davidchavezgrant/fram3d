@@ -76,13 +76,16 @@ namespace Fram3d.Engine.Integration
                                              IGrouping<string, RawLens> group,
                                              RawLens                    representative)
         {
-            var focalLengths = group.Where(l => l.focal_length_mm > 0).Select(l => l.focal_length_mm).OrderBy(f => f).ToArray();
+            var specs = group.Where(l => l.focal_length_mm > 0)
+                            .OrderBy(l => l.focal_length_mm)
+                            .Select(l => new LensSpec(l.focal_length_mm, l.max_aperture_tstop, l.close_focus_m))
+                            .ToArray();
 
-            if (focalLengths.Length == 0)
+            if (specs.Length == 0)
                 return;
 
             db.AddLensSet(new LensSet(setName,
-                                      focalLengths,
+                                      specs,
                                       representative.is_anamorphic,
                                       representative.squeeze_factor));
         }
@@ -100,7 +103,9 @@ namespace Fram3d.Engine.Integration
                                           range[0],
                                           range[1],
                                           lens.is_anamorphic,
-                                          lens.squeeze_factor));
+                                          lens.squeeze_factor,
+                                          lens.max_aperture_tstop > 0? lens.max_aperture_tstop : 0f,
+                                          lens.close_focus_m > 0? lens.close_focus_m : 0f));
             }
         }
 
@@ -135,9 +140,11 @@ namespace Fram3d.Engine.Integration
         [System.Serializable]
         private class RawLens
         {
+            public float   close_focus_m;
             public float   focal_length_mm;
             public float[] focal_range_mm;
             public bool    is_anamorphic;
+            public float   max_aperture_tstop;
             public string  name;
             public string  set;
             public float   squeeze_factor;

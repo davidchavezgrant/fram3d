@@ -959,5 +959,281 @@ namespace Fram3d.Core.Tests.Camera
 
 			cam.Position.Should().NotBe(positionBefore);
 		}
+
+		// --- Depth of Field (1.1.5) ---
+
+		[Fact]
+		public void DofEnabled__DefaultsFalse__When__Constructed()
+		{
+			var cam = CreateCamera();
+			cam.DofEnabled.Should().BeFalse();
+		}
+
+		[Fact]
+		public void FocusDistance__DefaultsTo10__When__Constructed()
+		{
+			var cam = CreateCamera();
+			cam.FocusDistance.Should().Be(10f);
+		}
+
+		[Fact]
+		public void Aperture__DefaultsToF56__When__Constructed()
+		{
+			var cam = CreateCamera();
+			cam.Aperture.Should().Be(5.6f);
+		}
+
+		[Fact]
+		public void StepApertureWider__DecreasesFNumber__When__NotAtWidest()
+		{
+			var cam = CreateCamera();
+			// Default is f/5.6
+			cam.StepApertureWider();
+			cam.Aperture.Should().Be(4f);
+		}
+
+		[Fact]
+		public void StepApertureNarrower__IncreasesFNumber__When__NotAtNarrowest()
+		{
+			var cam = CreateCamera();
+			// Default is f/5.6
+			cam.StepApertureNarrower();
+			cam.Aperture.Should().Be(8f);
+		}
+
+		[Fact]
+		public void StepApertureWider__StaysAtF14__When__AlreadyAtWidest()
+		{
+			var cam = CreateCamera();
+			// Step wider until at f/1.4
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(1.4f);
+
+			// One more step should stay at f/1.4
+			cam.StepApertureWider();
+			cam.Aperture.Should().Be(1.4f);
+		}
+
+		[Fact]
+		public void StepApertureNarrower__StaysAtF22__When__AlreadyAtNarrowest()
+		{
+			var cam = CreateCamera();
+			// Step narrower until at f/22
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureNarrower();
+
+			cam.Aperture.Should().Be(22f);
+
+			// One more step should stay at f/22
+			cam.StepApertureNarrower();
+			cam.Aperture.Should().Be(22f);
+		}
+
+		[Fact]
+		public void StepApertureWider__TraversesAllStops__When__SteppedRepeatedly()
+		{
+			var cam = CreateCamera();
+			// Start at f/22
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureNarrower();
+
+			cam.Aperture.Should().Be(22f);
+
+			// Step wider through every stop
+			var expectedStops = new[] { 16f, 11f, 8f, 5.6f, 4f, 2.8f, 2f, 1.4f };
+			foreach (var expected in expectedStops)
+			{
+				cam.StepApertureWider();
+				cam.Aperture.Should().Be(expected);
+			}
+		}
+
+		[Fact]
+		public void DofEnabled__CanBeToggled__When__SetDirectly()
+		{
+			var cam = CreateCamera();
+			cam.DofEnabled = true;
+			cam.DofEnabled.Should().BeTrue();
+
+			cam.DofEnabled = false;
+			cam.DofEnabled.Should().BeFalse();
+		}
+
+		[Fact]
+		public void FocusDistance__CanBeSet__When__AssignedDirectly()
+		{
+			var cam = CreateCamera();
+			cam.FocusDistance = 5.5f;
+			cam.FocusDistance.Should().Be(5.5f);
+		}
+
+		[Fact]
+		public void Reset__PreservesDofSettings__When__DofWasConfigured()
+		{
+			var cam = CreateCamera();
+			cam.DofEnabled = true;
+			cam.StepApertureWider();
+			cam.StepApertureWider();
+			cam.FocusDistance = 3f;
+
+			cam.Reset();
+
+			// DOF settings are equipment — preserved through reset
+			cam.DofEnabled.Should().BeTrue();
+			cam.Aperture.Should().Be(2.8f);
+			cam.FocusDistance.Should().Be(3f);
+		}
+
+		// --- Lens-constrained aperture (1.1.5) ---
+
+		[Fact]
+		public void StepApertureWider__ClampsToLensMaxAperture__When__LensHasT2()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f, maxAperture: 2f));
+
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(2f);
+		}
+
+		[Fact]
+		public void StepApertureWider__AllowsF14__When__NoLensSetActive()
+		{
+			var cam = CreateCamera();
+
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(1.4f);
+		}
+
+		[Fact]
+		public void SetLensSet__ClampsAperture__When__CurrentApertureWiderThanLens()
+		{
+			var cam = CreateCamera();
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(1.4f);
+
+			cam.SetLensSet(new LensSet("Slow Lens", new float[] { 50 }, false, 1.0f, maxAperture: 2.8f));
+
+			cam.Aperture.Should().BeGreaterThanOrEqualTo(2.8f);
+		}
+
+		// --- Lens-constrained focus distance (1.1.5) ---
+
+		[Fact]
+		public void FocusDistance__ClampsToCloseFocus__When__LensHasMinimum()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Master Primes", new float[] { 50 }, false, 1.0f, closeFocusM: 0.45f));
+
+			cam.FocusDistance = 0.2f;
+
+			cam.FocusDistance.Should().Be(0.45f);
+		}
+
+		[Fact]
+		public void FocusDistance__AllowsAboveCloseFocus__When__LensHasMinimum()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Master Primes", new float[] { 50 }, false, 1.0f, closeFocusM: 0.45f));
+
+			cam.FocusDistance = 5f;
+
+			cam.FocusDistance.Should().Be(5f);
+		}
+
+		[Fact]
+		public void SetLensSet__ClampsFocusDistance__When__CurrentBelowCloseFocus()
+		{
+			var cam = CreateCamera();
+			cam.FocusDistance = 0.2f;
+
+			cam.SetLensSet(new LensSet("Long Lens", new float[] { 200 }, false, 1.0f, closeFocusM: 1.5f));
+
+			cam.FocusDistance.Should().Be(1.5f);
+		}
+
+		// --- Per-lens constraints (1.1.5) ---
+
+		[Fact]
+		public void StepFocalLengthUp__ClampsAperture__When__NextLensHasNarrowerMaxAperture()
+		{
+			// 50mm is T1.4, 85mm is T2.8
+			var specs = new[]
+			{
+				new LensSpec(50f, 1.4f, 0.4f),
+				new LensSpec(85f, 2.8f, 0.8f)
+			};
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Mixed Set", specs, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+
+			// Open aperture to f/1.4 (allowed on 50mm)
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(1.4f);
+
+			// Step to 85mm — max aperture is T2.8, should clamp
+			cam.StepFocalLengthUp();
+
+			cam.FocalLength.Should().Be(85f);
+			cam.Aperture.Should().BeGreaterThanOrEqualTo(2.8f);
+		}
+
+		[Fact]
+		public void StepFocalLengthDown__ClampsFocusDistance__When__NextLensHasLongerCloseFocus()
+		{
+			// 85mm has 0.8m close focus, 50mm has 0.4m
+			var specs = new[]
+			{
+				new LensSpec(50f, 1.4f, 0.4f),
+				new LensSpec(85f, 1.4f, 0.8f)
+			};
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Test Set", specs, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+			cam.FocusDistance = 0.5f;
+
+			cam.FocusDistance.Should().Be(0.5f);
+
+			// Step to 85mm — close focus is 0.8m, should clamp
+			cam.StepFocalLengthUp();
+
+			cam.FocusDistance.Should().Be(0.8f);
+		}
+
+		[Fact]
+		public void StepFocalLengthDown__AllowsWiderAperture__When__NextLensIsFaster()
+		{
+			// 50mm is T2.8, 35mm is T1.4
+			var specs = new[]
+			{
+				new LensSpec(35f, 1.4f, 0.3f),
+				new LensSpec(50f, 2.8f, 0.4f)
+			};
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Fast Wide", specs, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+
+			// At f/2.8 on 50mm (its max)
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(2.8f);
+
+			// Step to 35mm — T1.4 max, now we can open wider
+			cam.StepFocalLengthDown();
+			cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(2f);
+		}
 	}
 }

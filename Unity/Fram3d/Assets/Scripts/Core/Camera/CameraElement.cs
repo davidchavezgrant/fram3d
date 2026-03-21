@@ -155,8 +155,6 @@ namespace Fram3d.Core.Camera
             this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
         }
 
-        // --- Body ---
-
         /// <summary>
         /// Sets the camera body, updating sensor dimensions. FOV recalculates automatically.
         /// Focal length is preserved.
@@ -178,8 +176,6 @@ namespace Fram3d.Core.Camera
         /// Sets the active lens set and snaps focal length to the nearest valid value.
         /// </summary>
         public void SetLensSet(LensSet lensSet) => this._lens.SetLensSet(lensSet);
-
-        // --- Lens (delegated to LensController) ---
 
         /// <summary>
         /// Steps to the next or previous focal length in the active prime lens set.
@@ -206,8 +202,6 @@ namespace Fram3d.Core.Camera
             var right = Vector3.Transform(Vector3.UnitX, this.Rotation);
             this.Position += right * amount;
         }
-
-        // --- Reset ---
 
         /// <summary>
         /// Restore camera to default position, rotation, and focal length.

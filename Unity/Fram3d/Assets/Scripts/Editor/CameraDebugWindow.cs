@@ -11,8 +11,8 @@ namespace Fram3d.Editor
     /// </summary>
     public sealed class CameraDebugWindow: EditorWindow
     {
-        private CameraBehaviour _cameraBehaviour;
         private string[]        _bodyNames;
+        private CameraBehaviour _cameraBehaviour;
         private string[]        _lensSetNames;
         private int             _selectedBodyIndex;
         private int             _selectedLensSetIndex;
@@ -20,20 +20,34 @@ namespace Fram3d.Editor
         [MenuItem("Fram3d/Camera Debug")]
         public static void ShowWindow() => GetWindow<CameraDebugWindow>("Camera Debug");
 
-        private void OnEnable()
+        private void BuildDropdowns(CameraDatabase db)
         {
-            EditorApplication.playModeStateChanged += this.OnPlayModeChanged;
-        }
+            this._bodyNames    = db.Bodies.Select(b => $"{b.Manufacturer} — {b.Name}").ToArray();
+            this._lensSetNames = db.LensSets.Select(ls => ls.Name).ToArray();
 
-        private void OnDisable()
-        {
-            EditorApplication.playModeStateChanged -= this.OnPlayModeChanged;
+            // Find current selection indices
+            var cam = this._cameraBehaviour.CameraElement;
+            this._selectedBodyIndex    = cam.Body          != null? db.Bodies.ToList().IndexOf(cam.Body) : 0;
+            this._selectedLensSetIndex = cam.ActiveLensSet != null? db.LensSets.ToList().IndexOf(cam.ActiveLensSet) : 0;
         }
 
         private void OnPlayModeChanged(PlayModeStateChange state)
         {
             if (state == PlayModeStateChange.EnteredPlayMode)
                 this.RefreshReferences();
+        }
+
+        private void RefreshReferences()
+        {
+            this._cameraBehaviour = FindObjectOfType<CameraBehaviour>();
+
+            if (this._cameraBehaviour != null)
+                this.BuildDropdowns(this._cameraBehaviour.Database);
+        }
+
+        private void OnEnable()
+        {
+            EditorApplication.playModeStateChanged += this.OnPlayModeChanged;
         }
 
         private void OnGUI()
@@ -62,7 +76,7 @@ namespace Fram3d.Editor
             EditorGUILayout.LabelField("Sensor",        $"{cam.SensorWidth:F2} x {cam.SensorHeight:F2} mm");
             EditorGUILayout.LabelField("Lens Set",      cam.ActiveLensSet?.Name ?? "(none)");
             EditorGUILayout.LabelField("Focal Length",  $"{cam.FocalLength:F1} mm");
-            EditorGUILayout.LabelField("Vertical FOV",  $"{cam.ComputeVerticalFov() * Mathf.Rad2Deg:F1}°");
+            EditorGUILayout.LabelField("Vertical FOV",  $"{cam.VerticalFov * Mathf.Rad2Deg:F1}°");
             EditorGUILayout.Space();
 
             // Body selector
@@ -115,23 +129,9 @@ namespace Fram3d.Editor
             this.Repaint();
         }
 
-        private void RefreshReferences()
+        private void OnDisable()
         {
-            this._cameraBehaviour = FindObjectOfType<CameraBehaviour>();
-
-            if (this._cameraBehaviour != null)
-                this.BuildDropdowns(this._cameraBehaviour.Database);
-        }
-
-        private void BuildDropdowns(CameraDatabase db)
-        {
-            this._bodyNames    = db.Bodies.Select(b => $"{b.Manufacturer} — {b.Name}").ToArray();
-            this._lensSetNames = db.LensSets.Select(ls => ls.Name).ToArray();
-
-            // Find current selection indices
-            var cam = this._cameraBehaviour.CameraElement;
-            this._selectedBodyIndex    = cam.Body          != null? db.Bodies.ToList().IndexOf(cam.Body) : 0;
-            this._selectedLensSetIndex = cam.ActiveLensSet != null? db.LensSets.ToList().IndexOf(cam.ActiveLensSet) : 0;
+            EditorApplication.playModeStateChanged -= this.OnPlayModeChanged;
         }
     }
 }

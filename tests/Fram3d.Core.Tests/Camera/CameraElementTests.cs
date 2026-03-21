@@ -431,17 +431,17 @@ namespace Fram3d.Core.Tests.Camera
 			// SensorHeight = 18.66mm, FocalLength = 50mm
 			// FOV = 2 * atan(18.66 / 100) ≈ 0.3696 radians ≈ 21.18°
 			var expected = 2f * MathF.Atan(18.66f / (2f * 50f));
-			cam.ComputeVerticalFov().Should().BeApproximately(expected, 0.001f);
+			cam.VerticalFov.Should().BeApproximately(expected, 0.001f);
 		}
 
 		[Fact]
 		public void ComputeVerticalFov__ReturnsWiderFov__When__FocalLengthDecreases()
 		{
 			var cam = CreateCamera();
-			var fov50 = cam.ComputeVerticalFov();
+			var fov50 = cam.VerticalFov;
 
 			cam.FocalLength = 24f;
-			var fov24 = cam.ComputeVerticalFov();
+			var fov24 = cam.VerticalFov;
 
 			fov24.Should().BeGreaterThan(fov50);
 		}
@@ -450,10 +450,10 @@ namespace Fram3d.Core.Tests.Camera
 		public void ComputeVerticalFov__ReturnsNarrowerFov__When__FocalLengthIncreases()
 		{
 			var cam = CreateCamera();
-			var fov50 = cam.ComputeVerticalFov();
+			var fov50 = cam.VerticalFov;
 
 			cam.FocalLength = 135f;
-			var fov135 = cam.ComputeVerticalFov();
+			var fov135 = cam.VerticalFov;
 
 			fov135.Should().BeLessThan(fov50);
 		}
@@ -462,10 +462,10 @@ namespace Fram3d.Core.Tests.Camera
 		public void ComputeVerticalFov__ReturnsWiderFov__When__SensorHeightIncreases()
 		{
 			var cam = CreateCamera();
-			var fovSuper35 = cam.ComputeVerticalFov();
+			var fovSuper35 = cam.VerticalFov;
 
 			cam.SetBody(new CameraBody("Generic 35mm", "Generic", 36.0f, 24.0f, "FF", "", new[] { 4096, 2160 }, new[] { 24 }));
-			var fovFullFrame = cam.ComputeVerticalFov();
+			var fovFullFrame = cam.VerticalFov;
 
 			fovFullFrame.Should().BeGreaterThan(fovSuper35);
 		}
@@ -592,12 +592,12 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetBody__ChangesFov__When__DifferentSensorSize()
 		{
 			var cam = CreateCamera();
-			var fovBefore = cam.ComputeVerticalFov();
+			var fovBefore = cam.VerticalFov;
 
 			// Full-frame has larger sensor than default Super 35
 			cam.SetBody(new CameraBody("Generic 35mm", "Generic", 36.0f, 24.0f, "FF", "", new[] { 4096, 2160 }, new[] { 24 }));
 
-			cam.ComputeVerticalFov().Should().BeGreaterThan(fovBefore);
+			cam.VerticalFov.Should().BeGreaterThan(fovBefore);
 		}
 
 		// --- Lens Set (1.1.3) ---

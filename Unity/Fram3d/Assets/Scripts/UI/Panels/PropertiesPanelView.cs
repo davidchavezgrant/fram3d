@@ -3,6 +3,7 @@ using System.Linq;
 using Fram3d.Core.Camera;
 using Fram3d.Engine.Integration;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace Fram3d.UI.Panels
@@ -43,7 +44,7 @@ namespace Fram3d.UI.Panels
                 if (!this._visible || this._root == null)
                     return false;
 
-                var mousePos  = UnityEngine.Input.mousePosition;
+                var mousePos  = Mouse.current.position.ReadValue();
                 var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
                 var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
 
@@ -207,8 +208,11 @@ namespace Fram3d.UI.Panels
             var db  = this._cameraBehaviour.Database;
             var cam = this._cameraBehaviour.CameraElement;
 
-            // Sorted by year descending so most recent cameras appear first. Generics (year 0) go last.
-            this._bodyList = db.Bodies.OrderByDescending(b => b.Year).ToList();
+            // Generics first, then sorted by year descending (most recent cameras first)
+            this._bodyList = db.Bodies
+                .OrderByDescending(b => b.Manufacturer == "Generic")
+                .ThenByDescending(b => b.Year)
+                .ToList();
             var names   = this._bodyList.Select(b => $"{b.Manufacturer} — {b.Name}").ToList();
             var current = cam.Body != null ? this._bodyList.IndexOf(cam.Body) : 0;
 

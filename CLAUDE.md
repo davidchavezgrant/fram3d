@@ -6,7 +6,8 @@ Fram3d is a 3D previsualization tool for filmmakers. Unity project (Unity 6, URP
 
 - **Never overwrite or replace existing work.** When building new mockups, features, or files that relate to existing ones, incorporate or reference the existing work — don't start from scratch. If you need to create something new in the same space, create a separate file. Never nuke what we've already iterated on.
 - **Use the domain language.** Read `docs/reference/domain-language.md` before writing specs, code, or UI text. Terms are chosen deliberately — don't invent synonyms.
-- **All work requires a Linear ticket.** Create or find a Linear issue before starting any implementation, bug fix, or research task. Reference the ticket in commits and PRs.
+- **All work requires a Linear ticket.** Before creating a new issue, **thoroughly search** for an existing one — search by title keywords, browse the relevant project/milestone, and check backlog. Only create a new issue if no match exists. Reference the ticket (e.g., FRA-36) in commits and PRs.
+- **Never overwrite Linear issue content.** When updating an issue, append implementation notes below the existing description. Never replace the original spec text or user-written content.
 
 ## Code Style (C#)
 

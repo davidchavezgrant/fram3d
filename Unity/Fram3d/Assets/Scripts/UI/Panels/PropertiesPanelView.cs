@@ -185,10 +185,22 @@ namespace Fram3d.UI.Panels
 
             this.RebuildBodyDropdown();
 
+            var labelColor    = new Color(0.75f, 0.75f, 0.75f);
             var showAllToggle = new Toggle("Show all cameras");
             showAllToggle.style.fontSize  = 9;
             showAllToggle.style.marginTop = 4;
-            showAllToggle.style.color     = new Color(0.75f, 0.75f, 0.75f);
+
+            // Force the label color so Unity's default checked-blue doesn't override it
+            var toggleLabel = showAllToggle.Q<Label>();
+
+            if (toggleLabel != null)
+                toggleLabel.style.color = labelColor;
+
+            showAllToggle.RegisterValueChangedCallback(_ =>
+            {
+                if (toggleLabel != null)
+                    toggleLabel.style.color = labelColor;
+            });
 
             // Shrink the checkbox itself
             var checkmark = showAllToggle.Q(className: "unity-toggle__checkmark");

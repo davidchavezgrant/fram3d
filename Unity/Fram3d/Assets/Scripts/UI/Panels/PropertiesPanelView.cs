@@ -37,14 +37,27 @@ namespace Fram3d.UI.Panels
             this._panel.style.display = this._visible ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        private void OnEnable()
+        private void Start()
         {
             this._cameraBehaviour = FindObjectOfType<CameraBehaviour>();
 
             if (this._cameraBehaviour == null)
-                return;
+            {
+                Debug.LogWarning("PropertiesPanelView: No CameraBehaviour found.");
 
-            this._root = this.GetComponent<UIDocument>().rootVisualElement;
+                return;
+            }
+
+            var uiDocument = this.GetComponent<UIDocument>();
+
+            if (uiDocument == null || uiDocument.rootVisualElement == null)
+            {
+                Debug.LogWarning("PropertiesPanelView: UIDocument or rootVisualElement is null.");
+
+                return;
+            }
+
+            this._root = uiDocument.rootVisualElement;
             this.BuildPanel();
         }
 

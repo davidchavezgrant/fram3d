@@ -119,9 +119,10 @@ When asked to implement a feature or milestone, follow this sequence exactly.
 ### 6. PR and Linear
 
 1. Push branch, create PR with summary and test plan.
-2. PR title format: `FRA-XX: short description`.
-3. Link the PR to the Linear issue (as an attachment).
-4. Update Linear status — do NOT overwrite the existing description. Append implementation notes below a `---` separator.
+2. **PRs always target `main`.** Never set the base branch to another feature branch.
+3. PR title format: `FRA-XX: short description`.
+4. Link the PR to the Linear issue (as an attachment).
+5. Update Linear status — do NOT overwrite the existing description. Append implementation notes below a `---` separator.
 
 ## Documentation
 

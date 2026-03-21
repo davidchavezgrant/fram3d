@@ -7,13 +7,11 @@ namespace Fram3d.Engine.Integration
     [RequireComponent(typeof(Camera))]
     public sealed class CameraBehaviour: MonoBehaviour
     {
-        private const float LENS_LERP_SPEED = 10f;
-
-        private Camera        _unityCamera;
-        private CameraElement _cameraElement;
-        private float         _displayedFocalLength;
-
-        public CameraElement CameraElement => this._cameraElement;
+        private const float         LENS_LERP_SPEED = 10f;
+        private       Camera        _unityCamera;
+        private       CameraElement _cameraElement;
+        private       float         _displayedFocalLength;
+        public        CameraElement CameraElement => this._cameraElement;
 
         private void Awake()
         {
@@ -35,11 +33,20 @@ namespace Fram3d.Engine.Integration
             this.transform.position = this._cameraElement.Position.ToUnity();
             this.transform.rotation = this._cameraElement.Rotation.ToUnity();
 
-            // Smooth focal length transitions — lerp the displayed value toward the domain target
-            this._displayedFocalLength = Mathf.Lerp(
-                this._displayedFocalLength,
-                this._cameraElement.FocalLength,
-                Time.deltaTime * LENS_LERP_SPEED);
+            // Dolly zoom requires instant sync to keep position and focal length perfectly paired.
+            // All other focal length changes lerp for smooth visual transitions.
+            if (this._cameraElement.SnapFocalLength)
+            {
+                this._displayedFocalLength             = this._cameraElement.FocalLength;
+                this._cameraElement.SnapFocalLength = false;
+            }
+            else
+            {
+                this._displayedFocalLength = Mathf.Lerp(
+                    this._displayedFocalLength,
+                    this._cameraElement.FocalLength,
+                    Time.deltaTime * LENS_LERP_SPEED);
+            }
 
             this._unityCamera.focalLength = this._displayedFocalLength;
             this._unityCamera.sensorSize  = new Vector2(24.89f, this._cameraElement.SensorHeight);

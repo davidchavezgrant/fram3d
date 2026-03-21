@@ -19,8 +19,9 @@ namespace Fram3d.Core.Camera
             private set => this._focalLength = Math.Clamp(value, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
         }
 
-        public float   SensorHeight   { get; set; } = DEFAULT_SENSOR_HEIGHT;
-        public Vector3 OrbitPivotPoint { get; set; } = Vector3.Zero;
+        public float   SensorHeight      { get; set; } = DEFAULT_SENSOR_HEIGHT;
+        public Vector3 OrbitPivotPoint    { get; set; } = Vector3.Zero;
+        public bool    SnapFocalLength    { get; set; }
 
         public CameraElement(ElementId id, string name): base(id, name)
         {
@@ -147,6 +148,7 @@ namespace Fram3d.Core.Camera
 
             this.Position = this.OrbitPivotPoint + direction * clampedDistance;
             this.SetFocalLength(newFocalLength);
+            this.SnapFocalLength = true;
         }
 
         /// <summary>

@@ -39,6 +39,8 @@ The `.editorconfig` at the project root is the source of truth for formatting. T
 - **Early return** over else blocks — if an `if` branch returns/continues/breaks and the else would be the rest of the method, drop the else and early return.
 - **Local variables for readability** — when passing `this._thing.Property` chains into method calls, introduce a short local variable to keep lines readable.
 - **Member ordering** — enforced by Rider, alphabetized within each group: constants/static fields → instance fields → constructors → properties → methods. Alphabetical order within each group.
+- **Computed properties over methods** — if it takes no parameters and computes from current state, make it a property (e.g., `VerticalFov`, `LookDirection`, `CanDollyZoom`), not a `Compute*()` or `Get*()` method.
+- **Break up large methods** — extract private methods when a method has distinct logical sections. Each method should do one thing. Name the extracted method after what it does, not when it's called.
 
 ## Project Layout
 

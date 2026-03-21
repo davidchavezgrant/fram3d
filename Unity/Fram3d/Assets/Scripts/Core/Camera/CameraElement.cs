@@ -18,6 +18,7 @@ namespace Fram3d.Core.Camera
 
         public LensSet    ActiveLensSet => this._lens.ActiveLensSet;
         public CameraBody Body          { get; private set; }
+        public bool       CanDollyZoom  => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
 
         /// <summary>
         /// Current focal length in mm. Setting this value respects lens constraints:
@@ -43,6 +44,15 @@ namespace Fram3d.Core.Camera
             get => this._lens.SnapFocalLength;
             set => this._lens.SnapFocalLength = value;
         }
+
+        // --- Internal ---
+
+        /// <summary>
+        /// The world-space direction the camera is currently looking at.
+        /// Computed by rotating the base forward vector (-Z in right-handed System.Numerics)
+        /// by the camera's current rotation.
+        /// </summary>
+        private Vector3 LookDirection => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
 
         // --- FOV ---
 
@@ -82,7 +92,7 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public void DollyZoom(float amount)
         {
-            if (!this._lens.CanDollyZoom)
+            if (!this.CanDollyZoom)
                 return;
 
             var forward     = this.LookDirection;
@@ -196,15 +206,6 @@ namespace Fram3d.Core.Camera
             var right = Vector3.Transform(Vector3.UnitX, this.Rotation);
             this.Position += right * amount;
         }
-
-        // --- Internal ---
-
-        /// <summary>
-        /// The world-space direction the camera is currently looking at.
-        /// Computed by rotating the base forward vector (-Z in right-handed System.Numerics)
-        /// by the camera's current rotation.
-        /// </summary>
-        private Vector3 LookDirection => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
 
         // --- Reset ---
 

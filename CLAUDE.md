@@ -38,6 +38,7 @@ The `.editorconfig` at the project root is the source of truth for formatting. T
 - **No extra blank lines** — formatter strips them (keep_blank_lines = 0).
 - **Early return** over else blocks — if an `if` branch returns/continues/breaks and the else would be the rest of the method, drop the else and early return.
 - **Local variables for readability** — when passing `this._thing.Property` chains into method calls, introduce a short local variable to keep lines readable.
+- **Member ordering** — enforced by Rider, alphabetized within each group: constants/static fields → instance fields → constructors → properties → methods. Alphabetical order within each group.
 
 ## Project Layout
 

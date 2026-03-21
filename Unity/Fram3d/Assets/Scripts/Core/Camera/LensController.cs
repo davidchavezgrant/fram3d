@@ -15,12 +15,6 @@ namespace Fram3d.Core.Camera
         private       float   _focalLength         = DEFAULT_FOCAL_LENGTH;
         public        LensSet ActiveLensSet { get; private set; }
 
-        /// <summary>
-        /// Whether dolly zoom is allowed with the current lens set.
-        /// Disabled for prime lenses which have fixed focal lengths.
-        /// </summary>
-        public bool CanDollyZoom => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
-
         public float FocalLength
         {
             get => this._focalLength;
@@ -46,17 +40,6 @@ namespace Fram3d.Core.Camera
         /// Cleared by CameraBehaviour after consuming.
         /// </summary>
         public bool SnapFocalLength { get; set; }
-
-        /// <summary>
-        /// Computes the vertical field of view in radians from the current focal length
-        /// and the provided sensor height.
-        /// FOV = 2 * atan(sensorHeight / (2 * focalLength))
-        /// </summary>
-
-        // TODO: When anamorphic lens is active, compute horizontal FOV using squeeze factor:
-        //   hFov = 2 * atan((sensorWidth * squeezeFactor) / (2 * focalLength))
-        //   Also auto-lock aspect ratio to the computed delivery format (see 1.2.1).
-        public float ComputeVerticalFov(float sensorHeight) => 2f * MathF.Atan(sensorHeight / (2f * this.FocalLength));
 
         /// <summary>
         /// Sets focal length continuously. Respects lens set constraints:

@@ -1,5 +1,6 @@
 using Fram3d.Core.Camera;
 using Fram3d.Engine.Integration;
+using Fram3d.UI.Panels;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -11,6 +12,9 @@ namespace Fram3d.UI.Input
 
         [SerializeField]
         private CameraBehaviour cameraBehaviour;
+
+        [SerializeField]
+        private PropertiesPanelView propertiesPanel;
 
         private CameraElement _camera;
 
@@ -121,6 +125,14 @@ namespace Fram3d.UI.Input
 
         private void HandleKeyboardInput(Keyboard keyboard)
         {
+            // I = toggle properties panel
+            if (keyboard.iKey.wasPressedThisFrame && this.propertiesPanel != null)
+            {
+                this.propertiesPanel.Toggle();
+
+                return;
+            }
+
             if (keyboard.ctrlKey.isPressed && keyboard.rKey.wasPressedThisFrame)
             {
                 this._camera.Reset();

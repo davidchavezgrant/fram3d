@@ -34,7 +34,7 @@ namespace Fram3d.UI.Input
             this.HandleKeyboardInput(keyboard);
 
             // Don't process scroll/drag when pointer is over a UI panel
-            if (this.propertiesPanel != null && this.propertiesPanel.IsPointerOver)
+            if (this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI)
                 return;
 
             this.HandleScrollInput(keyboard, mouse);

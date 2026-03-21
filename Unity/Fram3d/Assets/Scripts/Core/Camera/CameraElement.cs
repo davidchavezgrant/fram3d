@@ -196,10 +196,44 @@ namespace Fram3d.Core.Camera
         }
 
         /// <summary>
-        /// Sets the active lens set, updating which focal lengths are available for preset snapping.
-        /// Does not change the current focal length — even if it's not in the new set's list.
+        /// Sets the active lens set and snaps the focal length to the nearest valid value.
+        /// For primes: snaps to the closest available focal length in the set.
+        /// For zooms: clamps to the lens's min/max range.
         /// </summary>
-        public void SetLensSet(LensSet lensSet) => this.ActiveLensSet = lensSet;
+        public void SetLensSet(LensSet lensSet)
+        {
+            this.ActiveLensSet = lensSet;
+
+            if (lensSet == null)
+                return;
+
+            if (lensSet.IsZoom)
+            {
+                // Clamp to zoom range
+                this.FocalLength     = Math.Clamp(this.FocalLength, lensSet.MinFocalMm, lensSet.MaxFocalMm);
+                this.SnapFocalLength = true;
+            }
+            else if (lensSet.FocalLengths.Length > 0)
+            {
+                // Snap to nearest prime focal length
+                var nearest = lensSet.FocalLengths[0];
+                var minDiff = MathF.Abs(this.FocalLength - nearest);
+
+                for (var i = 1; i < lensSet.FocalLengths.Length; i++)
+                {
+                    var diff = MathF.Abs(this.FocalLength - lensSet.FocalLengths[i]);
+
+                    if (diff >= minDiff)
+                        continue;
+
+                    minDiff = diff;
+                    nearest = lensSet.FocalLengths[i];
+                }
+
+                this.FocalLength     = nearest;
+                this.SnapFocalLength = true;
+            }
+        }
 
         /// <summary>
         /// Computes the vertical field of view in radians from the current focal length and sensor height.

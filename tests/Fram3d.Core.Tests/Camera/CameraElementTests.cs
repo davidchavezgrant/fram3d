@@ -590,15 +590,15 @@ namespace Fram3d.Core.Tests.Camera
 		}
 
 		[Fact]
-		public void SetLensSet__PreservesFocalLength__When__FocalLengthNotInSet()
+		public void SetLensSet__SnapsToNearestPrime__When__FocalLengthNotInSet()
 		{
 			var cam = CreateCamera();
 			cam.SetFocalLength(200f);
 
-			// Leica Summilux-C maxes out at 135mm
+			// Leica Summilux-C maxes out at 135mm — 200mm snaps to nearest (135mm)
 			cam.SetLensSet(new LensSet("Leica Summilux-C", new float[] { 16, 18, 21, 25, 29, 35, 40, 50, 65, 75, 100, 135 }, false, 1.0f));
 
-			cam.FocalLength.Should().Be(200f);
+			cam.FocalLength.Should().Be(135f);
 		}
 
 		[Fact]
@@ -725,6 +725,69 @@ namespace Fram3d.Core.Tests.Camera
 			cam.SetFocalLength(45f);
 
 			cam.FocalLength.Should().Be(45f);
+		}
+
+		// --- Snap on lens set switch (1.1.3) ---
+
+		[Fact]
+		public void SetLensSet__SnapsToZoomMin__When__BelowZoomRange()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 16-35mm", 16f, 35f, false, 1.0f));
+			cam.SetFocalLength(16f);
+
+			// Switch to 24-70mm — current 16mm is below range, should snap to 24mm
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+
+			cam.FocalLength.Should().Be(24f);
+		}
+
+		[Fact]
+		public void SetLensSet__SnapsToZoomMax__When__AboveZoomRange()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(200f);
+
+			// Switch to 24-70mm — current 200mm is above range, should snap to 70mm
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+
+			cam.FocalLength.Should().Be(70f);
+		}
+
+		[Fact]
+		public void SetLensSet__PreservesFocalLength__When__WithinZoomRange()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(35f);
+
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+
+			cam.FocalLength.Should().Be(35f);
+		}
+
+		[Fact]
+		public void SetLensSet__SnapsToNearestPrime__When__SwitchingFromZoomToPrime()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+			cam.SetFocalLength(45f);
+
+			// Switch to primes — 45mm should snap to nearest (50mm)
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		[Fact]
+		public void SetLensSet__SetsSnapFlag__When__FocalLengthChanges()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(200f);
+			cam.SnapFocalLength = false;
+
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+
+			cam.SnapFocalLength.Should().BeTrue();
 		}
 	}
 }

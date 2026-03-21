@@ -21,6 +21,12 @@ namespace Fram3d.Core.Camera
 
         public float   SensorHeight      { get; set; } = DEFAULT_SENSOR_HEIGHT;
         public Vector3 OrbitPivotPoint    { get; set; } = Vector3.Zero;
+        /// <summary>
+        /// When true, CameraBehaviour applies focal length instantly instead of lerping.
+        /// Set by DollyZoom to keep position and focal length perfectly synchronized —
+        /// any lerp delay between them breaks the dolly zoom effect and causes visible jitter.
+        /// Cleared by CameraBehaviour after consuming.
+        /// </summary>
         public bool    SnapFocalLength    { get; set; }
 
         public CameraElement(ElementId id, string name): base(id, name)

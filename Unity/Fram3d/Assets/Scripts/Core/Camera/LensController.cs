@@ -92,10 +92,31 @@ namespace Fram3d.Core.Camera
         }
 
         /// <summary>
-        /// Steps to the next (+1) or previous (-1) focal length in the active prime lens set.
-        /// No-op if no lens set or if the lens set is a zoom.
+        /// Steps to the next shorter focal length in the active prime lens set.
+        /// No-op if no lens set, if the lens set is a zoom, or if already at the shortest lens.
         /// </summary>
-        public void StepFocalLength(int direction)
+        public void StepFocalLengthDown()
+        {
+            this.StepFocalLength(-1);
+        }
+
+        /// <summary>
+        /// Steps to the next longer focal length in the active prime lens set.
+        /// No-op if no lens set, if the lens set is a zoom, or if already at the longest lens.
+        /// </summary>
+        public void StepFocalLengthUp()
+        {
+            this.StepFocalLength(1);
+        }
+
+        /// <summary>
+        /// Sets focal length directly, bypassing prime lens restrictions.
+        /// Used internally by CameraElement.DollyZoom which needs to adjust
+        /// focal length regardless of lens type constraints.
+        /// </summary>
+        internal void SetFocalLengthUnchecked(float mm) => this.FocalLength = mm;
+
+        private void StepFocalLength(int direction)
         {
             if (this.ActiveLensSet == null || this.ActiveLensSet.IsZoom)
                 return;
@@ -110,13 +131,6 @@ namespace Fram3d.Core.Camera
             this.FocalLength     = lengths[newIndex];
             this.SnapFocalLength = true;
         }
-
-        /// <summary>
-        /// Sets focal length directly, bypassing prime lens restrictions.
-        /// Used internally by CameraElement.DollyZoom which needs to adjust
-        /// focal length regardless of lens type constraints.
-        /// </summary>
-        internal void SetFocalLengthUnchecked(float mm) => this.FocalLength = mm;
 
         private static int FindNearestIndex(float[] values, float target)
         {

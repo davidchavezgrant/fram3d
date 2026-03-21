@@ -78,7 +78,10 @@ namespace Fram3d.UI.Input
                 var activeLensSet = this._camera.ActiveLensSet;
 
                 if (activeLensSet != null && !activeLensSet.IsZoom)
-                    this._camera.StepFocalLength(scrollY > 0 ? 1 : -1);
+                    if (scrollY > 0)
+                        this._camera.StepFocalLengthUp();
+                    else
+                        this._camera.StepFocalLengthDown();
                 else
                     this._camera.FocalLength = this._camera.FocalLength + scrollY * MovementSpeeds.FOCAL_LENGTH_SCROLL;
             }

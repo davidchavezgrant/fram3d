@@ -23,7 +23,7 @@ namespace Fram3d.Core.Camera
         /// <summary>
         /// Current focal length in mm. Setting this value respects lens constraints:
         /// zoom lenses clamp to their range, prime lenses ignore the write (use
-        /// StepFocalLength or SetFocalLengthPreset for primes).
+        /// StepFocalLengthUp/Down or SetFocalLengthPreset for primes).
         /// </summary>
         public float FocalLength
         {
@@ -174,9 +174,14 @@ namespace Fram3d.Core.Camera
         public void SetLensSet(LensSet lensSet) => this._lens.SetLensSet(lensSet);
 
         /// <summary>
-        /// Steps to the next or previous focal length in the active prime lens set.
+        /// Steps to the next longer focal length in the active prime lens set.
         /// </summary>
-        public void StepFocalLength(int direction) => this._lens.StepFocalLength(direction);
+        public void StepFocalLengthUp() => this._lens.StepFocalLengthUp();
+
+        /// <summary>
+        /// Steps to the next shorter focal length in the active prime lens set.
+        /// </summary>
+        public void StepFocalLengthDown() => this._lens.StepFocalLengthDown();
 
         /// <summary>
         /// Vertical rotation around the camera's local right axis.

@@ -654,50 +654,50 @@ namespace Fram3d.Core.Tests.Camera
 		}
 
 		[Fact]
-		public void StepFocalLength__SnapsToNextLens__When__SteppingForward()
+		public void StepFocalLengthUp__SnapsToNextLens__When__Called()
 		{
 			var cam = CreateCamera();
 			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
 			cam.SetFocalLengthPreset(35f);
 
-			cam.StepFocalLength(1);
+			cam.StepFocalLengthUp();
 
 			cam.FocalLength.Should().Be(50f);
 		}
 
 		[Fact]
-		public void StepFocalLength__SnapsToPreviousLens__When__SteppingBackward()
+		public void StepFocalLengthDown__SnapsToPreviousLens__When__Called()
 		{
 			var cam = CreateCamera();
 			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
 			cam.SetFocalLengthPreset(50f);
 
-			cam.StepFocalLength(-1);
+			cam.StepFocalLengthDown();
 
 			cam.FocalLength.Should().Be(35f);
 		}
 
 		[Fact]
-		public void StepFocalLength__ClampsAtEnd__When__AlreadyAtMax()
+		public void StepFocalLengthUp__StaysAtMax__When__AlreadyAtLongestLens()
 		{
 			var cam = CreateCamera();
 			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
 			cam.SetFocalLengthPreset(100f);
 
-			cam.StepFocalLength(1);
+			cam.StepFocalLengthUp();
 
 			cam.FocalLength.Should().Be(100f);
 		}
 
 		[Fact]
-		public void StepFocalLength__SetsSnapFlag__When__Stepping()
+		public void StepFocalLengthUp__SetsSnapFlag__When__Called()
 		{
 			var cam = CreateCamera();
 			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
 			cam.SetFocalLengthPreset(35f);
 			cam.SnapFocalLength = false;
 
-			cam.StepFocalLength(1);
+			cam.StepFocalLengthUp();
 
 			cam.SnapFocalLength.Should().BeTrue();
 		}

@@ -8,7 +8,7 @@ namespace Fram3d.UI.Panels
 {
     /// <summary>
     /// A dropdown with an integrated search field that live-filters the options list.
-    /// Arrow keys navigate the results, Enter confirms selection.
+    /// Arrow keys navigate the results, Enter confirms selection, Escape closes.
     /// Only one SearchableDropdown can be open at a time.
     /// </summary>
     public sealed class SearchableDropdown
@@ -21,11 +21,11 @@ namespace Fram3d.UI.Panels
         private List<string>  _filteredItems;
         private int           _highlightedIndex = -1;
         private bool          _isOpen;
+        private VisualElement _root;
         private ScrollView    _scrollView;
         private TextField     _searchField;
         private int           _selectedIndex;
         private Label         _selectedLabel;
-        private VisualElement _root;
 
         public event Action<int> SelectionChanged;
 
@@ -53,12 +53,12 @@ namespace Fram3d.UI.Panels
         {
             this._browseItems = filteredItems;
 
-            if (string.IsNullOrEmpty(this._searchField.value))
-            {
-                this._filteredItems.Clear();
-                this._filteredItems.AddRange(this._browseItems);
-                this.RebuildListItems();
-            }
+            if (!string.IsNullOrEmpty(this._searchField.value))
+                return;
+
+            this._filteredItems.Clear();
+            this._filteredItems.AddRange(this._browseItems);
+            this.RebuildListItems();
         }
 
         public void Close()
@@ -94,38 +94,23 @@ namespace Fram3d.UI.Panels
             _currentlyOpen = this;
         }
 
+        // --- Selector bar (click to open) ---
+
         private void BuildSelector()
         {
             var selector = new VisualElement();
-            selector.style.flexDirection          = FlexDirection.Row;
-            selector.style.backgroundColor        = new Color(0.18f, 0.18f, 0.18f);
-            selector.style.borderBottomWidth      = 1;
-            selector.style.borderTopWidth         = 1;
-            selector.style.borderLeftWidth        = 1;
-            selector.style.borderRightWidth       = 1;
-            selector.style.borderBottomColor      = new Color(0.3f, 0.3f, 0.3f);
-            selector.style.borderTopColor         = new Color(0.3f, 0.3f, 0.3f);
-            selector.style.borderLeftColor        = new Color(0.3f, 0.3f, 0.3f);
-            selector.style.borderRightColor       = new Color(0.3f, 0.3f, 0.3f);
-            selector.style.borderBottomLeftRadius  = 3;
-            selector.style.borderBottomRightRadius = 3;
-            selector.style.borderTopLeftRadius     = 3;
-            selector.style.borderTopRightRadius    = 3;
-            selector.style.paddingLeft             = 6;
-            selector.style.paddingRight            = 6;
-            selector.style.paddingTop              = 4;
-            selector.style.paddingBottom           = 4;
+            StyleSelector(selector);
 
             var initialText = this._allItems.Count > 0 ? this._allItems[this._selectedIndex] : "—";
             this._selectedLabel = new Label(initialText);
-            this._selectedLabel.style.fontSize = 11;
-            this._selectedLabel.style.color    = new Color(0.8f, 0.8f, 0.8f);
+            this._selectedLabel.style.fontSize = Theme.FONT_BODY;
+            this._selectedLabel.style.color    = Theme.TEXT_LIGHT;
             this._selectedLabel.style.flexGrow = 1;
             this._selectedLabel.style.overflow = Overflow.Hidden;
 
             var arrow = new Label("▾");
-            arrow.style.fontSize = 10;
-            arrow.style.color    = new Color(0.5f, 0.5f, 0.5f);
+            arrow.style.fontSize = Theme.FONT_HEADER;
+            arrow.style.color    = Theme.LABEL_MID;
 
             selector.Add(this._selectedLabel);
             selector.Add(arrow);
@@ -141,16 +126,40 @@ namespace Fram3d.UI.Panels
             this._root.Add(selector);
         }
 
+        private static void StyleSelector(VisualElement selector)
+        {
+            selector.style.flexDirection          = FlexDirection.Row;
+            selector.style.backgroundColor        = Theme.SELECTOR_BG;
+            selector.style.borderBottomWidth      = 1;
+            selector.style.borderTopWidth         = 1;
+            selector.style.borderLeftWidth        = 1;
+            selector.style.borderRightWidth       = 1;
+            selector.style.borderBottomColor      = Theme.SELECTOR_BORDER;
+            selector.style.borderTopColor         = Theme.SELECTOR_BORDER;
+            selector.style.borderLeftColor        = Theme.SELECTOR_BORDER;
+            selector.style.borderRightColor       = Theme.SELECTOR_BORDER;
+            selector.style.borderBottomLeftRadius  = 3;
+            selector.style.borderBottomRightRadius = 3;
+            selector.style.borderTopLeftRadius     = 3;
+            selector.style.borderTopRightRadius    = 3;
+            selector.style.paddingLeft             = 6;
+            selector.style.paddingRight            = 6;
+            selector.style.paddingTop              = 4;
+            selector.style.paddingBottom           = 4;
+        }
+
+        // --- Dropdown overlay (search + scrollable list) ---
+
         private void BuildOverlay(string placeholder)
         {
             this._dropdownOverlay = new VisualElement();
-            this._dropdownOverlay.style.backgroundColor        = new Color(0.16f, 0.16f, 0.16f);
+            this._dropdownOverlay.style.backgroundColor        = Theme.DROPDOWN_BG;
             this._dropdownOverlay.style.borderBottomWidth      = 1;
             this._dropdownOverlay.style.borderLeftWidth        = 1;
             this._dropdownOverlay.style.borderRightWidth       = 1;
-            this._dropdownOverlay.style.borderBottomColor      = new Color(0.3f, 0.3f, 0.3f);
-            this._dropdownOverlay.style.borderLeftColor        = new Color(0.3f, 0.3f, 0.3f);
-            this._dropdownOverlay.style.borderRightColor       = new Color(0.3f, 0.3f, 0.3f);
+            this._dropdownOverlay.style.borderBottomColor      = Theme.SELECTOR_BORDER;
+            this._dropdownOverlay.style.borderLeftColor        = Theme.SELECTOR_BORDER;
+            this._dropdownOverlay.style.borderRightColor       = Theme.SELECTOR_BORDER;
             this._dropdownOverlay.style.borderBottomLeftRadius  = 3;
             this._dropdownOverlay.style.borderBottomRightRadius = 3;
             this._dropdownOverlay.style.display                = DisplayStyle.None;
@@ -160,14 +169,10 @@ namespace Fram3d.UI.Panels
             this._searchField.style.marginRight  = 4;
             this._searchField.style.marginTop    = 4;
             this._searchField.style.marginBottom = 2;
-            this._searchField.style.fontSize     = 11;
+            this._searchField.style.fontSize     = Theme.FONT_BODY;
             this._searchField.textEdition.placeholder = placeholder;
             this._searchField.RegisterValueChangedCallback(this.OnSearchChanged);
-
-            // Arrow keys + Enter — use TrickleDown so we capture before the text field consumes them
             this._searchField.RegisterCallback<KeyDownEvent>(this.OnKeyDown, TrickleDown.TrickleDown);
-
-            // Close when focus leaves
             this._searchField.RegisterCallback<FocusOutEvent>(_ =>
                 this._searchField.schedule.Execute(this.Close).ExecuteLater(150));
 
@@ -180,63 +185,59 @@ namespace Fram3d.UI.Panels
             this._root.Add(this._dropdownOverlay);
         }
 
-        /// <summary>
-        /// Rebuilds the list items from _filteredItems. Uses simple VisualElements
-        /// instead of ListView to avoid stale callback issues with bindItem.
-        /// </summary>
+        // --- List items ---
+
         private void RebuildListItems()
         {
             this._scrollView.Clear();
 
             for (var i = 0; i < this._filteredItems.Count; i++)
             {
-                var index = i;
-                var row   = new VisualElement();
-                row.style.flexDirection = FlexDirection.Row;
-                row.style.alignItems   = Align.Center;
-                row.style.paddingLeft  = 6;
-                row.style.paddingTop   = 3;
-                row.style.paddingBottom = 3;
-
+                var index         = i;
                 var isHighlighted = i == this._highlightedIndex;
+                var row           = this.CreateListRow(this._filteredItems[i], index, isHighlighted);
 
-                row.style.backgroundColor = isHighlighted
-                    ? new Color(0.2f, 0.4f, 0.7f, 0.6f)
-                    : new StyleColor(StyleKeyword.Null);
-
-                var label = new Label(this._filteredItems[i]);
-                label.style.fontSize       = 11;
-                label.style.unityTextAlign = TextAnchor.MiddleLeft;
-                label.style.flexGrow       = 1;
-
-                // Highlighted row gets white text, others get gray
-                label.style.color = isHighlighted
-                    ? new Color(1f, 1f, 1f)
-                    : new Color(0.75f, 0.75f, 0.75f);
-
-                row.Add(label);
-
-                row.RegisterCallback<PointerEnterEvent>(_ =>
-                {
-                    row.style.backgroundColor = new Color(0.2f, 0.4f, 0.7f, 0.4f);
-                    label.style.color         = new Color(1f, 1f, 1f);
-                });
-
-                row.RegisterCallback<PointerLeaveEvent>(_ =>
-                {
-                    var highlighted = index == this._highlightedIndex;
-                    row.style.backgroundColor = highlighted
-                        ? new Color(0.2f, 0.4f, 0.7f, 0.6f)
-                        : new StyleColor(StyleKeyword.Null);
-                    label.style.color = highlighted
-                        ? new Color(1f, 1f, 1f)
-                        : new Color(0.75f, 0.75f, 0.75f);
-                });
-
-                row.RegisterCallback<ClickEvent>(_ => this.ConfirmSelection(index));
                 this._scrollView.Add(row);
             }
         }
+
+        private VisualElement CreateListRow(string text, int index, bool isHighlighted)
+        {
+            var row = new VisualElement();
+            row.style.flexDirection  = FlexDirection.Row;
+            row.style.alignItems    = Align.Center;
+            row.style.paddingLeft   = 6;
+            row.style.paddingTop    = 3;
+            row.style.paddingBottom = 3;
+            row.style.backgroundColor = isHighlighted ? Theme.HIGHLIGHT_STRONG : new StyleColor(StyleKeyword.Null);
+
+            var label = new Label(text);
+            label.style.fontSize       = Theme.FONT_BODY;
+            label.style.unityTextAlign = TextAnchor.MiddleLeft;
+            label.style.flexGrow       = 1;
+            label.style.color          = isHighlighted ? Theme.TEXT_WHITE : Theme.TEXT_DEFAULT;
+
+            row.Add(label);
+
+            row.RegisterCallback<PointerEnterEvent>(_ =>
+            {
+                row.style.backgroundColor = Theme.HIGHLIGHT;
+                label.style.color         = Theme.TEXT_WHITE;
+            });
+
+            row.RegisterCallback<PointerLeaveEvent>(_ =>
+            {
+                var highlighted = index == this._highlightedIndex;
+                row.style.backgroundColor = highlighted ? Theme.HIGHLIGHT_STRONG : new StyleColor(StyleKeyword.Null);
+                label.style.color         = highlighted ? Theme.TEXT_WHITE : Theme.TEXT_DEFAULT;
+            });
+
+            row.RegisterCallback<ClickEvent>(_ => this.ConfirmSelection(index));
+
+            return row;
+        }
+
+        // --- Keyboard navigation ---
 
         private void OnKeyDown(KeyDownEvent evt)
         {
@@ -281,6 +282,8 @@ namespace Fram3d.UI.Panels
             }
         }
 
+        // --- Search ---
+
         private void OnSearchChanged(ChangeEvent<string> evt)
         {
             var search = evt.newValue;
@@ -292,8 +295,6 @@ namespace Fram3d.UI.Panels
             }
             else
             {
-                // Split query into words — all words must appear somewhere in the item name
-                // e.g., "sony fx3" matches "Sony — FX3" because both "sony" and "fx3" are found
                 var words = search.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
                 this._filteredItems.AddRange(
@@ -304,6 +305,8 @@ namespace Fram3d.UI.Panels
             this._highlightedIndex = this._filteredItems.Count > 0 ? 0 : -1;
             this.RebuildListItems();
         }
+
+        // --- Selection ---
 
         private void ConfirmSelection(int filteredIndex)
         {

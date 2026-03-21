@@ -106,12 +106,15 @@ namespace Fram3d.UI.Panels
             this._listView.itemsSource     = this._filteredItems;
             this._listView.fixedItemHeight = 22;
 
+            // Selection highlight color — dark enough for white text to be readable
+            this._listView.selectionColor = new Color(0.2f, 0.4f, 0.7f, 0.6f);
+
             this._listView.makeItem = () =>
             {
                 var label = new Label();
-                label.style.fontSize    = 11;
-                label.style.color       = new Color(0.75f, 0.75f, 0.75f);
-                label.style.paddingLeft = 6;
+                label.style.fontSize       = 11;
+                label.style.color          = new Color(0.75f, 0.75f, 0.75f);
+                label.style.paddingLeft    = 6;
                 label.style.unityTextAlign = TextAnchor.MiddleLeft;
 
                 return label;
@@ -126,17 +129,42 @@ namespace Fram3d.UI.Panels
 
             this._dropdownOverlay.Add(this._listView);
             this._root.Add(this._dropdownOverlay);
+
+            // Close dropdown when the search field loses focus (user clicked elsewhere)
+            this._searchField.RegisterCallback<FocusOutEvent>(_ =>
+            {
+                // Delay so that list item click events fire before we close
+                this._searchField.schedule.Execute(this.CloseDropdown).ExecuteLater(100);
+            });
         }
 
         public VisualElement Root => this._root;
 
+        private void CloseDropdown()
+        {
+            if (!this._isOpen)
+                return;
+
+            this._isOpen = false;
+            this._dropdownOverlay.style.display = DisplayStyle.None;
+            this._searchField.value             = "";
+            this._filteredItems.Clear();
+            this._filteredItems.AddRange(this._allItems);
+            this._listView.RefreshItems();
+        }
+
         private void ToggleDropdown()
         {
-            this._isOpen = !this._isOpen;
-            this._dropdownOverlay.style.display = this._isOpen ? DisplayStyle.Flex : DisplayStyle.None;
-
             if (this._isOpen)
-                this._searchField.Focus();
+            {
+                this.CloseDropdown();
+
+                return;
+            }
+
+            this._isOpen = true;
+            this._dropdownOverlay.style.display = DisplayStyle.Flex;
+            this._searchField.Focus();
         }
 
         private void OnSearchChanged(ChangeEvent<string> evt)
@@ -165,17 +193,10 @@ namespace Fram3d.UI.Panels
                 return;
 
             var selectedName = this._filteredItems[listIndex];
-            this._selectedIndex = this._allItems.IndexOf(selectedName);
+            this._selectedIndex      = this._allItems.IndexOf(selectedName);
             this._selectedLabel.text = selectedName;
 
-            // Close dropdown
-            this._isOpen = false;
-            this._dropdownOverlay.style.display = DisplayStyle.None;
-            this._searchField.value = "";
-            this._filteredItems.Clear();
-            this._filteredItems.AddRange(this._allItems);
-            this._listView.RefreshItems();
-
+            this.CloseDropdown();
             this.SelectionChanged?.Invoke(this._selectedIndex);
         }
     }

@@ -187,6 +187,7 @@ namespace Fram3d.UI.Panels
             var showAllToggle = new Toggle("Show all cameras");
             showAllToggle.style.fontSize  = 10;
             showAllToggle.style.marginTop = 4;
+            showAllToggle.style.color     = new Color(0.6f, 0.6f, 0.6f);
             showAllToggle.value           = this._showAllBodies;
 
             showAllToggle.RegisterValueChangedCallback(evt =>

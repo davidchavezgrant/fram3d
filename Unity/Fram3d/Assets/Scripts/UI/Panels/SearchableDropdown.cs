@@ -165,7 +165,7 @@ namespace Fram3d.UI.Panels
             this._searchField.RegisterValueChangedCallback(this.OnSearchChanged);
 
             // Arrow keys + Enter — use TrickleDown so we capture before the text field consumes them
-            this._searchField.RegisterCallback<KeyDownEvent>(this.OnKeyDown, TrickleDownPhase.TrickleDown);
+            this._searchField.RegisterCallback<KeyDownEvent>(this.OnKeyDown, TrickleDown.TrickleDown);
 
             // Close when focus leaves
             this._searchField.RegisterCallback<FocusOutEvent>(_ =>

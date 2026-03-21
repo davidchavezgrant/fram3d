@@ -48,7 +48,7 @@ namespace Fram3d.UI.Panels
                 if (!this._visible || this._root == null)
                     return false;
 
-                var mousePos  = Input.mousePosition;
+                var mousePos  = UnityEngine.Input.mousePosition;
                 var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
                 var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
 

@@ -6,17 +6,35 @@ Fram3d is a 3D previsualization tool for filmmakers. Unity project (Unity 6, URP
 
 - **Never overwrite or replace existing work.** When building new mockups, features, or files that relate to existing ones, incorporate or reference the existing work — don't start from scratch. If you need to create something new in the same space, create a separate file. Never nuke what we've already iterated on.
 - **Use the domain language.** Read `docs/reference/domain-language.md` before writing specs, code, or UI text. Terms are chosen deliberately — don't invent synonyms.
-- **All work requires a Linear ticket.** Create or find a Linear issue before starting any implementation, bug fix, or research task. Reference the ticket in commits and PRs.
+- **All work requires a Linear ticket.** Before creating a new issue, **thoroughly search** for an existing one — search by title keywords, browse the relevant project/milestone, and check backlog. Only create a new issue if no match exists. Reference the ticket (e.g., FRA-36) in commits and PRs.
+- **Never overwrite Linear issue content.** When updating an issue, append implementation notes below the existing description. Never replace the original spec text or user-written content.
 
 ## Code Style (C#)
 
-- **C# 9 maximum.** Unity 6 supports C# 9. Do not use C# 10+ features (`record struct`, `global using`, file-scoped namespaces, `required`, etc.). `record` classes and `init` properties are fine (C# 9).
-- **Explicit `private` modifier.** Always write `private` on private members — never rely on the implicit default.
-- **Private fields:** `_camelCase` (underscore prefix). E.g., `private float _focalLength;`
-- **Private methods:** PascalCase. E.g., `private void ApplyRotation()`
-- **Expression-bodied members:** Prefer `=>` for single-expression members. If the body requires multiple lines or a ternary, use a block body instead.
+The `.editorconfig` at the project root is the source of truth for formatting. These rules cover what editorconfig can't express.
+
+### Language restrictions
+- **C# 9 maximum.** Unity 6 supports C# 9. Do not use C# 10+ features (`record struct`, `global using`, file-scoped namespaces, `required`, etc.). Do not use `record` or `init` — Unity's runtime lacks `IsExternalInit` and polyfilling it is a hack. Use plain classes or structs instead.
 - **No ternary expressions.** Use `if`/`else` instead.
-- Follow the global CLAUDE.md C# conventions for everything else (tabs, `var` when evident, `SCREAMING_SNAKE_CASE` constants, etc.).
+- **Target-typed `new`.** Use `new()` instead of `new ClassName()` when the type is evident from context.
+
+### Naming
+- **Private fields:** `_camelCase` (underscore prefix). E.g., `private float _focalLength;`
+- **`[SerializeField]` fields:** `camelCase` (no underscore). E.g., `[SerializeField] private CameraBehaviour cameraBehaviour;`
+- **Private methods:** PascalCase. E.g., `private void ApplyRotation()`
+- **Constants and static readonly:** `SCREAMING_SNAKE_CASE`.
+
+### Key rules from editorconfig (for quick reference)
+- **`this.` qualifier on all instance members** — fields, properties, events, methods.
+- **`var` everywhere** — including built-in types.
+- **4 spaces** for indentation, not tabs.
+- **`sealed`** on classes unless designed for inheritance.
+- **Block-scoped namespaces** (not file-scoped).
+- **Expression bodies** for methods, properties, accessors (single-expression only).
+- **No space before `:` in inheritance/constraints.**
+- **Column-align** fields, properties, variables, assignments.
+- **Braces required for multiline only.** `using` blocks never require braces.
+- **No extra blank lines** — formatter strips them (keep_blank_lines = 0).
 
 ## Project Layout
 

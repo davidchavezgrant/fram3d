@@ -2,7 +2,6 @@ using System.IO;
 using System.Linq;
 using Fram3d.Core.Camera;
 using UnityEngine;
-
 namespace Fram3d.Engine.Integration
 {
     /// <summary>
@@ -21,18 +20,14 @@ namespace Fram3d.Engine.Integration
             if (!File.Exists(path))
             {
                 Debug.LogWarning($"Camera database not found at {path}. Using generic defaults only.");
-
                 return db;
             }
 
             var json  = File.ReadAllText(path);
             var rawDb = JsonUtility.FromJson<RawDatabase>(json);
-
             LoadBodies(db, rawDb);
             LoadLensSets(db, rawDb);
-
             Debug.Log($"Camera database loaded: {db.Bodies.Count} bodies, {db.LensSets.Count} lens sets.");
-
             return db;
         }
 
@@ -43,15 +38,14 @@ namespace Fram3d.Engine.Integration
 
             foreach (var raw in rawDb.cameras)
             {
-                db.AddBody(new CameraBody(
-                    raw.name,
-                    raw.manufacturer,
-                    raw.sensor_width_mm,
-                    raw.sensor_height_mm,
-                    raw.format,
-                    raw.mount,
-                    raw.native_resolution,
-                    raw.supported_fps));
+                db.AddBody(new CameraBody(raw.name,
+                                          raw.manufacturer,
+                                          raw.sensor_width_mm,
+                                          raw.sensor_height_mm,
+                                          raw.format,
+                                          raw.mount,
+                                          raw.native_resolution,
+                                          raw.supported_fps));
             }
         }
 
@@ -60,9 +54,7 @@ namespace Fram3d.Engine.Integration
             if (rawDb.lenses == null)
                 return;
 
-            var groupedBySet = rawDb.lenses
-                .GroupBy(l => l.set)
-                .OrderBy(g => g.Key);
+            var groupedBySet = rawDb.lenses.GroupBy(l => l.set).OrderBy(g => g.Key);
 
             foreach (var group in groupedBySet)
             {
@@ -71,8 +63,27 @@ namespace Fram3d.Engine.Integration
                 if (first.type == "Zoom")
                     LoadZoomLensSets(db, group);
                 else
-                    LoadPrimeLensSet(db, group.Key, group, first);
+                    LoadPrimeLensSet(db,
+                                     group.Key,
+                                     group,
+                                     first);
             }
+        }
+
+        private static void LoadPrimeLensSet(CameraDatabase             db,
+                                             string                     setName,
+                                             IGrouping<string, RawLens> group,
+                                             RawLens                    representative)
+        {
+            var focalLengths = group.Where(l => l.focal_length_mm > 0).Select(l => l.focal_length_mm).OrderBy(f => f).ToArray();
+
+            if (focalLengths.Length == 0)
+                return;
+
+            db.AddLensSet(new LensSet(setName,
+                                      focalLengths,
+                                      representative.is_anamorphic,
+                                      representative.squeeze_factor));
         }
 
         private static void LoadZoomLensSets(CameraDatabase db, IGrouping<string, RawLens> group)
@@ -84,45 +95,14 @@ namespace Fram3d.Engine.Integration
                 if (range == null || range.Length != 2)
                     continue;
 
-                db.AddLensSet(new LensSet(
-                    lens.name,
-                    range[0],
-                    range[1],
-                    lens.is_anamorphic,
-                    lens.squeeze_factor));
+                db.AddLensSet(new LensSet(lens.name,
+                                          range[0],
+                                          range[1],
+                                          lens.is_anamorphic,
+                                          lens.squeeze_factor));
             }
         }
 
-        private static void LoadPrimeLensSet(CameraDatabase db,
-                                             string         setName,
-                                             IGrouping<string, RawLens> group,
-                                             RawLens        representative)
-        {
-            var focalLengths = group
-                .Where(l => l.focal_length_mm > 0)
-                .Select(l => l.focal_length_mm)
-                .OrderBy(f => f)
-                .ToArray();
-
-            if (focalLengths.Length == 0)
-                return;
-
-            db.AddLensSet(new LensSet(
-                setName,
-                focalLengths,
-                representative.is_anamorphic,
-                representative.squeeze_factor));
-        }
-
-        // Raw JSON structure matching camera-lens-database.json.
-        // Using JsonUtility which requires serializable classes with public fields.
-
-        [System.Serializable]
-        private class RawDatabase
-        {
-            public RawCamera[] cameras;
-            public RawLens[]   lenses;
-        }
 
         [System.Serializable]
         private class RawCamera
@@ -136,6 +116,19 @@ namespace Fram3d.Engine.Integration
             public float  sensor_width_mm;
             public int[]  supported_fps;
         }
+
+
+        // Raw JSON structure matching camera-lens-database.json.
+        // Using JsonUtility which requires serializable classes with public fields.
+
+
+        [System.Serializable]
+        private class RawDatabase
+        {
+            public RawCamera[] cameras;
+            public RawLens[]   lenses;
+        }
+
 
         [System.Serializable]
         private class RawLens

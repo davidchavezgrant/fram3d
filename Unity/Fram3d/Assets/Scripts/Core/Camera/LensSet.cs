@@ -18,13 +18,13 @@ namespace Fram3d.Core.Camera
                        bool    isAnamorphic,
                        float   squeezeFactor)
         {
-            this.Name          = name;
-            this.IsZoom        = false;
-            this.IsAnamorphic  = isAnamorphic;
-            this.SqueezeFactor = squeezeFactor;
-            this.FocalLengths  = focalLengths;
-            this.MinFocalLength    = focalLengths.Length > 0? focalLengths[0] : 0;
-            this.MaxFocalLength    = focalLengths.Length > 0? focalLengths[focalLengths.Length - 1] : 0;
+            this.Name           = name;
+            this.IsZoom         = false;
+            this.IsAnamorphic   = isAnamorphic;
+            this.SqueezeFactor  = squeezeFactor;
+            this.FocalLengths   = focalLengths;
+            this.MinFocalLength = focalLengths.Length > 0? focalLengths[0] : 0;
+            this.MaxFocalLength = focalLengths.Length > 0? focalLengths[focalLengths.Length - 1] : 0;
         }
 
         /// <summary>

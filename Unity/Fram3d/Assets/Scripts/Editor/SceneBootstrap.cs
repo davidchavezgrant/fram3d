@@ -20,6 +20,27 @@ namespace Fram3d.Editor
             Debug.Log("Fram3d scene bootstrapped.");
         }
 
+        private static void CreateReferenceObject(string        name,
+                                                  PrimitiveType type,
+                                                  Vector3       position,
+                                                  Color         color)
+        {
+            if (GameObject.Find(name) != null)
+                return;
+
+            var gameObject = GameObject.CreatePrimitive(type);
+            gameObject.name               = name;
+            gameObject.transform.position = position;
+            var renderer = gameObject.GetComponent<Renderer>();
+
+            if (renderer != null)
+            {
+                renderer.material.color = color;
+            }
+
+            EditorUtility.SetDirty(gameObject);
+        }
+
         private static void SetupCamera()
         {
             var cameraGameObject = GameObject.Find("Main Camera");
@@ -82,27 +103,6 @@ namespace Fram3d.Editor
                                   PrimitiveType.Sphere,
                                   new Vector3(-2f, 1f, 5f),
                                   Color.green);
-        }
-
-        private static void CreateReferenceObject(string        name,
-                                                  PrimitiveType type,
-                                                  Vector3       position,
-                                                  Color         color)
-        {
-            if (GameObject.Find(name) != null)
-                return;
-
-            var gameObject = GameObject.CreatePrimitive(type);
-            gameObject.name               = name;
-            gameObject.transform.position = position;
-            var renderer = gameObject.GetComponent<Renderer>();
-
-            if (renderer != null)
-            {
-                renderer.material.color = color;
-            }
-
-            EditorUtility.SetDirty(gameObject);
         }
     }
 }

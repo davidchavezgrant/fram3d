@@ -59,7 +59,7 @@ namespace Fram3d.Editor
             this.DrawCurrentState(cam);
             this.DrawBodySelector(cam, db);
             this.DrawLensSetSelector(cam, db);
-            this.DrawLensSetDetails(cam);
+            DrawLensSetDetails(cam);
             this.Repaint();
         }
 

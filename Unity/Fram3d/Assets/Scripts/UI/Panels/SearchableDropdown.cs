@@ -16,6 +16,7 @@ namespace Fram3d.UI.Panels
         private static SearchableDropdown _currentlyOpen;
 
         private readonly List<string>    _allItems;
+        private          List<string>    _browseItems;
         private readonly VisualElement   _dropdownOverlay;
         private readonly List<string>    _filteredItems;
         private readonly ListView        _listView;
@@ -32,9 +33,26 @@ namespace Fram3d.UI.Panels
         public VisualElement   Root          => this._root;
         public int             SelectedIndex => this._selectedIndex;
 
+        /// <summary>
+        /// Sets which items are shown when the search field is empty (browse mode).
+        /// Search always covers all items regardless of this filter.
+        /// </summary>
+        public void SetBrowseFilter(List<string> filteredItems)
+        {
+            this._browseItems = filteredItems;
+
+            if (string.IsNullOrEmpty(this._searchField.value))
+            {
+                this._filteredItems.Clear();
+                this._filteredItems.AddRange(this._browseItems);
+                this._listView.RefreshItems();
+            }
+        }
+
         public SearchableDropdown(List<string> items, int initialIndex, string placeholder)
         {
             this._allItems      = items;
+            this._browseItems   = items;
             this._filteredItems = new List<string>(items);
             this._selectedIndex = Math.Clamp(initialIndex, 0, Math.Max(0, items.Count - 1));
 
@@ -54,7 +72,7 @@ namespace Fram3d.UI.Panels
             this._highlightedIndex              = -1;
 
             this._filteredItems.Clear();
-            this._filteredItems.AddRange(this._allItems);
+            this._filteredItems.AddRange(this._browseItems);
             this._listView.RefreshItems();
 
             if (_currentlyOpen == this)
@@ -245,8 +263,9 @@ namespace Fram3d.UI.Panels
             this._filteredItems.Clear();
 
             if (string.IsNullOrEmpty(search))
-                this._filteredItems.AddRange(this._allItems);
+                this._filteredItems.AddRange(this._browseItems);
             else
+                // Search always covers ALL items, not just the browse-filtered subset
                 this._filteredItems.AddRange(
                     this._allItems.Where(item => item.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0));
 

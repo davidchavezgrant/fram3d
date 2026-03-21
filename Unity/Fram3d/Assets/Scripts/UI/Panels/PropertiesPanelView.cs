@@ -193,7 +193,8 @@ namespace Fram3d.UI.Panels
             showAllToggle.RegisterValueChangedCallback(evt =>
             {
                 this._showAllBodies = evt.newValue;
-                this.RebuildBodyDropdown();
+                var names = this._bodyList.Select(b => $"{b.Manufacturer} — {b.Name}").ToList();
+                this.ApplyBodyBrowseFilter(names);
             });
 
             parent.Add(showAllToggle);
@@ -206,23 +207,39 @@ namespace Fram3d.UI.Panels
             var db  = this._cameraBehaviour.Database;
             var cam = this._cameraBehaviour.CameraElement;
 
-            this._bodyList = this._showAllBodies
-                ? db.Bodies.ToList()
-                : db.Bodies.Where(b => b.Manufacturer == "Generic" || b.Year >= MIN_BODY_YEAR).ToList();
-
+            // Always pass all bodies — search covers everything
+            this._bodyList = db.Bodies.ToList();
             var names   = this._bodyList.Select(b => $"{b.Manufacturer} — {b.Name}").ToList();
             var current = cam.Body != null ? this._bodyList.IndexOf(cam.Body) : 0;
-
-            if (current < 0 && cam.Body != null)
-            {
-                this._bodyList.Insert(0, cam.Body);
-                names.Insert(0, $"{cam.Body.Manufacturer} — {cam.Body.Name}");
-                current = 0;
-            }
 
             this._bodyDropdown = new SearchableDropdown(names, current >= 0 ? current : 0, "Search cameras...");
             this._bodyDropdown.SelectionChanged += this.OnBodySelected;
             this._bodySectionContainer.Add(this._bodyDropdown.Root);
+
+            this.ApplyBodyBrowseFilter(names);
+        }
+
+        private void ApplyBodyBrowseFilter(List<string> allNames)
+        {
+            if (this._showAllBodies)
+            {
+                this._bodyDropdown.SetBrowseFilter(allNames);
+
+                return;
+            }
+
+            // When browsing (no search text), show only generics + 2019+ cameras
+            var browseNames = new List<string>();
+
+            for (var i = 0; i < this._bodyList.Count; i++)
+            {
+                var body = this._bodyList[i];
+
+                if (body.Manufacturer == "Generic" || body.Year >= MIN_BODY_YEAR)
+                    browseNames.Add(allNames[i]);
+            }
+
+            this._bodyDropdown.SetBrowseFilter(browseNames);
         }
 
         private void OnBodySelected(int index)

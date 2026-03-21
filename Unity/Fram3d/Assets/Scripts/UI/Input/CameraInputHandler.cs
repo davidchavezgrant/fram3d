@@ -177,6 +177,13 @@ namespace Fram3d.UI.Input
                 return;
             }
 
+            if (sample.CommandHeld && !sample.AltHeld && Mathf.Abs(sample.Y) > SCROLL_DEADZONE)
+            {
+                this._camera.FocusDistance = this._camera.FocusDistance + sample.Y * MovementSpeeds.FOCUS_DISTANCE;
+                this._lastModifierScrollTime = Time.time;
+                return;
+            }
+
             if (sample.CtrlHeld)
             {
                 if (Mathf.Abs(sample.Y) > SCROLL_DEADZONE)

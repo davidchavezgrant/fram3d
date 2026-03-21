@@ -1085,5 +1085,79 @@ namespace Fram3d.Core.Tests.Camera
 			cam.Aperture.Should().Be(2.8f);
 			cam.FocusDistance.Should().Be(3f);
 		}
+
+		// --- Lens-constrained aperture (1.1.5) ---
+
+		[Fact]
+		public void StepApertureWider__ClampsToLensMaxAperture__When__LensHasT2()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f, maxAperture: 2f));
+
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(2f);
+		}
+
+		[Fact]
+		public void StepApertureWider__AllowsF14__When__NoLensSetActive()
+		{
+			var cam = CreateCamera();
+
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(1.4f);
+		}
+
+		[Fact]
+		public void SetLensSet__ClampsAperture__When__CurrentApertureWiderThanLens()
+		{
+			var cam = CreateCamera();
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(1.4f);
+
+			cam.SetLensSet(new LensSet("Slow Lens", new float[] { 50 }, false, 1.0f, maxAperture: 2.8f));
+
+			cam.Aperture.Should().BeGreaterThanOrEqualTo(2.8f);
+		}
+
+		// --- Lens-constrained focus distance (1.1.5) ---
+
+		[Fact]
+		public void FocusDistance__ClampsToCloseFocus__When__LensHasMinimum()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Master Primes", new float[] { 50 }, false, 1.0f, closeFocusM: 0.45f));
+
+			cam.FocusDistance = 0.2f;
+
+			cam.FocusDistance.Should().Be(0.45f);
+		}
+
+		[Fact]
+		public void FocusDistance__AllowsAboveCloseFocus__When__LensHasMinimum()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Master Primes", new float[] { 50 }, false, 1.0f, closeFocusM: 0.45f));
+
+			cam.FocusDistance = 5f;
+
+			cam.FocusDistance.Should().Be(5f);
+		}
+
+		[Fact]
+		public void SetLensSet__ClampsFocusDistance__When__CurrentBelowCloseFocus()
+		{
+			var cam = CreateCamera();
+			cam.FocusDistance = 0.2f;
+
+			cam.SetLensSet(new LensSet("Long Lens", new float[] { 200 }, false, 1.0f, closeFocusM: 1.5f));
+
+			cam.FocusDistance.Should().Be(1.5f);
+		}
 	}
 }

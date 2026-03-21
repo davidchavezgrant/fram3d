@@ -62,6 +62,53 @@ tests/Fram3d.Core.Tests/
 
 The test project compiles Core's source files directly via `<Compile Include="../../Unity/Fram3d/Assets/Scripts/Core/**/*.cs" />` — one copy of source, two compilation targets (Unity asmdef + .NET for `dotnet test`).
 
+## Implementation Workflow
+
+When asked to implement a feature or milestone, follow this sequence exactly.
+
+### 1. Find the work
+
+1. Read `docs/reference/roadmap.md` to understand the feature and its dependencies.
+2. Read the relevant spec in `docs/specs/`.
+3. Read all reference docs listed in the "Read before writing code" table below. If the feature involves UI, also read the "Read before writing UI" docs.
+
+### 2. Find the Linear ticket
+
+1. Search Linear thoroughly — by title keywords, by project/milestone, and by browsing backlog.
+2. If an existing ticket matches, use it. Update its status to In Progress.
+3. Only create a new ticket if no match exists after thorough search.
+
+### 3. Plan
+
+1. Check `docs/plans/` for an existing implementation plan.
+2. If none exists, write one. Save to `docs/plans/YYYY-MM-DD-<feature>.md`.
+3. All file paths in the plan must use full paths from the repo root (e.g., `Unity/Fram3d/Assets/Scripts/Core/...`).
+4. Plans must cover all layers end-to-end (Core → Engine → UI), not just domain.
+
+### 4. Branch and implement
+
+1. Create a feature branch from the Linear ticket's suggested branch name.
+2. Implement across all layers. Every new type needs tests.
+3. Run `dotnet test tests/Fram3d.Core.Tests` after every significant change — do not accumulate untested code.
+4. Before each commit, verify:
+   - Tests pass.
+   - No C# 10+ features (check for `record`, `init`, inferred delegate types, file-scoped namespaces).
+   - All instance members use `this.` qualifier.
+   - Naming follows conventions (`_camelCase` private fields, `camelCase` serialized fields, `SCREAMING_SNAKE_CASE` constants).
+   - No YAGNI — every member, parameter, and type is used by code in this PR. Nothing "for later."
+
+### 5. Commit
+
+- Clean, logical commits — separate scaffolding, config, and feature code.
+- Reference the Linear ticket ID (e.g., FRA-36) in the feature commit message.
+
+### 6. PR and Linear
+
+1. Push branch, create PR with summary and test plan.
+2. PR title format: `FRA-XX: short description`.
+3. Link the PR to the Linear issue (as an attachment).
+4. Update Linear status — do NOT overwrite the existing description. Append implementation notes below a `---` separator.
+
 ## Documentation
 
 ### Must-read before any work

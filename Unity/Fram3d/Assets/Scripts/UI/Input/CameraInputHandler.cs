@@ -72,7 +72,11 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            // Unmodified Scroll Y = focal length (stub until 1.1.2)
+            // Unmodified Scroll Y = focal length
+            if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
+            {
+                this._camera.SetFocalLength(this._camera.FocalLength + scrollY * MovementSpeeds.FOCAL_LENGTH_SCROLL);
+            }
         }
 
         private void HandleDragInput(Keyboard keyboard, Mouse mouse)
@@ -112,6 +116,26 @@ namespace Fram3d.UI.Input
             if (keyboard.ctrlKey.isPressed && keyboard.rKey.wasPressedThisFrame)
             {
                 this._camera.Reset();
+
+                return;
+            }
+
+            // Number keys 1–9 = focal length presets
+            var digitKeys = new[]
+            {
+                keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key,
+                keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key,
+                keyboard.digit7Key, keyboard.digit8Key, keyboard.digit9Key
+            };
+
+            for (var i = 0; i < digitKeys.Length; i++)
+            {
+                if (digitKeys[i].wasPressedThisFrame)
+                {
+                    this._camera.SetFocalLength(FocalLengthPresets.QUICK[i]);
+
+                    break;
+                }
             }
         }
 

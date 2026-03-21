@@ -75,7 +75,18 @@ namespace Fram3d.UI.Input
             // Unmodified Scroll Y = focal length
             if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
-                this._camera.SetFocalLength(this._camera.FocalLength + scrollY * MovementSpeeds.FOCAL_LENGTH_SCROLL);
+                var lensSet = this._camera.ActiveLensSet;
+
+                // Prime lenses: step to next/previous lens in the set
+                if (lensSet != null && !lensSet.IsZoom)
+                {
+                    this._camera.StepFocalLength(scrollY > 0 ? 1 : -1);
+                }
+                else
+                {
+                    // Zoom or no lens set: continuous adjustment
+                    this._camera.SetFocalLength(this._camera.FocalLength + scrollY * MovementSpeeds.FOCAL_LENGTH_SCROLL);
+                }
             }
         }
 
@@ -138,7 +149,7 @@ namespace Fram3d.UI.Input
             {
                 if (digitKeys[i].wasPressedThisFrame)
                 {
-                    this._camera.SetFocalLength(presets[i]);
+                    this._camera.SetFocalLengthPreset(presets[i]);
 
                     break;
                 }

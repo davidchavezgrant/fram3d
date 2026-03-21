@@ -613,5 +613,118 @@ namespace Fram3d.Core.Tests.Camera
 			cam.ActiveLensSet.MinFocalMm.Should().Be(24f);
 			cam.ActiveLensSet.MaxFocalMm.Should().Be(290f);
 		}
+
+		// --- Prime lens restrictions (1.1.3) ---
+
+		[Fact]
+		public void SetFocalLength__IsIgnored__When__PrimeLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+
+			cam.SetFocalLength(85f);
+
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		[Fact]
+		public void StepFocalLength__SnapsToNextLens__When__SteppingForward()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(35f);
+
+			cam.StepFocalLength(1);
+
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		[Fact]
+		public void StepFocalLength__SnapsToPreviousLens__When__SteppingBackward()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+
+			cam.StepFocalLength(-1);
+
+			cam.FocalLength.Should().Be(35f);
+		}
+
+		[Fact]
+		public void StepFocalLength__ClampsAtEnd__When__AlreadyAtMax()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(100f);
+
+			cam.StepFocalLength(1);
+
+			cam.FocalLength.Should().Be(100f);
+		}
+
+		[Fact]
+		public void StepFocalLength__SetsSnapFlag__When__Stepping()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(35f);
+			cam.SnapFocalLength = false;
+
+			cam.StepFocalLength(1);
+
+			cam.SnapFocalLength.Should().BeTrue();
+		}
+
+		[Fact]
+		public void DollyZoom__IsDisabled__When__PrimeLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var positionBefore = cam.Position;
+
+			cam.DollyZoom(1.0f);
+
+			cam.Position.Should().Be(positionBefore);
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		// --- Zoom lens clamping (1.1.3) ---
+
+		[Fact]
+		public void SetFocalLength__ClampsToZoomRange__When__ZoomLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 16-35mm", 16f, 35f, false, 1.0f));
+
+			cam.SetFocalLength(100f);
+
+			cam.FocalLength.Should().Be(35f);
+		}
+
+		[Fact]
+		public void SetFocalLength__ClampsToZoomMin__When__BelowRange()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 16-35mm", 16f, 35f, false, 1.0f));
+
+			cam.SetFocalLength(10f);
+
+			cam.FocalLength.Should().Be(16f);
+		}
+
+		[Fact]
+		public void SetFocalLength__AllowsContinuousAdjustment__When__ZoomLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+
+			cam.SetFocalLength(45f);
+
+			cam.FocalLength.Should().Be(45f);
+		}
 	}
 }

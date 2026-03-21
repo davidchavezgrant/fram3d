@@ -17,7 +17,20 @@ namespace Fram3d.Core.Camera
         public float FocalLength
         {
             get => this._focalLength;
-            private set => this._focalLength = Math.Clamp(value, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
+            private set
+            {
+                var min = MIN_FOCAL_LENGTH;
+                var max = MAX_FOCAL_LENGTH;
+
+                // Zoom lenses clamp to their actual range
+                if (this.ActiveLensSet != null && this.ActiveLensSet.IsZoom)
+                {
+                    min = Math.Max(min, this.ActiveLensSet.MinFocalMm);
+                    max = Math.Min(max, this.ActiveLensSet.MaxFocalMm);
+                }
+
+                this._focalLength = Math.Clamp(value, min, max);
+            }
         }
 
         public float      SensorWidth       { get; private set; } = DEFAULT_SENSOR_WIDTH;
@@ -115,9 +128,61 @@ namespace Fram3d.Core.Camera
         }
 
         /// <summary>
-        /// Sets focal length, clamped to 14–400mm.
+        /// Sets focal length. Behavior depends on the active lens set:
+        /// - No lens set or zoom lens: clamps to the lens range (or 14–400mm global range)
+        /// - Prime lens set: ignored — use StepFocalLength or SetFocalLengthPreset instead
         /// </summary>
-        public void SetFocalLength(float mm) => this.FocalLength = mm;
+        public void SetFocalLength(float mm)
+        {
+            if (this.ActiveLensSet != null && !this.ActiveLensSet.IsZoom)
+                return;
+
+            this.FocalLength = mm;
+        }
+
+        /// <summary>
+        /// Steps to the next (+1) or previous (-1) focal length in the active prime lens set.
+        /// No-op if no lens set or if the lens set is a zoom.
+        /// </summary>
+        public void StepFocalLength(int direction)
+        {
+            if (this.ActiveLensSet == null || this.ActiveLensSet.IsZoom)
+                return;
+
+            var lengths = this.ActiveLensSet.FocalLengths;
+
+            if (lengths.Length == 0)
+                return;
+
+            // Find the current index (nearest match)
+            var currentIndex = 0;
+            var minDiff      = float.MaxValue;
+
+            for (var i = 0; i < lengths.Length; i++)
+            {
+                var diff = MathF.Abs(lengths[i] - this.FocalLength);
+
+                if (diff < minDiff)
+                {
+                    minDiff      = diff;
+                    currentIndex = i;
+                }
+            }
+
+            var newIndex = Math.Clamp(currentIndex + direction, 0, lengths.Length - 1);
+            this.FocalLength     = lengths[newIndex];
+            this.SnapFocalLength = true;
+        }
+
+        /// <summary>
+        /// Sets focal length to a specific preset value. Snaps instantly (no lerp).
+        /// Works for both prime and zoom lens sets.
+        /// </summary>
+        public void SetFocalLengthPreset(float mm)
+        {
+            this.FocalLength     = mm;
+            this.SnapFocalLength = true;
+        }
 
         /// <summary>
         /// Sets the camera body, updating sensor dimensions. FOV recalculates automatically
@@ -150,6 +215,10 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public void DollyZoom(float amount)
         {
+            // Dolly zoom requires continuous focal length adjustment — disabled for prime lenses
+            if (this.ActiveLensSet != null && !this.ActiveLensSet.IsZoom)
+                return;
+
             var forward  = this.ComputeLookDirection();
             var distance = Vector3.Distance(this.Position, this.OrbitPivotPoint);
 

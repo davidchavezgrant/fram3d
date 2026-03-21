@@ -317,7 +317,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void Reset__RestoresDefaultFocalLength__When__FocalLengthChanged()
 		{
 			var cam = CreateCamera();
-			cam.FocalLength = 85f;
+			cam.SetFocalLength(85f);
 
 			cam.Reset();
 
@@ -369,6 +369,172 @@ namespace Fram3d.Core.Tests.Camera
 			// X should change (truck) and Y should change (crane)
 			cam.Position.X.Should().NotBeApproximately(originalPos.X, 0.001f);
 			cam.Position.Y.Should().NotBeApproximately(originalPos.Y, 0.001f);
+		}
+
+		// --- Focal Length (1.1.2) ---
+
+		[Fact]
+		public void SetFocalLength__ClampsToMinimum__When__BelowRange()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(5f);
+			cam.FocalLength.Should().Be(14f);
+		}
+
+		[Fact]
+		public void SetFocalLength__ClampsToMaximum__When__AboveRange()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(500f);
+			cam.FocalLength.Should().Be(400f);
+		}
+
+		[Fact]
+		public void SetFocalLength__SetsExactValue__When__WithinRange()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(85f);
+			cam.FocalLength.Should().Be(85f);
+		}
+
+		// --- FOV (1.1.2) ---
+
+		[Fact]
+		public void ComputeVerticalFov__ReturnsCorrectFov__When__50mmOnSuper35()
+		{
+			var cam = CreateCamera();
+			// SensorHeight = 18.66mm, FocalLength = 50mm
+			// FOV = 2 * atan(18.66 / 100) ≈ 0.3696 radians ≈ 21.18°
+			var expected = 2f * MathF.Atan(18.66f / (2f * 50f));
+			cam.ComputeVerticalFov().Should().BeApproximately(expected, 0.001f);
+		}
+
+		[Fact]
+		public void ComputeVerticalFov__ReturnsWiderFov__When__FocalLengthDecreases()
+		{
+			var cam = CreateCamera();
+			var fov50 = cam.ComputeVerticalFov();
+
+			cam.SetFocalLength(24f);
+			var fov24 = cam.ComputeVerticalFov();
+
+			fov24.Should().BeGreaterThan(fov50);
+		}
+
+		[Fact]
+		public void ComputeVerticalFov__ReturnsNarrowerFov__When__FocalLengthIncreases()
+		{
+			var cam = CreateCamera();
+			var fov50 = cam.ComputeVerticalFov();
+
+			cam.SetFocalLength(135f);
+			var fov135 = cam.ComputeVerticalFov();
+
+			fov135.Should().BeLessThan(fov50);
+		}
+
+		[Fact]
+		public void ComputeVerticalFov__ReturnsWiderFov__When__SensorHeightIncreases()
+		{
+			var cam = CreateCamera();
+			var fovSuper35 = cam.ComputeVerticalFov();
+
+			cam.SensorHeight = 24.0f; // full-frame
+			var fovFullFrame = cam.ComputeVerticalFov();
+
+			fovFullFrame.Should().BeGreaterThan(fovSuper35);
+		}
+
+		// --- Dolly Zoom with focal length (1.1.2) ---
+
+		[Fact]
+		public void DollyZoom__AdjustsFocalLength__When__MovingCloser()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(50f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+
+			cam.DollyZoom(1.0f);
+
+			// Moving closer to pivot should decrease focal length
+			cam.FocalLength.Should().BeLessThan(50f);
+		}
+
+		[Fact]
+		public void DollyZoom__MaintainsSubjectSize__When__Applied()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(50f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+
+			var distanceBefore = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
+			var ratioBefore    = cam.FocalLength / distanceBefore;
+
+			cam.DollyZoom(1.0f);
+
+			var distanceAfter = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
+			var ratioAfter    = cam.FocalLength / distanceAfter;
+
+			ratioAfter.Should().BeApproximately(ratioBefore, 0.01f);
+		}
+
+		[Fact]
+		public void DollyZoom__ClampsAtMinFocalLength__When__VeryClose()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(15f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+
+			// Move very close — focal length should clamp at 14mm
+			cam.DollyZoom(4.0f);
+
+			cam.FocalLength.Should().BeGreaterThanOrEqualTo(14f);
+		}
+
+		[Fact]
+		public void DollyZoom__StopsMoving__When__AtMinFocalLength()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(14f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var positionBefore = cam.Position;
+
+			// Already at minimum — should not move
+			cam.DollyZoom(1.0f);
+
+			cam.Position.Should().Be(positionBefore);
+			cam.FocalLength.Should().Be(14f);
+		}
+
+		[Fact]
+		public void DollyZoom__StopsMoving__When__AtMaxFocalLength()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(400f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var positionBefore = cam.Position;
+
+			// Already at maximum — should not move
+			cam.DollyZoom(-1.0f);
+
+			cam.Position.Should().Be(positionBefore);
+			cam.FocalLength.Should().Be(400f);
+		}
+
+		[Fact]
+		public void DollyZoom__KeepsPositionAndFocalLengthConsistent__When__Clamped()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(20f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+
+			// Large move that would overshoot min focal length
+			cam.DollyZoom(4.5f);
+
+			// Position should be adjusted so focal/distance ratio is maintained at the clamped value
+			var distance = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
+			cam.FocalLength.Should().BeGreaterThanOrEqualTo(14f);
+			distance.Should().BeGreaterThan(0f);
 		}
 	}
 }

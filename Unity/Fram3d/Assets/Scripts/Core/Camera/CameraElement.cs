@@ -71,7 +71,7 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public void Dolly(float amount)
         {
-            var forward = this.ComputeLookDirection();
+            var forward = this.LookDirection;
             this.Position += forward * amount;
         }
 
@@ -85,7 +85,7 @@ namespace Fram3d.Core.Camera
             if (!this._lens.CanDollyZoom)
                 return;
 
-            var forward     = this.ComputeLookDirection();
+            var forward     = this.LookDirection;
             var distance    = Vector3.Distance(this.Position, this.OrbitPivotPoint);
             var focalLength = this._lens.FocalLength;
 
@@ -140,7 +140,7 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public void Roll(float amount)
         {
-            var forward  = this.ComputeLookDirection();
+            var forward  = this.LookDirection;
             var rotation = Quaternion.CreateFromAxisAngle(forward, amount);
             this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
         }
@@ -200,11 +200,11 @@ namespace Fram3d.Core.Camera
         // --- Internal ---
 
         /// <summary>
-        /// Returns the world-space direction the camera is currently looking at.
+        /// The world-space direction the camera is currently looking at.
         /// Computed by rotating the base forward vector (-Z in right-handed System.Numerics)
         /// by the camera's current rotation.
         /// </summary>
-        private Vector3 ComputeLookDirection() => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
+        private Vector3 LookDirection => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
 
         // --- Reset ---
 

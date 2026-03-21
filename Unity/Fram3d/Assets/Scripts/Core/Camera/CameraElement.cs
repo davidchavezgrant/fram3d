@@ -5,16 +5,10 @@ namespace Fram3d.Core.Camera
 {
     public class CameraElement: Element
     {
-        private static readonly float[] APERTURE_STOPS = { 1.4f, 2f, 2.8f, 4f, 5.6f, 8f, 11f, 16f, 22f };
-
-        private const           int            DEFAULT_APERTURE_INDEX = 4;
-        private const           float          DEFAULT_FOCUS_DISTANCE = 10f;
-        private const           float          DEFAULT_SENSOR_HEIGHT  = 18.66f;
-        private const           float          DEFAULT_SENSOR_WIDTH   = 24.89f;
-        private static readonly Vector3        DEFAULT_POSITION       = new(0f, 1.6f, 5f);
-        private                 int            _apertureIndex         = DEFAULT_APERTURE_INDEX;
-        private                 float          _focusDistance         = DEFAULT_FOCUS_DISTANCE;
-        private readonly        LensController _lens                  = new();
+        private const           float          DEFAULT_SENSOR_HEIGHT = 18.66f;
+        private const           float          DEFAULT_SENSOR_WIDTH  = 24.89f;
+        private static readonly Vector3        DEFAULT_POSITION      = new(0f, 1.6f, 5f);
+        private readonly        LensController _lens                 = new();
 
         public CameraElement(ElementId id, string name): base(id, name)
         {
@@ -23,31 +17,10 @@ namespace Fram3d.Core.Camera
         }
 
         public LensSet    ActiveLensSet => this._lens.ActiveLensSet;
-
-        /// <summary>
-        /// Current aperture as an f-number (e.g. 5.6 for f/5.6).
-        /// Derived from the discrete aperture stop index.
-        /// </summary>
-        public float Aperture => APERTURE_STOPS[this._apertureIndex];
-
-        public CameraBody Body         { get; private set; }
-        public bool       CanDollyZoom => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
-        public bool       DofEnabled   { get; set; }
-
-        /// <summary>
-        /// Distance in meters from the camera to the plane of sharpest focus.
-        /// Clamped to the active lens set's close focus distance when set.
-        /// Will be auto-set by FocusOn when element selection exists (1.1.4).
-        /// </summary>
-        public float FocusDistance
-        {
-            get => this._focusDistance;
-            set
-            {
-                var min = this.ActiveLensSet?.CloseFocusM ?? 0f;
-                this._focusDistance = min > 0 ? Math.Max(value, min) : Math.Max(value, 0.1f);
-            }
-        }
+        public float      Aperture      => this._lens.Aperture;
+        public CameraBody Body          { get; private set; }
+        public bool       CanDollyZoom  => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
+        public bool       DofEnabled    { get; set; }
 
         /// <summary>
         /// Current focal length in mm. Setting this value respects lens constraints:
@@ -58,6 +31,12 @@ namespace Fram3d.Core.Camera
         {
             get => this._lens.FocalLength;
             set => this._lens.SetFocalLength(value);
+        }
+
+        public float FocusDistance
+        {
+            get => this._lens.FocusDistance;
+            set => this._lens.FocusDistance = value;
         }
 
         public Vector3 OrbitPivotPoint { get; set; }         = Vector3.Zero;
@@ -90,25 +69,6 @@ namespace Fram3d.Core.Camera
         /// by the camera's current rotation.
         /// </summary>
         private Vector3 LookDirection => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
-
-        private void ClampApertureToLens()
-        {
-            var maxAperture = this.ActiveLensSet?.MaxAperture ?? 0f;
-
-            if (maxAperture <= 0)
-                return;
-
-            while (this._apertureIndex < APERTURE_STOPS.Length - 1 && APERTURE_STOPS[this._apertureIndex] < maxAperture)
-                this._apertureIndex++;
-        }
-
-        private void ClampFocusDistanceToLens()
-        {
-            var closeFocus = this.ActiveLensSet?.CloseFocusM ?? 0f;
-
-            if (closeFocus > 0 && this._focusDistance < closeFocus)
-                this._focusDistance = closeFocus;
-        }
 
         /// <summary>
         /// Translate vertically along the world Y axis.
@@ -233,40 +193,10 @@ namespace Fram3d.Core.Camera
         /// Sets the active lens set and snaps focal length to the nearest valid value.
         /// Also clamps aperture and focus distance to the lens's physical limits.
         /// </summary>
-        public void SetLensSet(LensSet lensSet)
-        {
-            this._lens.SetLensSet(lensSet);
-            this.ClampApertureToLens();
-            this.ClampFocusDistanceToLens();
-        }
+        public void SetLensSet(LensSet lensSet) => this._lens.SetLensSet(lensSet);
 
-        /// <summary>
-        /// Steps to the next narrower aperture (higher f-number, deeper DOF).
-        /// No-op if already at f/22.
-        /// </summary>
-        public void StepApertureNarrower()
-        {
-            if (this._apertureIndex < APERTURE_STOPS.Length - 1)
-                this._apertureIndex++;
-        }
-
-        /// <summary>
-        /// Steps to the next wider aperture (lower f-number, shallower DOF).
-        /// Clamped to the active lens set's widest T-stop. No-op if already at widest.
-        /// </summary>
-        public void StepApertureWider()
-        {
-            if (this._apertureIndex <= 0)
-                return;
-
-            var candidate = this._apertureIndex - 1;
-            var maxAperture = this.ActiveLensSet?.MaxAperture ?? 0f;
-
-            if (maxAperture > 0 && APERTURE_STOPS[candidate] < maxAperture)
-                return;
-
-            this._apertureIndex = candidate;
-        }
+        public void StepApertureNarrower() => this._lens.StepApertureNarrower();
+        public void StepApertureWider()    => this._lens.StepApertureWider();
 
         /// <summary>
         /// Steps to the next shorter focal length in the active prime lens set.

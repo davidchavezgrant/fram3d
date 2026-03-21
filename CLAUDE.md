@@ -83,9 +83,10 @@ When asked to implement a feature or milestone, follow this sequence exactly.
 
 ### 1. Find the work
 
-1. Read `docs/reference/roadmap.md` to understand the feature and its dependencies.
-2. Read the relevant spec in `docs/specs/`.
-3. Read all reference docs listed in the "Read before writing code" table below. If the feature involves UI, also read the "Read before writing UI" docs.
+1. Read `docs/reference/build-order.md` to check the dependency map. If the feature depends on unbuilt infrastructure, flag it before starting — it may need to be reordered or deferred.
+2. Read `docs/reference/roadmap.md` to understand the feature and its dependencies.
+3. Read the relevant spec in `docs/specs/`.
+4. Read all reference docs listed in the "Read before writing code" table below. If the feature involves UI, also read the "Read before writing UI" docs.
 
 ### 2. Find the Linear ticket
 

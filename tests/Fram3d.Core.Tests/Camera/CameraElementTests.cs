@@ -1159,5 +1159,81 @@ namespace Fram3d.Core.Tests.Camera
 
 			cam.FocusDistance.Should().Be(1.5f);
 		}
+
+		// --- Per-lens constraints (1.1.5) ---
+
+		[Fact]
+		public void StepFocalLengthUp__ClampsAperture__When__NextLensHasNarrowerMaxAperture()
+		{
+			// 50mm is T1.4, 85mm is T2.8
+			var specs = new[]
+			{
+				new LensSpec(50f, 1.4f, 0.4f),
+				new LensSpec(85f, 2.8f, 0.8f)
+			};
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Mixed Set", specs, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+
+			// Open aperture to f/1.4 (allowed on 50mm)
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(1.4f);
+
+			// Step to 85mm — max aperture is T2.8, should clamp
+			cam.StepFocalLengthUp();
+
+			cam.FocalLength.Should().Be(85f);
+			cam.Aperture.Should().BeGreaterThanOrEqualTo(2.8f);
+		}
+
+		[Fact]
+		public void StepFocalLengthDown__ClampsFocusDistance__When__NextLensHasLongerCloseFocus()
+		{
+			// 85mm has 0.8m close focus, 50mm has 0.4m
+			var specs = new[]
+			{
+				new LensSpec(50f, 1.4f, 0.4f),
+				new LensSpec(85f, 1.4f, 0.8f)
+			};
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Test Set", specs, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+			cam.FocusDistance = 0.5f;
+
+			cam.FocusDistance.Should().Be(0.5f);
+
+			// Step to 85mm — close focus is 0.8m, should clamp
+			cam.StepFocalLengthUp();
+
+			cam.FocusDistance.Should().Be(0.8f);
+		}
+
+		[Fact]
+		public void StepFocalLengthDown__AllowsWiderAperture__When__NextLensIsFaster()
+		{
+			// 50mm is T2.8, 35mm is T1.4
+			var specs = new[]
+			{
+				new LensSpec(35f, 1.4f, 0.3f),
+				new LensSpec(50f, 2.8f, 0.4f)
+			};
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Fast Wide", specs, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+
+			// At f/2.8 on 50mm (its max)
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(2.8f);
+
+			// Step to 35mm — T1.4 max, now we can open wider
+			cam.StepFocalLengthDown();
+			cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(2f);
+		}
 	}
 }

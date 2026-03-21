@@ -76,22 +76,18 @@ namespace Fram3d.Engine.Integration
                                              IGrouping<string, RawLens> group,
                                              RawLens                    representative)
         {
-            var lenses       = group.Where(l => l.focal_length_mm > 0).OrderBy(l => l.focal_length_mm).ToArray();
-            var focalLengths = lenses.Select(l => l.focal_length_mm).ToArray();
+            var specs = group.Where(l => l.focal_length_mm > 0)
+                            .OrderBy(l => l.focal_length_mm)
+                            .Select(l => new LensSpec(l.focal_length_mm, l.max_aperture_tstop, l.close_focus_m))
+                            .ToArray();
 
-            if (focalLengths.Length == 0)
+            if (specs.Length == 0)
                 return;
 
-            var maxApertures = lenses.Where(l => l.max_aperture_tstop > 0).Select(l => l.max_aperture_tstop);
-            var closeFocuses = lenses.Where(l => l.close_focus_m > 0).Select(l => l.close_focus_m);
-            var maxAperture  = maxApertures.Any()? maxApertures.Min() : 0f;
-            var closeFocusM  = closeFocuses.Any()? closeFocuses.Min() : 0f;
             db.AddLensSet(new LensSet(setName,
-                                      focalLengths,
+                                      specs,
                                       representative.is_anamorphic,
-                                      representative.squeeze_factor,
-                                      maxAperture,
-                                      closeFocusM));
+                                      representative.squeeze_factor));
         }
 
         private static void LoadZoomLensSets(CameraDatabase db, IGrouping<string, RawLens> group)

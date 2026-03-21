@@ -24,6 +24,8 @@ namespace Fram3d.Engine.Integration
             this._cameraElement                     = new CameraElement(new ElementId(System.Guid.NewGuid()), "Main Camera");
             this._database                          = CameraDatabaseLoader.Load();
             this._unityCamera.usePhysicalProperties = true;
+            var urpCameraData = this._unityCamera.GetUniversalAdditionalCameraData();
+            urpCameraData.renderPostProcessing = true;
             var cam            = this._cameraElement;
             var defaultBody    = this._database.DefaultBody;
             var defaultLensSet = this._database.DefaultLensSet;

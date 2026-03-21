@@ -115,6 +115,18 @@ namespace Fram3d.UI.Input
                 return;
             }
 
+            if (keyboard.aKey.wasPressedThisFrame
+             && !keyboard.ctrlKey.isPressed
+             && !keyboard.altKey.isPressed)
+            {
+                if (keyboard.shiftKey.isPressed)
+                    this.cameraBehaviour.CycleAspectRatioBackward();
+                else
+                    this.cameraBehaviour.CycleAspectRatioForward();
+
+                return;
+            }
+
             if (keyboard.ctrlKey.isPressed && keyboard.rKey.wasPressedThisFrame)
             {
                 this._camera.Reset();

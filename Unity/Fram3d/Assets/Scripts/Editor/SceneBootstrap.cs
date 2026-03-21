@@ -1,6 +1,7 @@
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
 using Fram3d.UI.Panels;
+using Fram3d.UI.Views;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -17,6 +18,7 @@ namespace Fram3d.Editor
         public static void Bootstrap()
         {
             SetupCamera();
+            SetupAspectRatioMask();
             SetupPropertiesPanel();
             SetupGroundPlane();
             SetupReferenceObjects();
@@ -55,6 +57,29 @@ namespace Fram3d.Editor
             settings.scaleMode = PanelScaleMode.ConstantPixelSize;
             AssetDatabase.CreateAsset(settings, "Assets/Settings/PanelSettings.asset");
             return settings;
+        }
+
+        private static void SetupAspectRatioMask()
+        {
+            var maskGo = GameObject.Find("Aspect Ratio Mask");
+
+            if (maskGo == null)
+                maskGo = new GameObject("Aspect Ratio Mask");
+
+            var uiDoc = maskGo.GetComponent<UIDocument>();
+
+            if (uiDoc == null)
+            {
+                uiDoc               = maskGo.AddComponent<UIDocument>();
+                uiDoc.panelSettings = GetOrCreatePanelSettings();
+            }
+
+            uiDoc.sortingOrder = 0;
+
+            if (maskGo.GetComponent<AspectRatioMaskView>() == null)
+                maskGo.AddComponent<AspectRatioMaskView>();
+
+            EditorUtility.SetDirty(maskGo);
         }
 
         private static void SetupCamera()
@@ -112,11 +137,15 @@ namespace Fram3d.Editor
                 panelGo = new GameObject("Properties Panel");
             }
 
-            if (panelGo.GetComponent<UIDocument>() == null)
+            var panelUiDoc = panelGo.GetComponent<UIDocument>();
+
+            if (panelUiDoc == null)
             {
-                var uiDoc = panelGo.AddComponent<UIDocument>();
-                uiDoc.panelSettings = GetOrCreatePanelSettings();
+                panelUiDoc               = panelGo.AddComponent<UIDocument>();
+                panelUiDoc.panelSettings = GetOrCreatePanelSettings();
             }
+
+            panelUiDoc.sortingOrder = 1;
 
             if (panelGo.GetComponent<PropertiesPanelView>() == null)
                 panelGo.AddComponent<PropertiesPanelView>();

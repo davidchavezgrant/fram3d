@@ -12,13 +12,19 @@ namespace Fram3d.Engine.Integration
         private const float          FOCAL_LENGTH_LERP_SPEED    = 10f;
         private const float          SHAKE_ROTATION_SCALE       = 0.5f;
         private const float          SHAKE_TIME_OFFSET          = 100f;
+        private       AspectRatio    _activeAspectRatio = AspectRatio.DEFAULT;
         private       CameraElement  _cameraElement;
         private       CameraDatabase _database;
         private       DepthOfField   _dof;
         private       float          _displayedFocalLength;
         private       Camera         _unityCamera;
-        public        CameraElement  CameraElement => this._cameraElement;
-        public        CameraDatabase Database      => this._database;
+
+        public AspectRatio    ActiveAspectRatio => this._activeAspectRatio;
+        public CameraElement  CameraElement     => this._cameraElement;
+        public CameraDatabase Database          => this._database;
+
+        public void CycleAspectRatioBackward() => this._activeAspectRatio = this._activeAspectRatio.Previous();
+        public void CycleAspectRatioForward()  => this._activeAspectRatio = this._activeAspectRatio.Next();
 
         private void Awake()
         {

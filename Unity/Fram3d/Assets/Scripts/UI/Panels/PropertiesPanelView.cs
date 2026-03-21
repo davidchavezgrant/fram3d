@@ -60,7 +60,7 @@ namespace Fram3d.UI.Panels
             content.style.paddingLeft  = 10;
             content.style.paddingRight = 10;
             this._infoSection          = new CameraInfoSection();
-            this._infoSection.UpdateValues(cam);
+            this._infoSection.UpdateValues(cam, this._cameraBehaviour.ActiveAspectRatio);
             content.Add(this._infoSection);
             content.Add(Theme.CreateSeparator());
             this._bodySection             =  new CameraBodySection(db.Bodies, cam.Body);
@@ -141,7 +141,7 @@ namespace Fram3d.UI.Panels
                 return;
 
             var cam = this._cameraBehaviour.CameraElement;
-            this._infoSection?.UpdateValues(cam);
+            this._infoSection?.UpdateValues(cam, this._cameraBehaviour.ActiveAspectRatio);
             this._shakeSection?.UpdateValues(cam);
         }
     }

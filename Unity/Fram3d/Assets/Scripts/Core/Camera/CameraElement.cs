@@ -176,14 +176,14 @@ namespace Fram3d.Core.Camera
         public void SetLensSet(LensSet lensSet) => this._lens.SetLensSet(lensSet);
 
         /// <summary>
-        /// Steps to the next longer focal length in the active prime lens set.
-        /// </summary>
-        public void StepFocalLengthUp() => this._lens.StepFocalLengthUp();
-
-        /// <summary>
         /// Steps to the next shorter focal length in the active prime lens set.
         /// </summary>
         public void StepFocalLengthDown() => this._lens.StepFocalLengthDown();
+
+        /// <summary>
+        /// Steps to the next longer focal length in the active prime lens set.
+        /// </summary>
+        public void StepFocalLengthUp() => this._lens.StepFocalLengthUp();
 
         /// <summary>
         /// Vertical rotation around the camera's local right axis.

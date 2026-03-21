@@ -24,7 +24,7 @@ namespace Fram3d.UI.Panels
             this.Add(this._dropdown.Root);
         }
 
-        public event Action<LensSet>        LensSetChanged;
+        public event Action<LensSet> LensSetChanged;
 
         /// <summary>
         /// Whether the dropdown's search field has focus.

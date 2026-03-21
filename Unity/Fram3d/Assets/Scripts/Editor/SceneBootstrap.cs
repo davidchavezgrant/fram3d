@@ -44,6 +44,19 @@ namespace Fram3d.Editor
             EditorUtility.SetDirty(gameObject);
         }
 
+        private static PanelSettings GetOrCreatePanelSettings()
+        {
+            var guids = AssetDatabase.FindAssets("t:PanelSettings");
+
+            if (guids.Length > 0)
+                return AssetDatabase.LoadAssetAtPath<PanelSettings>(AssetDatabase.GUIDToAssetPath(guids[0]));
+
+            var settings = ScriptableObject.CreateInstance<PanelSettings>();
+            settings.scaleMode = PanelScaleMode.ConstantPixelSize;
+            AssetDatabase.CreateAsset(settings, "Assets/Settings/PanelSettings.asset");
+            return settings;
+        }
+
         private static void SetupCamera()
         {
             var cameraGameObject = GameObject.Find("Main Camera");
@@ -69,6 +82,25 @@ namespace Fram3d.Editor
             prop.objectReferenceValue = cameraGameObject.GetComponent<CameraBehaviour>();
             serializedObject.ApplyModifiedProperties();
             EditorUtility.SetDirty(cameraGameObject);
+        }
+
+        private static void SetupGroundPlane()
+        {
+            if (GameObject.Find("Ground Plane") != null)
+                return;
+
+            var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            plane.name                 = "Ground Plane";
+            plane.transform.position   = Vector3.zero;
+            plane.transform.localScale = new Vector3(10f, 1f, 10f);
+            var renderer = plane.GetComponent<Renderer>();
+
+            if (renderer != null)
+            {
+                renderer.material.color = new Color(0.3f, 0.3f, 0.3f);
+            }
+
+            EditorUtility.SetDirty(plane);
         }
 
         private static void SetupPropertiesPanel()
@@ -102,38 +134,6 @@ namespace Fram3d.Editor
             }
 
             EditorUtility.SetDirty(panelGo);
-        }
-
-        private static PanelSettings GetOrCreatePanelSettings()
-        {
-            var guids = AssetDatabase.FindAssets("t:PanelSettings");
-
-            if (guids.Length > 0)
-                return AssetDatabase.LoadAssetAtPath<PanelSettings>(AssetDatabase.GUIDToAssetPath(guids[0]));
-
-            var settings = ScriptableObject.CreateInstance<PanelSettings>();
-            settings.scaleMode = PanelScaleMode.ConstantPixelSize;
-            AssetDatabase.CreateAsset(settings, "Assets/Settings/PanelSettings.asset");
-            return settings;
-        }
-
-        private static void SetupGroundPlane()
-        {
-            if (GameObject.Find("Ground Plane") != null)
-                return;
-
-            var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            plane.name                 = "Ground Plane";
-            plane.transform.position   = Vector3.zero;
-            plane.transform.localScale = new Vector3(10f, 1f, 10f);
-            var renderer = plane.GetComponent<Renderer>();
-
-            if (renderer != null)
-            {
-                renderer.material.color = new Color(0.3f, 0.3f, 0.3f);
-            }
-
-            EditorUtility.SetDirty(plane);
         }
 
         private static void SetupReferenceObjects()

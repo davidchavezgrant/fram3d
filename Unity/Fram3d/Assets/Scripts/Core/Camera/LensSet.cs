@@ -2,14 +2,6 @@ namespace Fram3d.Core.Camera
 {
     public sealed class LensSet
     {
-        public string  Name          { get; }
-        public bool    IsZoom        { get; }
-        public bool    IsAnamorphic  { get; }
-        public float   SqueezeFactor { get; }
-        public float[] FocalLengths  { get; }
-        public float   MinFocalLength    { get; }
-        public float   MaxFocalLength    { get; }
-
         /// <summary>
         /// Creates a prime lens set from a list of fixed focal lengths.
         /// </summary>
@@ -36,13 +28,21 @@ namespace Fram3d.Core.Camera
                        bool   isAnamorphic,
                        float  squeezeFactor)
         {
-            this.Name          = name;
-            this.IsZoom        = true;
-            this.IsAnamorphic  = isAnamorphic;
-            this.SqueezeFactor = squeezeFactor;
-            this.FocalLengths  = System.Array.Empty<float>();
-            this.MinFocalLength    = minFocalLength;
-            this.MaxFocalLength    = maxFocalLength;
+            this.Name           = name;
+            this.IsZoom         = true;
+            this.IsAnamorphic   = isAnamorphic;
+            this.SqueezeFactor  = squeezeFactor;
+            this.FocalLengths   = System.Array.Empty<float>();
+            this.MinFocalLength = minFocalLength;
+            this.MaxFocalLength = maxFocalLength;
         }
+
+        public float[] FocalLengths   { get; }
+        public bool    IsAnamorphic   { get; }
+        public bool    IsZoom         { get; }
+        public float   MaxFocalLength { get; }
+        public float   MinFocalLength { get; }
+        public string  Name           { get; }
+        public float   SqueezeFactor  { get; }
     }
 }

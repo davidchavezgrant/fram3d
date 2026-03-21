@@ -28,7 +28,7 @@ namespace Fram3d.UI.Panels
             this.BuildShowAllToggle();
         }
 
-        public event Action<CameraBody>     BodyChanged;
+        public event Action<CameraBody> BodyChanged;
 
         /// <summary>
         /// Whether the dropdown's search field has focus.

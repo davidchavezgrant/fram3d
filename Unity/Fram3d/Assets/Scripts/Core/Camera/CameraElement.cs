@@ -5,16 +5,34 @@ namespace Fram3d.Core.Camera
 {
     public class CameraElement: Element
     {
-        private static readonly Vector3        DEFAULT_POSITION      = new(0f, 1.6f, 5f);
-        private const           float          DEFAULT_SENSOR_WIDTH  = 24.89f;
         private const           float          DEFAULT_SENSOR_HEIGHT = 18.66f;
+        private const           float          DEFAULT_SENSOR_WIDTH  = 24.89f;
+        private static readonly Vector3        DEFAULT_POSITION      = new(0f, 1.6f, 5f);
         private readonly        LensController _lens                 = new();
-        public                  float          FocalLength     => this._lens.FocalLength;
-        public                  LensSet        ActiveLensSet   => this._lens.ActiveLensSet;
-        public                  float          SensorWidth     { get; private set; } = DEFAULT_SENSOR_WIDTH;
-        public                  float          SensorHeight    { get; private set; } = DEFAULT_SENSOR_HEIGHT;
-        public                  CameraBody     Body            { get; private set; }
-        public                  Vector3        OrbitPivotPoint { get; set; } = Vector3.Zero;
+
+        public CameraElement(ElementId id, string name): base(id, name)
+        {
+            this.Position = DEFAULT_POSITION;
+            this.Rotation = Quaternion.Identity;
+        }
+
+        public LensSet    ActiveLensSet => this._lens.ActiveLensSet;
+        public CameraBody Body          { get; private set; }
+
+        /// <summary>
+        /// Current focal length in mm. Setting this value respects lens constraints:
+        /// zoom lenses clamp to their range, prime lenses ignore the write (use
+        /// StepFocalLength or SetFocalLengthPreset for primes).
+        /// </summary>
+        public float FocalLength
+        {
+            get => this._lens.FocalLength;
+            set => this._lens.SetFocalLength(value);
+        }
+
+        public Vector3 OrbitPivotPoint { get; set; }         = Vector3.Zero;
+        public float   SensorHeight    { get; private set; } = DEFAULT_SENSOR_HEIGHT;
+        public float   SensorWidth     { get; private set; } = DEFAULT_SENSOR_WIDTH;
 
         /// <summary>
         /// When true, CameraBehaviour applies focal length instantly instead of lerping.
@@ -26,54 +44,17 @@ namespace Fram3d.Core.Camera
             set => this._lens.SnapFocalLength = value;
         }
 
-        public CameraElement(ElementId id, string name): base(id, name)
-        {
-            this.Position = DEFAULT_POSITION;
-            this.Rotation = Quaternion.Identity;
-        }
-
-        // --- Movement ---
+        // --- FOV ---
 
         /// <summary>
-        /// Horizontal rotation around the world Y axis through the camera's position.
-        /// Positive amount rotates rightward.
+        /// Computes the vertical field of view in radians from the current focal length and sensor height.
+        /// FOV = 2 * atan(sensorHeight / (2 * focalLength))
         /// </summary>
-        public void Pan(float amount)
-        {
-            var rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -amount);
-            this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
-        }
 
-        /// <summary>
-        /// Vertical rotation around the camera's local right axis.
-        /// Positive amount rotates upward.
-        /// </summary>
-        public void Tilt(float amount)
-        {
-            var right    = Vector3.Transform(Vector3.UnitX, this.Rotation);
-            var rotation = Quaternion.CreateFromAxisAngle(right, amount);
-            this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
-        }
-
-        /// <summary>
-        /// Translate along the camera's local forward axis.
-        /// Positive amount moves toward whatever the camera is looking at.
-        /// </summary>
-        public void Dolly(float amount)
-        {
-            var forward = this.ComputeLookDirection();
-            this.Position += forward * amount;
-        }
-
-        /// <summary>
-        /// Translate laterally along the camera's local right axis.
-        /// Positive amount moves rightward.
-        /// </summary>
-        public void Truck(float amount)
-        {
-            var right = Vector3.Transform(Vector3.UnitX, this.Rotation);
-            this.Position += right * amount;
-        }
+        // TODO: When anamorphic lens is active, compute horizontal FOV using squeeze factor:
+        //   hFov = 2 * atan((sensorWidth * squeezeFactor) / (2 * focalLength))
+        //   Also auto-lock aspect ratio to the computed delivery format (see 1.2.1).
+        public float ComputeVerticalFov() => 2f * MathF.Atan(this.SensorHeight / (2f * this._lens.FocalLength));
 
         /// <summary>
         /// Translate vertically along the world Y axis.
@@ -85,28 +66,13 @@ namespace Fram3d.Core.Camera
         }
 
         /// <summary>
-        /// Rotate around the camera's local forward axis.
-        /// Positive amount tilts the top of the frame rightward (clockwise from camera's perspective).
+        /// Translate along the camera's local forward axis.
+        /// Positive amount moves toward whatever the camera is looking at.
         /// </summary>
-        public void Roll(float amount)
+        public void Dolly(float amount)
         {
-            var forward  = this.ComputeLookDirection();
-            var rotation = Quaternion.CreateFromAxisAngle(forward, amount);
-            this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
-        }
-
-        /// <summary>
-        /// Rotate the camera around OrbitPivotPoint while keeping the pivot centered in frame.
-        /// </summary>
-        public void Orbit(float horizontalAmount, float verticalAmount)
-        {
-            var offset        = this.Position - this.OrbitPivotPoint;
-            var horizontalRot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -horizontalAmount);
-            var right         = Vector3.Transform(Vector3.UnitX, this.Rotation);
-            var verticalRot   = Quaternion.CreateFromAxisAngle(right, verticalAmount);
-            var combinedRot   = horizontalRot * verticalRot;
-            this.Position = this.OrbitPivotPoint + Vector3.Transform(offset, combinedRot);
-            this.Rotation = Quaternion.Normalize(combinedRot * this.Rotation);
+            var forward = this.ComputeLookDirection();
+            this.Position += forward * amount;
         }
 
         /// <summary>
@@ -142,27 +108,42 @@ namespace Fram3d.Core.Camera
             this._lens.SnapFocalLength = true;
         }
 
-        // --- Lens (delegated to LensController) ---
+        /// <summary>
+        /// Rotate the camera around OrbitPivotPoint while keeping the pivot centered in frame.
+        /// </summary>
+        public void Orbit(float horizontalAmount, float verticalAmount)
+        {
+            var offset        = this.Position - this.OrbitPivotPoint;
+            var horizontalRot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -horizontalAmount);
+            var right         = Vector3.Transform(Vector3.UnitX, this.Rotation);
+            var verticalRot   = Quaternion.CreateFromAxisAngle(right, verticalAmount);
+            var combinedRot   = horizontalRot * verticalRot;
+            this.Position = this.OrbitPivotPoint + Vector3.Transform(offset, combinedRot);
+            this.Rotation = Quaternion.Normalize(combinedRot * this.Rotation);
+        }
+
+        // --- Movement ---
 
         /// <summary>
-        /// Sets focal length continuously. No-op for prime lenses.
+        /// Horizontal rotation around the world Y axis through the camera's position.
+        /// Positive amount rotates rightward.
         /// </summary>
-        public void SetFocalLength(float mm) => this._lens.SetFocalLength(mm);
+        public void Pan(float amount)
+        {
+            var rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -amount);
+            this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
+        }
 
         /// <summary>
-        /// Steps to the next or previous focal length in the active prime lens set.
+        /// Rotate around the camera's local forward axis.
+        /// Positive amount tilts the top of the frame rightward (clockwise from camera's perspective).
         /// </summary>
-        public void StepFocalLength(int direction) => this._lens.StepFocalLength(direction);
-
-        /// <summary>
-        /// Sets focal length to a specific preset value. Snaps instantly (no lerp).
-        /// </summary>
-        public void SetFocalLengthPreset(float mm) => this._lens.SetPreset(mm);
-
-        /// <summary>
-        /// Sets the active lens set and snaps focal length to the nearest valid value.
-        /// </summary>
-        public void SetLensSet(LensSet lensSet) => this._lens.SetLensSet(lensSet);
+        public void Roll(float amount)
+        {
+            var forward  = this.ComputeLookDirection();
+            var rotation = Quaternion.CreateFromAxisAngle(forward, amount);
+            this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
+        }
 
         // --- Body ---
 
@@ -177,17 +158,53 @@ namespace Fram3d.Core.Camera
             this.SensorHeight = body.SensorHeightMm;
         }
 
-        // --- FOV ---
+        /// <summary>
+        /// Sets focal length to a specific preset value, bypassing prime lens restrictions.
+        /// Snaps instantly (no lerp). Used by number key presets.
+        /// </summary>
+        public void SetFocalLengthPreset(float mm) => this._lens.SetPreset(mm);
 
         /// <summary>
-        /// Computes the vertical field of view in radians from the current focal length and sensor height.
-        /// FOV = 2 * atan(sensorHeight / (2 * focalLength))
+        /// Sets the active lens set and snaps focal length to the nearest valid value.
         /// </summary>
+        public void SetLensSet(LensSet lensSet) => this._lens.SetLensSet(lensSet);
 
-        // TODO: When anamorphic lens is active, compute horizontal FOV using squeeze factor:
-        //   hFov = 2 * atan((sensorWidth * squeezeFactor) / (2 * focalLength))
-        //   Also auto-lock aspect ratio to the computed delivery format (see 1.2.1).
-        public float ComputeVerticalFov() => 2f * MathF.Atan(this.SensorHeight / (2f * this._lens.FocalLength));
+        // --- Lens (delegated to LensController) ---
+
+        /// <summary>
+        /// Steps to the next or previous focal length in the active prime lens set.
+        /// </summary>
+        public void StepFocalLength(int direction) => this._lens.StepFocalLength(direction);
+
+        /// <summary>
+        /// Vertical rotation around the camera's local right axis.
+        /// Positive amount rotates upward.
+        /// </summary>
+        public void Tilt(float amount)
+        {
+            var right    = Vector3.Transform(Vector3.UnitX, this.Rotation);
+            var rotation = Quaternion.CreateFromAxisAngle(right, amount);
+            this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
+        }
+
+        /// <summary>
+        /// Translate laterally along the camera's local right axis.
+        /// Positive amount moves rightward.
+        /// </summary>
+        public void Truck(float amount)
+        {
+            var right = Vector3.Transform(Vector3.UnitX, this.Rotation);
+            this.Position += right * amount;
+        }
+
+        // --- Internal ---
+
+        /// <summary>
+        /// Returns the world-space direction the camera is currently looking at.
+        /// Computed by rotating the base forward vector (-Z in right-handed System.Numerics)
+        /// by the camera's current rotation.
+        /// </summary>
+        private Vector3 ComputeLookDirection() => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
 
         // --- Reset ---
 
@@ -203,14 +220,5 @@ namespace Fram3d.Core.Camera
             this.OrbitPivotPoint = Vector3.Zero;
             this._lens.Reset();
         }
-
-        // --- Internal ---
-
-        /// <summary>
-        /// Returns the world-space direction the camera is currently looking at.
-        /// Computed by rotating the base forward vector (-Z in right-handed System.Numerics)
-        /// by the camera's current rotation.
-        /// </summary>
-        private Vector3 ComputeLookDirection() => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
     }
 }

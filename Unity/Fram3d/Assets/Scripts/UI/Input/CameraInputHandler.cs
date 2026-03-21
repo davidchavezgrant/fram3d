@@ -75,12 +75,12 @@ namespace Fram3d.UI.Input
             // Unmodified Scroll Y = focal length
             if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
-                var lens = this._camera.Lens;
+                var activeLensSet = this._camera.ActiveLensSet;
 
-                if (lens.ActiveLensSet != null && !lens.ActiveLensSet.IsZoom)
-                    lens.StepFocalLength(scrollY > 0 ? 1 : -1);
+                if (activeLensSet != null && !activeLensSet.IsZoom)
+                    this._camera.StepFocalLength(scrollY > 0 ? 1 : -1);
                 else
-                    lens.SetFocalLength(lens.FocalLength + scrollY * MovementSpeeds.FOCAL_LENGTH_SCROLL);
+                    this._camera.FocalLength = this._camera.FocalLength + scrollY * MovementSpeeds.FOCAL_LENGTH_SCROLL;
             }
         }
 
@@ -128,10 +128,8 @@ namespace Fram3d.UI.Input
             // Number keys 1–9 = focal length presets (from active lens set, or generic fallback)
             // TODO: For zoom lenses, FocalLengths is empty so this falls through to QUICK.
             //   Consider disabling number keys for zooms or mapping to evenly-spaced values in the range.
-            var lens    = this._camera.Lens;
-            var presets = lens.ActiveLensSet != null
-                ? lens.ActiveLensSet.FocalLengths
-                : FocalLengthPresets.QUICK;
+            var activeLensSet = this._camera.ActiveLensSet;
+            var presets       = activeLensSet != null ? activeLensSet.FocalLengths : FocalLengthPresets.QUICK;
 
             var digitKeys = new[]
             {
@@ -147,7 +145,7 @@ namespace Fram3d.UI.Input
                 if (!digitKeys[i].wasPressedThisFrame)
                     continue;
 
-                lens.SetPreset(presets[i]);
+                this._camera.SetFocalLengthPreset(presets[i]);
 
                 break;
             }

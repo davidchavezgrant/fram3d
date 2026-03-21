@@ -317,7 +317,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void Reset__RestoresDefaultFocalLength__When__FocalLengthChanged()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(85f);
+			cam.FocalLength = 85f;
 
 			cam.Reset();
 
@@ -402,7 +402,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetFocalLength__ClampsToMinimum__When__BelowRange()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(5f);
+			cam.FocalLength = 5f;
 			cam.FocalLength.Should().Be(14f);
 		}
 
@@ -410,7 +410,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetFocalLength__ClampsToMaximum__When__AboveRange()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(500f);
+			cam.FocalLength = 500f;
 			cam.FocalLength.Should().Be(400f);
 		}
 
@@ -418,7 +418,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetFocalLength__SetsExactValue__When__WithinRange()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(85f);
+			cam.FocalLength = 85f;
 			cam.FocalLength.Should().Be(85f);
 		}
 
@@ -440,7 +440,7 @@ namespace Fram3d.Core.Tests.Camera
 			var cam = CreateCamera();
 			var fov50 = cam.ComputeVerticalFov();
 
-			cam.SetFocalLength(24f);
+			cam.FocalLength = 24f;
 			var fov24 = cam.ComputeVerticalFov();
 
 			fov24.Should().BeGreaterThan(fov50);
@@ -452,7 +452,7 @@ namespace Fram3d.Core.Tests.Camera
 			var cam = CreateCamera();
 			var fov50 = cam.ComputeVerticalFov();
 
-			cam.SetFocalLength(135f);
+			cam.FocalLength = 135f;
 			var fov135 = cam.ComputeVerticalFov();
 
 			fov135.Should().BeLessThan(fov50);
@@ -476,7 +476,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__AdjustsFocalLength__When__MovingCloser()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(50f);
+			cam.FocalLength = 50f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 
 			cam.DollyZoom(1.0f);
@@ -489,7 +489,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__MaintainsSubjectSize__When__Applied()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(50f);
+			cam.FocalLength = 50f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 
 			var distanceBefore = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
@@ -507,7 +507,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__ClampsAtMinFocalLength__When__VeryClose()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(15f);
+			cam.FocalLength = 15f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 
 			// Move very close — focal length should clamp at 14mm
@@ -520,7 +520,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__StopsMoving__When__AtMinFocalLength()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(14f);
+			cam.FocalLength = 14f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 			var positionBefore = cam.Position;
 
@@ -535,7 +535,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__StopsMoving__When__AtMaxFocalLength()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(400f);
+			cam.FocalLength = 400f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 			var positionBefore = cam.Position;
 
@@ -550,7 +550,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__KeepsPositionAndFocalLengthConsistent__When__Clamped()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(20f);
+			cam.FocalLength = 20f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 
 			// Large move that would overshoot min focal length
@@ -581,7 +581,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetBody__PreservesFocalLength__When__BodyChanged()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(85f);
+			cam.FocalLength = 85f;
 
 			cam.SetBody(new CameraBody("ARRI Alexa 35", "ARRI", 27.99f, 19.22f, "S35", "LPL", new[] { 4608, 3164 }, new[] { 24 }));
 
@@ -618,7 +618,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetLensSet__SnapsToNearestPrime__When__FocalLengthNotInSet()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(200f);
+			cam.FocalLength = 200f;
 
 			// Leica Summilux-C maxes out at 135mm — 200mm snaps to nearest (135mm)
 			cam.SetLensSet(new LensSet("Leica Summilux-C", new float[] { 16, 18, 21, 25, 29, 35, 40, 50, 65, 75, 100, 135 }, false, 1.0f));
@@ -648,7 +648,7 @@ namespace Fram3d.Core.Tests.Camera
 			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
 			cam.SetFocalLengthPreset(50f);
 
-			cam.SetFocalLength(85f);
+			cam.FocalLength = 85f;
 
 			cam.FocalLength.Should().Be(50f);
 		}
@@ -725,7 +725,7 @@ namespace Fram3d.Core.Tests.Camera
 			var cam = CreateCamera();
 			cam.SetLensSet(new LensSet("Canon 16-35mm", 16f, 35f, false, 1.0f));
 
-			cam.SetFocalLength(100f);
+			cam.FocalLength = 100f;
 
 			cam.FocalLength.Should().Be(35f);
 		}
@@ -736,7 +736,7 @@ namespace Fram3d.Core.Tests.Camera
 			var cam = CreateCamera();
 			cam.SetLensSet(new LensSet("Canon 16-35mm", 16f, 35f, false, 1.0f));
 
-			cam.SetFocalLength(10f);
+			cam.FocalLength = 10f;
 
 			cam.FocalLength.Should().Be(16f);
 		}
@@ -747,7 +747,7 @@ namespace Fram3d.Core.Tests.Camera
 			var cam = CreateCamera();
 			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
 
-			cam.SetFocalLength(45f);
+			cam.FocalLength = 45f;
 
 			cam.FocalLength.Should().Be(45f);
 		}
@@ -759,7 +759,7 @@ namespace Fram3d.Core.Tests.Camera
 		{
 			var cam = CreateCamera();
 			cam.SetLensSet(new LensSet("Canon 16-35mm", 16f, 35f, false, 1.0f));
-			cam.SetFocalLength(16f);
+			cam.FocalLength = 16f;
 
 			// Switch to 24-70mm — current 16mm is below range, should snap to 24mm
 			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
@@ -771,7 +771,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetLensSet__SnapsToZoomMax__When__AboveZoomRange()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(200f);
+			cam.FocalLength = 200f;
 
 			// Switch to 24-70mm — current 200mm is above range, should snap to 70mm
 			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
@@ -783,7 +783,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetLensSet__PreservesFocalLength__When__WithinZoomRange()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(35f);
+			cam.FocalLength = 35f;
 
 			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
 
@@ -795,7 +795,7 @@ namespace Fram3d.Core.Tests.Camera
 		{
 			var cam = CreateCamera();
 			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
-			cam.SetFocalLength(45f);
+			cam.FocalLength = 45f;
 
 			// Switch to primes — 45mm should snap to nearest (50mm)
 			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
@@ -807,7 +807,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetLensSet__SetsSnapFlag__When__FocalLengthChanges()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(200f);
+			cam.FocalLength = 200f;
 			cam.SnapFocalLength = false;
 
 			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));

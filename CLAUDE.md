@@ -1,11 +1,48 @@
 # Fram3d — Project Instructions
 
-Fram3d is a 3D previsualization tool for filmmakers. Unity project (Unity 6, Cinemachine 3.x, C#).
+Fram3d is a 3D previsualization tool for filmmakers. Unity project (Unity 6, URP, C#).
 
 ## Rules
 
 - **Never overwrite or replace existing work.** When building new mockups, features, or files that relate to existing ones, incorporate or reference the existing work — don't start from scratch. If you need to create something new in the same space, create a separate file. Never nuke what we've already iterated on.
 - **Use the domain language.** Read `docs/reference/domain-language.md` before writing specs, code, or UI text. Terms are chosen deliberately — don't invent synonyms.
+- **All work requires a Linear ticket.** Create or find a Linear issue before starting any implementation, bug fix, or research task. Reference the ticket in commits and PRs.
+
+## Code Style (C#)
+
+- **C# 9 maximum.** Unity 6 supports C# 9. Do not use C# 10+ features (`record struct`, `global using`, file-scoped namespaces, `required`, etc.). `record` classes and `init` properties are fine (C# 9).
+- **Explicit `private` modifier.** Always write `private` on private members — never rely on the implicit default.
+- **Private fields:** `_camelCase` (underscore prefix). E.g., `private float _focalLength;`
+- **Private methods:** PascalCase. E.g., `private void ApplyRotation()`
+- **Expression-bodied members:** Prefer `=>` for single-expression members. If the body requires multiple lines or a ternary, use a block body instead.
+- **No ternary expressions.** Use `if`/`else` instead.
+- Follow the global CLAUDE.md C# conventions for everything else (tabs, `var` when evident, `SCREAMING_SNAKE_CASE` constants, etc.).
+
+## Project Layout
+
+### Application code
+
+All source code lives inside the Unity project under `Unity/Fram3d/Assets/Scripts/`, organized by assembly:
+
+```
+Unity/Fram3d/Assets/Scripts/
+  Core/        ← Fram3d.Core (pure C#, System.Numerics, no Unity imports)
+  Engine/      ← Fram3d.Engine (Unity, references Core)
+  UI/          ← Fram3d.UI (Unity, references Core + Engine)
+```
+
+Each directory has a `.asmdef` file defining the assembly and its references. See `docs/reference/domain-model.md` and `docs/reference/decisions.md` for what belongs in each layer.
+
+### Tests
+
+Tests live outside Unity as a standalone .NET project:
+
+```
+tests/Fram3d.Core.Tests/
+  Fram3d.Core.Tests.csproj    ← xUnit + FluentAssertions
+```
+
+The test project compiles Core's source files directly via `<Compile Include="../../Unity/Fram3d/Assets/Scripts/Core/**/*.cs" />` — one copy of source, two compilation targets (Unity asmdef + .NET for `dotnet test`).
 
 ## Documentation
 

@@ -45,17 +45,6 @@ namespace Fram3d.Core.Camera
             set => this._lens.SnapFocalLength = value;
         }
 
-        // --- Internal ---
-
-        /// <summary>
-        /// The world-space direction the camera is currently looking at.
-        /// Computed by rotating the base forward vector (-Z in right-handed System.Numerics)
-        /// by the camera's current rotation.
-        /// </summary>
-        private Vector3 LookDirection => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
-
-        // --- FOV ---
-
         /// <summary>
         /// Computes the vertical field of view in radians from the current focal length and sensor height.
         /// FOV = 2 * atan(sensorHeight / (2 * focalLength))
@@ -64,7 +53,14 @@ namespace Fram3d.Core.Camera
         // TODO: When anamorphic lens is active, compute horizontal FOV using squeeze factor:
         //   hFov = 2 * atan((sensorWidth * squeezeFactor) / (2 * focalLength))
         //   Also auto-lock aspect ratio to the computed delivery format (see 1.2.1).
-        public float ComputeVerticalFov() => 2f * MathF.Atan(this.SensorHeight / (2f * this._lens.FocalLength));
+        public float VerticalFov => 2f * MathF.Atan(this.SensorHeight / (2f * this._lens.FocalLength));
+
+        /// <summary>
+        /// The world-space direction the camera is currently looking at.
+        /// Computed by rotating the base forward vector (-Z in right-handed System.Numerics)
+        /// by the camera's current rotation.
+        /// </summary>
+        private Vector3 LookDirection => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
 
         /// <summary>
         /// Translate vertically along the world Y axis.

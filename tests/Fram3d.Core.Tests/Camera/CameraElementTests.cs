@@ -425,7 +425,7 @@ namespace Fram3d.Core.Tests.Camera
 		// --- FOV (1.1.2) ---
 
 		[Fact]
-		public void ComputeVerticalFov__ReturnsCorrectFov__When__50mmOnSuper35()
+		public void VerticalFov__ReturnsCorrectFov__When__50mmOnSuper35()
 		{
 			var cam = CreateCamera();
 			// SensorHeight = 18.66mm, FocalLength = 50mm
@@ -435,7 +435,7 @@ namespace Fram3d.Core.Tests.Camera
 		}
 
 		[Fact]
-		public void ComputeVerticalFov__ReturnsWiderFov__When__FocalLengthDecreases()
+		public void VerticalFov__ReturnsWiderFov__When__FocalLengthDecreases()
 		{
 			var cam = CreateCamera();
 			var fov50 = cam.VerticalFov;
@@ -447,7 +447,7 @@ namespace Fram3d.Core.Tests.Camera
 		}
 
 		[Fact]
-		public void ComputeVerticalFov__ReturnsNarrowerFov__When__FocalLengthIncreases()
+		public void VerticalFov__ReturnsNarrowerFov__When__FocalLengthIncreases()
 		{
 			var cam = CreateCamera();
 			var fov50 = cam.VerticalFov;
@@ -459,7 +459,7 @@ namespace Fram3d.Core.Tests.Camera
 		}
 
 		[Fact]
-		public void ComputeVerticalFov__ReturnsWiderFov__When__SensorHeightIncreases()
+		public void VerticalFov__ReturnsWiderFov__When__SensorHeightIncreases()
 		{
 			var cam = CreateCamera();
 			var fovSuper35 = cam.VerticalFov;

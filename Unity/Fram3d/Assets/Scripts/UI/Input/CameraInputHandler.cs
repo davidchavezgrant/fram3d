@@ -142,6 +142,15 @@ namespace Fram3d.UI.Input
                 return;
             }
 
+            if (keyboard.sKey.wasPressedThisFrame
+             && !keyboard.ctrlKey.isPressed
+             && !keyboard.altKey.isPressed
+             && !keyboard.shiftKey.isPressed)
+            {
+                this._camera.ShakeEnabled = !this._camera.ShakeEnabled;
+                return;
+            }
+
             // Number keys 1–9 = focal length presets
             // TODO: For zoom lenses, FocalLengths is empty so this falls through to QUICK.
             var activeLensSet = this._camera.ActiveLensSet;

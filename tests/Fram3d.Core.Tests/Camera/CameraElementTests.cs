@@ -1235,5 +1235,54 @@ namespace Fram3d.Core.Tests.Camera
 
 			cam.Aperture.Should().Be(2f);
 		}
+
+		// --- Camera Shake (1.1.6) ---
+
+		[Fact]
+		public void ShakeEnabled__DefaultsFalse__When__Constructed()
+		{
+			var cam = CreateCamera();
+			cam.ShakeEnabled.Should().BeFalse();
+		}
+
+		[Fact]
+		public void ShakeAmplitude__DefaultsTo01__When__Constructed()
+		{
+			var cam = CreateCamera();
+			cam.ShakeAmplitude.Should().Be(0.1f);
+		}
+
+		[Fact]
+		public void ShakeFrequency__DefaultsTo1__When__Constructed()
+		{
+			var cam = CreateCamera();
+			cam.ShakeFrequency.Should().Be(1.0f);
+		}
+
+		[Fact]
+		public void ShakeEnabled__CanBeToggled__When__SetDirectly()
+		{
+			var cam = CreateCamera();
+			cam.ShakeEnabled = true;
+			cam.ShakeEnabled.Should().BeTrue();
+
+			cam.ShakeEnabled = false;
+			cam.ShakeEnabled.Should().BeFalse();
+		}
+
+		[Fact]
+		public void Reset__PreservesShakeSettings__When__ShakeWasConfigured()
+		{
+			var cam = CreateCamera();
+			cam.ShakeEnabled   = true;
+			cam.ShakeAmplitude = 0.5f;
+			cam.ShakeFrequency = 3.0f;
+
+			cam.Reset();
+
+			cam.ShakeEnabled.Should().BeTrue();
+			cam.ShakeAmplitude.Should().Be(0.5f);
+			cam.ShakeFrequency.Should().Be(3.0f);
+		}
 	}
 }

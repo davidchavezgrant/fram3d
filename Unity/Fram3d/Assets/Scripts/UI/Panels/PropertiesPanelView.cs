@@ -17,6 +17,7 @@ namespace Fram3d.UI.Panels
         private       CameraInfoSection _infoSection;
         private       LensSetSection    _lensSetSection;
         private       VisualElement     _panel;
+        private       ShakeSection      _shakeSection;
         private       VisualElement     _root;
         private       bool              _visible = true;
 
@@ -69,6 +70,9 @@ namespace Fram3d.UI.Panels
             this._lensSetSection                =  new LensSetSection(db.LensSets, cam.ActiveLensSet);
             this._lensSetSection.LensSetChanged += lensSet => cam.SetLensSet(lensSet);
             content.Add(this._lensSetSection);
+            content.Add(Theme.CreateSeparator());
+            this._shakeSection = new ShakeSection(cam);
+            content.Add(this._shakeSection);
             return content;
         }
 
@@ -136,7 +140,9 @@ namespace Fram3d.UI.Panels
             if (!this._visible || this._cameraBehaviour == null)
                 return;
 
-            this._infoSection?.UpdateValues(this._cameraBehaviour.CameraElement);
+            var cam = this._cameraBehaviour.CameraElement;
+            this._infoSection?.UpdateValues(cam);
+            this._shakeSection?.UpdateValues(cam);
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void FindBody__ReturnsBody__When__NameExists()
 		{
 			var db = new CameraDatabase();
-			db.AddBody(new CameraBody("ARRI Alexa 35", "ARRI", 27.99f, 19.22f, "S35", "LPL", new[] { 4608, 3164 }, new[] { 24, 25, 30 }));
+			db.AddBody(new CameraBody("ARRI Alexa 35", "ARRI", 0, 27.99f, 19.22f, "S35", "LPL", new[] { 4608, 3164 }, new[] { 24, 25, 30 }));
 
 			var body = db.FindBody("ARRI Alexa 35");
 

@@ -42,6 +42,20 @@ namespace Fram3d.Core.Camera
         public bool SnapFocalLength { get; set; }
 
         /// <summary>
+        /// The effective maximum focal length considering the active lens set.
+        /// </summary>
+        internal float EffectiveMaxFocalLength => this.ActiveLensSet != null && this.ActiveLensSet.IsZoom?
+                                                      Math.Min(MAX_FOCAL_LENGTH, this.ActiveLensSet.MaxFocalLength) :
+                                                      MAX_FOCAL_LENGTH;
+
+        /// <summary>
+        /// The effective minimum focal length considering the active lens set.
+        /// </summary>
+        internal float EffectiveMinFocalLength => this.ActiveLensSet != null && this.ActiveLensSet.IsZoom?
+                                                      Math.Max(MIN_FOCAL_LENGTH, this.ActiveLensSet.MinFocalLength) :
+                                                      MIN_FOCAL_LENGTH;
+
+        /// <summary>
         /// Sets focal length continuously. Respects lens set constraints:
         /// - No lens set or zoom lens: clamps to the lens range (or 14–400mm global range)
         /// - Prime lens set: no-op — use Step or SetPreset instead

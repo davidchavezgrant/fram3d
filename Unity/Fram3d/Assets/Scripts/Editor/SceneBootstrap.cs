@@ -1,7 +1,9 @@
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
+using Fram3d.UI.Panels;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 namespace Fram3d.Editor
 {
     /// <summary>
@@ -15,6 +17,7 @@ namespace Fram3d.Editor
         public static void Bootstrap()
         {
             SetupCamera();
+            SetupPropertiesPanel();
             SetupGroundPlane();
             SetupReferenceObjects();
             Debug.Log("Fram3d scene bootstrapped.");
@@ -66,6 +69,52 @@ namespace Fram3d.Editor
             prop.objectReferenceValue = cameraGameObject.GetComponent<CameraBehaviour>();
             serializedObject.ApplyModifiedProperties();
             EditorUtility.SetDirty(cameraGameObject);
+        }
+
+        private static void SetupPropertiesPanel()
+        {
+            var panelGo = GameObject.Find("Properties Panel");
+
+            if (panelGo == null)
+            {
+                panelGo = new GameObject("Properties Panel");
+            }
+
+            if (panelGo.GetComponent<UIDocument>() == null)
+            {
+                var uiDoc = panelGo.AddComponent<UIDocument>();
+                uiDoc.panelSettings = GetOrCreatePanelSettings();
+            }
+
+            if (panelGo.GetComponent<PropertiesPanelView>() == null)
+                panelGo.AddComponent<PropertiesPanelView>();
+
+            // Wire properties panel reference on the input handler
+            var cameraGo     = GameObject.Find("Main Camera");
+            var inputHandler = cameraGo.GetComponent<CameraInputHandler>();
+
+            if (inputHandler != null)
+            {
+                var so   = new SerializedObject(inputHandler);
+                var prop = so.FindProperty("propertiesPanel");
+                prop.objectReferenceValue = panelGo.GetComponent<PropertiesPanelView>();
+                so.ApplyModifiedProperties();
+            }
+
+            EditorUtility.SetDirty(panelGo);
+        }
+
+        private static PanelSettings GetOrCreatePanelSettings()
+        {
+            var guids = AssetDatabase.FindAssets("t:PanelSettings");
+
+            if (guids.Length > 0)
+                return AssetDatabase.LoadAssetAtPath<PanelSettings>(AssetDatabase.GUIDToAssetPath(guids[0]));
+
+            var settings = ScriptableObject.CreateInstance<PanelSettings>();
+            settings.scaleMode = PanelScaleMode.ConstantPixelSize;
+            AssetDatabase.CreateAsset(settings, "Assets/Settings/PanelSettings.asset");
+            return settings;
         }
 
         private static void SetupGroundPlane()

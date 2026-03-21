@@ -9,13 +9,13 @@ namespace Fram3d.Engine.Conversion
         /// System.Numerics is right-handed (-Z forward), Unity is left-handed (+Z forward).
         /// We negate Z to convert between coordinate systems.
         /// </summary>
-        public static UnityEngine.Vector3 ToUnity(this SysVector3 v) => new UnityEngine.Vector3(v.X, v.Y, -v.Z);
+        public static UnityEngine.Vector3 ToUnity(this SysVector3 v) => new(v.X, v.Y, -v.Z);
 
         /// <summary>
         /// Convert UnityEngine.Vector3 to System.Numerics.Vector3.
         /// Negates Z to convert from left-handed to right-handed.
         /// </summary>
-        public static SysVector3 ToSystem(this UnityEngine.Vector3 v) => new SysVector3(v.x, v.y, -v.z);
+        public static SysVector3 ToSystem(this UnityEngine.Vector3 v) => new(v.x, v.y, -v.z);
 
         /// <summary>
         /// Convert System.Numerics.Quaternion to UnityEngine.Quaternion.

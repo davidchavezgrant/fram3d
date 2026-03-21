@@ -15,6 +15,7 @@ The `.editorconfig` at the project root is the source of truth for formatting. T
 ### Language restrictions
 - **C# 9 maximum.** Unity 6 supports C# 9. Do not use C# 10+ features (`record struct`, `global using`, file-scoped namespaces, `required`, etc.). Do not use `record` or `init` — Unity's runtime lacks `IsExternalInit` and polyfilling it is a hack. Use plain classes or structs instead.
 - **No ternary expressions.** Use `if`/`else` instead.
+- **Target-typed `new`.** Use `new()` instead of `new ClassName()` when the type is evident from context.
 
 ### Naming
 - **Private fields:** `_camelCase` (underscore prefix). E.g., `private float _focalLength;`

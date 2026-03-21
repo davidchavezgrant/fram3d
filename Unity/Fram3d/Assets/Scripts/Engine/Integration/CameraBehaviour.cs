@@ -14,7 +14,7 @@ namespace Fram3d.Engine.Integration
         private void Awake()
         {
             this._unityCamera                       = this.GetComponent<Camera>();
-            this._cameraElement                     = new CameraElement(ElementId.New(), "Main Camera");
+            this._cameraElement                     = new CameraElement(new ElementId(System.Guid.NewGuid()), "Main Camera");
             this._unityCamera.usePhysicalProperties = true;
             this._unityCamera.focalLength           = this._cameraElement.FocalLength;
 

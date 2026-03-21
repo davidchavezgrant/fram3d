@@ -35,18 +35,17 @@ namespace Fram3d.Core.Tests.Common
 		[Fact]
 		public void Equals__ReturnsFalse__When__DifferentGuid()
 		{
-			var a = ElementId.New();
-			var b = ElementId.New();
+			var a = new ElementId(Guid.NewGuid());
+			var b = new ElementId(Guid.NewGuid());
 			a.Should().NotBe(b);
 			(a != b).Should().BeTrue();
 		}
 
 		[Fact]
-		public void New__ReturnsUniqueId__When__CalledMultipleTimes()
+		public void Equals__ReturnsFalse__When__ComparedToNull()
 		{
-			var a = ElementId.New();
-			var b = ElementId.New();
-			a.Value.Should().NotBe(b.Value);
+			var a = new ElementId(Guid.NewGuid());
+			a.Equals(null).Should().BeFalse();
 		}
 
 		[Fact]

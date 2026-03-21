@@ -1,12 +1,12 @@
 namespace Fram3d.Core.Camera
 {
-    public sealed class MovementSpeeds
+    public static class MovementSpeeds
     {
-        public float Dolly     { get; set; } = 0.01f;
-        public float PanTilt   { get; set; } = 0.2f;
-        public float Roll      { get; set; } = 0.03f;
-        public float Crane     { get; set; } = 0.02f;
-        public float Truck     { get; set; } = 0.02f;
-        public float DollyZoom { get; set; } = 0.5f;
+        public static float DOLLY      = 0.01f;
+        public static float PAN_TILT   = 0.2f;
+        public static float ROLL       = 0.03f;
+        public static float CRANE      = 0.02f;
+        public static float TRUCK      = 0.02f;
+        public static float DOLLY_ZOOM = 0.5f;
     }
 }

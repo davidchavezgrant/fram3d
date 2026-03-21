@@ -35,15 +35,13 @@ namespace Fram3d.UI.Input
             var scroll  = mouse.scroll.ReadValue();
             var scrollY = scroll.y;
             var scrollX = scroll.x;
-            var speeds  = this._camera.Speeds;
 
             // Scroll is a discrete impulse (one notch = ~120), not a continuous per-frame value.
             // Do NOT multiply by deltaTime.
             if (IsCommandHeld(keyboard) && keyboard.altKey.isPressed && Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
                 // Cmd+Alt+Scroll Y = dolly zoom
-                this._camera.DollyZoom(scrollY * speeds.DollyZoom);
-
+                this._camera.DollyZoom(scrollY * MovementSpeeds.DOLLY_ZOOM);
                 return;
             }
 
@@ -51,11 +49,11 @@ namespace Fram3d.UI.Input
             {
                 // Ctrl+Scroll Y = dolly
                 if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
-                    this._camera.Dolly(scrollY * speeds.Dolly);
+                    this._camera.Dolly(scrollY * MovementSpeeds.DOLLY);
 
                 // Ctrl+Scroll X = truck
                 if (Mathf.Abs(scrollX) > SCROLL_DEADZONE)
-                    this._camera.Truck(scrollX * speeds.Truck);
+                    this._camera.Truck(scrollX * MovementSpeeds.TRUCK);
 
                 return;
             }
@@ -63,16 +61,14 @@ namespace Fram3d.UI.Input
             if (keyboard.altKey.isPressed && Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
                 // Alt+Scroll Y = crane
-                this._camera.Crane(scrollY * speeds.Crane);
-
+                this._camera.Crane(scrollY * MovementSpeeds.CRANE);
                 return;
             }
 
             if (keyboard.shiftKey.isPressed && Mathf.Abs(scrollX) > SCROLL_DEADZONE)
             {
                 // Shift+Scroll X = roll
-                this._camera.Roll(scrollX * speeds.Roll);
-
+                this._camera.Roll(scrollX * MovementSpeeds.ROLL);
                 return;
             }
 
@@ -86,30 +82,27 @@ namespace Fram3d.UI.Input
             if (delta.sqrMagnitude < 0.001f)
                 return;
 
-            var speeds = this._camera.Speeds;
-            var dt     = Time.deltaTime;
+            var dt = Time.deltaTime;
 
             // Alt+Left-drag = orbit (Unity convention)
             if (keyboard.altKey.isPressed && mouse.leftButton.isPressed)
             {
-                this._camera.Orbit(delta.x * speeds.PanTilt * dt, -delta.y * speeds.PanTilt * dt);
-
+                this._camera.Orbit(delta.x * MovementSpeeds.PAN_TILT * dt, -delta.y * MovementSpeeds.PAN_TILT * dt);
                 return;
             }
 
             // Middle-drag = pan/tilt (Unity convention)
             if (mouse.middleButton.isPressed)
             {
-                this._camera.Pan(delta.x * speeds.PanTilt * dt);
-                this._camera.Tilt(-delta.y * speeds.PanTilt * dt);
-
+                this._camera.Pan(delta.x   * MovementSpeeds.PAN_TILT * dt);
+                this._camera.Tilt(-delta.y * MovementSpeeds.PAN_TILT * dt);
                 return;
             }
 
             // Alt+Right-drag = dolly (Unity convention)
             if (keyboard.altKey.isPressed && mouse.rightButton.isPressed)
             {
-                this._camera.Dolly(delta.y * speeds.Dolly * dt);
+                this._camera.Dolly(delta.y * MovementSpeeds.DOLLY * dt);
             }
         }
 

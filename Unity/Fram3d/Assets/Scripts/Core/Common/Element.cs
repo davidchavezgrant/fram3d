@@ -12,8 +12,8 @@ namespace Fram3d.Core.Common
 
         public Element(ElementId id, string name)
         {
-            this.Id = id;
-            this.Name  = name;
+            this.Id   = id;
+            this.Name = name;
         }
     }
 }

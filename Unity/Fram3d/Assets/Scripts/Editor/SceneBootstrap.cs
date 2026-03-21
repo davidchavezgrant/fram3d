@@ -22,29 +22,29 @@ namespace Fram3d.Editor
 
         private static void SetupCamera()
         {
-            var cameraGo = GameObject.Find("Main Camera");
+            var cameraGameObject = GameObject.Find("Main Camera");
 
-            if (cameraGo == null)
+            if (cameraGameObject == null)
             {
-                cameraGo = new GameObject("Main Camera");
-                cameraGo.AddComponent<Camera>();
-                cameraGo.tag = "MainCamera";
+                cameraGameObject = new GameObject("Main Camera");
+                cameraGameObject.AddComponent<Camera>();
+                cameraGameObject.tag = "MainCamera";
             }
 
-            if (cameraGo.GetComponent<CameraBehaviour>() == null)
-                cameraGo.AddComponent<CameraBehaviour>();
+            if (cameraGameObject.GetComponent<CameraBehaviour>() == null)
+                cameraGameObject.AddComponent<CameraBehaviour>();
 
-            var inputHandler = cameraGo.GetComponent<CameraInputHandler>();
+            var inputHandler = cameraGameObject.GetComponent<CameraInputHandler>();
 
             if (inputHandler == null)
-                inputHandler = cameraGo.AddComponent<CameraInputHandler>();
+                inputHandler = cameraGameObject.AddComponent<CameraInputHandler>();
 
             // Wire the serialized reference
-            var so   = new SerializedObject(inputHandler);
-            var prop = so.FindProperty("cameraBehaviour");
-            prop.objectReferenceValue = cameraGo.GetComponent<CameraBehaviour>();
-            so.ApplyModifiedProperties();
-            EditorUtility.SetDirty(cameraGo);
+            var serializedObject = new SerializedObject(inputHandler);
+            var prop             = serializedObject.FindProperty("cameraBehaviour");
+            prop.objectReferenceValue = cameraGameObject.GetComponent<CameraBehaviour>();
+            serializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(cameraGameObject);
         }
 
         private static void SetupGroundPlane()
@@ -92,17 +92,17 @@ namespace Fram3d.Editor
             if (GameObject.Find(name) != null)
                 return;
 
-            var go = GameObject.CreatePrimitive(type);
-            go.name               = name;
-            go.transform.position = position;
-            var renderer = go.GetComponent<Renderer>();
+            var gameObject = GameObject.CreatePrimitive(type);
+            gameObject.name               = name;
+            gameObject.transform.position = position;
+            var renderer = gameObject.GetComponent<Renderer>();
 
             if (renderer != null)
             {
                 renderer.material.color = color;
             }
 
-            EditorUtility.SetDirty(go);
+            EditorUtility.SetDirty(gameObject);
         }
     }
 }

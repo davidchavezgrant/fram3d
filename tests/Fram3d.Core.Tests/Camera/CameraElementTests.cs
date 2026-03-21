@@ -10,7 +10,7 @@ namespace Fram3d.Core.Tests.Camera
 	public class CameraElementTests
 	{
 		private static CameraElement CreateCamera() =>
-			new CameraElement(ElementId.New(), "Test Camera");
+			new CameraElement(new ElementId(Guid.NewGuid()), "Test Camera");
 
 		// --- Construction defaults ---
 
@@ -283,20 +283,6 @@ namespace Fram3d.Core.Tests.Camera
 			var originalPos = cam.Position;
 			cam.DollyZoom(1.0f);
 			cam.Position.Should().NotBe(originalPos);
-		}
-
-		[Fact]
-		public void DollyZoom__StoresReferenceDistance__When__Initialized()
-		{
-			var cam = CreateCamera();
-			cam.DollyZoomReferenceDistance.Should().Be(10f);
-		}
-
-		[Fact]
-		public void DollyZoom__UsesFixedDistance__When__NoTargetElement()
-		{
-			var cam = CreateCamera();
-			cam.DollyZoomTargetId.Should().BeNull();
 		}
 
 		// --- Reset ---

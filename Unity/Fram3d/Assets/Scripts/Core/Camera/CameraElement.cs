@@ -4,13 +4,10 @@ namespace Fram3d.Core.Camera
 {
     public class CameraElement: Element
     {
-        private static readonly Vector3        DEFAULT_POSITION     = new(0f, 1.6f, 5f);
-        private const           float          DEFAULT_FOCAL_LENGTH = 50f;
-        public                  float          FocalLength                { get; set; } = DEFAULT_FOCAL_LENGTH;
-        public                  Vector3        OrbitPivotPoint            { get; set; } = Vector3.Zero;
-        public                  float          DollyZoomReferenceDistance { get; set; } = 10f;
-        public                  ElementId?     DollyZoomTargetId          { get; set; }
-        public                  MovementSpeeds Speeds                     { get; set; } = new();
+        private static readonly Vector3 DEFAULT_POSITION     = new(0f, 1.6f, 5f);
+        private const           float   DEFAULT_FOCAL_LENGTH = 50f;
+        public                  float   FocalLength     { get; set; } = DEFAULT_FOCAL_LENGTH;
+        public                  Vector3 OrbitPivotPoint { get; set; } = Vector3.Zero;
 
         public CameraElement(ElementId id, string name): base(id, name)
         {
@@ -45,7 +42,7 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public void Dolly(float amount)
         {
-            var forward = this.GetForward();
+            var forward = this.ComputeLookDirection();
             this.Position += forward * amount;
         }
 
@@ -74,7 +71,7 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public void Roll(float amount)
         {
-            var forward  = this.GetForward();
+            var forward  = this.ComputeLookDirection();
             var rotation = Quaternion.CreateFromAxisAngle(forward, amount);
             this.Rotation = rotation * this.Rotation;
         }
@@ -99,7 +96,7 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public void DollyZoom(float amount)
         {
-            var forward = this.GetForward();
+            var forward = this.ComputeLookDirection();
             this.Position += forward * amount;
 
             // TODO 1.1.2: Adjust FocalLength to compensate for distance change
@@ -116,10 +113,11 @@ namespace Fram3d.Core.Camera
             this.OrbitPivotPoint = Vector3.Zero;
         }
 
-        private Vector3 GetForward()
-        {
-            // System.Numerics is right-handed: -Z is forward
-            return Vector3.Transform(-Vector3.UnitZ, this.Rotation);
-        }
+        /// <summary>
+        /// Returns the world-space direction the camera is currently looking at.
+        /// Computed by rotating the base forward vector (-Z in right-handed System.Numerics)
+        /// by the camera's current rotation.
+        /// </summary>
+        private Vector3 ComputeLookDirection() => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
     }
 }

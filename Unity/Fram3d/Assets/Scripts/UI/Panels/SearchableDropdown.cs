@@ -8,28 +8,29 @@ namespace Fram3d.UI.Panels
 {
     /// <summary>
     /// A dropdown with an integrated search field that live-filters the options list.
-    /// Built with UI Toolkit. Replaces PopupField + separate TextField pattern.
+    /// Arrow keys navigate the results, Enter confirms selection.
+    /// Only one SearchableDropdown can be open at a time.
     /// </summary>
     public sealed class SearchableDropdown
     {
+        private static SearchableDropdown _currentlyOpen;
+
+        private readonly List<string>    _allItems;
+        private readonly VisualElement   _dropdownOverlay;
+        private readonly List<string>    _filteredItems;
+        private readonly ListView        _listView;
         private readonly VisualElement   _root;
         private readonly TextField       _searchField;
-        private readonly ListView        _listView;
-        private readonly VisualElement   _dropdownOverlay;
-        private readonly List<string>    _allItems;
-        private readonly List<string>    _filteredItems;
         private readonly Label           _selectedLabel;
-        private          int             _selectedIndex;
+        private          int             _highlightedIndex = -1;
         private          bool            _isOpen;
+        private          int             _selectedIndex;
 
         public event Action<int> SelectionChanged;
 
-        /// <summary>
-        /// Whether the search field currently has keyboard focus.
-        /// </summary>
-        public bool HasFocus => this._searchField.focusController?.focusedElement == this._searchField;
-
-        public int SelectedIndex => this._selectedIndex;
+        public bool            HasFocus      => this._isOpen;
+        public VisualElement   Root          => this._root;
+        public int             SelectedIndex => this._selectedIndex;
 
         public SearchableDropdown(List<string> items, int initialIndex, string placeholder)
         {
@@ -38,33 +39,66 @@ namespace Fram3d.UI.Panels
             this._selectedIndex = Math.Clamp(initialIndex, 0, Math.Max(0, items.Count - 1));
 
             this._root = new VisualElement();
+            this.BuildSelector(items);
+            this.BuildOverlay(placeholder);
+        }
 
-            // Selected value display (click to open)
+        public void Close()
+        {
+            if (!this._isOpen)
+                return;
+
+            this._isOpen                        = false;
+            this._dropdownOverlay.style.display = DisplayStyle.None;
+            this._searchField.value             = "";
+            this._highlightedIndex              = -1;
+
+            this._filteredItems.Clear();
+            this._filteredItems.AddRange(this._allItems);
+            this._listView.RefreshItems();
+
+            if (_currentlyOpen == this)
+                _currentlyOpen = null;
+        }
+
+        private void Open()
+        {
+            // Close any other open dropdown instantly
+            _currentlyOpen?.Close();
+
+            this._isOpen                        = true;
+            this._dropdownOverlay.style.display = DisplayStyle.Flex;
+            this._searchField.Focus();
+            _currentlyOpen = this;
+        }
+
+        private void BuildSelector(List<string> items)
+        {
             var selector = new VisualElement();
-            selector.style.flexDirection   = FlexDirection.Row;
-            selector.style.backgroundColor = new Color(0.18f, 0.18f, 0.18f);
-            selector.style.borderBottomWidth = 1;
-            selector.style.borderTopWidth    = 1;
-            selector.style.borderLeftWidth   = 1;
-            selector.style.borderRightWidth  = 1;
-            selector.style.borderBottomColor = new Color(0.3f, 0.3f, 0.3f);
-            selector.style.borderTopColor    = new Color(0.3f, 0.3f, 0.3f);
-            selector.style.borderLeftColor   = new Color(0.3f, 0.3f, 0.3f);
-            selector.style.borderRightColor  = new Color(0.3f, 0.3f, 0.3f);
+            selector.style.flexDirection          = FlexDirection.Row;
+            selector.style.backgroundColor        = new Color(0.18f, 0.18f, 0.18f);
+            selector.style.borderBottomWidth      = 1;
+            selector.style.borderTopWidth         = 1;
+            selector.style.borderLeftWidth        = 1;
+            selector.style.borderRightWidth       = 1;
+            selector.style.borderBottomColor      = new Color(0.3f, 0.3f, 0.3f);
+            selector.style.borderTopColor         = new Color(0.3f, 0.3f, 0.3f);
+            selector.style.borderLeftColor        = new Color(0.3f, 0.3f, 0.3f);
+            selector.style.borderRightColor       = new Color(0.3f, 0.3f, 0.3f);
             selector.style.borderBottomLeftRadius  = 3;
             selector.style.borderBottomRightRadius = 3;
             selector.style.borderTopLeftRadius     = 3;
             selector.style.borderTopRightRadius    = 3;
-            selector.style.paddingLeft   = 6;
-            selector.style.paddingRight  = 6;
-            selector.style.paddingTop    = 4;
-            selector.style.paddingBottom = 4;
+            selector.style.paddingLeft             = 6;
+            selector.style.paddingRight            = 6;
+            selector.style.paddingTop              = 4;
+            selector.style.paddingBottom           = 4;
 
             this._selectedLabel = new Label(items.Count > 0 ? items[this._selectedIndex] : "—");
-            this._selectedLabel.style.fontSize  = 11;
-            this._selectedLabel.style.color     = new Color(0.8f, 0.8f, 0.8f);
-            this._selectedLabel.style.flexGrow  = 1;
-            this._selectedLabel.style.overflow  = Overflow.Hidden;
+            this._selectedLabel.style.fontSize = 11;
+            this._selectedLabel.style.color    = new Color(0.8f, 0.8f, 0.8f);
+            this._selectedLabel.style.flexGrow = 1;
+            this._selectedLabel.style.overflow = Overflow.Hidden;
 
             var arrow = new Label("▾");
             arrow.style.fontSize = 10;
@@ -72,22 +106,30 @@ namespace Fram3d.UI.Panels
 
             selector.Add(this._selectedLabel);
             selector.Add(arrow);
-            selector.RegisterCallback<ClickEvent>(_ => this.ToggleDropdown());
+            selector.RegisterCallback<ClickEvent>(_ =>
+            {
+                if (this._isOpen)
+                    this.Close();
+                else
+                    this.Open();
+            });
 
             this._root.Add(selector);
+        }
 
-            // Dropdown overlay (search + list)
+        private void BuildOverlay(string placeholder)
+        {
             this._dropdownOverlay = new VisualElement();
-            this._dropdownOverlay.style.backgroundColor = new Color(0.16f, 0.16f, 0.16f);
-            this._dropdownOverlay.style.borderBottomWidth = 1;
-            this._dropdownOverlay.style.borderLeftWidth   = 1;
-            this._dropdownOverlay.style.borderRightWidth  = 1;
-            this._dropdownOverlay.style.borderBottomColor = new Color(0.3f, 0.3f, 0.3f);
-            this._dropdownOverlay.style.borderLeftColor   = new Color(0.3f, 0.3f, 0.3f);
-            this._dropdownOverlay.style.borderRightColor  = new Color(0.3f, 0.3f, 0.3f);
+            this._dropdownOverlay.style.backgroundColor        = new Color(0.16f, 0.16f, 0.16f);
+            this._dropdownOverlay.style.borderBottomWidth      = 1;
+            this._dropdownOverlay.style.borderLeftWidth        = 1;
+            this._dropdownOverlay.style.borderRightWidth       = 1;
+            this._dropdownOverlay.style.borderBottomColor      = new Color(0.3f, 0.3f, 0.3f);
+            this._dropdownOverlay.style.borderLeftColor        = new Color(0.3f, 0.3f, 0.3f);
+            this._dropdownOverlay.style.borderRightColor       = new Color(0.3f, 0.3f, 0.3f);
             this._dropdownOverlay.style.borderBottomLeftRadius  = 3;
             this._dropdownOverlay.style.borderBottomRightRadius = 3;
-            this._dropdownOverlay.style.display = DisplayStyle.None;
+            this._dropdownOverlay.style.display                = DisplayStyle.None;
 
             this._searchField = new TextField();
             this._searchField.style.marginLeft   = 4;
@@ -98,13 +140,27 @@ namespace Fram3d.UI.Panels
             this._searchField.textEdition.placeholder = placeholder;
             this._searchField.RegisterValueChangedCallback(this.OnSearchChanged);
 
-            this._dropdownOverlay.Add(this._searchField);
+            // Keyboard navigation: arrow keys + enter
+            this._searchField.RegisterCallback<KeyDownEvent>(this.OnKeyDown);
 
+            // Close when focus leaves the entire dropdown
+            this._searchField.RegisterCallback<FocusOutEvent>(_ =>
+                this._searchField.schedule.Execute(this.Close).ExecuteLater(150));
+
+            this._dropdownOverlay.Add(this._searchField);
+            this.BuildListView();
+            this._dropdownOverlay.Add(this._listView);
+            this._root.Add(this._dropdownOverlay);
+        }
+
+        private void BuildListView()
+        {
             this._listView = new ListView();
             this._listView.style.maxHeight = 200;
             this._listView.style.flexGrow  = 1;
             this._listView.itemsSource     = this._filteredItems;
             this._listView.fixedItemHeight = 22;
+            this._listView.selectionType   = SelectionType.None;
 
             this._listView.makeItem = () =>
             {
@@ -120,62 +176,67 @@ namespace Fram3d.UI.Panels
                 label.style.flexGrow       = 1;
 
                 row.Add(label);
-
-                row.RegisterCallback<PointerEnterEvent>(_ =>
-                    row.style.backgroundColor = new Color(0.2f, 0.4f, 0.7f, 0.4f));
-
-                row.RegisterCallback<PointerLeaveEvent>(_ =>
-                    row.style.backgroundColor = StyleKeyword.Null);
-
                 return row;
             };
 
             this._listView.bindItem = (element, index) =>
             {
-                var label = element.Q<Label>();
-                label.text = this._filteredItems[index];
+                var label       = element.Q<Label>();
+                label.text      = this._filteredItems[index];
+                var isHighlighted = index == this._highlightedIndex;
+
+                element.style.backgroundColor = isHighlighted
+                    ? new Color(0.2f, 0.4f, 0.7f, 0.4f)
+                    : new StyleColor(StyleKeyword.Null);
+
+                // Click to select
+                element.RegisterCallback<ClickEvent>(_ => this.ConfirmSelection(index));
             };
-
-            this._listView.selectedIndicesChanged += _ => this.OnItemSelected();
-
-            this._dropdownOverlay.Add(this._listView);
-            this._root.Add(this._dropdownOverlay);
-
-            // Close dropdown when the search field loses focus (user clicked elsewhere)
-            this._searchField.RegisterCallback<FocusOutEvent>(_ =>
-            {
-                // Delay so that list item click events fire before we close
-                this._searchField.schedule.Execute(this.CloseDropdown).ExecuteLater(100);
-            });
         }
 
-        public VisualElement Root => this._root;
-
-        private void CloseDropdown()
+        private void OnKeyDown(KeyDownEvent evt)
         {
-            if (!this._isOpen)
+            if (this._filteredItems.Count == 0)
                 return;
 
-            this._isOpen = false;
-            this._dropdownOverlay.style.display = DisplayStyle.None;
-            this._searchField.value             = "";
-            this._filteredItems.Clear();
-            this._filteredItems.AddRange(this._allItems);
-            this._listView.RefreshItems();
-        }
-
-        private void ToggleDropdown()
-        {
-            if (this._isOpen)
+            switch (evt.keyCode)
             {
-                this.CloseDropdown();
+                case KeyCode.DownArrow:
+                    this._highlightedIndex = Math.Min(this._highlightedIndex + 1, this._filteredItems.Count - 1);
+                    this._listView.RefreshItems();
+                    this._listView.ScrollToItem(this._highlightedIndex);
+                    evt.StopPropagation();
+                    evt.PreventDefault();
 
-                return;
+                    break;
+
+                case KeyCode.UpArrow:
+                    this._highlightedIndex = Math.Max(this._highlightedIndex - 1, 0);
+                    this._listView.RefreshItems();
+                    this._listView.ScrollToItem(this._highlightedIndex);
+                    evt.StopPropagation();
+                    evt.PreventDefault();
+
+                    break;
+
+                case KeyCode.Return:
+                case KeyCode.KeypadEnter:
+                    if (this._highlightedIndex >= 0)
+                    {
+                        this.ConfirmSelection(this._highlightedIndex);
+                        evt.StopPropagation();
+                        evt.PreventDefault();
+                    }
+
+                    break;
+
+                case KeyCode.Escape:
+                    this.Close();
+                    evt.StopPropagation();
+                    evt.PreventDefault();
+
+                    break;
             }
-
-            this._isOpen = true;
-            this._dropdownOverlay.style.display = DisplayStyle.Flex;
-            this._searchField.Focus();
         }
 
         private void OnSearchChanged(ChangeEvent<string> evt)
@@ -184,30 +245,25 @@ namespace Fram3d.UI.Panels
             this._filteredItems.Clear();
 
             if (string.IsNullOrEmpty(search))
-            {
                 this._filteredItems.AddRange(this._allItems);
-            }
             else
-            {
                 this._filteredItems.AddRange(
                     this._allItems.Where(item => item.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0));
-            }
 
+            this._highlightedIndex = this._filteredItems.Count > 0 ? 0 : -1;
             this._listView.RefreshItems();
         }
 
-        private void OnItemSelected()
+        private void ConfirmSelection(int filteredIndex)
         {
-            var listIndex = this._listView.selectedIndex;
-
-            if (listIndex < 0 || listIndex >= this._filteredItems.Count)
+            if (filteredIndex < 0 || filteredIndex >= this._filteredItems.Count)
                 return;
 
-            var selectedName = this._filteredItems[listIndex];
+            var selectedName = this._filteredItems[filteredIndex];
             this._selectedIndex      = this._allItems.IndexOf(selectedName);
             this._selectedLabel.text = selectedName;
 
-            this.CloseDropdown();
+            this.Close();
             this.SelectionChanged?.Invoke(this._selectedIndex);
         }
     }

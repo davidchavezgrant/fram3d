@@ -3,7 +3,6 @@ using Fram3d.Core.Camera;
 using Fram3d.Engine.Integration;
 using UnityEditor;
 using UnityEngine;
-
 namespace Fram3d.Editor
 {
     /// <summary>
@@ -19,8 +18,7 @@ namespace Fram3d.Editor
         private int             _selectedLensSetIndex;
 
         [MenuItem("Fram3d/Camera Debug")]
-        public static void ShowWindow() =>
-            GetWindow<CameraDebugWindow>("Camera Debug");
+        public static void ShowWindow() => GetWindow<CameraDebugWindow>("Camera Debug");
 
         private void OnEnable()
         {
@@ -43,7 +41,6 @@ namespace Fram3d.Editor
             if (!Application.isPlaying)
             {
                 EditorGUILayout.HelpBox("Enter Play Mode to use camera debug controls.", MessageType.Info);
-
                 return;
             }
 
@@ -53,22 +50,19 @@ namespace Fram3d.Editor
             if (this._cameraBehaviour == null)
             {
                 EditorGUILayout.HelpBox("No CameraBehaviour found in scene.", MessageType.Warning);
-
                 return;
             }
 
-            var cam  = this._cameraBehaviour.CameraElement;
-            var lens = cam.Lens;
-            var db   = this._cameraBehaviour.Database;
+            var cam = this._cameraBehaviour.CameraElement;
+            var db  = this._cameraBehaviour.Database;
 
             // Current state
             EditorGUILayout.LabelField("Current State", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("Body", cam.Body?.Name ?? "(none)");
-            EditorGUILayout.LabelField("Sensor", $"{cam.SensorWidth:F2} x {cam.SensorHeight:F2} mm");
-            EditorGUILayout.LabelField("Lens Set", lens.ActiveLensSet?.Name ?? "(none)");
-            EditorGUILayout.LabelField("Focal Length", $"{lens.FocalLength:F1} mm");
-            EditorGUILayout.LabelField("Vertical FOV", $"{cam.ComputeVerticalFov() * Mathf.Rad2Deg:F1}°");
-
+            EditorGUILayout.LabelField("Body",          cam.Body?.Name ?? "(none)");
+            EditorGUILayout.LabelField("Sensor",        $"{cam.SensorWidth:F2} x {cam.SensorHeight:F2} mm");
+            EditorGUILayout.LabelField("Lens Set",      cam.ActiveLensSet?.Name ?? "(none)");
+            EditorGUILayout.LabelField("Focal Length",  $"{cam.FocalLength:F1} mm");
+            EditorGUILayout.LabelField("Vertical FOV",  $"{cam.ComputeVerticalFov() * Mathf.Rad2Deg:F1}°");
             EditorGUILayout.Space();
 
             // Body selector
@@ -93,11 +87,11 @@ namespace Fram3d.Editor
             if (newLensIndex != this._selectedLensSetIndex)
             {
                 this._selectedLensSetIndex = newLensIndex;
-                lens.SetLensSet(db.LensSets[newLensIndex]);
+                cam.SetLensSet(db.LensSets[newLensIndex]);
             }
 
             // Show available focal lengths
-            var activeLensSet = lens.ActiveLensSet;
+            var activeLensSet = cam.ActiveLensSet;
 
             if (activeLensSet != null)
             {
@@ -105,12 +99,12 @@ namespace Fram3d.Editor
 
                 if (activeLensSet.IsZoom)
                 {
-                    EditorGUILayout.LabelField("Type", "Zoom");
+                    EditorGUILayout.LabelField("Type",  "Zoom");
                     EditorGUILayout.LabelField("Range", $"{activeLensSet.MinFocalLength}–{activeLensSet.MaxFocalLength} mm");
                 }
                 else
                 {
-                    EditorGUILayout.LabelField("Type", "Prime");
+                    EditorGUILayout.LabelField("Type",          "Prime");
                     EditorGUILayout.LabelField("Focal Lengths", string.Join(", ", activeLensSet.FocalLengths.Select(f => $"{f}mm")));
                 }
 
@@ -135,16 +129,9 @@ namespace Fram3d.Editor
             this._lensSetNames = db.LensSets.Select(ls => ls.Name).ToArray();
 
             // Find current selection indices
-            var cam  = this._cameraBehaviour.CameraElement;
-            var lens = cam.Lens;
-
-            this._selectedBodyIndex = cam.Body != null
-                ? db.Bodies.ToList().IndexOf(cam.Body)
-                : 0;
-
-            this._selectedLensSetIndex = lens.ActiveLensSet != null
-                ? db.LensSets.ToList().IndexOf(lens.ActiveLensSet)
-                : 0;
+            var cam = this._cameraBehaviour.CameraElement;
+            this._selectedBodyIndex    = cam.Body          != null? db.Bodies.ToList().IndexOf(cam.Body) : 0;
+            this._selectedLensSetIndex = cam.ActiveLensSet != null? db.LensSets.ToList().IndexOf(cam.ActiveLensSet) : 0;
         }
     }
 }

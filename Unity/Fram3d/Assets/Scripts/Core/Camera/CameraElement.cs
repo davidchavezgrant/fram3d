@@ -5,21 +5,34 @@ namespace Fram3d.Core.Camera
 {
     public class CameraElement: Element
     {
-        private static readonly Vector3 DEFAULT_POSITION      = new(0f, 1.6f, 5f);
-        private const           float   DEFAULT_SENSOR_WIDTH  = 24.89f;
-        private const           float   DEFAULT_SENSOR_HEIGHT = 18.66f;
+        private static readonly Vector3        DEFAULT_POSITION      = new(0f, 1.6f, 5f);
+        private const           float          DEFAULT_SENSOR_WIDTH  = 24.89f;
+        private const           float          DEFAULT_SENSOR_HEIGHT = 18.66f;
+        private readonly        LensController _lens                 = new();
+        public                  float          FocalLength     => this._lens.FocalLength;
+        public                  LensSet        ActiveLensSet   => this._lens.ActiveLensSet;
+        public                  float          SensorWidth     { get; private set; } = DEFAULT_SENSOR_WIDTH;
+        public                  float          SensorHeight    { get; private set; } = DEFAULT_SENSOR_HEIGHT;
+        public                  CameraBody     Body            { get; private set; }
+        public                  Vector3        OrbitPivotPoint { get; set; } = Vector3.Zero;
 
-        public LensController Lens            { get; }      = new();
-        public float          SensorWidth     { get; private set; } = DEFAULT_SENSOR_WIDTH;
-        public float          SensorHeight    { get; private set; } = DEFAULT_SENSOR_HEIGHT;
-        public CameraBody     Body            { get; private set; }
-        public Vector3        OrbitPivotPoint { get; set; } = Vector3.Zero;
+        /// <summary>
+        /// When true, CameraBehaviour applies focal length instantly instead of lerping.
+        /// Cleared by CameraBehaviour after consuming.
+        /// </summary>
+        public bool SnapFocalLength
+        {
+            get => this._lens.SnapFocalLength;
+            set => this._lens.SnapFocalLength = value;
+        }
 
         public CameraElement(ElementId id, string name): base(id, name)
         {
             this.Position = DEFAULT_POSITION;
             this.Rotation = Quaternion.Identity;
         }
+
+        // --- Movement ---
 
         /// <summary>
         /// Horizontal rotation around the world Y axis through the camera's position.
@@ -103,17 +116,15 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public void DollyZoom(float amount)
         {
-            if (!this.Lens.CanDollyZoom)
+            if (!this._lens.CanDollyZoom)
                 return;
 
-            var lens     = this.Lens;
-            var forward  = this.ComputeLookDirection();
-            var distance = Vector3.Distance(this.Position, this.OrbitPivotPoint);
+            var forward     = this.ComputeLookDirection();
+            var distance    = Vector3.Distance(this.Position, this.OrbitPivotPoint);
+            var focalLength = this._lens.FocalLength;
 
             if (distance < 0.01f)
                 return;
-
-            var focalLength = lens.FocalLength;
 
             if (amount > 0 && focalLength <= 14f)
                 return;
@@ -127,9 +138,33 @@ namespace Fram3d.Core.Camera
             var clampedDistance = distance * newFocalLength / focalLength;
             var direction       = Vector3.Normalize(newPosition - this.OrbitPivotPoint);
             this.Position = this.OrbitPivotPoint + direction * clampedDistance;
-            lens.SetFocalLengthUnchecked(newFocalLength);
-            lens.SnapFocalLength = true;
+            this._lens.SetFocalLengthUnchecked(newFocalLength);
+            this._lens.SnapFocalLength = true;
         }
+
+        // --- Lens (delegated to LensController) ---
+
+        /// <summary>
+        /// Sets focal length continuously. No-op for prime lenses.
+        /// </summary>
+        public void SetFocalLength(float mm) => this._lens.SetFocalLength(mm);
+
+        /// <summary>
+        /// Steps to the next or previous focal length in the active prime lens set.
+        /// </summary>
+        public void StepFocalLength(int direction) => this._lens.StepFocalLength(direction);
+
+        /// <summary>
+        /// Sets focal length to a specific preset value. Snaps instantly (no lerp).
+        /// </summary>
+        public void SetFocalLengthPreset(float mm) => this._lens.SetPreset(mm);
+
+        /// <summary>
+        /// Sets the active lens set and snaps focal length to the nearest valid value.
+        /// </summary>
+        public void SetLensSet(LensSet lensSet) => this._lens.SetLensSet(lensSet);
+
+        // --- Body ---
 
         /// <summary>
         /// Sets the camera body, updating sensor dimensions. FOV recalculates automatically.
@@ -142,15 +177,19 @@ namespace Fram3d.Core.Camera
             this.SensorHeight = body.SensorHeightMm;
         }
 
+        // --- FOV ---
+
         /// <summary>
         /// Computes the vertical field of view in radians from the current focal length and sensor height.
         /// FOV = 2 * atan(sensorHeight / (2 * focalLength))
         /// </summary>
+
         // TODO: When anamorphic lens is active, compute horizontal FOV using squeeze factor:
         //   hFov = 2 * atan((sensorWidth * squeezeFactor) / (2 * focalLength))
         //   Also auto-lock aspect ratio to the computed delivery format (see 1.2.1).
-        public float ComputeVerticalFov() =>
-            2f * MathF.Atan(this.SensorHeight / (2f * this.Lens.FocalLength));
+        public float ComputeVerticalFov() => 2f * MathF.Atan(this.SensorHeight / (2f * this._lens.FocalLength));
+
+        // --- Reset ---
 
         /// <summary>
         /// Restore camera to default position, rotation, and focal length.
@@ -162,8 +201,10 @@ namespace Fram3d.Core.Camera
             this.Position        = DEFAULT_POSITION;
             this.Rotation        = Quaternion.Identity;
             this.OrbitPivotPoint = Vector3.Zero;
-            this.Lens.Reset();
+            this._lens.Reset();
         }
+
+        // --- Internal ---
 
         /// <summary>
         /// Returns the world-space direction the camera is currently looking at.

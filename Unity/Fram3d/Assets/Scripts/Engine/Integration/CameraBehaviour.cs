@@ -32,9 +32,9 @@ namespace Fram3d.Engine.Integration
                 cam.SetBody(defaultBody);
 
             if (defaultLensSet != null)
-                cam.Lens.SetLensSet(defaultLensSet);
+                cam.SetLensSet(defaultLensSet);
 
-            this._displayedFocalLength  = cam.Lens.FocalLength;
+            this._displayedFocalLength  = cam.FocalLength;
             this._unityCamera.sensorSize = new Vector2(cam.SensorWidth, cam.SensorHeight);
             this.Sync();
         }
@@ -47,18 +47,17 @@ namespace Fram3d.Engine.Integration
         private void Sync()
         {
             var cam               = this._cameraElement;
-            var lens              = cam.Lens;
-            var targetFocalLength = lens.FocalLength;
+            var targetFocalLength = cam.FocalLength;
 
             this.transform.position = cam.Position.ToUnity();
             this.transform.rotation = cam.Rotation.ToUnity();
 
             // Dolly zoom requires instant sync to keep position and focal length perfectly paired.
             // All other focal length changes lerp for smooth visual transitions.
-            if (lens.SnapFocalLength)
+            if (cam.SnapFocalLength)
             {
                 this._displayedFocalLength = targetFocalLength;
-                lens.SnapFocalLength       = false;
+                cam.SnapFocalLength        = false;
             }
             else
             {

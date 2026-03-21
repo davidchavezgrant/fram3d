@@ -36,47 +36,51 @@ namespace Fram3d.UI.Input
             var scrollY = scroll.y;
             var scrollX = scroll.x;
             var speeds  = this._camera.Speeds;
-            var dt      = Time.deltaTime;
 
-            // Scroll Y with modifiers
-            if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
+            // Scroll is a discrete impulse (one notch = ~120), not a continuous per-frame value.
+            // Do NOT multiply by deltaTime.
+            if (IsCommandHeld(keyboard) && keyboard.altKey.isPressed && Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
-                if (IsCommandHeld(keyboard) && keyboard.altKey.isPressed)
-                {
-                    // Cmd+Alt+Scroll Y = dolly zoom
-                    this._camera.DollyZoom(scrollY * speeds.DollyZoom * dt);
-                }
-                else if (keyboard.altKey.isPressed)
-                {
-                    // Alt+Scroll Y = dolly
-                    this._camera.Dolly(scrollY * speeds.Dolly * dt);
-                }
-                else if (keyboard.shiftKey.isPressed)
-                {
-                    // Shift+Scroll Y = crane
-                    this._camera.Crane(scrollY * speeds.Crane * dt);
-                }
-                else if (keyboard.ctrlKey.isPressed)
-                {
-                    // Ctrl+Scroll Y = roll
-                    this._camera.Roll(scrollY * speeds.Roll * dt);
-                }
+                // Cmd+Alt+Scroll Y = dolly zoom
+                this._camera.DollyZoom(scrollY * speeds.DollyZoom);
 
-                // else: Scroll Y without modifiers = focal length (stub until 1.1.2)
+                return;
             }
 
-            // Cmd+Scroll X = truck
-            if (Mathf.Abs(scrollX) > SCROLL_DEADZONE && IsCommandHeld(keyboard))
+            if (keyboard.ctrlKey.isPressed)
             {
-                this._camera.Truck(scrollX * speeds.Truck * dt);
+                // Ctrl+Scroll Y = dolly
+                if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
+                    this._camera.Dolly(scrollY * speeds.Dolly);
+
+                // Ctrl+Scroll X = truck
+                if (Mathf.Abs(scrollX) > SCROLL_DEADZONE)
+                    this._camera.Truck(scrollX * speeds.Truck);
+
+                return;
             }
+
+            if (keyboard.altKey.isPressed && Mathf.Abs(scrollY) > SCROLL_DEADZONE)
+            {
+                // Alt+Scroll Y = crane
+                this._camera.Crane(scrollY * speeds.Crane);
+
+                return;
+            }
+
+            if (keyboard.shiftKey.isPressed && Mathf.Abs(scrollX) > SCROLL_DEADZONE)
+            {
+                // Shift+Scroll X = roll
+                this._camera.Roll(scrollX * speeds.Roll);
+
+                return;
+            }
+
+            // Unmodified Scroll Y = focal length (stub until 1.1.2)
         }
 
         private void HandleDragInput(Keyboard keyboard, Mouse mouse)
         {
-            if (!mouse.leftButton.isPressed && !mouse.rightButton.isPressed && !mouse.middleButton.isPressed)
-                return;
-
             var delta = mouse.delta.ReadValue();
 
             if (delta.sqrMagnitude < 0.001f)
@@ -85,16 +89,27 @@ namespace Fram3d.UI.Input
             var speeds = this._camera.Speeds;
             var dt     = Time.deltaTime;
 
-            if (keyboard.ctrlKey.isPressed)
+            // Alt+Left-drag = orbit (Unity convention)
+            if (keyboard.altKey.isPressed && mouse.leftButton.isPressed)
             {
-                // Ctrl+Drag = pan (X) + tilt (Y)
-                this._camera.Pan(delta.x   * speeds.PanTilt * dt);
-                this._camera.Tilt(-delta.y * speeds.PanTilt * dt);
-            }
-            else if (keyboard.altKey.isPressed)
-            {
-                // Alt+Drag = orbit
                 this._camera.Orbit(delta.x * speeds.PanTilt * dt, -delta.y * speeds.PanTilt * dt);
+
+                return;
+            }
+
+            // Middle-drag = pan/tilt (Unity convention)
+            if (mouse.middleButton.isPressed)
+            {
+                this._camera.Pan(delta.x * speeds.PanTilt * dt);
+                this._camera.Tilt(-delta.y * speeds.PanTilt * dt);
+
+                return;
+            }
+
+            // Alt+Right-drag = dolly (Unity convention)
+            if (keyboard.altKey.isPressed && mouse.rightButton.isPressed)
+            {
+                this._camera.Dolly(delta.y * speeds.Dolly * dt);
             }
         }
 

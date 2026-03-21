@@ -6,11 +6,14 @@ UI/UX interaction rules, input mappings, and behavioral specifications.
 
 ## Input Mappings
 
-**Mouse (scene):**
-- Scroll Y = focal length, +Alt = dolly, +Shift = crane, +Ctrl = roll, +Cmd+Alt = dolly zoom
-- Scroll X+Cmd = truck
-- Ctrl-drag = pan/tilt
-- Alt-drag = orbit (around selected or world origin)
+**Mouse (scene) — scroll:**
+- Scroll Y = focal length, +Ctrl = dolly, +Alt = crane, +Cmd+Alt = dolly zoom
+- Scroll X+Ctrl = truck, +Shift = roll
+
+**Mouse (scene) — drag (Unity-style):**
+- Alt+Left-drag = orbit (around selected or world origin)
+- Middle-drag = pan/tilt
+- Alt+Right-drag = dolly
 
 **Mouse (timeline):**
 - Scroll = zoom at cursor position

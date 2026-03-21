@@ -4,7 +4,7 @@ namespace Fram3d.Core.Camera
 {
     public class CameraElement: Element
     {
-        private static readonly Vector3        DEFAULT_POSITION     = new(0f, 1.6f, -5f);
+        private static readonly Vector3        DEFAULT_POSITION     = new(0f, 1.6f, 5f);
         private const           float          DEFAULT_FOCAL_LENGTH = 50f;
         public                  float          FocalLength                { get; set; } = DEFAULT_FOCAL_LENGTH;
         public                  Vector3        OrbitPivotPoint            { get; set; } = Vector3.Zero;

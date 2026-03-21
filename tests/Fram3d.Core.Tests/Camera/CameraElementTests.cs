@@ -18,7 +18,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void Constructor__HasDefaultPosition__When__Constructed()
 		{
 			var cam = CreateCamera();
-			cam.Position.Should().Be(new Vector3(0f, 1.6f, -5f));
+			cam.Position.Should().Be(new Vector3(0f, 1.6f, 5f));
 		}
 
 		[Fact]
@@ -311,7 +311,7 @@ namespace Fram3d.Core.Tests.Camera
 
 			cam.Reset();
 
-			cam.Position.Should().Be(new Vector3(0f, 1.6f, -5f));
+			cam.Position.Should().Be(new Vector3(0f, 1.6f, 5f));
 		}
 
 		[Fact]

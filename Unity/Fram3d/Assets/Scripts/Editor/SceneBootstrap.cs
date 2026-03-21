@@ -41,7 +41,7 @@ namespace Fram3d.Editor
 
             // Wire the serialized reference
             var so   = new SerializedObject(inputHandler);
-            var prop = so.FindProperty("_cameraBehaviour");
+            var prop = so.FindProperty("cameraBehaviour");
             prop.objectReferenceValue = cameraGo.GetComponent<CameraBehaviour>();
             so.ApplyModifiedProperties();
             EditorUtility.SetDirty(cameraGo);

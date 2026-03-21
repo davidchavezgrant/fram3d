@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Fram3d.Core.Camera;
@@ -16,30 +15,26 @@ namespace Fram3d.UI.Panels
     /// </summary>
     public sealed class PropertiesPanelView: MonoBehaviour
     {
-        private const float PANEL_WIDTH    = 440f;
-        private const int   MIN_BODY_YEAR  = 2019;
+        private const float PANEL_WIDTH   = 440f;
+        private const int   MIN_BODY_YEAR = 2019;
 
-        private VisualElement      _bodyContainer;
-        private PopupField<string> _bodyDropdown;
+        private SearchableDropdown _bodyDropdown;
         private Label              _bodyLabel;
         private List<CameraBody>   _bodyList;
-        private string             _bodySearch = "";
         private CameraBehaviour    _cameraBehaviour;
         private Label              _focalLengthLabel;
         private Label              _fovLabel;
-        private VisualElement      _lensSetContainer;
-        private PopupField<string> _lensSetDropdown;
+        private SearchableDropdown _lensSetDropdown;
         private List<LensSet>      _lensSetList;
-        private string             _lensSetSearch = "";
         private VisualElement      _panel;
         private VisualElement      _root;
         private Label              _sensorLabel;
         private bool               _showAllBodies;
+        private VisualElement      _bodySectionContainer;
         private bool               _visible = true;
 
         /// <summary>
         /// True when the mouse is over any UI Toolkit element (panel, dropdowns, popup menus).
-        /// Used by CameraInputHandler to block scroll/drag passthrough.
         /// </summary>
         public bool IsPointerOverUI
         {
@@ -53,6 +48,24 @@ namespace Fram3d.UI.Panels
                 var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
 
                 return this._root.panel.Pick(panelPos) != null;
+            }
+        }
+
+        /// <summary>
+        /// True when a search field in the panel has keyboard focus.
+        /// Used to suppress keyboard shortcuts while typing.
+        /// </summary>
+        public bool HasFocusedTextField
+        {
+            get
+            {
+                if (this._bodyDropdown != null && this._bodyDropdown.HasFocus)
+                    return true;
+
+                if (this._lensSetDropdown != null && this._lensSetDropdown.HasFocus)
+                    return true;
+
+                return false;
             }
         }
 
@@ -108,7 +121,7 @@ namespace Fram3d.UI.Panels
             this._panel.style.overflow        = Overflow.Hidden;
 
             this.BuildHeader();
-            this.BuildBodyContent();
+            this.BuildContent();
             this._root.Add(this._panel);
         }
 
@@ -131,24 +144,25 @@ namespace Fram3d.UI.Panels
             title.style.letterSpacing           = 1;
             title.style.unityFontStyleAndWeight = FontStyle.Normal;
             header.Add(title);
+
             this._panel.Add(header);
         }
 
-        private void BuildBodyContent()
+        private void BuildContent()
         {
-            var body = new VisualElement();
-            body.style.flexGrow     = 1;
-            body.style.paddingTop   = 8;
-            body.style.paddingLeft  = 10;
-            body.style.paddingRight = 10;
+            var content = new VisualElement();
+            content.style.flexGrow     = 1;
+            content.style.paddingTop   = 8;
+            content.style.paddingLeft  = 10;
+            content.style.paddingRight = 10;
 
-            this.BuildInfoRows(body);
-            AddSeparator(body);
-            this.BuildBodySection(body);
-            AddSeparator(body);
-            this.BuildLensSetSection(body);
+            this.BuildInfoRows(content);
+            AddSeparator(content);
+            this.BuildBodySection(content);
+            AddSeparator(content);
+            this.BuildLensSetSection(content);
 
-            this._panel.Add(body);
+            this._panel.Add(content);
         }
 
         private void BuildInfoRows(VisualElement parent)
@@ -164,14 +178,10 @@ namespace Fram3d.UI.Panels
         private void BuildBodySection(VisualElement parent)
         {
             AddSectionLabel(parent, "Camera Body");
-            parent.Add(CreateSearchField("Search cameras...", value =>
-            {
-                this._bodySearch = value;
-                this.RebuildBodyDropdown();
-            }));
 
-            this._bodyContainer = new VisualElement();
-            parent.Add(this._bodyContainer);
+            this._bodySectionContainer = new VisualElement();
+            parent.Add(this._bodySectionContainer);
+
             this.RebuildBodyDropdown();
 
             var showAllToggle = new Toggle("Show all cameras");
@@ -190,22 +200,15 @@ namespace Fram3d.UI.Panels
 
         private void RebuildBodyDropdown()
         {
-            this._bodyContainer.Clear();
+            this._bodySectionContainer.Clear();
 
             var db  = this._cameraBehaviour.Database;
             var cam = this._cameraBehaviour.CameraElement;
 
-            IEnumerable<CameraBody> filtered = this._showAllBodies
-                ? db.Bodies
-                : db.Bodies.Where(b => b.Manufacturer == "Generic" || b.Year >= MIN_BODY_YEAR);
+            this._bodyList = this._showAllBodies
+                ? db.Bodies.ToList()
+                : db.Bodies.Where(b => b.Manufacturer == "Generic" || b.Year >= MIN_BODY_YEAR).ToList();
 
-            if (!string.IsNullOrEmpty(this._bodySearch))
-            {
-                var search = this._bodySearch;
-                filtered = filtered.Where(b => MatchesSearch(b.Name, search) || MatchesSearch(b.Manufacturer, search));
-            }
-
-            this._bodyList = filtered.ToList();
             var names   = this._bodyList.Select(b => $"{b.Manufacturer} — {b.Name}").ToList();
             var current = cam.Body != null ? this._bodyList.IndexOf(cam.Body) : 0;
 
@@ -216,22 +219,13 @@ namespace Fram3d.UI.Panels
                 current = 0;
             }
 
-            if (names.Count == 0)
-            {
-                this._bodyContainer.Add(new Label("No matches") { style = { fontSize = 10, color = new Color(0.4f, 0.4f, 0.4f) } });
-
-                return;
-            }
-
-            this._bodyDropdown = new PopupField<string>(names, current >= 0 ? current : 0);
-            this._bodyDropdown.RegisterValueChangedCallback(this.OnBodyChanged);
-            this._bodyContainer.Add(this._bodyDropdown);
+            this._bodyDropdown = new SearchableDropdown(names, current >= 0 ? current : 0, "Search cameras...");
+            this._bodyDropdown.SelectionChanged += this.OnBodySelected;
+            this._bodySectionContainer.Add(this._bodyDropdown.Root);
         }
 
-        private void OnBodyChanged(ChangeEvent<string> evt)
+        private void OnBodySelected(int index)
         {
-            var index = this._bodyDropdown.index;
-
             if (index >= 0 && index < this._bodyList.Count)
                 this._cameraBehaviour.CameraElement.SetBody(this._bodyList[index]);
         }
@@ -241,59 +235,21 @@ namespace Fram3d.UI.Panels
         private void BuildLensSetSection(VisualElement parent)
         {
             AddSectionLabel(parent, "Lens Set");
-            parent.Add(CreateSearchField("Search lenses...", value =>
-            {
-                this._lensSetSearch = value;
-                this.RebuildLensSetDropdown();
-            }));
-
-            this._lensSetContainer = new VisualElement();
-            parent.Add(this._lensSetContainer);
-            this.RebuildLensSetDropdown();
-        }
-
-        private void RebuildLensSetDropdown()
-        {
-            this._lensSetContainer.Clear();
 
             var db  = this._cameraBehaviour.Database;
             var cam = this._cameraBehaviour.CameraElement;
 
-            IEnumerable<LensSet> filtered = db.LensSets;
-
-            if (!string.IsNullOrEmpty(this._lensSetSearch))
-            {
-                var search = this._lensSetSearch;
-                filtered = filtered.Where(ls => MatchesSearch(ls.Name, search));
-            }
-
-            this._lensSetList = filtered.ToList();
+            this._lensSetList = db.LensSets.ToList();
             var names   = this._lensSetList.Select(ls => ls.Name).ToList();
             var current = cam.ActiveLensSet != null ? this._lensSetList.IndexOf(cam.ActiveLensSet) : 0;
 
-            if (current < 0 && cam.ActiveLensSet != null)
-            {
-                this._lensSetList.Insert(0, cam.ActiveLensSet);
-                names.Insert(0, cam.ActiveLensSet.Name);
-                current = 0;
-            }
-
-            if (names.Count == 0)
-            {
-                this._lensSetContainer.Add(new Label("No matches") { style = { fontSize = 10, color = new Color(0.4f, 0.4f, 0.4f) } });
-
-                return;
-            }
-
-            this._lensSetDropdown = new PopupField<string>(names, current >= 0 ? current : 0);
-            this._lensSetDropdown.RegisterValueChangedCallback(this.OnLensSetChanged);
-            this._lensSetContainer.Add(this._lensSetDropdown);
+            this._lensSetDropdown = new SearchableDropdown(names, current >= 0 ? current : 0, "Search lenses...");
+            this._lensSetDropdown.SelectionChanged += this.OnLensSetSelected;
+            parent.Add(this._lensSetDropdown.Root);
         }
 
-        private void OnLensSetChanged(ChangeEvent<string> evt)
+        private void OnLensSetSelected(int index)
         {
-            var index = this._lensSetDropdown.index;
-
             if (index >= 0 && index < this._lensSetList.Count)
                 this._cameraBehaviour.CameraElement.SetLensSet(this._lensSetList[index]);
         }
@@ -311,21 +267,6 @@ namespace Fram3d.UI.Panels
         }
 
         // --- UI Helpers ---
-
-        private static bool MatchesSearch(string text, string search) =>
-            text.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
-
-        private static TextField CreateSearchField(string placeholder, Action<string> onChanged)
-        {
-            var field = new TextField();
-            field.style.marginBottom       = 4;
-            field.style.fontSize           = 11;
-            field.textEdition.placeholder  = placeholder;
-
-            field.RegisterValueChangedCallback(evt => onChanged(evt.newValue));
-
-            return field;
-        }
 
         private static Label CreateInfoRow(VisualElement parent, string labelText)
         {

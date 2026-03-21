@@ -31,6 +31,10 @@ namespace Fram3d.UI.Input
             if (keyboard == null || mouse == null)
                 return;
 
+            // Skip all input when a text field has focus (e.g., search fields in properties panel)
+            if (this.propertiesPanel != null && this.propertiesPanel.HasFocusedTextField)
+                return;
+
             this.HandleKeyboardInput(keyboard);
 
             // Don't process scroll/drag when pointer is over a UI panel

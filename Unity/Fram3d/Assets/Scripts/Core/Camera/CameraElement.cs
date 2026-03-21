@@ -5,14 +5,13 @@ namespace Fram3d.Core.Camera
 {
     public class CameraElement: Element
     {
-        private static readonly Vector3 DEFAULT_POSITION     = new(0f, 1.6f, 5f);
-        private const           float   DEFAULT_FOCAL_LENGTH = 50f;
-        private const           float   MIN_FOCAL_LENGTH     = 14f;
-        private const           float   MAX_FOCAL_LENGTH     = 400f;
+        private static readonly Vector3 DEFAULT_POSITION      = new(0f, 1.6f, 5f);
+        private const           float   DEFAULT_FOCAL_LENGTH  = 50f;
+        private const           float   MIN_FOCAL_LENGTH      = 14f;
+        private const           float   MAX_FOCAL_LENGTH      = 400f;
         private const           float   DEFAULT_SENSOR_WIDTH  = 24.89f;
         private const           float   DEFAULT_SENSOR_HEIGHT = 18.66f;
-
-        private float _focalLength = DEFAULT_FOCAL_LENGTH;
+        private                 float   _focalLength          = DEFAULT_FOCAL_LENGTH;
 
         public float FocalLength
         {
@@ -25,26 +24,27 @@ namespace Fram3d.Core.Camera
                 // Zoom lenses clamp to their actual range
                 if (this.ActiveLensSet != null && this.ActiveLensSet.IsZoom)
                 {
-                    min = Math.Max(min, this.ActiveLensSet.MinFocalMm);
-                    max = Math.Min(max, this.ActiveLensSet.MaxFocalMm);
+                    min = Math.Max(min, this.ActiveLensSet.MinFocalLength);
+                    max = Math.Min(max, this.ActiveLensSet.MaxFocalLength);
                 }
 
                 this._focalLength = Math.Clamp(value, min, max);
             }
         }
 
-        public float      SensorWidth       { get; private set; } = DEFAULT_SENSOR_WIDTH;
-        public float      SensorHeight      { get; private set; } = DEFAULT_SENSOR_HEIGHT;
-        public CameraBody Body              { get; private set; }
-        public LensSet    ActiveLensSet     { get; private set; }
-        public Vector3    OrbitPivotPoint    { get; set; } = Vector3.Zero;
+        public float      SensorWidth     { get; private set; } = DEFAULT_SENSOR_WIDTH;
+        public float      SensorHeight    { get; private set; } = DEFAULT_SENSOR_HEIGHT;
+        public CameraBody Body            { get; private set; }
+        public LensSet    ActiveLensSet   { get; private set; }
+        public Vector3    OrbitPivotPoint { get; set; } = Vector3.Zero;
+
         /// <summary>
         /// When true, CameraBehaviour applies focal length instantly instead of lerping.
         /// Set by DollyZoom to keep position and focal length perfectly synchronized —
         /// any lerp delay between them breaks the dolly zoom effect and causes visible jitter.
         /// Cleared by CameraBehaviour after consuming.
         /// </summary>
-        public bool    SnapFocalLength    { get; set; }
+        public bool SnapFocalLength { get; set; }
 
         public CameraElement(ElementId id, string name): base(id, name)
         {
@@ -210,7 +210,7 @@ namespace Fram3d.Core.Camera
             if (lensSet.IsZoom)
             {
                 // Clamp to zoom range
-                this.FocalLength     = Math.Clamp(this.FocalLength, lensSet.MinFocalMm, lensSet.MaxFocalMm);
+                this.FocalLength     = Math.Clamp(this.FocalLength, lensSet.MinFocalLength, lensSet.MaxFocalLength);
                 this.SnapFocalLength = true;
             }
             else if (lensSet.FocalLengths.Length > 0)
@@ -239,11 +239,11 @@ namespace Fram3d.Core.Camera
         /// Computes the vertical field of view in radians from the current focal length and sensor height.
         /// FOV = 2 * atan(sensorHeight / (2 * focalLength))
         /// </summary>
+
         // TODO: When anamorphic lens is active, compute horizontal FOV using squeeze factor:
         //   hFov = 2 * atan((sensorWidth * squeezeFactor) / (2 * focalLength))
         //   Also auto-lock aspect ratio to the computed delivery format (see 1.2.1).
-        public float ComputeVerticalFov() =>
-            2f * MathF.Atan(this.SensorHeight / (2f * this.FocalLength));
+        public float ComputeVerticalFov() => 2f * MathF.Atan(this.SensorHeight / (2f * this.FocalLength));
 
         /// <summary>
         /// Simultaneously translates the camera and adjusts focal length to maintain the apparent
@@ -278,7 +278,6 @@ namespace Fram3d.Core.Camera
             newFocalLength = Math.Clamp(newFocalLength, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
             var clampedDistance = distance * newFocalLength / this.FocalLength;
             var direction       = Vector3.Normalize(newPosition - this.OrbitPivotPoint);
-
             this.Position = this.OrbitPivotPoint + direction * clampedDistance;
             this.SetFocalLength(newFocalLength);
             this.SnapFocalLength = true;

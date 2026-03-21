@@ -97,28 +97,29 @@ namespace Fram3d.UI.Input
             if (delta.sqrMagnitude < 0.001f)
                 return;
 
-            var dt = Time.deltaTime;
+            var dt       = Time.deltaTime;
+            var panSpeed = MovementSpeeds.PAN_TILT * dt;
 
             // Alt+Left-drag = orbit (Unity convention)
             if (keyboard.altKey.isPressed && mouse.leftButton.isPressed)
             {
-                this._camera.Orbit(delta.x * MovementSpeeds.PAN_TILT * dt, -delta.y * MovementSpeeds.PAN_TILT * dt);
+                this._camera.Orbit(delta.x * panSpeed, -delta.y * panSpeed);
+
                 return;
             }
 
             // Middle-drag = pan/tilt (Unity convention)
             if (mouse.middleButton.isPressed)
             {
-                this._camera.Pan(delta.x   * MovementSpeeds.PAN_TILT * dt);
-                this._camera.Tilt(-delta.y * MovementSpeeds.PAN_TILT * dt);
+                this._camera.Pan(delta.x * panSpeed);
+                this._camera.Tilt(-delta.y * panSpeed);
+
                 return;
             }
 
             // Alt+Right-drag = dolly (Unity convention)
             if (keyboard.altKey.isPressed && mouse.rightButton.isPressed)
-            {
                 this._camera.Dolly(delta.y * MovementSpeeds.DOLLY * dt);
-            }
         }
 
         private void HandleKeyboardInput(Keyboard keyboard)
@@ -158,13 +159,7 @@ namespace Fram3d.UI.Input
             }
         }
 
-        private static bool IsCommandHeld(Keyboard keyboard)
-        {
-        #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
-            return keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed;
-        #else
-			return keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed;
-        #endif
-        }
+        private static bool IsCommandHeld(Keyboard keyboard) =>
+            keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed;
     }
 }

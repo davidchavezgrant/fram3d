@@ -103,7 +103,7 @@ namespace Fram3d.Editor
                 if (cam.ActiveLensSet.IsZoom)
                 {
                     EditorGUILayout.LabelField("Type", "Zoom");
-                    EditorGUILayout.LabelField("Range", $"{cam.ActiveLensSet.MinFocalMm}–{cam.ActiveLensSet.MaxFocalMm} mm");
+                    EditorGUILayout.LabelField("Range", $"{cam.ActiveLensSet.MinFocalLength}–{cam.ActiveLensSet.MaxFocalLength} mm");
                 }
                 else
                 {

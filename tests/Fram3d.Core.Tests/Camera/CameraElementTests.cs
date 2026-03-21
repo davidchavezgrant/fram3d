@@ -635,8 +635,8 @@ namespace Fram3d.Core.Tests.Camera
 			cam.SetLensSet(zoom);
 
 			cam.ActiveLensSet.IsZoom.Should().BeTrue();
-			cam.ActiveLensSet.MinFocalMm.Should().Be(24f);
-			cam.ActiveLensSet.MaxFocalMm.Should().Be(290f);
+			cam.ActiveLensSet.MinFocalLength.Should().Be(24f);
+			cam.ActiveLensSet.MaxFocalLength.Should().Be(290f);
 		}
 
 		// --- Prime lens restrictions (1.1.3) ---

@@ -7,14 +7,13 @@ namespace Fram3d.Engine.Integration
     [RequireComponent(typeof(Camera))]
     public sealed class CameraBehaviour: MonoBehaviour
     {
-        private const float          LENS_LERP_SPEED = 10f;
+        private const float          FOCAL_LENGTH_LERP_SPEED = 10f;
         private       Camera         _unityCamera;
         private       CameraElement  _cameraElement;
         private       CameraDatabase _database;
         private       float          _displayedFocalLength;
-
-        public CameraElement  CameraElement => this._cameraElement;
-        public CameraDatabase Database      => this._database;
+        public        CameraElement  CameraElement => this._cameraElement;
+        public        CameraDatabase Database      => this._database;
 
         private void Awake()
         {
@@ -33,7 +32,7 @@ namespace Fram3d.Engine.Integration
             if (defaultLensSet != null)
                 this._cameraElement.SetLensSet(defaultLensSet);
 
-            this._displayedFocalLength = this._cameraElement.FocalLength;
+            this._displayedFocalLength   = this._cameraElement.FocalLength;
             this._unityCamera.sensorSize = new Vector2(this._cameraElement.SensorWidth, this._cameraElement.SensorHeight);
             this.Sync();
         }
@@ -45,30 +44,34 @@ namespace Fram3d.Engine.Integration
 
         private void Sync()
         {
-            this.transform.position = this._cameraElement.Position.ToUnity();
-            this.transform.rotation = this._cameraElement.Rotation.ToUnity();
+            var cam = this._cameraElement;
+
+            this.transform.position = cam.Position.ToUnity();
+            this.transform.rotation = cam.Rotation.ToUnity();
 
             // Dolly zoom requires instant sync to keep position and focal length perfectly paired.
             // All other focal length changes lerp for smooth visual transitions.
-            if (this._cameraElement.SnapFocalLength)
+            var targetFocalLength = cam.FocalLength;
+
+            if (cam.SnapFocalLength)
             {
-                this._displayedFocalLength             = this._cameraElement.FocalLength;
-                this._cameraElement.SnapFocalLength = false;
+                this._displayedFocalLength = targetFocalLength;
+                cam.SnapFocalLength        = false;
             }
             else
             {
                 this._displayedFocalLength = Mathf.Lerp(
                     this._displayedFocalLength,
-                    this._cameraElement.FocalLength,
-                    Time.deltaTime * LENS_LERP_SPEED);
+                    targetFocalLength,
+                    Time.deltaTime * FOCAL_LENGTH_LERP_SPEED);
 
                 // Snap to target when close enough to prevent asymptotic drift
-                if (Mathf.Abs(this._displayedFocalLength - this._cameraElement.FocalLength) < 0.01f)
-                    this._displayedFocalLength = this._cameraElement.FocalLength;
+                if (Mathf.Abs(this._displayedFocalLength - targetFocalLength) < 0.01f)
+                    this._displayedFocalLength = targetFocalLength;
             }
 
             this._unityCamera.focalLength = this._displayedFocalLength;
-            this._unityCamera.sensorSize  = new Vector2(this._cameraElement.SensorWidth, this._cameraElement.SensorHeight);
+            this._unityCamera.sensorSize  = new Vector2(cam.SensorWidth, cam.SensorHeight);
         }
     }
 }

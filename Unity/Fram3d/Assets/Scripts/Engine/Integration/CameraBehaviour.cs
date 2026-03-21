@@ -59,10 +59,12 @@ namespace Fram3d.Engine.Integration
             volume.profile     = ScriptableObject.CreateInstance<VolumeProfile>();
             this._dof          = volume.profile.Add<DepthOfField>();
             this._dof.active   = true;
-            this._dof.mode.overrideState          = true;
-            this._dof.focusDistance.overrideState  = true;
-            this._dof.aperture.overrideState       = true;
-            this._dof.focalLength.overrideState    = true;
+            this._dof.mode.overrideState                 = true;
+            this._dof.focusDistance.overrideState         = true;
+            this._dof.aperture.overrideState              = true;
+            this._dof.focalLength.overrideState           = true;
+            this._dof.highQualitySampling.overrideState   = true;
+            this._dof.highQualitySampling.value           = true;
         }
 
         private void Sync()

@@ -2,6 +2,7 @@ using Fram3d.Core.Camera;
 using Fram3d.Engine.Integration;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
 namespace Fram3d.UI.Input
 {
     public sealed class CameraInputHandler: MonoBehaviour
@@ -12,7 +13,8 @@ namespace Fram3d.UI.Input
         private CameraBehaviour cameraBehaviour;
 
         private CameraElement _camera;
-        private void          Start() => this._camera = this.cameraBehaviour.CameraElement;
+
+        private void Start() => this._camera = this.cameraBehaviour.CameraElement;
 
         private void Update()
         {
@@ -40,18 +42,16 @@ namespace Fram3d.UI.Input
             // Do NOT multiply by deltaTime.
             if (IsCommandHeld(keyboard) && keyboard.altKey.isPressed && Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
-                // Cmd+Alt+Scroll Y = dolly zoom
                 this._camera.DollyZoom(scrollY * MovementSpeeds.DOLLY_ZOOM);
+
                 return;
             }
 
             if (keyboard.ctrlKey.isPressed)
             {
-                // Ctrl+Scroll Y = dolly
                 if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
                     this._camera.Dolly(scrollY * MovementSpeeds.DOLLY);
 
-                // Ctrl+Scroll X = truck
                 if (Mathf.Abs(scrollX) > SCROLL_DEADZONE)
                     this._camera.Truck(scrollX * MovementSpeeds.TRUCK);
 
@@ -60,33 +60,27 @@ namespace Fram3d.UI.Input
 
             if (keyboard.altKey.isPressed && Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
-                // Alt+Scroll Y = crane
                 this._camera.Crane(scrollY * MovementSpeeds.CRANE);
+
                 return;
             }
 
             if (keyboard.shiftKey.isPressed && Mathf.Abs(scrollX) > SCROLL_DEADZONE)
             {
-                // Shift+Scroll X = roll
                 this._camera.Roll(scrollX * MovementSpeeds.ROLL);
+
                 return;
             }
 
             // Unmodified Scroll Y = focal length
             if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
-                var lensSet = this._camera.ActiveLensSet;
+                var lens = this._camera.Lens;
 
-                // Prime lenses: step to next/previous lens in the set
-                if (lensSet != null && !lensSet.IsZoom)
-                {
-                    this._camera.StepFocalLength(scrollY > 0 ? 1 : -1);
-                }
+                if (lens.ActiveLensSet != null && !lens.ActiveLensSet.IsZoom)
+                    lens.StepFocalLength(scrollY > 0 ? 1 : -1);
                 else
-                {
-                    // Zoom or no lens set: continuous adjustment
-                    this._camera.SetFocalLength(this._camera.FocalLength + scrollY * MovementSpeeds.FOCAL_LENGTH_SCROLL);
-                }
+                    lens.SetFocalLength(lens.FocalLength + scrollY * MovementSpeeds.FOCAL_LENGTH_SCROLL);
             }
         }
 
@@ -124,7 +118,6 @@ namespace Fram3d.UI.Input
 
         private void HandleKeyboardInput(Keyboard keyboard)
         {
-            // Ctrl+R = reset
             if (keyboard.ctrlKey.isPressed && keyboard.rKey.wasPressedThisFrame)
             {
                 this._camera.Reset();
@@ -135,8 +128,9 @@ namespace Fram3d.UI.Input
             // Number keys 1–9 = focal length presets (from active lens set, or generic fallback)
             // TODO: For zoom lenses, FocalLengths is empty so this falls through to QUICK.
             //   Consider disabling number keys for zooms or mapping to evenly-spaced values in the range.
-            var presets = this._camera.ActiveLensSet != null
-                ? this._camera.ActiveLensSet.FocalLengths
+            var lens    = this._camera.Lens;
+            var presets = lens.ActiveLensSet != null
+                ? lens.ActiveLensSet.FocalLengths
                 : FocalLengthPresets.QUICK;
 
             var digitKeys = new[]
@@ -150,12 +144,12 @@ namespace Fram3d.UI.Input
 
             for (var i = 0; i < presetCount; i++)
             {
-                if (digitKeys[i].wasPressedThisFrame)
-                {
-                    this._camera.SetFocalLengthPreset(presets[i]);
+                if (!digitKeys[i].wasPressedThisFrame)
+                    continue;
 
-                    break;
-                }
+                lens.SetPreset(presets[i]);
+
+                break;
             }
         }
 

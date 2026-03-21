@@ -57,15 +57,16 @@ namespace Fram3d.Editor
                 return;
             }
 
-            var cam = this._cameraBehaviour.CameraElement;
-            var db  = this._cameraBehaviour.Database;
+            var cam  = this._cameraBehaviour.CameraElement;
+            var lens = cam.Lens;
+            var db   = this._cameraBehaviour.Database;
 
             // Current state
             EditorGUILayout.LabelField("Current State", EditorStyles.boldLabel);
             EditorGUILayout.LabelField("Body", cam.Body?.Name ?? "(none)");
             EditorGUILayout.LabelField("Sensor", $"{cam.SensorWidth:F2} x {cam.SensorHeight:F2} mm");
-            EditorGUILayout.LabelField("Lens Set", cam.ActiveLensSet?.Name ?? "(none)");
-            EditorGUILayout.LabelField("Focal Length", $"{cam.FocalLength:F1} mm");
+            EditorGUILayout.LabelField("Lens Set", lens.ActiveLensSet?.Name ?? "(none)");
+            EditorGUILayout.LabelField("Focal Length", $"{lens.FocalLength:F1} mm");
             EditorGUILayout.LabelField("Vertical FOV", $"{cam.ComputeVerticalFov() * Mathf.Rad2Deg:F1}°");
 
             EditorGUILayout.Space();
@@ -92,27 +93,29 @@ namespace Fram3d.Editor
             if (newLensIndex != this._selectedLensSetIndex)
             {
                 this._selectedLensSetIndex = newLensIndex;
-                cam.SetLensSet(db.LensSets[newLensIndex]);
+                lens.SetLensSet(db.LensSets[newLensIndex]);
             }
 
             // Show available focal lengths
-            if (cam.ActiveLensSet != null)
+            var activeLensSet = lens.ActiveLensSet;
+
+            if (activeLensSet != null)
             {
                 EditorGUILayout.Space();
 
-                if (cam.ActiveLensSet.IsZoom)
+                if (activeLensSet.IsZoom)
                 {
                     EditorGUILayout.LabelField("Type", "Zoom");
-                    EditorGUILayout.LabelField("Range", $"{cam.ActiveLensSet.MinFocalLength}–{cam.ActiveLensSet.MaxFocalLength} mm");
+                    EditorGUILayout.LabelField("Range", $"{activeLensSet.MinFocalLength}–{activeLensSet.MaxFocalLength} mm");
                 }
                 else
                 {
                     EditorGUILayout.LabelField("Type", "Prime");
-                    EditorGUILayout.LabelField("Focal Lengths", string.Join(", ", cam.ActiveLensSet.FocalLengths.Select(f => $"{f}mm")));
+                    EditorGUILayout.LabelField("Focal Lengths", string.Join(", ", activeLensSet.FocalLengths.Select(f => $"{f}mm")));
                 }
 
-                if (cam.ActiveLensSet.IsAnamorphic)
-                    EditorGUILayout.LabelField("Squeeze", $"{cam.ActiveLensSet.SqueezeFactor}x");
+                if (activeLensSet.IsAnamorphic)
+                    EditorGUILayout.LabelField("Squeeze", $"{activeLensSet.SqueezeFactor}x");
             }
 
             this.Repaint();
@@ -132,14 +135,15 @@ namespace Fram3d.Editor
             this._lensSetNames = db.LensSets.Select(ls => ls.Name).ToArray();
 
             // Find current selection indices
-            var cam = this._cameraBehaviour.CameraElement;
+            var cam  = this._cameraBehaviour.CameraElement;
+            var lens = cam.Lens;
 
             this._selectedBodyIndex = cam.Body != null
                 ? db.Bodies.ToList().IndexOf(cam.Body)
                 : 0;
 
-            this._selectedLensSetIndex = cam.ActiveLensSet != null
-                ? db.LensSets.ToList().IndexOf(cam.ActiveLensSet)
+            this._selectedLensSetIndex = lens.ActiveLensSet != null
+                ? db.LensSets.ToList().IndexOf(lens.ActiveLensSet)
                 : 0;
         }
     }

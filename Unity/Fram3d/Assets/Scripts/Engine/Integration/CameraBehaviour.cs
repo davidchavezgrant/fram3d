@@ -2,6 +2,7 @@ using Fram3d.Core.Camera;
 using Fram3d.Core.Common;
 using Fram3d.Engine.Conversion;
 using UnityEngine;
+
 namespace Fram3d.Engine.Integration
 {
     [RequireComponent(typeof(Camera))]
@@ -12,8 +13,9 @@ namespace Fram3d.Engine.Integration
         private       CameraElement  _cameraElement;
         private       CameraDatabase _database;
         private       float          _displayedFocalLength;
-        public        CameraElement  CameraElement => this._cameraElement;
-        public        CameraDatabase Database      => this._database;
+
+        public CameraElement  CameraElement => this._cameraElement;
+        public CameraDatabase Database      => this._database;
 
         private void Awake()
         {
@@ -22,18 +24,18 @@ namespace Fram3d.Engine.Integration
             this._database                          = CameraDatabaseLoader.Load();
             this._unityCamera.usePhysicalProperties = true;
 
-            // Set defaults from database
+            var cam            = this._cameraElement;
             var defaultBody    = this._database.DefaultBody;
             var defaultLensSet = this._database.DefaultLensSet;
 
             if (defaultBody != null)
-                this._cameraElement.SetBody(defaultBody);
+                cam.SetBody(defaultBody);
 
             if (defaultLensSet != null)
-                this._cameraElement.SetLensSet(defaultLensSet);
+                cam.Lens.SetLensSet(defaultLensSet);
 
-            this._displayedFocalLength   = this._cameraElement.FocalLength;
-            this._unityCamera.sensorSize = new Vector2(this._cameraElement.SensorWidth, this._cameraElement.SensorHeight);
+            this._displayedFocalLength  = cam.Lens.FocalLength;
+            this._unityCamera.sensorSize = new Vector2(cam.SensorWidth, cam.SensorHeight);
             this.Sync();
         }
 
@@ -44,19 +46,19 @@ namespace Fram3d.Engine.Integration
 
         private void Sync()
         {
-            var cam = this._cameraElement;
+            var cam               = this._cameraElement;
+            var lens              = cam.Lens;
+            var targetFocalLength = lens.FocalLength;
 
             this.transform.position = cam.Position.ToUnity();
             this.transform.rotation = cam.Rotation.ToUnity();
 
             // Dolly zoom requires instant sync to keep position and focal length perfectly paired.
             // All other focal length changes lerp for smooth visual transitions.
-            var targetFocalLength = cam.FocalLength;
-
-            if (cam.SnapFocalLength)
+            if (lens.SnapFocalLength)
             {
                 this._displayedFocalLength = targetFocalLength;
-                cam.SnapFocalLength        = false;
+                lens.SnapFocalLength       = false;
             }
             else
             {

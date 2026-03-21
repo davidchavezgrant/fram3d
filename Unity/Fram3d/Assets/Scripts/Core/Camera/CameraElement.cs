@@ -6,45 +6,14 @@ namespace Fram3d.Core.Camera
     public class CameraElement: Element
     {
         private static readonly Vector3 DEFAULT_POSITION      = new(0f, 1.6f, 5f);
-        private const           float   DEFAULT_FOCAL_LENGTH  = 50f;
-        private const           float   MIN_FOCAL_LENGTH      = 14f;
-        private const           float   MAX_FOCAL_LENGTH      = 400f;
         private const           float   DEFAULT_SENSOR_WIDTH  = 24.89f;
         private const           float   DEFAULT_SENSOR_HEIGHT = 18.66f;
-        private                 float   _focalLength          = DEFAULT_FOCAL_LENGTH;
 
-        public float FocalLength
-        {
-            get => this._focalLength;
-            private set
-            {
-                var min = MIN_FOCAL_LENGTH;
-                var max = MAX_FOCAL_LENGTH;
-
-                // Zoom lenses clamp to their actual range
-                if (this.ActiveLensSet != null && this.ActiveLensSet.IsZoom)
-                {
-                    min = Math.Max(min, this.ActiveLensSet.MinFocalLength);
-                    max = Math.Min(max, this.ActiveLensSet.MaxFocalLength);
-                }
-
-                this._focalLength = Math.Clamp(value, min, max);
-            }
-        }
-
-        public float      SensorWidth     { get; private set; } = DEFAULT_SENSOR_WIDTH;
-        public float      SensorHeight    { get; private set; } = DEFAULT_SENSOR_HEIGHT;
-        public CameraBody Body            { get; private set; }
-        public LensSet    ActiveLensSet   { get; private set; }
-        public Vector3    OrbitPivotPoint { get; set; } = Vector3.Zero;
-
-        /// <summary>
-        /// When true, CameraBehaviour applies focal length instantly instead of lerping.
-        /// Set by DollyZoom to keep position and focal length perfectly synchronized —
-        /// any lerp delay between them breaks the dolly zoom effect and causes visible jitter.
-        /// Cleared by CameraBehaviour after consuming.
-        /// </summary>
-        public bool SnapFocalLength { get; set; }
+        public LensController Lens            { get; }      = new();
+        public float          SensorWidth     { get; private set; } = DEFAULT_SENSOR_WIDTH;
+        public float          SensorHeight    { get; private set; } = DEFAULT_SENSOR_HEIGHT;
+        public CameraBody     Body            { get; private set; }
+        public Vector3        OrbitPivotPoint { get; set; } = Vector3.Zero;
 
         public CameraElement(ElementId id, string name): base(id, name)
         {
@@ -128,65 +97,43 @@ namespace Fram3d.Core.Camera
         }
 
         /// <summary>
-        /// Sets focal length. Behavior depends on the active lens set:
-        /// - No lens set or zoom lens: clamps to the lens range (or 14–400mm global range)
-        /// - Prime lens set: ignored — use StepFocalLength or SetFocalLengthPreset instead
+        /// Simultaneously translates the camera and adjusts focal length to maintain the apparent
+        /// size of a subject at the reference point while changing perspective distortion.
+        /// Uses OrbitPivotPoint as the reference (world origin by default, focused element later).
         /// </summary>
-        public void SetFocalLength(float mm)
+        public void DollyZoom(float amount)
         {
-            if (this.ActiveLensSet != null && !this.ActiveLensSet.IsZoom)
+            if (!this.Lens.CanDollyZoom)
                 return;
 
-            this.FocalLength = mm;
+            var lens     = this.Lens;
+            var forward  = this.ComputeLookDirection();
+            var distance = Vector3.Distance(this.Position, this.OrbitPivotPoint);
+
+            if (distance < 0.01f)
+                return;
+
+            var focalLength = lens.FocalLength;
+
+            if (amount > 0 && focalLength <= 14f)
+                return;
+
+            if (amount < 0 && focalLength >= 400f)
+                return;
+
+            var newPosition     = this.Position + forward * amount;
+            var newDistance     = Vector3.Distance(newPosition, this.OrbitPivotPoint);
+            var newFocalLength  = Math.Clamp(focalLength * newDistance / distance, 14f, 400f);
+            var clampedDistance = distance * newFocalLength / focalLength;
+            var direction       = Vector3.Normalize(newPosition - this.OrbitPivotPoint);
+            this.Position = this.OrbitPivotPoint + direction * clampedDistance;
+            lens.SetFocalLengthUnchecked(newFocalLength);
+            lens.SnapFocalLength = true;
         }
 
         /// <summary>
-        /// Steps to the next (+1) or previous (-1) focal length in the active prime lens set.
-        /// No-op if no lens set or if the lens set is a zoom.
-        /// </summary>
-        public void StepFocalLength(int direction)
-        {
-            if (this.ActiveLensSet == null || this.ActiveLensSet.IsZoom)
-                return;
-
-            var lengths = this.ActiveLensSet.FocalLengths;
-
-            if (lengths.Length == 0)
-                return;
-
-            // Find the current index (nearest match)
-            var currentIndex = 0;
-            var minDiff      = float.MaxValue;
-
-            for (var i = 0; i < lengths.Length; i++)
-            {
-                var diff = MathF.Abs(lengths[i] - this.FocalLength);
-
-                if (diff < minDiff)
-                {
-                    minDiff      = diff;
-                    currentIndex = i;
-                }
-            }
-
-            var newIndex = Math.Clamp(currentIndex + direction, 0, lengths.Length - 1);
-            this.FocalLength     = lengths[newIndex];
-            this.SnapFocalLength = true;
-        }
-
-        /// <summary>
-        /// Sets focal length to a specific preset value. Snaps instantly (no lerp).
-        /// Works for both prime and zoom lens sets.
-        /// </summary>
-        public void SetFocalLengthPreset(float mm)
-        {
-            this.FocalLength     = mm;
-            this.SnapFocalLength = true;
-        }
-
-        /// <summary>
-        /// Sets the camera body, updating sensor dimensions. FOV recalculates automatically
-        /// since ComputeVerticalFov reads SensorHeight. Focal length is preserved.
+        /// Sets the camera body, updating sensor dimensions. FOV recalculates automatically.
+        /// Focal length is preserved.
         /// </summary>
         public void SetBody(CameraBody body)
         {
@@ -196,92 +143,14 @@ namespace Fram3d.Core.Camera
         }
 
         /// <summary>
-        /// Sets the active lens set and snaps the focal length to the nearest valid value.
-        /// For primes: snaps to the closest available focal length in the set.
-        /// For zooms: clamps to the lens's min/max range.
-        /// </summary>
-        public void SetLensSet(LensSet lensSet)
-        {
-            this.ActiveLensSet = lensSet;
-
-            if (lensSet == null)
-                return;
-
-            if (lensSet.IsZoom)
-            {
-                // Clamp to zoom range
-                this.FocalLength     = Math.Clamp(this.FocalLength, lensSet.MinFocalLength, lensSet.MaxFocalLength);
-                this.SnapFocalLength = true;
-            }
-            else if (lensSet.FocalLengths.Length > 0)
-            {
-                // Snap to nearest prime focal length
-                var nearest = lensSet.FocalLengths[0];
-                var minDiff = MathF.Abs(this.FocalLength - nearest);
-
-                for (var i = 1; i < lensSet.FocalLengths.Length; i++)
-                {
-                    var diff = MathF.Abs(this.FocalLength - lensSet.FocalLengths[i]);
-
-                    if (diff >= minDiff)
-                        continue;
-
-                    minDiff = diff;
-                    nearest = lensSet.FocalLengths[i];
-                }
-
-                this.FocalLength     = nearest;
-                this.SnapFocalLength = true;
-            }
-        }
-
-        /// <summary>
         /// Computes the vertical field of view in radians from the current focal length and sensor height.
         /// FOV = 2 * atan(sensorHeight / (2 * focalLength))
         /// </summary>
-
         // TODO: When anamorphic lens is active, compute horizontal FOV using squeeze factor:
         //   hFov = 2 * atan((sensorWidth * squeezeFactor) / (2 * focalLength))
         //   Also auto-lock aspect ratio to the computed delivery format (see 1.2.1).
-        public float ComputeVerticalFov() => 2f * MathF.Atan(this.SensorHeight / (2f * this.FocalLength));
-
-        /// <summary>
-        /// Simultaneously translates the camera and adjusts focal length to maintain the apparent
-        /// size of a subject at the reference point while changing perspective distortion.
-        /// Uses OrbitPivotPoint as the reference (world origin by default, focused element later).
-        /// </summary>
-        public void DollyZoom(float amount)
-        {
-            // Dolly zoom requires continuous focal length adjustment — disabled for prime lenses
-            if (this.ActiveLensSet != null && !this.ActiveLensSet.IsZoom)
-                return;
-
-            var forward  = this.ComputeLookDirection();
-            var distance = Vector3.Distance(this.Position, this.OrbitPivotPoint);
-
-            if (distance < 0.01f)
-                return;
-
-            // Stop if focal length is already at the limit for this direction
-            if (amount > 0 && this.FocalLength <= MIN_FOCAL_LENGTH)
-                return;
-
-            if (amount < 0 && this.FocalLength >= MAX_FOCAL_LENGTH)
-                return;
-
-            // Compute what the new focal length would be
-            var newPosition    = this.Position + forward * amount;
-            var newDistance    = Vector3.Distance(newPosition, this.OrbitPivotPoint);
-            var newFocalLength = this.FocalLength * newDistance / distance;
-
-            // Clamp the focal length and back-compute the position to match
-            newFocalLength = Math.Clamp(newFocalLength, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
-            var clampedDistance = distance * newFocalLength / this.FocalLength;
-            var direction       = Vector3.Normalize(newPosition - this.OrbitPivotPoint);
-            this.Position = this.OrbitPivotPoint + direction * clampedDistance;
-            this.SetFocalLength(newFocalLength);
-            this.SnapFocalLength = true;
-        }
+        public float ComputeVerticalFov() =>
+            2f * MathF.Atan(this.SensorHeight / (2f * this.Lens.FocalLength));
 
         /// <summary>
         /// Restore camera to default position, rotation, and focal length.
@@ -292,9 +161,8 @@ namespace Fram3d.Core.Camera
         {
             this.Position        = DEFAULT_POSITION;
             this.Rotation        = Quaternion.Identity;
-            this.FocalLength     = DEFAULT_FOCAL_LENGTH;
             this.OrbitPivotPoint = Vector3.Zero;
-            this.SnapFocalLength = true;
+            this.Lens.Reset();
         }
 
         /// <summary>

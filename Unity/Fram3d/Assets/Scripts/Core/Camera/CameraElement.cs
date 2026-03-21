@@ -59,7 +59,7 @@ namespace Fram3d.Core.Camera
         public void Pan(float amount)
         {
             var rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -amount);
-            this.Rotation = rotation * this.Rotation;
+            this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
         }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace Fram3d.Core.Camera
         {
             var right    = Vector3.Transform(Vector3.UnitX, this.Rotation);
             var rotation = Quaternion.CreateFromAxisAngle(right, amount);
-            this.Rotation = rotation * this.Rotation;
+            this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace Fram3d.Core.Camera
         {
             var forward  = this.ComputeLookDirection();
             var rotation = Quaternion.CreateFromAxisAngle(forward, amount);
-            this.Rotation = rotation * this.Rotation;
+            this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace Fram3d.Core.Camera
             var verticalRot   = Quaternion.CreateFromAxisAngle(right, verticalAmount);
             var combinedRot   = horizontalRot * verticalRot;
             this.Position = this.OrbitPivotPoint + Vector3.Transform(offset, combinedRot);
-            this.Rotation = combinedRot * this.Rotation;
+            this.Rotation = Quaternion.Normalize(combinedRot * this.Rotation);
         }
 
         /// <summary>
@@ -239,6 +239,9 @@ namespace Fram3d.Core.Camera
         /// Computes the vertical field of view in radians from the current focal length and sensor height.
         /// FOV = 2 * atan(sensorHeight / (2 * focalLength))
         /// </summary>
+        // TODO: When anamorphic lens is active, compute horizontal FOV using squeeze factor:
+        //   hFov = 2 * atan((sensorWidth * squeezeFactor) / (2 * focalLength))
+        //   Also auto-lock aspect ratio to the computed delivery format (see 1.2.1).
         public float ComputeVerticalFov() =>
             2f * MathF.Atan(this.SensorHeight / (2f * this.FocalLength));
 
@@ -283,17 +286,16 @@ namespace Fram3d.Core.Camera
 
         /// <summary>
         /// Restore camera to default position, rotation, and focal length.
+        /// Preserves camera body and lens set selection — reset reframes the shot,
+        /// it doesn't change the equipment.
         /// </summary>
         public void Reset()
         {
             this.Position        = DEFAULT_POSITION;
             this.Rotation        = Quaternion.Identity;
             this.FocalLength     = DEFAULT_FOCAL_LENGTH;
-            this.SensorWidth     = DEFAULT_SENSOR_WIDTH;
-            this.SensorHeight    = DEFAULT_SENSOR_HEIGHT;
-            this.Body            = null;
-            this.ActiveLensSet   = null;
             this.OrbitPivotPoint = Vector3.Zero;
+            this.SnapFocalLength = true;
         }
 
         /// <summary>

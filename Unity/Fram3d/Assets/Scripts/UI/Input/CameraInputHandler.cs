@@ -6,8 +6,7 @@ namespace Fram3d.UI.Input
 {
     public sealed class CameraInputHandler: MonoBehaviour
     {
-        private const float SCROLL_DEADZONE            = 0.01f;
-        private const float FOCAL_LENGTH_SCROLL_DEADZONE = 5.0f;
+        private const float SCROLL_DEADZONE = 0.01f;
 
         [SerializeField]
         private CameraBehaviour cameraBehaviour;
@@ -73,8 +72,8 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            // Unmodified Scroll Y = focal length (higher deadzone to filter trackpad noise)
-            if (Mathf.Abs(scrollY) > FOCAL_LENGTH_SCROLL_DEADZONE)
+            // Unmodified Scroll Y = focal length
+            if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
                 var lensSet = this._camera.ActiveLensSet;
 
@@ -133,6 +132,8 @@ namespace Fram3d.UI.Input
             }
 
             // Number keys 1–9 = focal length presets (from active lens set, or generic fallback)
+            // TODO: For zoom lenses, FocalLengths is empty so this falls through to QUICK.
+            //   Consider disabling number keys for zooms or mapping to evenly-spaced values in the range.
             var presets = this._camera.ActiveLensSet != null
                 ? this._camera.ActiveLensSet.FocalLengths
                 : FocalLengthPresets.QUICK;

@@ -335,6 +335,31 @@ namespace Fram3d.Core.Tests.Camera
 			cam.OrbitPivotPoint.Should().Be(Vector3.Zero);
 		}
 
+		[Fact]
+		public void Reset__PreservesBody__When__BodyWasSet()
+		{
+			var cam = CreateCamera();
+			var body = new CameraBody("ARRI Alexa 35", "ARRI", 27.99f, 19.22f, "S35", "LPL", new[] { 4608, 3164 }, new[] { 24 });
+			cam.SetBody(body);
+
+			cam.Reset();
+
+			cam.Body.Should().Be(body);
+			cam.SensorHeight.Should().Be(19.22f);
+		}
+
+		[Fact]
+		public void Reset__PreservesLensSet__When__LensSetWasSet()
+		{
+			var cam = CreateCamera();
+			var lensSet = new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f);
+			cam.SetLensSet(lensSet);
+
+			cam.Reset();
+
+			cam.ActiveLensSet.Should().Be(lensSet);
+		}
+
 		// --- Composition ---
 
 		[Fact]

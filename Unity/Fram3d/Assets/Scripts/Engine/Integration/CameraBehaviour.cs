@@ -61,6 +61,10 @@ namespace Fram3d.Engine.Integration
                     this._displayedFocalLength,
                     this._cameraElement.FocalLength,
                     Time.deltaTime * LENS_LERP_SPEED);
+
+                // Snap to target when close enough to prevent asymptotic drift
+                if (Mathf.Abs(this._displayedFocalLength - this._cameraElement.FocalLength) < 0.01f)
+                    this._displayedFocalLength = this._cameraElement.FocalLength;
             }
 
             this._unityCamera.focalLength = this._displayedFocalLength;

@@ -562,6 +562,55 @@ namespace Fram3d.Core.Tests.Camera
 			distance.Should().BeGreaterThan(0f);
 		}
 
+		[Fact]
+		public void DollyZoom__ClampsToZoomRange__When__ZoomLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("ARRI Signature Zoom 65-300mm", 65f, 300f, false, 1.0f));
+			cam.SetFocalLengthPreset(100f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+
+			// Dolly zoom forward should decrease focal length but never below 65mm
+			for (var i = 0; i < 50; i++)
+				cam.DollyZoom(1.0f);
+
+			cam.FocalLength.Should().BeGreaterThanOrEqualTo(65f);
+		}
+
+		[Fact]
+		public void DollyZoom__MaintainsRatioWithinZoomRange__When__ZoomLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("ARRI Signature Zoom 65-300mm", 65f, 300f, false, 1.0f));
+			cam.SetFocalLengthPreset(150f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+
+			var distanceBefore = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
+			var ratioBefore    = cam.FocalLength / distanceBefore;
+
+			cam.DollyZoom(0.5f);
+
+			var distanceAfter = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
+			var ratioAfter    = cam.FocalLength / distanceAfter;
+
+			ratioAfter.Should().BeApproximately(ratioBefore, 0.01f);
+		}
+
+		[Fact]
+		public void DollyZoom__StopsAtZoomMin__When__AlreadyAtMinimum()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 16-35mm", 16f, 35f, false, 1.0f));
+			cam.SetFocalLengthPreset(16f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var positionBefore = cam.Position;
+
+			cam.DollyZoom(1.0f);
+
+			cam.Position.Should().Be(positionBefore);
+			cam.FocalLength.Should().Be(16f);
+		}
+
 		// --- Camera Body (1.1.3) ---
 
 		[Fact]

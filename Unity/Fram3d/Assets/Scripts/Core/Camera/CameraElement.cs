@@ -94,21 +94,24 @@ namespace Fram3d.Core.Camera
             var forward     = this.LookDirection;
             var distance    = Vector3.Distance(this.Position, this.OrbitPivotPoint);
             var focalLength = this._lens.FocalLength;
+            var minFocal    = this._lens.EffectiveMinFocalLength;
+            var maxFocal    = this._lens.EffectiveMaxFocalLength;
 
             if (distance < 0.01f)
                 return;
 
-            if (amount > 0 && focalLength <= 14f)
+            if (amount > 0 && focalLength <= minFocal)
                 return;
 
-            if (amount < 0 && focalLength >= 400f)
+            if (amount < 0 && focalLength >= maxFocal)
                 return;
 
-            var newPosition     = this.Position + forward * amount;
+            var newPosition    = this.Position + forward * amount;
             var newDistance     = Vector3.Distance(newPosition, this.OrbitPivotPoint);
-            var newFocalLength  = Math.Clamp(focalLength * newDistance / distance, 14f, 400f);
+            var newFocalLength = Math.Clamp(focalLength * newDistance / distance, minFocal, maxFocal);
             var clampedDistance = distance * newFocalLength / focalLength;
             var direction       = Vector3.Normalize(newPosition - this.OrbitPivotPoint);
+
             this.Position = this.OrbitPivotPoint + direction * clampedDistance;
             this._lens.SetFocalLengthUnchecked(newFocalLength);
             this._lens.SnapFocalLength = true;

@@ -15,14 +15,14 @@ namespace Fram3d.UI.Panels
     {
         private static SearchableDropdown _currentlyOpen;
 
-        private readonly List<string>    _allItems;
+        private List<string>    _allItems;
         private          List<string>    _browseItems;
-        private readonly VisualElement   _dropdownOverlay;
-        private readonly List<string>    _filteredItems;
-        private readonly ListView        _listView;
-        private readonly VisualElement   _root;
-        private readonly TextField       _searchField;
-        private readonly Label           _selectedLabel;
+        private VisualElement   _dropdownOverlay;
+        private List<string>    _filteredItems;
+        private ListView        _listView;
+        private VisualElement   _root;
+        private TextField       _searchField;
+        private Label           _selectedLabel;
         private          int             _highlightedIndex = -1;
         private          bool            _isOpen;
         private          int             _selectedIndex;

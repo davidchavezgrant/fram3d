@@ -3,7 +3,6 @@ using Fram3d.Core.Camera;
 using Fram3d.Engine.Integration;
 using UnityEditor;
 using UnityEngine;
-
 namespace Fram3d.Editor
 {
     /// <summary>
@@ -36,7 +35,6 @@ namespace Fram3d.Editor
             if (!Application.isPlaying)
             {
                 EditorGUILayout.HelpBox("Enter Play Mode to use camera debug controls.", MessageType.Info);
-
                 return;
             }
 
@@ -46,7 +44,6 @@ namespace Fram3d.Editor
             if (this._cameraBehaviour == null)
             {
                 EditorGUILayout.HelpBox("No CameraBehaviour found in scene.", MessageType.Warning);
-
                 return;
             }
 
@@ -73,20 +70,19 @@ namespace Fram3d.Editor
         {
             this._bodyNames    = db.Bodies.Select(b => $"{b.Manufacturer} — {b.Name}").ToArray();
             this._lensSetNames = db.LensSets.Select(ls => ls.Name).ToArray();
-
             var cam = this._cameraBehaviour.CameraElement;
-            this._selectedBodyIndex    = cam.Body != null ? db.Bodies.ToList().IndexOf(cam.Body) : 0;
-            this._selectedLensSetIndex = cam.ActiveLensSet != null ? db.LensSets.ToList().IndexOf(cam.ActiveLensSet) : 0;
+            this._selectedBodyIndex    = cam.Body          != null? db.Bodies.ToList().IndexOf(cam.Body) : 0;
+            this._selectedLensSetIndex = cam.ActiveLensSet != null? db.LensSets.ToList().IndexOf(cam.ActiveLensSet) : 0;
         }
 
         private void DrawCurrentState(CameraElement cam)
         {
             EditorGUILayout.LabelField("Current State", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("Body", cam.Body?.Name ?? "(none)");
-            EditorGUILayout.LabelField("Sensor", $"{cam.SensorWidth:F2} x {cam.SensorHeight:F2} mm");
-            EditorGUILayout.LabelField("Lens Set", cam.ActiveLensSet?.Name ?? "(none)");
-            EditorGUILayout.LabelField("Focal Length", $"{cam.FocalLength:F1} mm");
-            EditorGUILayout.LabelField("Vertical FOV", $"{cam.VerticalFov * Mathf.Rad2Deg:F1}°");
+            EditorGUILayout.LabelField("Body",          cam.Body?.Name ?? "(none)");
+            EditorGUILayout.LabelField("Sensor",        $"{cam.SensorWidth:F2} x {cam.SensorHeight:F2} mm");
+            EditorGUILayout.LabelField("Lens Set",      cam.ActiveLensSet?.Name ?? "(none)");
+            EditorGUILayout.LabelField("Focal Length",  $"{cam.FocalLength:F1} mm");
+            EditorGUILayout.LabelField("Vertical FOV",  $"{cam.VerticalFov * Mathf.Rad2Deg:F1}°");
             EditorGUILayout.Space();
         }
 
@@ -126,12 +122,12 @@ namespace Fram3d.Editor
 
             if (lensSet.IsZoom)
             {
-                EditorGUILayout.LabelField("Type", "Zoom");
+                EditorGUILayout.LabelField("Type",  "Zoom");
                 EditorGUILayout.LabelField("Range", $"{lensSet.MinFocalLength}–{lensSet.MaxFocalLength} mm");
             }
             else
             {
-                EditorGUILayout.LabelField("Type", "Prime");
+                EditorGUILayout.LabelField("Type",          "Prime");
                 EditorGUILayout.LabelField("Focal Lengths", string.Join(", ", lensSet.FocalLengths.Select(f => $"{f}mm")));
             }
 

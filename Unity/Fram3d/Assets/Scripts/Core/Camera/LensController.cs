@@ -13,23 +13,7 @@ namespace Fram3d.Core.Camera
         private const float   MAX_FOCAL_LENGTH     = 400f;
         private const float   MIN_FOCAL_LENGTH     = 14f;
         private       float   _focalLength         = DEFAULT_FOCAL_LENGTH;
-        public LensSet ActiveLensSet { get; private set; }
-
-        /// <summary>
-        /// The effective minimum focal length considering the active lens set.
-        /// </summary>
-        internal float EffectiveMinFocalLength =>
-            this.ActiveLensSet != null && this.ActiveLensSet.IsZoom
-                ? Math.Max(MIN_FOCAL_LENGTH, this.ActiveLensSet.MinFocalLength)
-                : MIN_FOCAL_LENGTH;
-
-        /// <summary>
-        /// The effective maximum focal length considering the active lens set.
-        /// </summary>
-        internal float EffectiveMaxFocalLength =>
-            this.ActiveLensSet != null && this.ActiveLensSet.IsZoom
-                ? Math.Min(MAX_FOCAL_LENGTH, this.ActiveLensSet.MaxFocalLength)
-                : MAX_FOCAL_LENGTH;
+        public        LensSet ActiveLensSet { get; private set; }
 
         public float FocalLength
         {
@@ -56,6 +40,20 @@ namespace Fram3d.Core.Camera
         /// Cleared by CameraBehaviour after consuming.
         /// </summary>
         public bool SnapFocalLength { get; set; }
+
+        /// <summary>
+        /// The effective maximum focal length considering the active lens set.
+        /// </summary>
+        internal float EffectiveMaxFocalLength => this.ActiveLensSet != null && this.ActiveLensSet.IsZoom?
+                                                      Math.Min(MAX_FOCAL_LENGTH, this.ActiveLensSet.MaxFocalLength) :
+                                                      MAX_FOCAL_LENGTH;
+
+        /// <summary>
+        /// The effective minimum focal length considering the active lens set.
+        /// </summary>
+        internal float EffectiveMinFocalLength => this.ActiveLensSet != null && this.ActiveLensSet.IsZoom?
+                                                      Math.Max(MIN_FOCAL_LENGTH, this.ActiveLensSet.MinFocalLength) :
+                                                      MIN_FOCAL_LENGTH;
 
         /// <summary>
         /// Sets focal length continuously. Respects lens set constraints:

@@ -1,7 +1,6 @@
 using Fram3d.Core.Camera;
 using UnityEngine;
 using UnityEngine.UIElements;
-
 namespace Fram3d.UI.Panels
 {
     /// <summary>
@@ -21,7 +20,6 @@ namespace Fram3d.UI.Panels
             this._sensorRow      = new InfoRow("Sensor");
             this._focalLengthRow = new InfoRow("Focal Length");
             this._fovRow         = new InfoRow("FOV");
-
             this.Add(this._bodyRow);
             this.Add(this._sensorRow);
             this.Add(this._focalLengthRow);

@@ -360,6 +360,31 @@ namespace Fram3d.Core.Tests.Camera
 			cam.ActiveLensSet.Should().Be(lensSet);
 		}
 
+		[Fact]
+		public void Reset__ClampsFocalLengthToZoomRange__When__ZoomLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("ARRI Signature Zoom 65-300mm", 65f, 300f, false, 1.0f));
+			cam.SetFocalLengthPreset(200f);
+
+			cam.Reset();
+
+			// Default 50mm is below the zoom's 65mm minimum — should clamp to 65mm
+			cam.FocalLength.Should().Be(65f);
+			cam.ActiveLensSet.Should().NotBeNull();
+		}
+
+		[Fact]
+		public void Reset__RestoresDefaultFocalLength__When__NoLensSetActive()
+		{
+			var cam = CreateCamera();
+			cam.FocalLength = 200f;
+
+			cam.Reset();
+
+			cam.FocalLength.Should().Be(50f);
+		}
+
 		// --- Composition ---
 
 		[Fact]
@@ -862,6 +887,77 @@ namespace Fram3d.Core.Tests.Camera
 			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
 
 			cam.SnapFocalLength.Should().BeTrue();
+		}
+
+		[Fact]
+		public void SetFocalLengthPreset__ClampsToZoomRange__When__OutsideRange()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+
+			cam.SetFocalLengthPreset(200f);
+
+			// Preset bypasses prime check but still clamps to zoom range
+			cam.FocalLength.Should().Be(70f);
+		}
+
+		[Fact]
+		public void SetFocalLengthPreset__WorksWithinZoomRange__When__InsideRange()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+
+			cam.SetFocalLengthPreset(50f);
+
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		[Fact]
+		public void StepFocalLengthDown__StaysAtMin__When__AlreadyAtShortestLens()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(18f);
+
+			cam.StepFocalLengthDown();
+
+			cam.FocalLength.Should().Be(18f);
+		}
+
+		[Fact]
+		public void StepFocalLengthUp__IsNoOp__When__NoLensSetActive()
+		{
+			var cam = CreateCamera();
+			cam.FocalLength = 50f;
+
+			cam.StepFocalLengthUp();
+
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		[Fact]
+		public void StepFocalLengthUp__IsNoOp__When__ZoomLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+
+			cam.StepFocalLengthUp();
+
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		[Fact]
+		public void DollyZoom__IsAllowed__When__NoLensSetActive()
+		{
+			var cam = CreateCamera();
+			cam.FocalLength = 50f;
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var positionBefore = cam.Position;
+
+			cam.DollyZoom(0.5f);
+
+			cam.Position.Should().NotBe(positionBefore);
 		}
 	}
 }

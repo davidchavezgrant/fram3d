@@ -20,6 +20,10 @@ Patterns worth carrying forward and anti-patterns to avoid, drawn from the prior
 
 **Value objects with validation.** `KeyframeId` wraps `Guid`, rejects `Guid.Empty` at construction, implements full equality. `TimePosition` rejects negative values, provides `Add()`/`Subtract()` (clamps to zero), `ToFrames(frameRate)`, comparison operators. Prevents raw-float time bugs.
 
+**Event-level modifier tracking for scroll input.** `CameraInputHandler` uses `InputSystem.onEvent` to intercept raw input events and pair each scroll event with the modifier state at the time it physically occurred. This prevents scroll bleed — where a scroll event and a modifier key-up land in the same frame, and polling-based code sees "no modifier + scroll" even though the scroll happened while the modifier was still held. The old Kinemachine codebase used `performed`/`canceled` callbacks with separate named actions per modifier combo; the Fram3d approach achieves the same temporal accuracy with less boilerplate.
+
+**Gap-based momentum guard for trackpad scroll.** macOS trackpad momentum delivers scroll events for 1-2 seconds after finger lift, with intermittent gaps where scroll drops to zero then resurfaces. The guard in `HandleScrollSample` tracks the time of the last modifier-associated scroll. Unmodified scroll arriving within 150ms of that timestamp is treated as momentum and blocked; scroll after a longer gap is treated as a new intentional gesture and allowed through. This replaced 7 failed approaches: single-frame guard, multi-frame grace period, time-based cooldown, gesture tracking state machine, value-change detection, scroll-nonzero check, and continuous-zero-scroll requirement — all of which failed because they didn't account for both the event-ordering problem AND the intermittent nature of trackpad momentum.
+
 ---
 
 ## Anti-patterns to Avoid
@@ -35,6 +39,8 @@ Patterns worth carrying forward and anti-patterns to avoid, drawn from the prior
 **Transient command objects allocated every `Update()`.** `new TimelineInteractionHandler(...).Execute()` and `new UpdateTimeline(...).Execute()` were called every frame, allocating heap objects that immediately die. These are stateless procedures dressed as objects — they should be reused instances or static methods.
 
 **Mixed input systems.** The project uses the New Input System (`Keyboard.current` / `Mouse.current`) in `UserInputDriver`, but `UpdateTimeline`, `TimelineInteractionHandler`, and `CameraInfoView` use legacy `UnityEngine.Input.GetKeyDown()`. Pick one input system and use it everywhere.
+
+**Polling modifier state for scroll routing.** Reading `keyboard.ctrlKey.isPressed` and `mouse.scroll.ReadValue()` in the same `Update()` call loses temporal ordering. The Input System processes all events before `Update()`, so `isPressed` reflects the final state (Ctrl released) while `ReadValue()` reflects accumulated scroll (which happened while Ctrl was still held). This causes scroll bleed — modifier+scroll gestures leak into unmodified scroll handlers. Always capture modifier state at event time, not poll time. See `CameraInputHandler` for the correct event-driven approach.
 
 **Rotation shake drift.** Position shake is applied as an additive offset and reverted each frame. Rotation shake compounds via `Rotation *= Quaternion.Euler(...)` without reverting. The camera slowly drifts in orientation while shake is enabled. Both must use the revert-then-apply pattern.
 

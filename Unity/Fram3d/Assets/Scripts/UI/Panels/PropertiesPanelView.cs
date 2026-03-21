@@ -2,7 +2,6 @@ using Fram3d.Engine.Integration;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
-
 namespace Fram3d.UI.Panels
 {
     /// <summary>
@@ -12,15 +11,20 @@ namespace Fram3d.UI.Panels
     /// </summary>
     public sealed class PropertiesPanelView: MonoBehaviour
     {
-        private const float PANEL_WIDTH = 440f;
+        private const float             PANEL_WIDTH = 440f;
+        private       CameraBodySection _bodySection;
+        private       CameraBehaviour   _cameraBehaviour;
+        private       CameraInfoSection _infoSection;
+        private       LensSetSection    _lensSetSection;
+        private       VisualElement     _panel;
+        private       VisualElement     _root;
+        private       bool              _visible = true;
 
-        private CameraBodySection _bodySection;
-        private CameraBehaviour   _cameraBehaviour;
-        private CameraInfoSection _infoSection;
-        private LensSetSection    _lensSetSection;
-        private VisualElement     _panel;
-        private VisualElement     _root;
-        private bool              _visible = true;
+        /// <summary>
+        /// True when any search field in the panel has keyboard focus.
+        /// </summary>
+        public bool HasFocusedTextField => (this._bodySection    != null && this._bodySection.HasFocus)
+                                        || (this._lensSetSection != null && this._lensSetSection.HasFocus);
 
         /// <summary>
         /// True when the mouse is over any UI Toolkit element (panel, dropdowns, popup menus).
@@ -29,60 +33,43 @@ namespace Fram3d.UI.Panels
         {
             get
             {
-                if (!this._visible || this._root == null)
+                if (!this._visible || this._root == null || Mouse.current == null)
                     return false;
 
                 var mousePos  = Mouse.current.position.ReadValue();
                 var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
                 var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
-
                 return this._root.panel.Pick(panelPos) != null;
             }
         }
 
-        /// <summary>
-        /// True when any search field in the panel has keyboard focus.
-        /// </summary>
-        public bool HasFocusedTextField =>
-            (this._bodySection != null && this._bodySection.HasFocus)
-            || (this._lensSetSection != null && this._lensSetSection.HasFocus);
-
         public void Toggle()
         {
             this._visible             = !this._visible;
-            this._panel.style.display = this._visible ? DisplayStyle.Flex : DisplayStyle.None;
+            this._panel.style.display = this._visible? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        private void Start()
+        private VisualElement BuildContent()
         {
-            this._cameraBehaviour = FindObjectOfType<CameraBehaviour>();
-
-            if (this._cameraBehaviour == null)
-            {
-                Debug.LogWarning("PropertiesPanelView: No CameraBehaviour found.");
-
-                return;
-            }
-
-            var uiDocument = this.GetComponent<UIDocument>();
-
-            if (uiDocument == null || uiDocument.rootVisualElement == null)
-            {
-                Debug.LogWarning("PropertiesPanelView: UIDocument or rootVisualElement is null.");
-
-                return;
-            }
-
-            this._root = uiDocument.rootVisualElement;
-            this.BuildPanel();
-        }
-
-        private void Update()
-        {
-            if (!this._visible || this._cameraBehaviour == null)
-                return;
-
-            this._infoSection?.UpdateValues(this._cameraBehaviour.CameraElement);
+            var cam     = this._cameraBehaviour.CameraElement;
+            var db      = this._cameraBehaviour.Database;
+            var content = new VisualElement();
+            content.style.flexGrow     = 1;
+            content.style.paddingTop   = 8;
+            content.style.paddingLeft  = 10;
+            content.style.paddingRight = 10;
+            this._infoSection          = new CameraInfoSection();
+            this._infoSection.UpdateValues(cam);
+            content.Add(this._infoSection);
+            content.Add(Theme.CreateSeparator());
+            this._bodySection             =  new CameraBodySection(db.Bodies, cam.Body);
+            this._bodySection.BodyChanged += body => cam.SetBody(body);
+            content.Add(this._bodySection);
+            content.Add(Theme.CreateSeparator());
+            this._lensSetSection                =  new LensSetSection(db.LensSets, cam.ActiveLensSet);
+            this._lensSetSection.LensSetChanged += lensSet => cam.SetLensSet(lensSet);
+            content.Add(this._lensSetSection);
+            return content;
         }
 
         private void BuildPanel()
@@ -97,8 +84,7 @@ namespace Fram3d.UI.Panels
             this._panel.style.borderLeftWidth = 1;
             this._panel.style.borderLeftColor = Theme.BORDER;
             this._panel.style.overflow        = Overflow.Hidden;
-
-            this._panel.Add(this.BuildHeader());
+            this._panel.Add(BuildHeader());
             this._panel.Add(this.BuildContent());
             this._root.Add(this._panel);
         }
@@ -115,44 +101,42 @@ namespace Fram3d.UI.Panels
             header.style.flexDirection     = FlexDirection.Row;
             header.style.paddingLeft       = 10;
             header.style.flexShrink        = 0;
-
             var title = new Label("PROPERTIES");
             title.style.fontSize      = Theme.FONT_HEADER;
             title.style.color         = Theme.LABEL_DIM;
             title.style.letterSpacing = 1;
             header.Add(title);
-
             return header;
         }
 
-        private VisualElement BuildContent()
+        private void Start()
         {
-            var cam = this._cameraBehaviour.CameraElement;
-            var db  = this._cameraBehaviour.Database;
+            this._cameraBehaviour = FindObjectOfType<CameraBehaviour>();
 
-            var content = new VisualElement();
-            content.style.flexGrow     = 1;
-            content.style.paddingTop   = 8;
-            content.style.paddingLeft  = 10;
-            content.style.paddingRight = 10;
+            if (this._cameraBehaviour == null)
+            {
+                Debug.LogWarning("PropertiesPanelView: No CameraBehaviour found.");
+                return;
+            }
 
-            this._infoSection = new CameraInfoSection();
-            this._infoSection.UpdateValues(cam);
-            content.Add(this._infoSection);
+            var uiDocument = this.GetComponent<UIDocument>();
 
-            content.Add(Theme.CreateSeparator());
+            if (uiDocument == null || uiDocument.rootVisualElement == null)
+            {
+                Debug.LogWarning("PropertiesPanelView: UIDocument or rootVisualElement is null.");
+                return;
+            }
 
-            this._bodySection = new CameraBodySection(db.Bodies, cam.Body);
-            this._bodySection.BodyChanged += body => cam.SetBody(body);
-            content.Add(this._bodySection);
+            this._root = uiDocument.rootVisualElement;
+            this.BuildPanel();
+        }
 
-            content.Add(Theme.CreateSeparator());
+        private void Update()
+        {
+            if (!this._visible || this._cameraBehaviour == null)
+                return;
 
-            this._lensSetSection = new LensSetSection(db.LensSets, cam.ActiveLensSet);
-            this._lensSetSection.LensSetChanged += lensSet => cam.SetLensSet(lensSet);
-            content.Add(this._lensSetSection);
-
-            return content;
+            this._infoSection?.UpdateValues(this._cameraBehaviour.CameraElement);
         }
     }
 }

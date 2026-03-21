@@ -68,6 +68,14 @@ tests/Fram3d.Core.Tests/
 
 The test project compiles Core's source files directly via `<Compile Include="../../Unity/Fram3d/Assets/Scripts/Core/**/*.cs" />` — one copy of source, two compilation targets (Unity asmdef + .NET for `dotnet test`).
 
+## Input Handling
+
+**Do not poll `Mouse.scroll.ReadValue()` with modifier checks in `Update()`.** This architecture causes scroll bleed on macOS — scroll events and modifier key-up events can land in the same frame, and polling sees the final state (modifier released) while scroll accumulated while the modifier was still held. Seven fix attempts failed before this was identified as an architectural problem, not a timing/guard problem.
+
+**`CameraInputHandler` uses event-level interception via `InputSystem.onEvent`.** Each scroll event is paired with the modifier state at the time the raw event arrived, preserving temporal ordering. Scroll samples are queued and processed in `Update()`. Do not rewrite this to poll `ReadValue()` — the scroll bleed bug will return.
+
+**Trackpad momentum requires a gap-based guard.** macOS trackpads deliver momentum scroll events for 1-2 seconds after finger lift, with intermittent gaps where scroll drops to zero then resurfaces. The guard in `HandleScrollSample` blocks unmodified scroll within 150ms of the last modifier-associated scroll (`SCROLL_BLEED_COOLDOWN`). The timer resets on each blocked momentum event, so the guard stays active through the entire momentum period. Intentional new scroll after a 150ms+ gap passes through immediately. See `docs/reference/prior-codebase-lessons.md` for the full history.
+
 ## Implementation Workflow
 
 When asked to implement a feature or milestone, follow this sequence exactly.

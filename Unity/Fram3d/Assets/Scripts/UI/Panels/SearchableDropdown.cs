@@ -15,23 +15,35 @@ namespace Fram3d.UI.Panels
     {
         private static SearchableDropdown _currentlyOpen;
 
-        private List<string>    _allItems;
-        private          List<string>    _browseItems;
-        private VisualElement   _dropdownOverlay;
-        private List<string>    _filteredItems;
-        private ListView        _listView;
-        private VisualElement   _root;
-        private TextField       _searchField;
-        private Label           _selectedLabel;
-        private          int             _highlightedIndex = -1;
-        private          bool            _isOpen;
-        private          int             _selectedIndex;
+        private List<string>  _allItems;
+        private List<string>  _browseItems;
+        private VisualElement _dropdownOverlay;
+        private List<string>  _filteredItems;
+        private int           _highlightedIndex = -1;
+        private bool          _isOpen;
+        private ScrollView    _scrollView;
+        private TextField     _searchField;
+        private int           _selectedIndex;
+        private Label         _selectedLabel;
+        private VisualElement _root;
 
         public event Action<int> SelectionChanged;
 
-        public bool            HasFocus      => this._isOpen;
-        public VisualElement   Root          => this._root;
-        public int             SelectedIndex => this._selectedIndex;
+        public bool          HasFocus      => this._isOpen;
+        public VisualElement Root          => this._root;
+        public int           SelectedIndex => this._selectedIndex;
+
+        public SearchableDropdown(List<string> items, int initialIndex, string placeholder)
+        {
+            this._allItems      = items;
+            this._browseItems   = items;
+            this._filteredItems = new List<string>(items);
+            this._selectedIndex = Math.Clamp(initialIndex, 0, Math.Max(0, items.Count - 1));
+
+            this._root = new VisualElement();
+            this.BuildSelector();
+            this.BuildOverlay(placeholder);
+        }
 
         /// <summary>
         /// Sets which items are shown when the search field is empty (browse mode).
@@ -45,20 +57,8 @@ namespace Fram3d.UI.Panels
             {
                 this._filteredItems.Clear();
                 this._filteredItems.AddRange(this._browseItems);
-                this._listView.RefreshItems();
+                this.RebuildListItems();
             }
-        }
-
-        public SearchableDropdown(List<string> items, int initialIndex, string placeholder)
-        {
-            this._allItems      = items;
-            this._browseItems   = items;
-            this._filteredItems = new List<string>(items);
-            this._selectedIndex = Math.Clamp(initialIndex, 0, Math.Max(0, items.Count - 1));
-
-            this._root = new VisualElement();
-            this.BuildSelector(items);
-            this.BuildOverlay(placeholder);
         }
 
         public void Close()
@@ -73,7 +73,6 @@ namespace Fram3d.UI.Panels
 
             this._filteredItems.Clear();
             this._filteredItems.AddRange(this._browseItems);
-            this._listView.RefreshItems();
 
             if (_currentlyOpen == this)
                 _currentlyOpen = null;
@@ -81,16 +80,21 @@ namespace Fram3d.UI.Panels
 
         private void Open()
         {
-            // Close any other open dropdown instantly
             _currentlyOpen?.Close();
 
             this._isOpen                        = true;
+            this._highlightedIndex              = -1;
             this._dropdownOverlay.style.display = DisplayStyle.Flex;
+
+            this._filteredItems.Clear();
+            this._filteredItems.AddRange(this._browseItems);
+            this.RebuildListItems();
+
             this._searchField.Focus();
             _currentlyOpen = this;
         }
 
-        private void BuildSelector(List<string> items)
+        private void BuildSelector()
         {
             var selector = new VisualElement();
             selector.style.flexDirection          = FlexDirection.Row;
@@ -112,7 +116,8 @@ namespace Fram3d.UI.Panels
             selector.style.paddingTop              = 4;
             selector.style.paddingBottom           = 4;
 
-            this._selectedLabel = new Label(items.Count > 0 ? items[this._selectedIndex] : "—");
+            var initialText = this._allItems.Count > 0 ? this._allItems[this._selectedIndex] : "—";
+            this._selectedLabel = new Label(initialText);
             this._selectedLabel.style.fontSize = 11;
             this._selectedLabel.style.color    = new Color(0.8f, 0.8f, 0.8f);
             this._selectedLabel.style.flexGrow = 1;
@@ -124,6 +129,7 @@ namespace Fram3d.UI.Panels
 
             selector.Add(this._selectedLabel);
             selector.Add(arrow);
+
             selector.RegisterCallback<ClickEvent>(_ =>
             {
                 if (this._isOpen)
@@ -158,58 +164,78 @@ namespace Fram3d.UI.Panels
             this._searchField.textEdition.placeholder = placeholder;
             this._searchField.RegisterValueChangedCallback(this.OnSearchChanged);
 
-            // Keyboard navigation: arrow keys + enter
-            this._searchField.RegisterCallback<KeyDownEvent>(this.OnKeyDown);
+            // Arrow keys + Enter — use TrickleDown so we capture before the text field consumes them
+            this._searchField.RegisterCallback<KeyDownEvent>(this.OnKeyDown, TrickleDownPhase.TrickleDown);
 
-            // Close when focus leaves the entire dropdown
+            // Close when focus leaves
             this._searchField.RegisterCallback<FocusOutEvent>(_ =>
                 this._searchField.schedule.Execute(this.Close).ExecuteLater(150));
 
             this._dropdownOverlay.Add(this._searchField);
-            this.BuildListView();
-            this._dropdownOverlay.Add(this._listView);
+
+            this._scrollView = new ScrollView(ScrollViewMode.Vertical);
+            this._scrollView.style.maxHeight = 200;
+            this._dropdownOverlay.Add(this._scrollView);
+
             this._root.Add(this._dropdownOverlay);
         }
 
-        private void BuildListView()
+        /// <summary>
+        /// Rebuilds the list items from _filteredItems. Uses simple VisualElements
+        /// instead of ListView to avoid stale callback issues with bindItem.
+        /// </summary>
+        private void RebuildListItems()
         {
-            this._listView = new ListView();
-            this._listView.style.maxHeight = 200;
-            this._listView.style.flexGrow  = 1;
-            this._listView.itemsSource     = this._filteredItems;
-            this._listView.fixedItemHeight = 22;
-            this._listView.selectionType   = SelectionType.None;
+            this._scrollView.Clear();
 
-            this._listView.makeItem = () =>
+            for (var i = 0; i < this._filteredItems.Count; i++)
             {
-                var row = new VisualElement();
+                var index = i;
+                var row   = new VisualElement();
                 row.style.flexDirection = FlexDirection.Row;
                 row.style.alignItems   = Align.Center;
                 row.style.paddingLeft  = 6;
+                row.style.paddingTop   = 3;
+                row.style.paddingBottom = 3;
 
-                var label = new Label();
+                var isHighlighted = i == this._highlightedIndex;
+
+                row.style.backgroundColor = isHighlighted
+                    ? new Color(0.2f, 0.4f, 0.7f, 0.6f)
+                    : new StyleColor(StyleKeyword.Null);
+
+                var label = new Label(this._filteredItems[i]);
                 label.style.fontSize       = 11;
-                label.style.color          = new Color(0.75f, 0.75f, 0.75f);
                 label.style.unityTextAlign = TextAnchor.MiddleLeft;
                 label.style.flexGrow       = 1;
 
+                // Highlighted row gets white text, others get gray
+                label.style.color = isHighlighted
+                    ? new Color(1f, 1f, 1f)
+                    : new Color(0.75f, 0.75f, 0.75f);
+
                 row.Add(label);
-                return row;
-            };
 
-            this._listView.bindItem = (element, index) =>
-            {
-                var label       = element.Q<Label>();
-                label.text      = this._filteredItems[index];
-                var isHighlighted = index == this._highlightedIndex;
+                row.RegisterCallback<PointerEnterEvent>(_ =>
+                {
+                    row.style.backgroundColor = new Color(0.2f, 0.4f, 0.7f, 0.4f);
+                    label.style.color         = new Color(1f, 1f, 1f);
+                });
 
-                element.style.backgroundColor = isHighlighted
-                    ? new Color(0.2f, 0.4f, 0.7f, 0.4f)
-                    : new StyleColor(StyleKeyword.Null);
+                row.RegisterCallback<PointerLeaveEvent>(_ =>
+                {
+                    var highlighted = index == this._highlightedIndex;
+                    row.style.backgroundColor = highlighted
+                        ? new Color(0.2f, 0.4f, 0.7f, 0.6f)
+                        : new StyleColor(StyleKeyword.Null);
+                    label.style.color = highlighted
+                        ? new Color(1f, 1f, 1f)
+                        : new Color(0.75f, 0.75f, 0.75f);
+                });
 
-                // Click to select
-                element.RegisterCallback<ClickEvent>(_ => this.ConfirmSelection(index));
-            };
+                row.RegisterCallback<ClickEvent>(_ => this.ConfirmSelection(index));
+                this._scrollView.Add(row);
+            }
         }
 
         private void OnKeyDown(KeyDownEvent evt)
@@ -221,8 +247,7 @@ namespace Fram3d.UI.Panels
             {
                 case KeyCode.DownArrow:
                     this._highlightedIndex = Math.Min(this._highlightedIndex + 1, this._filteredItems.Count - 1);
-                    this._listView.RefreshItems();
-                    this._listView.ScrollToItem(this._highlightedIndex);
+                    this.RebuildListItems();
                     evt.StopPropagation();
                     evt.PreventDefault();
 
@@ -230,8 +255,7 @@ namespace Fram3d.UI.Panels
 
                 case KeyCode.UpArrow:
                     this._highlightedIndex = Math.Max(this._highlightedIndex - 1, 0);
-                    this._listView.RefreshItems();
-                    this._listView.ScrollToItem(this._highlightedIndex);
+                    this.RebuildListItems();
                     evt.StopPropagation();
                     evt.PreventDefault();
 
@@ -265,12 +289,11 @@ namespace Fram3d.UI.Panels
             if (string.IsNullOrEmpty(search))
                 this._filteredItems.AddRange(this._browseItems);
             else
-                // Search always covers ALL items, not just the browse-filtered subset
                 this._filteredItems.AddRange(
                     this._allItems.Where(item => item.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0));
 
             this._highlightedIndex = this._filteredItems.Count > 0 ? 0 : -1;
-            this._listView.RefreshItems();
+            this.RebuildListItems();
         }
 
         private void ConfirmSelection(int filteredIndex)

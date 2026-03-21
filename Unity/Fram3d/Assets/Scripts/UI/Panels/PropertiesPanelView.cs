@@ -207,8 +207,8 @@ namespace Fram3d.UI.Panels
             var db  = this._cameraBehaviour.Database;
             var cam = this._cameraBehaviour.CameraElement;
 
-            // Always pass all bodies — search covers everything
-            this._bodyList = db.Bodies.ToList();
+            // Sorted by year descending so most recent cameras appear first. Generics (year 0) go last.
+            this._bodyList = db.Bodies.OrderByDescending(b => b.Year).ToList();
             var names   = this._bodyList.Select(b => $"{b.Manufacturer} — {b.Name}").ToList();
             var current = cam.Body != null ? this._bodyList.IndexOf(cam.Body) : 0;
 

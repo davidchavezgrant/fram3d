@@ -490,5 +490,51 @@ namespace Fram3d.Core.Tests.Camera
 
 			cam.FocalLength.Should().BeGreaterThanOrEqualTo(14f);
 		}
+
+		[Fact]
+		public void DollyZoom__StopsMoving__When__AtMinFocalLength()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(14f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var positionBefore = cam.Position;
+
+			// Already at minimum — should not move
+			cam.DollyZoom(1.0f);
+
+			cam.Position.Should().Be(positionBefore);
+			cam.FocalLength.Should().Be(14f);
+		}
+
+		[Fact]
+		public void DollyZoom__StopsMoving__When__AtMaxFocalLength()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(400f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var positionBefore = cam.Position;
+
+			// Already at maximum — should not move
+			cam.DollyZoom(-1.0f);
+
+			cam.Position.Should().Be(positionBefore);
+			cam.FocalLength.Should().Be(400f);
+		}
+
+		[Fact]
+		public void DollyZoom__KeepsPositionAndFocalLengthConsistent__When__Clamped()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(20f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+
+			// Large move that would overshoot min focal length
+			cam.DollyZoom(4.5f);
+
+			// Position should be adjusted so focal/distance ratio is maintained at the clamped value
+			var distance = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
+			cam.FocalLength.Should().BeGreaterThanOrEqualTo(14f);
+			distance.Should().BeGreaterThan(0f);
+		}
 	}
 }

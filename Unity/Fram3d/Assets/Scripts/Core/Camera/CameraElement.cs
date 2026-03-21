@@ -128,10 +128,25 @@ namespace Fram3d.Core.Camera
             if (distance < 0.01f)
                 return;
 
-            this.Position += forward * amount;
+            // Stop if focal length is already at the limit for this direction
+            if (amount > 0 && this.FocalLength <= MIN_FOCAL_LENGTH)
+                return;
 
-            var newDistance = Vector3.Distance(this.Position, this.OrbitPivotPoint);
-            this.SetFocalLength(this.FocalLength * newDistance / distance);
+            if (amount < 0 && this.FocalLength >= MAX_FOCAL_LENGTH)
+                return;
+
+            // Compute what the new focal length would be
+            var newPosition    = this.Position + forward * amount;
+            var newDistance    = Vector3.Distance(newPosition, this.OrbitPivotPoint);
+            var newFocalLength = this.FocalLength * newDistance / distance;
+
+            // Clamp the focal length and back-compute the position to match
+            newFocalLength = Math.Clamp(newFocalLength, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
+            var clampedDistance = distance * newFocalLength / this.FocalLength;
+            var direction       = Vector3.Normalize(newPosition - this.OrbitPivotPoint);
+
+            this.Position = this.OrbitPivotPoint + direction * clampedDistance;
+            this.SetFocalLength(newFocalLength);
         }
 
         /// <summary>

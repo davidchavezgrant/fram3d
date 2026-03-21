@@ -339,7 +339,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void Reset__PreservesBody__When__BodyWasSet()
 		{
 			var cam = CreateCamera();
-			var body = new CameraBody("ARRI Alexa 35", "ARRI", 27.99f, 19.22f, "S35", "LPL", new[] { 4608, 3164 }, new[] { 24 });
+			var body = new CameraBody("ARRI Alexa 35", "ARRI", 0, 27.99f, 19.22f, "S35", "LPL", new[] { 4608, 3164 }, new[] { 24 });
 			cam.SetBody(body);
 
 			cam.Reset();
@@ -464,7 +464,7 @@ namespace Fram3d.Core.Tests.Camera
 			var cam = CreateCamera();
 			var fovSuper35 = cam.VerticalFov;
 
-			cam.SetBody(new CameraBody("Generic 35mm", "Generic", 36.0f, 24.0f, "FF", "", new[] { 4096, 2160 }, new[] { 24 }));
+			cam.SetBody(new CameraBody("Generic 35mm", "Generic", 0, 36.0f, 24.0f, "FF", "", new[] { 4096, 2160 }, new[] { 24 }));
 			var fovFullFrame = cam.VerticalFov;
 
 			fovFullFrame.Should().BeGreaterThan(fovSuper35);
@@ -568,7 +568,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetBody__UpdatesSensorDimensions__When__BodyChanged()
 		{
 			var cam = CreateCamera();
-			var body = new CameraBody("ARRI Alexa Mini LF", "ARRI", 36.7f, 25.54f, "LF", "LPL", new[] { 4448, 3096 }, new[] { 24 });
+			var body = new CameraBody("ARRI Alexa Mini LF", "ARRI", 0, 36.7f, 25.54f, "LF", "LPL", new[] { 4448, 3096 }, new[] { 24 });
 
 			cam.SetBody(body);
 
@@ -583,7 +583,7 @@ namespace Fram3d.Core.Tests.Camera
 			var cam = CreateCamera();
 			cam.FocalLength = 85f;
 
-			cam.SetBody(new CameraBody("ARRI Alexa 35", "ARRI", 27.99f, 19.22f, "S35", "LPL", new[] { 4608, 3164 }, new[] { 24 }));
+			cam.SetBody(new CameraBody("ARRI Alexa 35", "ARRI", 0, 27.99f, 19.22f, "S35", "LPL", new[] { 4608, 3164 }, new[] { 24 }));
 
 			cam.FocalLength.Should().Be(85f);
 		}
@@ -595,7 +595,7 @@ namespace Fram3d.Core.Tests.Camera
 			var fovBefore = cam.VerticalFov;
 
 			// Full-frame has larger sensor than default Super 35
-			cam.SetBody(new CameraBody("Generic 35mm", "Generic", 36.0f, 24.0f, "FF", "", new[] { 4096, 2160 }, new[] { 24 }));
+			cam.SetBody(new CameraBody("Generic 35mm", "Generic", 0, 36.0f, 24.0f, "FF", "", new[] { 4096, 2160 }, new[] { 24 }));
 
 			cam.VerticalFov.Should().BeGreaterThan(fovBefore);
 		}

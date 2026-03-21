@@ -14,7 +14,9 @@ namespace Fram3d.UI.Panels
     /// </summary>
     public sealed class PropertiesPanelView: MonoBehaviour
     {
-        private const float              PANEL_WIDTH = 320f;
+        private const float              PANEL_WIDTH          = 380f;
+        private const int                RECENT_BODIES_COUNT = 3;
+        private       VisualElement      _bodyContainer;
         private       PopupField<string> _bodyDropdown;
         private       Label              _bodyLabel;
         private       List<CameraBody>   _bodyList;
@@ -26,6 +28,7 @@ namespace Fram3d.UI.Panels
         private       VisualElement      _panel;
         private       VisualElement      _root;
         private       Label              _sensorLabel;
+        private       bool               _showAllBodies;
         private       bool               _visible = true;
 
         /// <summary>
@@ -70,15 +73,64 @@ namespace Fram3d.UI.Panels
 
         private void BuildBodyDropdown(VisualElement parent)
         {
-            var db = this._cameraBehaviour.Database;
-            this._bodyList = db.Bodies.ToList();
-            var names   = this._bodyList.Select(b => $"{b.Manufacturer} — {b.Name}").ToList();
-            var cam     = this._cameraBehaviour.CameraElement;
-            var current = cam.Body != null? this._bodyList.IndexOf(cam.Body) : 0;
             AddSectionLabel(parent, "Camera Body");
-            this._bodyDropdown = new PopupField<string>(names, current >= 0? current : 0);
+
+            this._bodyContainer = new VisualElement();
+            parent.Add(this._bodyContainer);
+
+            this.RebuildBodyDropdown();
+
+            var showAllToggle = new Toggle("Show all cameras");
+            showAllToggle.style.fontSize  = 10;
+            showAllToggle.style.marginTop = 4;
+            showAllToggle.value           = this._showAllBodies;
+
+            showAllToggle.RegisterValueChangedCallback(evt =>
+            {
+                this._showAllBodies = evt.newValue;
+                this.RebuildBodyDropdown();
+            });
+
+            parent.Add(showAllToggle);
+        }
+
+        private void RebuildBodyDropdown()
+        {
+            this._bodyContainer.Clear();
+
+            var db  = this._cameraBehaviour.Database;
+            var cam = this._cameraBehaviour.CameraElement;
+
+            if (this._showAllBodies)
+            {
+                this._bodyList = db.Bodies.ToList();
+            }
+            else
+            {
+                // Show generics + most recent N per manufacturer
+                this._bodyList = db.Bodies
+                    .Where(b => b.Manufacturer == "Generic")
+                    .Concat(db.Bodies
+                        .Where(b => b.Manufacturer != "Generic")
+                        .GroupBy(b => b.Manufacturer)
+                        .SelectMany(g => g.OrderByDescending(b => b.Year).Take(RECENT_BODIES_COUNT)))
+                    .ToList();
+            }
+
+            var names   = this._bodyList.Select(b => $"{b.Manufacturer} — {b.Name}").ToList();
+            var current = cam.Body != null ? this._bodyList.IndexOf(cam.Body) : 0;
+
+            // If current body isn't in the filtered list, add it so the dropdown doesn't reset
+            if (current < 0 && cam.Body != null)
+            {
+                this._bodyList.Insert(0, cam.Body);
+                names.Insert(0, $"{cam.Body.Manufacturer} — {cam.Body.Name}");
+                current = 0;
+            }
+
+            this._bodyDropdown = new PopupField<string>(names, current >= 0 ? current : 0);
             this._bodyDropdown.RegisterValueChangedCallback(this.OnBodyChanged);
-            parent.Add(this._bodyDropdown);
+            this._bodyContainer.Add(this._bodyDropdown);
         }
 
         private void BuildHeader()

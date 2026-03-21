@@ -40,6 +40,7 @@ namespace Fram3d.Engine.Integration
             {
                 db.AddBody(new CameraBody(raw.name,
                                           raw.manufacturer,
+                                          raw.year,
                                           raw.sensor_width_mm,
                                           raw.sensor_height_mm,
                                           raw.format,
@@ -115,6 +116,7 @@ namespace Fram3d.Engine.Integration
             public float  sensor_height_mm;
             public float  sensor_width_mm;
             public int[]  supported_fps;
+            public int    year;
         }
 
 

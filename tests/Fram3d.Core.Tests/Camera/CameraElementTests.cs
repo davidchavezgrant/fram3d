@@ -317,7 +317,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void Reset__RestoresDefaultFocalLength__When__FocalLengthChanged()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(85f);
+			cam.FocalLength = 85f;
 
 			cam.Reset();
 
@@ -333,6 +333,31 @@ namespace Fram3d.Core.Tests.Camera
 			cam.Reset();
 
 			cam.OrbitPivotPoint.Should().Be(Vector3.Zero);
+		}
+
+		[Fact]
+		public void Reset__PreservesBody__When__BodyWasSet()
+		{
+			var cam = CreateCamera();
+			var body = new CameraBody("ARRI Alexa 35", "ARRI", 27.99f, 19.22f, "S35", "LPL", new[] { 4608, 3164 }, new[] { 24 });
+			cam.SetBody(body);
+
+			cam.Reset();
+
+			cam.Body.Should().Be(body);
+			cam.SensorHeight.Should().Be(19.22f);
+		}
+
+		[Fact]
+		public void Reset__PreservesLensSet__When__LensSetWasSet()
+		{
+			var cam = CreateCamera();
+			var lensSet = new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f);
+			cam.SetLensSet(lensSet);
+
+			cam.Reset();
+
+			cam.ActiveLensSet.Should().Be(lensSet);
 		}
 
 		// --- Composition ---
@@ -377,7 +402,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetFocalLength__ClampsToMinimum__When__BelowRange()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(5f);
+			cam.FocalLength = 5f;
 			cam.FocalLength.Should().Be(14f);
 		}
 
@@ -385,7 +410,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetFocalLength__ClampsToMaximum__When__AboveRange()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(500f);
+			cam.FocalLength = 500f;
 			cam.FocalLength.Should().Be(400f);
 		}
 
@@ -393,54 +418,54 @@ namespace Fram3d.Core.Tests.Camera
 		public void SetFocalLength__SetsExactValue__When__WithinRange()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(85f);
+			cam.FocalLength = 85f;
 			cam.FocalLength.Should().Be(85f);
 		}
 
 		// --- FOV (1.1.2) ---
 
 		[Fact]
-		public void ComputeVerticalFov__ReturnsCorrectFov__When__50mmOnSuper35()
+		public void VerticalFov__ReturnsCorrectFov__When__50mmOnSuper35()
 		{
 			var cam = CreateCamera();
 			// SensorHeight = 18.66mm, FocalLength = 50mm
 			// FOV = 2 * atan(18.66 / 100) ≈ 0.3696 radians ≈ 21.18°
 			var expected = 2f * MathF.Atan(18.66f / (2f * 50f));
-			cam.ComputeVerticalFov().Should().BeApproximately(expected, 0.001f);
+			cam.VerticalFov.Should().BeApproximately(expected, 0.001f);
 		}
 
 		[Fact]
-		public void ComputeVerticalFov__ReturnsWiderFov__When__FocalLengthDecreases()
+		public void VerticalFov__ReturnsWiderFov__When__FocalLengthDecreases()
 		{
 			var cam = CreateCamera();
-			var fov50 = cam.ComputeVerticalFov();
+			var fov50 = cam.VerticalFov;
 
-			cam.SetFocalLength(24f);
-			var fov24 = cam.ComputeVerticalFov();
+			cam.FocalLength = 24f;
+			var fov24 = cam.VerticalFov;
 
 			fov24.Should().BeGreaterThan(fov50);
 		}
 
 		[Fact]
-		public void ComputeVerticalFov__ReturnsNarrowerFov__When__FocalLengthIncreases()
+		public void VerticalFov__ReturnsNarrowerFov__When__FocalLengthIncreases()
 		{
 			var cam = CreateCamera();
-			var fov50 = cam.ComputeVerticalFov();
+			var fov50 = cam.VerticalFov;
 
-			cam.SetFocalLength(135f);
-			var fov135 = cam.ComputeVerticalFov();
+			cam.FocalLength = 135f;
+			var fov135 = cam.VerticalFov;
 
 			fov135.Should().BeLessThan(fov50);
 		}
 
 		[Fact]
-		public void ComputeVerticalFov__ReturnsWiderFov__When__SensorHeightIncreases()
+		public void VerticalFov__ReturnsWiderFov__When__SensorHeightIncreases()
 		{
 			var cam = CreateCamera();
-			var fovSuper35 = cam.ComputeVerticalFov();
+			var fovSuper35 = cam.VerticalFov;
 
-			cam.SensorHeight = 24.0f; // full-frame
-			var fovFullFrame = cam.ComputeVerticalFov();
+			cam.SetBody(new CameraBody("Generic 35mm", "Generic", 36.0f, 24.0f, "FF", "", new[] { 4096, 2160 }, new[] { 24 }));
+			var fovFullFrame = cam.VerticalFov;
 
 			fovFullFrame.Should().BeGreaterThan(fovSuper35);
 		}
@@ -451,7 +476,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__AdjustsFocalLength__When__MovingCloser()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(50f);
+			cam.FocalLength = 50f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 
 			cam.DollyZoom(1.0f);
@@ -464,7 +489,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__MaintainsSubjectSize__When__Applied()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(50f);
+			cam.FocalLength = 50f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 
 			var distanceBefore = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
@@ -482,7 +507,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__ClampsAtMinFocalLength__When__VeryClose()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(15f);
+			cam.FocalLength = 15f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 
 			// Move very close — focal length should clamp at 14mm
@@ -495,7 +520,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__StopsMoving__When__AtMinFocalLength()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(14f);
+			cam.FocalLength = 14f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 			var positionBefore = cam.Position;
 
@@ -510,7 +535,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__StopsMoving__When__AtMaxFocalLength()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(400f);
+			cam.FocalLength = 400f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 			var positionBefore = cam.Position;
 
@@ -525,7 +550,7 @@ namespace Fram3d.Core.Tests.Camera
 		public void DollyZoom__KeepsPositionAndFocalLengthConsistent__When__Clamped()
 		{
 			var cam = CreateCamera();
-			cam.SetFocalLength(20f);
+			cam.FocalLength = 20f;
 			cam.OrbitPivotPoint = Vector3.Zero;
 
 			// Large move that would overshoot min focal length
@@ -535,6 +560,259 @@ namespace Fram3d.Core.Tests.Camera
 			var distance = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
 			cam.FocalLength.Should().BeGreaterThanOrEqualTo(14f);
 			distance.Should().BeGreaterThan(0f);
+		}
+
+		// --- Camera Body (1.1.3) ---
+
+		[Fact]
+		public void SetBody__UpdatesSensorDimensions__When__BodyChanged()
+		{
+			var cam = CreateCamera();
+			var body = new CameraBody("ARRI Alexa Mini LF", "ARRI", 36.7f, 25.54f, "LF", "LPL", new[] { 4448, 3096 }, new[] { 24 });
+
+			cam.SetBody(body);
+
+			cam.SensorWidth.Should().Be(36.7f);
+			cam.SensorHeight.Should().Be(25.54f);
+			cam.Body.Should().Be(body);
+		}
+
+		[Fact]
+		public void SetBody__PreservesFocalLength__When__BodyChanged()
+		{
+			var cam = CreateCamera();
+			cam.FocalLength = 85f;
+
+			cam.SetBody(new CameraBody("ARRI Alexa 35", "ARRI", 27.99f, 19.22f, "S35", "LPL", new[] { 4608, 3164 }, new[] { 24 }));
+
+			cam.FocalLength.Should().Be(85f);
+		}
+
+		[Fact]
+		public void SetBody__ChangesFov__When__DifferentSensorSize()
+		{
+			var cam = CreateCamera();
+			var fovBefore = cam.VerticalFov;
+
+			// Full-frame has larger sensor than default Super 35
+			cam.SetBody(new CameraBody("Generic 35mm", "Generic", 36.0f, 24.0f, "FF", "", new[] { 4096, 2160 }, new[] { 24 }));
+
+			cam.VerticalFov.Should().BeGreaterThan(fovBefore);
+		}
+
+		// --- Lens Set (1.1.3) ---
+
+		[Fact]
+		public void SetLensSet__StoresLensSet__When__Called()
+		{
+			var cam = CreateCamera();
+			var lensSet = new LensSet("Cooke S4/i", new float[] { 14, 18, 21, 25, 27, 32, 35, 40, 50, 65, 75, 100, 135 }, false, 1.0f);
+
+			cam.SetLensSet(lensSet);
+
+			cam.ActiveLensSet.Should().Be(lensSet);
+			cam.ActiveLensSet.FocalLengths.Should().HaveCount(13);
+		}
+
+		[Fact]
+		public void SetLensSet__SnapsToNearestPrime__When__FocalLengthNotInSet()
+		{
+			var cam = CreateCamera();
+			cam.FocalLength = 200f;
+
+			// Leica Summilux-C maxes out at 135mm — 200mm snaps to nearest (135mm)
+			cam.SetLensSet(new LensSet("Leica Summilux-C", new float[] { 16, 18, 21, 25, 29, 35, 40, 50, 65, 75, 100, 135 }, false, 1.0f));
+
+			cam.FocalLength.Should().Be(135f);
+		}
+
+		[Fact]
+		public void SetLensSet__WorksWithZoomLens__When__ZoomSelected()
+		{
+			var cam = CreateCamera();
+			var zoom = new LensSet("Angenieux Optimo 24-290mm", 24f, 290f, false, 1.0f);
+
+			cam.SetLensSet(zoom);
+
+			cam.ActiveLensSet.IsZoom.Should().BeTrue();
+			cam.ActiveLensSet.MinFocalLength.Should().Be(24f);
+			cam.ActiveLensSet.MaxFocalLength.Should().Be(290f);
+		}
+
+		// --- Prime lens restrictions (1.1.3) ---
+
+		[Fact]
+		public void SetFocalLength__IsIgnored__When__PrimeLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+
+			cam.FocalLength = 85f;
+
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		[Fact]
+		public void StepFocalLengthUp__SnapsToNextLens__When__Called()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(35f);
+
+			cam.StepFocalLengthUp();
+
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		[Fact]
+		public void StepFocalLengthDown__SnapsToPreviousLens__When__Called()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+
+			cam.StepFocalLengthDown();
+
+			cam.FocalLength.Should().Be(35f);
+		}
+
+		[Fact]
+		public void StepFocalLengthUp__StaysAtMax__When__AlreadyAtLongestLens()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(100f);
+
+			cam.StepFocalLengthUp();
+
+			cam.FocalLength.Should().Be(100f);
+		}
+
+		[Fact]
+		public void StepFocalLengthUp__SetsSnapFlag__When__Called()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(35f);
+			cam.SnapFocalLength = false;
+
+			cam.StepFocalLengthUp();
+
+			cam.SnapFocalLength.Should().BeTrue();
+		}
+
+		[Fact]
+		public void DollyZoom__IsDisabled__When__PrimeLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+			cam.SetFocalLengthPreset(50f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var positionBefore = cam.Position;
+
+			cam.DollyZoom(1.0f);
+
+			cam.Position.Should().Be(positionBefore);
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		// --- Zoom lens clamping (1.1.3) ---
+
+		[Fact]
+		public void SetFocalLength__ClampsToZoomRange__When__ZoomLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 16-35mm", 16f, 35f, false, 1.0f));
+
+			cam.FocalLength = 100f;
+
+			cam.FocalLength.Should().Be(35f);
+		}
+
+		[Fact]
+		public void SetFocalLength__ClampsToZoomMin__When__BelowRange()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 16-35mm", 16f, 35f, false, 1.0f));
+
+			cam.FocalLength = 10f;
+
+			cam.FocalLength.Should().Be(16f);
+		}
+
+		[Fact]
+		public void SetFocalLength__AllowsContinuousAdjustment__When__ZoomLensActive()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+
+			cam.FocalLength = 45f;
+
+			cam.FocalLength.Should().Be(45f);
+		}
+
+		// --- Snap on lens set switch (1.1.3) ---
+
+		[Fact]
+		public void SetLensSet__SnapsToZoomMin__When__BelowZoomRange()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 16-35mm", 16f, 35f, false, 1.0f));
+			cam.FocalLength = 16f;
+
+			// Switch to 24-70mm — current 16mm is below range, should snap to 24mm
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+
+			cam.FocalLength.Should().Be(24f);
+		}
+
+		[Fact]
+		public void SetLensSet__SnapsToZoomMax__When__AboveZoomRange()
+		{
+			var cam = CreateCamera();
+			cam.FocalLength = 200f;
+
+			// Switch to 24-70mm — current 200mm is above range, should snap to 70mm
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+
+			cam.FocalLength.Should().Be(70f);
+		}
+
+		[Fact]
+		public void SetLensSet__PreservesFocalLength__When__WithinZoomRange()
+		{
+			var cam = CreateCamera();
+			cam.FocalLength = 35f;
+
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+
+			cam.FocalLength.Should().Be(35f);
+		}
+
+		[Fact]
+		public void SetLensSet__SnapsToNearestPrime__When__SwitchingFromZoomToPrime()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+			cam.FocalLength = 45f;
+
+			// Switch to primes — 45mm should snap to nearest (50mm)
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		[Fact]
+		public void SetLensSet__SetsSnapFlag__When__FocalLengthChanges()
+		{
+			var cam = CreateCamera();
+			cam.FocalLength = 200f;
+			cam.SnapFocalLength = false;
+
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+
+			cam.SnapFocalLength.Should().BeTrue();
 		}
 	}
 }

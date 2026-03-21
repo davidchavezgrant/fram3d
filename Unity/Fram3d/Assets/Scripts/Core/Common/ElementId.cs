@@ -3,8 +3,6 @@ namespace Fram3d.Core.Common
 {
     public sealed class ElementId: IEquatable<ElementId>
     {
-        public Guid Value { get; }
-
         public ElementId(Guid value)
         {
             if (value == Guid.Empty)
@@ -13,6 +11,7 @@ namespace Fram3d.Core.Common
             this.Value = value;
         }
 
+        public          Guid   Value                                      { get; }
         public          bool   Equals(ElementId other)                    => other != null          && this.Value.Equals(other.Value);
         public override bool   Equals(object    obj)                      => obj is ElementId other && this.Equals(other);
         public override int    GetHashCode()                              => this.Value.GetHashCode();

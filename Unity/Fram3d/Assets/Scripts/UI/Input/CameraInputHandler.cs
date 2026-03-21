@@ -2,6 +2,7 @@ using Fram3d.Core.Camera;
 using Fram3d.Engine.Integration;
 using UnityEngine;
 using UnityEngine.InputSystem;
+
 namespace Fram3d.UI.Input
 {
     public sealed class CameraInputHandler: MonoBehaviour
@@ -12,7 +13,8 @@ namespace Fram3d.UI.Input
         private CameraBehaviour cameraBehaviour;
 
         private CameraElement _camera;
-        private void          Start() => this._camera = this.cameraBehaviour.CameraElement;
+
+        private void Start() => this._camera = this.cameraBehaviour.CameraElement;
 
         private void Update()
         {
@@ -40,18 +42,16 @@ namespace Fram3d.UI.Input
             // Do NOT multiply by deltaTime.
             if (IsCommandHeld(keyboard) && keyboard.altKey.isPressed && Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
-                // Cmd+Alt+Scroll Y = dolly zoom
                 this._camera.DollyZoom(scrollY * MovementSpeeds.DOLLY_ZOOM);
+
                 return;
             }
 
             if (keyboard.ctrlKey.isPressed)
             {
-                // Ctrl+Scroll Y = dolly
                 if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
                     this._camera.Dolly(scrollY * MovementSpeeds.DOLLY);
 
-                // Ctrl+Scroll X = truck
                 if (Mathf.Abs(scrollX) > SCROLL_DEADZONE)
                     this._camera.Truck(scrollX * MovementSpeeds.TRUCK);
 
@@ -60,22 +60,30 @@ namespace Fram3d.UI.Input
 
             if (keyboard.altKey.isPressed && Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
-                // Alt+Scroll Y = crane
                 this._camera.Crane(scrollY * MovementSpeeds.CRANE);
+
                 return;
             }
 
             if (keyboard.shiftKey.isPressed && Mathf.Abs(scrollX) > SCROLL_DEADZONE)
             {
-                // Shift+Scroll X = roll
                 this._camera.Roll(scrollX * MovementSpeeds.ROLL);
+
                 return;
             }
 
             // Unmodified Scroll Y = focal length
             if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
             {
-                this._camera.SetFocalLength(this._camera.FocalLength + scrollY * MovementSpeeds.FOCAL_LENGTH_SCROLL);
+                var activeLensSet = this._camera.ActiveLensSet;
+
+                if (activeLensSet != null && !activeLensSet.IsZoom)
+                    if (scrollY > 0)
+                        this._camera.StepFocalLengthUp();
+                    else
+                        this._camera.StepFocalLengthDown();
+                else
+                    this._camera.FocalLength = this._camera.FocalLength + scrollY * MovementSpeeds.FOCAL_LENGTH_SCROLL;
             }
         }
 
@@ -86,33 +94,33 @@ namespace Fram3d.UI.Input
             if (delta.sqrMagnitude < 0.001f)
                 return;
 
-            var dt = Time.deltaTime;
+            var dt       = Time.deltaTime;
+            var panSpeed = MovementSpeeds.PAN_TILT * dt;
 
             // Alt+Left-drag = orbit (Unity convention)
             if (keyboard.altKey.isPressed && mouse.leftButton.isPressed)
             {
-                this._camera.Orbit(delta.x * MovementSpeeds.PAN_TILT * dt, -delta.y * MovementSpeeds.PAN_TILT * dt);
+                this._camera.Orbit(delta.x * panSpeed, -delta.y * panSpeed);
+
                 return;
             }
 
             // Middle-drag = pan/tilt (Unity convention)
             if (mouse.middleButton.isPressed)
             {
-                this._camera.Pan(delta.x   * MovementSpeeds.PAN_TILT * dt);
-                this._camera.Tilt(-delta.y * MovementSpeeds.PAN_TILT * dt);
+                this._camera.Pan(delta.x * panSpeed);
+                this._camera.Tilt(-delta.y * panSpeed);
+
                 return;
             }
 
             // Alt+Right-drag = dolly (Unity convention)
             if (keyboard.altKey.isPressed && mouse.rightButton.isPressed)
-            {
                 this._camera.Dolly(delta.y * MovementSpeeds.DOLLY * dt);
-            }
         }
 
         private void HandleKeyboardInput(Keyboard keyboard)
         {
-            // Ctrl+R = reset
             if (keyboard.ctrlKey.isPressed && keyboard.rKey.wasPressedThisFrame)
             {
                 this._camera.Reset();
@@ -120,7 +128,12 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            // Number keys 1–9 = focal length presets
+            // Number keys 1–9 = focal length presets (from active lens set, or generic fallback)
+            // TODO: For zoom lenses, FocalLengths is empty so this falls through to QUICK.
+            //   Consider disabling number keys for zooms or mapping to evenly-spaced values in the range.
+            var activeLensSet = this._camera.ActiveLensSet;
+            var presets       = activeLensSet != null ? activeLensSet.FocalLengths : FocalLengthPresets.QUICK;
+
             var digitKeys = new[]
             {
                 keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key,
@@ -128,24 +141,20 @@ namespace Fram3d.UI.Input
                 keyboard.digit7Key, keyboard.digit8Key, keyboard.digit9Key
             };
 
-            for (var i = 0; i < digitKeys.Length; i++)
-            {
-                if (digitKeys[i].wasPressedThisFrame)
-                {
-                    this._camera.SetFocalLength(FocalLengthPresets.QUICK[i]);
+            var presetCount = presets.Length < digitKeys.Length ? presets.Length : digitKeys.Length;
 
-                    break;
-                }
+            for (var i = 0; i < presetCount; i++)
+            {
+                if (!digitKeys[i].wasPressedThisFrame)
+                    continue;
+
+                this._camera.SetFocalLengthPreset(presets[i]);
+
+                break;
             }
         }
 
-        private static bool IsCommandHeld(Keyboard keyboard)
-        {
-        #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
-            return keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed;
-        #else
-			return keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed;
-        #endif
-        }
+        private static bool IsCommandHeld(Keyboard keyboard) =>
+            keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed;
     }
 }

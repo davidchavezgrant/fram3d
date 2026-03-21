@@ -106,23 +106,34 @@ namespace Fram3d.UI.Panels
             this._listView.itemsSource     = this._filteredItems;
             this._listView.fixedItemHeight = 22;
 
-            // Selection highlight color — dark enough for white text to be readable
-            this._listView.selectionColor = new Color(0.2f, 0.4f, 0.7f, 0.6f);
-
             this._listView.makeItem = () =>
             {
+                var row = new VisualElement();
+                row.style.flexDirection = FlexDirection.Row;
+                row.style.alignItems   = Align.Center;
+                row.style.paddingLeft  = 6;
+
                 var label = new Label();
                 label.style.fontSize       = 11;
                 label.style.color          = new Color(0.75f, 0.75f, 0.75f);
-                label.style.paddingLeft    = 6;
                 label.style.unityTextAlign = TextAnchor.MiddleLeft;
+                label.style.flexGrow       = 1;
 
-                return label;
+                row.Add(label);
+
+                row.RegisterCallback<PointerEnterEvent>(_ =>
+                    row.style.backgroundColor = new Color(0.2f, 0.4f, 0.7f, 0.4f));
+
+                row.RegisterCallback<PointerLeaveEvent>(_ =>
+                    row.style.backgroundColor = StyleKeyword.Null);
+
+                return row;
             };
 
             this._listView.bindItem = (element, index) =>
             {
-                ((Label)element).text = this._filteredItems[index];
+                var label = element.Q<Label>();
+                label.text = this._filteredItems[index];
             };
 
             this._listView.selectedIndicesChanged += _ => this.OnItemSelected();

@@ -7,19 +7,34 @@ namespace Fram3d.Engine.Integration
     [RequireComponent(typeof(Camera))]
     public sealed class CameraBehaviour: MonoBehaviour
     {
-        private const float         LENS_LERP_SPEED = 10f;
-        private       Camera        _unityCamera;
-        private       CameraElement _cameraElement;
-        private       float         _displayedFocalLength;
-        public        CameraElement CameraElement => this._cameraElement;
+        private const float          LENS_LERP_SPEED = 10f;
+        private       Camera         _unityCamera;
+        private       CameraElement  _cameraElement;
+        private       CameraDatabase _database;
+        private       float          _displayedFocalLength;
+
+        public CameraElement  CameraElement => this._cameraElement;
+        public CameraDatabase Database      => this._database;
 
         private void Awake()
         {
             this._unityCamera                       = this.GetComponent<Camera>();
             this._cameraElement                     = new CameraElement(new ElementId(System.Guid.NewGuid()), "Main Camera");
+            this._database                          = CameraDatabaseLoader.Load();
             this._unityCamera.usePhysicalProperties = true;
-            this._displayedFocalLength              = this._cameraElement.FocalLength;
-            this._unityCamera.sensorSize            = new Vector2(24.89f, this._cameraElement.SensorHeight);
+
+            // Set defaults from database
+            var defaultBody    = this._database.DefaultBody;
+            var defaultLensSet = this._database.DefaultLensSet;
+
+            if (defaultBody != null)
+                this._cameraElement.SetBody(defaultBody);
+
+            if (defaultLensSet != null)
+                this._cameraElement.SetLensSet(defaultLensSet);
+
+            this._displayedFocalLength = this._cameraElement.FocalLength;
+            this._unityCamera.sensorSize = new Vector2(this._cameraElement.SensorWidth, this._cameraElement.SensorHeight);
             this.Sync();
         }
 
@@ -49,7 +64,7 @@ namespace Fram3d.Engine.Integration
             }
 
             this._unityCamera.focalLength = this._displayedFocalLength;
-            this._unityCamera.sensorSize  = new Vector2(24.89f, this._cameraElement.SensorHeight);
+            this._unityCamera.sensorSize  = new Vector2(this._cameraElement.SensorWidth, this._cameraElement.SensorHeight);
         }
     }
 }

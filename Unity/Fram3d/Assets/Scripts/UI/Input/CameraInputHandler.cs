@@ -120,7 +120,11 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            // Number keys 1–9 = focal length presets
+            // Number keys 1–9 = focal length presets (from active lens set, or generic fallback)
+            var presets = this._camera.ActiveLensSet != null
+                ? this._camera.ActiveLensSet.FocalLengths
+                : FocalLengthPresets.QUICK;
+
             var digitKeys = new[]
             {
                 keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key,
@@ -128,11 +132,13 @@ namespace Fram3d.UI.Input
                 keyboard.digit7Key, keyboard.digit8Key, keyboard.digit9Key
             };
 
-            for (var i = 0; i < digitKeys.Length; i++)
+            var presetCount = presets.Length < digitKeys.Length ? presets.Length : digitKeys.Length;
+
+            for (var i = 0; i < presetCount; i++)
             {
                 if (digitKeys[i].wasPressedThisFrame)
                 {
-                    this._camera.SetFocalLength(FocalLengthPresets.QUICK[i]);
+                    this._camera.SetFocalLength(presets[i]);
 
                     break;
                 }

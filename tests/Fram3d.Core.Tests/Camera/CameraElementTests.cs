@@ -439,7 +439,7 @@ namespace Fram3d.Core.Tests.Camera
 			var cam = CreateCamera();
 			var fovSuper35 = cam.ComputeVerticalFov();
 
-			cam.SensorHeight = 24.0f; // full-frame
+			cam.SetBody(new CameraBody("Generic 35mm", "Generic", 36.0f, 24.0f, "FF", "", new[] { 4096, 2160 }, new[] { 24 }));
 			var fovFullFrame = cam.ComputeVerticalFov();
 
 			fovFullFrame.Should().BeGreaterThan(fovSuper35);
@@ -535,6 +535,83 @@ namespace Fram3d.Core.Tests.Camera
 			var distance = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
 			cam.FocalLength.Should().BeGreaterThanOrEqualTo(14f);
 			distance.Should().BeGreaterThan(0f);
+		}
+
+		// --- Camera Body (1.1.3) ---
+
+		[Fact]
+		public void SetBody__UpdatesSensorDimensions__When__BodyChanged()
+		{
+			var cam = CreateCamera();
+			var body = new CameraBody("ARRI Alexa Mini LF", "ARRI", 36.7f, 25.54f, "LF", "LPL", new[] { 4448, 3096 }, new[] { 24 });
+
+			cam.SetBody(body);
+
+			cam.SensorWidth.Should().Be(36.7f);
+			cam.SensorHeight.Should().Be(25.54f);
+			cam.Body.Should().Be(body);
+		}
+
+		[Fact]
+		public void SetBody__PreservesFocalLength__When__BodyChanged()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(85f);
+
+			cam.SetBody(new CameraBody("ARRI Alexa 35", "ARRI", 27.99f, 19.22f, "S35", "LPL", new[] { 4608, 3164 }, new[] { 24 }));
+
+			cam.FocalLength.Should().Be(85f);
+		}
+
+		[Fact]
+		public void SetBody__ChangesFov__When__DifferentSensorSize()
+		{
+			var cam = CreateCamera();
+			var fovBefore = cam.ComputeVerticalFov();
+
+			// Full-frame has larger sensor than default Super 35
+			cam.SetBody(new CameraBody("Generic 35mm", "Generic", 36.0f, 24.0f, "FF", "", new[] { 4096, 2160 }, new[] { 24 }));
+
+			cam.ComputeVerticalFov().Should().BeGreaterThan(fovBefore);
+		}
+
+		// --- Lens Set (1.1.3) ---
+
+		[Fact]
+		public void SetLensSet__StoresLensSet__When__Called()
+		{
+			var cam = CreateCamera();
+			var lensSet = new LensSet("Cooke S4/i", new float[] { 14, 18, 21, 25, 27, 32, 35, 40, 50, 65, 75, 100, 135 }, false, 1.0f);
+
+			cam.SetLensSet(lensSet);
+
+			cam.ActiveLensSet.Should().Be(lensSet);
+			cam.ActiveLensSet.FocalLengths.Should().HaveCount(13);
+		}
+
+		[Fact]
+		public void SetLensSet__PreservesFocalLength__When__FocalLengthNotInSet()
+		{
+			var cam = CreateCamera();
+			cam.SetFocalLength(200f);
+
+			// Leica Summilux-C maxes out at 135mm
+			cam.SetLensSet(new LensSet("Leica Summilux-C", new float[] { 16, 18, 21, 25, 29, 35, 40, 50, 65, 75, 100, 135 }, false, 1.0f));
+
+			cam.FocalLength.Should().Be(200f);
+		}
+
+		[Fact]
+		public void SetLensSet__WorksWithZoomLens__When__ZoomSelected()
+		{
+			var cam = CreateCamera();
+			var zoom = new LensSet("Angenieux Optimo 24-290mm", 24f, 290f, false, 1.0f);
+
+			cam.SetLensSet(zoom);
+
+			cam.ActiveLensSet.IsZoom.Should().BeTrue();
+			cam.ActiveLensSet.MinFocalMm.Should().Be(24f);
+			cam.ActiveLensSet.MaxFocalMm.Should().Be(290f);
 		}
 	}
 }

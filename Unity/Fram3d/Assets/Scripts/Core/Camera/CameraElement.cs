@@ -9,6 +9,7 @@ namespace Fram3d.Core.Camera
         private const           float   DEFAULT_FOCAL_LENGTH = 50f;
         private const           float   MIN_FOCAL_LENGTH     = 14f;
         private const           float   MAX_FOCAL_LENGTH     = 400f;
+        private const           float   DEFAULT_SENSOR_WIDTH  = 24.89f;
         private const           float   DEFAULT_SENSOR_HEIGHT = 18.66f;
 
         private float _focalLength = DEFAULT_FOCAL_LENGTH;
@@ -19,8 +20,11 @@ namespace Fram3d.Core.Camera
             private set => this._focalLength = Math.Clamp(value, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
         }
 
-        public float   SensorHeight      { get; set; } = DEFAULT_SENSOR_HEIGHT;
-        public Vector3 OrbitPivotPoint    { get; set; } = Vector3.Zero;
+        public float      SensorWidth       { get; private set; } = DEFAULT_SENSOR_WIDTH;
+        public float      SensorHeight      { get; private set; } = DEFAULT_SENSOR_HEIGHT;
+        public CameraBody Body              { get; private set; }
+        public LensSet    ActiveLensSet     { get; private set; }
+        public Vector3    OrbitPivotPoint    { get; set; } = Vector3.Zero;
         /// <summary>
         /// When true, CameraBehaviour applies focal length instantly instead of lerping.
         /// Set by DollyZoom to keep position and focal length perfectly synchronized —
@@ -116,6 +120,23 @@ namespace Fram3d.Core.Camera
         public void SetFocalLength(float mm) => this.FocalLength = mm;
 
         /// <summary>
+        /// Sets the camera body, updating sensor dimensions. FOV recalculates automatically
+        /// since ComputeVerticalFov reads SensorHeight. Focal length is preserved.
+        /// </summary>
+        public void SetBody(CameraBody body)
+        {
+            this.Body         = body;
+            this.SensorWidth  = body.SensorWidthMm;
+            this.SensorHeight = body.SensorHeightMm;
+        }
+
+        /// <summary>
+        /// Sets the active lens set, updating which focal lengths are available for preset snapping.
+        /// Does not change the current focal length — even if it's not in the new set's list.
+        /// </summary>
+        public void SetLensSet(LensSet lensSet) => this.ActiveLensSet = lensSet;
+
+        /// <summary>
         /// Computes the vertical field of view in radians from the current focal length and sensor height.
         /// FOV = 2 * atan(sensorHeight / (2 * focalLength))
         /// </summary>
@@ -165,7 +186,10 @@ namespace Fram3d.Core.Camera
             this.Position        = DEFAULT_POSITION;
             this.Rotation        = Quaternion.Identity;
             this.FocalLength     = DEFAULT_FOCAL_LENGTH;
+            this.SensorWidth     = DEFAULT_SENSOR_WIDTH;
             this.SensorHeight    = DEFAULT_SENSOR_HEIGHT;
+            this.Body            = null;
+            this.ActiveLensSet   = null;
             this.OrbitPivotPoint = Vector3.Zero;
         }
 

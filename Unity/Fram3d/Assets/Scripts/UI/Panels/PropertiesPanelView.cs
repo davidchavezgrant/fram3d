@@ -14,8 +14,8 @@ namespace Fram3d.UI.Panels
     /// </summary>
     public sealed class PropertiesPanelView: MonoBehaviour
     {
-        private const float              PANEL_WIDTH          = 380f;
-        private const int                RECENT_BODIES_COUNT = 3;
+        private const float PANEL_WIDTH      = 440f;
+        private const int   MIN_BODY_YEAR   = 2019;
         private       VisualElement      _bodyContainer;
         private       PopupField<string> _bodyDropdown;
         private       Label              _bodyLabel;
@@ -109,11 +109,7 @@ namespace Fram3d.UI.Panels
             {
                 // Show generics + most recent N per manufacturer
                 this._bodyList = db.Bodies
-                    .Where(b => b.Manufacturer == "Generic")
-                    .Concat(db.Bodies
-                        .Where(b => b.Manufacturer != "Generic")
-                        .GroupBy(b => b.Manufacturer)
-                        .SelectMany(g => g.OrderByDescending(b => b.Year).Take(RECENT_BODIES_COUNT)))
+                    .Where(b => b.Manufacturer == "Generic" || b.Year >= MIN_BODY_YEAR)
                     .ToList();
             }
 

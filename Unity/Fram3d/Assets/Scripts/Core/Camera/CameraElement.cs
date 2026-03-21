@@ -5,10 +5,15 @@ namespace Fram3d.Core.Camera
 {
     public class CameraElement: Element
     {
-        private const           float          DEFAULT_SENSOR_HEIGHT = 18.66f;
-        private const           float          DEFAULT_SENSOR_WIDTH  = 24.89f;
-        private static readonly Vector3        DEFAULT_POSITION      = new(0f, 1.6f, 5f);
-        private readonly        LensController _lens                 = new();
+        private static readonly float[] APERTURE_STOPS = { 1.4f, 2f, 2.8f, 4f, 5.6f, 8f, 11f, 16f, 22f };
+
+        private const           int            DEFAULT_APERTURE_INDEX = 4;
+        private const           float          DEFAULT_FOCUS_DISTANCE = 10f;
+        private const           float          DEFAULT_SENSOR_HEIGHT  = 18.66f;
+        private const           float          DEFAULT_SENSOR_WIDTH   = 24.89f;
+        private static readonly Vector3        DEFAULT_POSITION       = new(0f, 1.6f, 5f);
+        private                 int            _apertureIndex         = DEFAULT_APERTURE_INDEX;
+        private readonly        LensController _lens                  = new();
 
         public CameraElement(ElementId id, string name): base(id, name)
         {
@@ -17,8 +22,22 @@ namespace Fram3d.Core.Camera
         }
 
         public LensSet    ActiveLensSet => this._lens.ActiveLensSet;
-        public CameraBody Body          { get; private set; }
-        public bool       CanDollyZoom  => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
+
+        /// <summary>
+        /// Current aperture as an f-number (e.g. 5.6 for f/5.6).
+        /// Derived from the discrete aperture stop index.
+        /// </summary>
+        public float Aperture => APERTURE_STOPS[this._apertureIndex];
+
+        public CameraBody Body         { get; private set; }
+        public bool       CanDollyZoom => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
+        public bool       DofEnabled   { get; set; }
+
+        /// <summary>
+        /// Distance in meters from the camera to the plane of sharpest focus.
+        /// Set manually for now; will be auto-set by FocusOn when element selection exists (1.1.4).
+        /// </summary>
+        public float FocusDistance { get; set; } = DEFAULT_FOCUS_DISTANCE;
 
         /// <summary>
         /// Current focal length in mm. Setting this value respects lens constraints:
@@ -130,8 +149,6 @@ namespace Fram3d.Core.Camera
             this.Rotation = Quaternion.Normalize(combinedRot * this.Rotation);
         }
 
-        // --- Movement ---
-
         /// <summary>
         /// Horizontal rotation around the world Y axis through the camera's position.
         /// Positive amount rotates rightward.
@@ -140,6 +157,19 @@ namespace Fram3d.Core.Camera
         {
             var rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -amount);
             this.Rotation = Quaternion.Normalize(rotation * this.Rotation);
+        }
+
+        /// <summary>
+        /// Restore camera to default position, rotation, and focal length.
+        /// Preserves camera body, lens set, and DOF settings — reset reframes the shot,
+        /// it doesn't change the equipment.
+        /// </summary>
+        public void Reset()
+        {
+            this.Position        = DEFAULT_POSITION;
+            this.Rotation        = Quaternion.Identity;
+            this.OrbitPivotPoint = Vector3.Zero;
+            this._lens.Reset();
         }
 
         /// <summary>
@@ -176,6 +206,26 @@ namespace Fram3d.Core.Camera
         public void SetLensSet(LensSet lensSet) => this._lens.SetLensSet(lensSet);
 
         /// <summary>
+        /// Steps to the next narrower aperture (higher f-number, deeper DOF).
+        /// No-op if already at f/22.
+        /// </summary>
+        public void StepApertureNarrower()
+        {
+            if (this._apertureIndex < APERTURE_STOPS.Length - 1)
+                this._apertureIndex++;
+        }
+
+        /// <summary>
+        /// Steps to the next wider aperture (lower f-number, shallower DOF).
+        /// No-op if already at f/1.4.
+        /// </summary>
+        public void StepApertureWider()
+        {
+            if (this._apertureIndex > 0)
+                this._apertureIndex--;
+        }
+
+        /// <summary>
         /// Steps to the next shorter focal length in the active prime lens set.
         /// </summary>
         public void StepFocalLengthDown() => this._lens.StepFocalLengthDown();
@@ -204,19 +254,6 @@ namespace Fram3d.Core.Camera
         {
             var right = Vector3.Transform(Vector3.UnitX, this.Rotation);
             this.Position += right * amount;
-        }
-
-        /// <summary>
-        /// Restore camera to default position, rotation, and focal length.
-        /// Preserves camera body and lens set selection — reset reframes the shot,
-        /// it doesn't change the equipment.
-        /// </summary>
-        public void Reset()
-        {
-            this.Position        = DEFAULT_POSITION;
-            this.Rotation        = Quaternion.Identity;
-            this.OrbitPivotPoint = Vector3.Zero;
-            this._lens.Reset();
         }
     }
 }

@@ -959,5 +959,131 @@ namespace Fram3d.Core.Tests.Camera
 
 			cam.Position.Should().NotBe(positionBefore);
 		}
+
+		// --- Depth of Field (1.1.5) ---
+
+		[Fact]
+		public void DofEnabled__DefaultsFalse__When__Constructed()
+		{
+			var cam = CreateCamera();
+			cam.DofEnabled.Should().BeFalse();
+		}
+
+		[Fact]
+		public void FocusDistance__DefaultsTo10__When__Constructed()
+		{
+			var cam = CreateCamera();
+			cam.FocusDistance.Should().Be(10f);
+		}
+
+		[Fact]
+		public void Aperture__DefaultsToF56__When__Constructed()
+		{
+			var cam = CreateCamera();
+			cam.Aperture.Should().Be(5.6f);
+		}
+
+		[Fact]
+		public void StepApertureWider__DecreasesFNumber__When__NotAtWidest()
+		{
+			var cam = CreateCamera();
+			// Default is f/5.6
+			cam.StepApertureWider();
+			cam.Aperture.Should().Be(4f);
+		}
+
+		[Fact]
+		public void StepApertureNarrower__IncreasesFNumber__When__NotAtNarrowest()
+		{
+			var cam = CreateCamera();
+			// Default is f/5.6
+			cam.StepApertureNarrower();
+			cam.Aperture.Should().Be(8f);
+		}
+
+		[Fact]
+		public void StepApertureWider__StaysAtF14__When__AlreadyAtWidest()
+		{
+			var cam = CreateCamera();
+			// Step wider until at f/1.4
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(1.4f);
+
+			// One more step should stay at f/1.4
+			cam.StepApertureWider();
+			cam.Aperture.Should().Be(1.4f);
+		}
+
+		[Fact]
+		public void StepApertureNarrower__StaysAtF22__When__AlreadyAtNarrowest()
+		{
+			var cam = CreateCamera();
+			// Step narrower until at f/22
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureNarrower();
+
+			cam.Aperture.Should().Be(22f);
+
+			// One more step should stay at f/22
+			cam.StepApertureNarrower();
+			cam.Aperture.Should().Be(22f);
+		}
+
+		[Fact]
+		public void StepApertureWider__TraversesAllStops__When__SteppedRepeatedly()
+		{
+			var cam = CreateCamera();
+			// Start at f/22
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureNarrower();
+
+			cam.Aperture.Should().Be(22f);
+
+			// Step wider through every stop
+			var expectedStops = new[] { 16f, 11f, 8f, 5.6f, 4f, 2.8f, 2f, 1.4f };
+			foreach (var expected in expectedStops)
+			{
+				cam.StepApertureWider();
+				cam.Aperture.Should().Be(expected);
+			}
+		}
+
+		[Fact]
+		public void DofEnabled__CanBeToggled__When__SetDirectly()
+		{
+			var cam = CreateCamera();
+			cam.DofEnabled = true;
+			cam.DofEnabled.Should().BeTrue();
+
+			cam.DofEnabled = false;
+			cam.DofEnabled.Should().BeFalse();
+		}
+
+		[Fact]
+		public void FocusDistance__CanBeSet__When__AssignedDirectly()
+		{
+			var cam = CreateCamera();
+			cam.FocusDistance = 5.5f;
+			cam.FocusDistance.Should().Be(5.5f);
+		}
+
+		[Fact]
+		public void Reset__PreservesDofSettings__When__DofWasConfigured()
+		{
+			var cam = CreateCamera();
+			cam.DofEnabled = true;
+			cam.StepApertureWider();
+			cam.StepApertureWider();
+			cam.FocusDistance = 3f;
+
+			cam.Reset();
+
+			// DOF settings are equipment — preserved through reset
+			cam.DofEnabled.Should().BeTrue();
+			cam.Aperture.Should().Be(2.8f);
+			cam.FocusDistance.Should().Be(3f);
+		}
 	}
 }

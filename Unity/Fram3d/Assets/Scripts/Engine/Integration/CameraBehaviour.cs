@@ -9,7 +9,9 @@ namespace Fram3d.Engine.Integration
     [RequireComponent(typeof(Camera))]
     public sealed class CameraBehaviour: MonoBehaviour
     {
-        private const float          FOCAL_LENGTH_LERP_SPEED = 10f;
+        private const float          FOCAL_LENGTH_LERP_SPEED    = 10f;
+        private const float          SHAKE_ROTATION_SCALE       = 0.5f;
+        private const float          SHAKE_TIME_OFFSET          = 100f;
         private       CameraElement  _cameraElement;
         private       CameraDatabase _database;
         private       DepthOfField   _dof;
@@ -67,6 +69,18 @@ namespace Fram3d.Engine.Integration
             this._dof.highQualitySampling.value           = true;
         }
 
+        private void ApplyShake(CameraElement cam)
+        {
+            if (!cam.ShakeEnabled)
+                return;
+
+            var t         = Time.time * cam.ShakeFrequency;
+            var amplitude = cam.ShakeAmplitude * SHAKE_ROTATION_SCALE;
+            var tiltNoise = (Mathf.PerlinNoise(t, 0f) - 0.5f) * 2f * amplitude;
+            var panNoise  = (Mathf.PerlinNoise(0f, t + SHAKE_TIME_OFFSET) - 0.5f) * 2f * amplitude;
+            this.transform.rotation *= Quaternion.Euler(tiltNoise, panNoise, 0f);
+        }
+
         private void Sync()
         {
             var cam               = this._cameraElement;
@@ -77,6 +91,7 @@ namespace Fram3d.Engine.Integration
             this.SyncDof(cam);
             this._unityCamera.focalLength = this._displayedFocalLength;
             this._unityCamera.sensorSize  = new Vector2(cam.SensorWidth, cam.SensorHeight);
+            this.ApplyShake(cam);
         }
 
         private void SyncDof(CameraElement cam)

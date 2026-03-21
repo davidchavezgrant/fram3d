@@ -40,9 +40,12 @@ namespace Fram3d.Core.Camera
             set => this._lens.FocusDistance = value;
         }
 
-        public Vector3 OrbitPivotPoint { get; set; }         = Vector3.Zero;
-        public float   SensorHeight    { get; private set; } = DEFAULT_SENSOR_HEIGHT;
-        public float   SensorWidth     { get; private set; } = DEFAULT_SENSOR_WIDTH;
+        public Vector3 OrbitPivotPoint  { get; set; }         = Vector3.Zero;
+        public float   SensorHeight     { get; private set; } = DEFAULT_SENSOR_HEIGHT;
+        public float   SensorWidth      { get; private set; } = DEFAULT_SENSOR_WIDTH;
+        public float   ShakeAmplitude   { get; set; }         = 0.1f;
+        public bool    ShakeEnabled     { get; set; }
+        public float   ShakeFrequency   { get; set; }         = 1.0f;
 
         /// <summary>
         /// When true, CameraBehaviour applies focal length instantly instead of lerping.

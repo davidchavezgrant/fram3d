@@ -16,6 +16,7 @@ namespace Fram3d.Core.Camera
         private const float DEFAULT_FOCUS_DISTANCE = 10f;
         private const float MAX_FOCAL_LENGTH       = 400f;
         private const float MIN_FOCAL_LENGTH       = 14f;
+        private const float MAX_FOCUS_DISTANCE     = 100f;
         private const float MIN_FOCUS_DISTANCE     = 0.1f;
         private       int   _apertureIndex         = DEFAULT_APERTURE_INDEX;
         private       float _focalLength           = DEFAULT_FOCAL_LENGTH;
@@ -66,13 +67,15 @@ namespace Fram3d.Core.Camera
         /// Distance in meters from the camera to the plane of sharpest focus.
         /// Clamped to the current lens's close focus distance.
         /// </summary>
+        public bool FocusAtInfinity => this._focusDistance >= MAX_FOCUS_DISTANCE;
+
         public float FocusDistance
         {
             get => this._focusDistance;
             set
             {
                 var min = this.CurrentCloseFocusM;
-                this._focusDistance = Math.Max(value, min > 0 ? min : MIN_FOCUS_DISTANCE);
+                this._focusDistance = Math.Clamp(value, min > 0 ? min : MIN_FOCUS_DISTANCE, MAX_FOCUS_DISTANCE);
             }
         }
 

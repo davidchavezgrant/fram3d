@@ -21,6 +21,7 @@ namespace Fram3d.Core.Camera
         public CameraBody Body          { get; private set; }
         public bool       CanDollyZoom  => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
         public bool       DofEnabled    { get; set; }
+        public bool       FocusAtInfinity => this._lens.FocusAtInfinity;
 
         /// <summary>
         /// Current focal length in mm. Setting this value respects lens constraints:

@@ -42,7 +42,7 @@ namespace Fram3d.UI.Panels
             this._apertureRow.style.display      = dofOn ? DisplayStyle.Flex : DisplayStyle.None;
             this._focusDistanceRow.style.display  = dofOn ? DisplayStyle.Flex : DisplayStyle.None;
             this._apertureRow.Value      = $"f/{camera.Aperture:G}";
-            this._focusDistanceRow.Value = $"{camera.FocusDistance:F1} m";
+            this._focusDistanceRow.Value = camera.FocusAtInfinity ? "\u221E" : $"{camera.FocusDistance:F1} m";
         }
     }
 }

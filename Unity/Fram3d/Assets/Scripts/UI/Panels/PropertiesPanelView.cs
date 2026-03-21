@@ -15,9 +15,10 @@ namespace Fram3d.UI.Panels
     /// </summary>
     public sealed class PropertiesPanelView: MonoBehaviour
     {
-        private const float PANEL_WIDTH = 220f;
+        private const float PANEL_WIDTH = 320f;
 
         private CameraBehaviour _cameraBehaviour;
+        private bool            _pointerOverPanel;
         private VisualElement   _panel;
         private VisualElement   _root;
         private bool            _visible = true;
@@ -30,6 +31,8 @@ namespace Fram3d.UI.Panels
         private PopupField<string> _lensSetDropdown;
         private List<LensSet>      _lensSetList;
         private Label              _sensorLabel;
+
+        public bool IsPointerOver => this._pointerOverPanel && this._visible;
 
         public void Toggle()
         {
@@ -84,6 +87,10 @@ namespace Fram3d.UI.Panels
 
             this.BuildHeader();
             this.BuildBody();
+
+            this._panel.RegisterCallback<PointerEnterEvent>(_ => this._pointerOverPanel = true);
+            this._panel.RegisterCallback<PointerLeaveEvent>(_ => this._pointerOverPanel = false);
+
             this._root.Add(this._panel);
         }
 

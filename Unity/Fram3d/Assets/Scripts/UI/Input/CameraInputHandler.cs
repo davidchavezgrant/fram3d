@@ -6,7 +6,8 @@ namespace Fram3d.UI.Input
 {
     public sealed class CameraInputHandler: MonoBehaviour
     {
-        private const float SCROLL_DEADZONE = 0.01f;
+        private const float SCROLL_DEADZONE            = 0.01f;
+        private const float FOCAL_LENGTH_SCROLL_DEADZONE = 5.0f;
 
         [SerializeField]
         private CameraBehaviour cameraBehaviour;
@@ -72,8 +73,8 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            // Unmodified Scroll Y = focal length
-            if (Mathf.Abs(scrollY) > SCROLL_DEADZONE)
+            // Unmodified Scroll Y = focal length (higher deadzone to filter trackpad noise)
+            if (Mathf.Abs(scrollY) > FOCAL_LENGTH_SCROLL_DEADZONE)
             {
                 var lensSet = this._camera.ActiveLensSet;
 

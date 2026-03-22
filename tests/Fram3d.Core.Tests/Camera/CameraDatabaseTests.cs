@@ -66,5 +66,39 @@ namespace Fram3d.Core.Tests.Camera
 			db.Bodies.Should().Contain(b => b.Name == "Generic Super 16");
 			db.Bodies.Should().Contain(b => b.Name == "Generic 8mm");
 		}
+
+		[Fact]
+		public void Bodies__HaveCorrectFormats__When__NewDatabase()
+		{
+			var db = new CameraDatabase();
+			db.FindBody("Generic 35mm").Format.Should().Be("FF");
+			db.FindBody("Generic Super 35").Format.Should().Be("S35");
+			db.FindBody("Generic 16mm").Format.Should().Be("16mm");
+			db.FindBody("Generic Super 16").Format.Should().Be("S16");
+			db.FindBody("Generic 8mm").Format.Should().Be("8mm");
+		}
+
+		[Fact]
+		public void Bodies__HaveGenericManufacturer__When__NewDatabase()
+		{
+			var db = new CameraDatabase();
+
+			foreach (var body in db.Bodies)
+				body.Manufacturer.Should().Be("Generic");
+		}
+
+		[Fact]
+		public void DefaultLensSet__IsNotAnamorphic__When__NewDatabase()
+		{
+			var db = new CameraDatabase();
+			db.DefaultLensSet.IsAnamorphic.Should().BeFalse();
+		}
+
+		[Fact]
+		public void FindLensSet__ReturnsNull__When__NameNotFound()
+		{
+			var db = new CameraDatabase();
+			db.FindLensSet("Nonexistent").Should().BeNull();
+		}
 	}
 }

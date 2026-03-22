@@ -277,8 +277,15 @@ namespace Fram3d.Core.Tests.Camera
 		public void DisplayName__ReturnsHumanReadable__When__Accessed()
 		{
 			AspectRatio.FULL_SCREEN.DisplayName.Should().Be("Full Screen");
+			AspectRatio.RATIO_1_1.DisplayName.Should().Be("1:1");
+			AspectRatio.RATIO_16_10.DisplayName.Should().Be("16:10");
 			AspectRatio.RATIO_16_9.DisplayName.Should().Be("16:9");
+			AspectRatio.RATIO_185_1.DisplayName.Should().Be("1.85:1");
+			AspectRatio.RATIO_2_1.DisplayName.Should().Be("2:1");
+			AspectRatio.RATIO_235_1.DisplayName.Should().Be("2.35:1");
 			AspectRatio.RATIO_239_1.DisplayName.Should().Be("2.39:1");
+			AspectRatio.RATIO_4_3.DisplayName.Should().Be("4:3");
+			AspectRatio.RATIO_9_16.DisplayName.Should().Be("9:16");
 		}
 
 		// --- Value ---
@@ -293,6 +300,18 @@ namespace Fram3d.Core.Tests.Camera
 		public void Value__IsCorrectRatio__When__16x9()
 		{
 			AspectRatio.RATIO_16_9.Value.Should().BeApproximately(16f / 9f, 0.001f);
+		}
+
+		[Fact]
+		public void Value__IsCorrectRatio__When__16x10()
+		{
+			AspectRatio.RATIO_16_10.Value.Should().BeApproximately(16f / 10f, 0.001f);
+		}
+
+		[Fact]
+		public void Value__IsCorrectRatio__When__4x3()
+		{
+			AspectRatio.RATIO_4_3.Value.Should().BeApproximately(4f / 3f, 0.001f);
 		}
 
 		[Fact]

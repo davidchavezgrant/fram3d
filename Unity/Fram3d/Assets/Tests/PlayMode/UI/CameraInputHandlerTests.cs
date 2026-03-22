@@ -249,7 +249,7 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._mouse, new MouseState());
 
             // Dolly moves along forward axis — Z should change
-            Assert.AreNotEqual(posBefore.Z, this._cam.Position.Z, 0.001f);
+            Assert.That(Mathf.Abs(posBefore.Z - this._cam.Position.Z), Is.GreaterThan(0.001f));
         }
 
         // --- Scroll: Ctrl+scroll X → Truck ---
@@ -269,7 +269,7 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             InputSystem.QueueStateEvent(this._mouse, new MouseState());
 
-            Assert.AreNotEqual(posBefore.X, this._cam.Position.X, 0.001f);
+            Assert.That(Mathf.Abs(posBefore.X - this._cam.Position.X), Is.GreaterThan(0.001f));
         }
 
         // --- Scroll: Alt+scroll Y → Crane ---
@@ -289,7 +289,7 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             InputSystem.QueueStateEvent(this._mouse, new MouseState());
 
-            Assert.AreNotEqual(yBefore, this._cam.Position.Y, 0.001f);
+            Assert.That(Mathf.Abs(yBefore - this._cam.Position.Y), Is.GreaterThan(0.001f));
         }
 
         // --- Scroll: Shift+scroll X → Roll ---
@@ -312,7 +312,31 @@ namespace Fram3d.Tests.UI
             Assert.AreNotEqual(rotBefore, this._cam.Rotation);
         }
 
-        // --- Drag: middle mouse → Pan/Tilt ---
+        // --- Drag: Cmd+left mouse → Pan/Tilt (trackpad-friendly) ---
+
+        [UnityTest]
+        public IEnumerator CmdLeftMouseDrag__PansAndTilts__When__Dragged()
+        {
+            yield return null;
+
+            this._cam = this._behaviour.CameraElement;
+            var rotBefore = this._cam.Rotation;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCommand));
+            InputSystem.QueueStateEvent(this._mouse, new MouseState
+            {
+                delta   = new Vector2(50f, 30f),
+                buttons = 1
+            });
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+
+            Assert.AreNotEqual(rotBefore, this._cam.Rotation);
+        }
+
+        // --- Drag: middle mouse → Pan/Tilt (external mouse fallback) ---
 
         [UnityTest]
         public IEnumerator MiddleMouseDrag__PansAndTilts__When__Dragged()
@@ -358,31 +382,6 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._mouse, new MouseState());
 
             Assert.AreNotEqual(posBefore, this._cam.Position);
-        }
-
-        // --- Drag: Alt+right mouse → Dolly ---
-
-        [UnityTest]
-        public IEnumerator AltRightMouseDrag__Dollies__When__Dragged()
-        {
-            yield return null;
-
-            this._cam = this._behaviour.CameraElement;
-            var posBefore = this._cam.Position;
-
-            // Right button = bit 1 (value 2)
-            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftAlt));
-            InputSystem.QueueStateEvent(this._mouse, new MouseState
-            {
-                delta   = new Vector2(0f, 50f),
-                buttons = 2
-            });
-            yield return null;
-
-            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
-            InputSystem.QueueStateEvent(this._mouse, new MouseState());
-
-            Assert.AreNotEqual(posBefore.Z, this._cam.Position.Z, 0.001f);
         }
     }
 }

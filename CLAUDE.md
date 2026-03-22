@@ -60,20 +60,47 @@ Each directory has a `.asmdef` file defining the assembly and its references. Se
 
 ### Tests
 
-Tests live outside Unity as a standalone .NET project:
+Two test suites: xUnit for Core (pure C#, fast, runs outside Unity) and NUnit Play Mode tests for Engine/UI (runs inside Unity).
 
 ```
 tests/Fram3d.Core/
-  Fram3d.Core.csproj          ← class library compiling Core sources
+  Fram3d.Core.csproj              ← class library compiling Core sources
 tests/Fram3d.Core.Tests/
-  Fram3d.Core.Tests.csproj    ← xUnit + FluentAssertions, references Fram3d.Core
-  stryker-config.json         ← Stryker.NET mutation testing config
+  Fram3d.Core.Tests.csproj        ← xUnit + FluentAssertions, references Fram3d.Core
+  stryker-config.json             ← Stryker.NET mutation testing config
+Unity/Fram3d/Assets/Tests/
+  PlayMode/
+    Fram3d.PlayMode.Tests.asmdef  ← NUnit, references Core + Engine + UI
+    Engine/                       ← CameraBehaviour, CameraDatabaseLoader
+    UI/                           ← AspectRatioMaskView, CameraInputHandler,
+                                    PropertiesPanelView, SearchableDropdown
 ```
 
-Run tests: `dotnet test tests/Fram3d.Core.Tests`
+Run Core tests: `dotnet test tests/Fram3d.Core.Tests`
 Run mutation tests: `cd tests/Fram3d.Core.Tests && dotnet stryker`
+Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 
 **After writing or modifying tests, always run Stryker** to verify the mutation score hasn't regressed. Current baseline: ~85%. Thresholds: green ≥85%, yellow ≥75%, break <60%.
+
+### When to write which tests
+
+- **Core logic** (domain math, computed properties, state machines) → xUnit tests in `Fram3d.Core.Tests`. These are fast, deterministic, and support mutation testing.
+- **Unity wiring** (does CameraBehaviour sync Core state to Unity Camera?) → Play Mode tests. Test that property changes propagate through the Engine layer.
+- **UI structure and behavior** (do bars exist, does search filter correctly, do keyboard shortcuts work?) → Play Mode tests. Test behavior, not visual styling.
+- **Don't duplicate** — if Core tests already cover the logic, Play Mode tests should only verify the integration wiring, not re-test the math.
+
+### Play Mode test gotchas
+
+- **`DestroyImmediate`, not `Destroy`.** `Object.Destroy` is deferred to end of frame. When tests run back-to-back, the previous test's objects still exist during the next SetUp. `FindAnyObjectByType` finds stale instances, `InputSystem.onEvent` dispatches to stale handlers. Always use `Object.DestroyImmediate` in TearDown.
+- **`FindObjectOfType` is deprecated.** Use `FindAnyObjectByType` (Unity 6).
+- **Input simulation: queue events, don't manually call `InputSystem.Update()`.** In Play Mode, the Input System updates automatically each frame. Manually calling `InputSystem.Update()` double-processes events and consumes `wasPressedThisFrame` before `MonoBehaviour.Update()` runs. Instead: `InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A))` then `yield return null`.
+- **Modifier + key: use `KeyboardState` with multiple keys.** `new KeyboardState(Key.LeftShift, Key.A)` sets both keys in a single state event.
+- **`[SerializeField]` wiring in tests.** Use reflection to set private serialized fields: `typeof(T).GetField("fieldName", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(instance, value)`.
+- **UI Toolkit `resolvedStyle` vs `style`.** `resolvedStyle` depends on the layout engine resolving element sizes, which requires a rendering surface. For absolutely positioned elements, prefer reading `style` values (what code SET) over `resolvedStyle` (what layout computed). Use `s.keyword == StyleKeyword.Undefined ? s.value.value : 0f` to extract the float from a `StyleLength`.
+- **UI Toolkit layout needs a panel.** When testing UI elements that read `resolvedStyle` (like `AspectRatioMaskView.UpdateBars`), render to a `RenderTexture` with known dimensions so layout resolves deterministically: `panelSettings.targetTexture = new RenderTexture(1920, 1080, 0)`.
+- **Coordinate conversion in assertions.** System.Numerics is right-handed (-Z forward), Unity is left-handed (+Z forward). `ToUnity()` negates Z and negates quaternion X/Y. Position assertions: `Assert.AreEqual(-expected.Z, actual.z)`. Rotation assertions: `Assert.AreEqual(-coreRot.X, unityRot.x)`.
+- **Focal length lerp is frame-rate dependent.** Don't assert convergence after a fixed frame count. Poll until convergence or timeout: `for (var i = 0; i < 600; i++) { yield return null; if (converged) yield break; }`.
+- **`Assert.AreNotEqual` has no tolerance overload.** Use `Assert.That(Mathf.Abs(a - b), Is.GreaterThan(tolerance))` instead.
 
 ## Input Handling
 

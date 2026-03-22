@@ -643,6 +643,105 @@ namespace Fram3d.Tests.Engine
             Object.Destroy(this._go);
         }
 
+        // --- Shake applies offset ---
+
+        [UnityTest]
+        public IEnumerator Shake__AppliesRotationOffset__When__Enabled()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            cam.ShakeEnabled   = true;
+            cam.ShakeAmplitude = 1.0f;
+            cam.ShakeFrequency = 5.0f;
+
+            // Wait a few frames for shake to apply
+            for (var i = 0; i < 10; i++)
+                yield return null;
+
+            // Unity rotation should differ from Core rotation (shake added on top)
+            var coreRot  = cam.Rotation;
+            var unityRot = this._go.transform.rotation;
+            var converted = new Quaternion(-coreRot.X, -coreRot.Y, coreRot.Z, coreRot.W);
+            Assert.AreNotEqual(converted, unityRot);
+        }
+
+        // --- DOF focal length tracks displayed value during lerp ---
+
+        [UnityTest]
+        public IEnumerator SyncDof__FocalLengthMatchesDisplayed__When__Lerping()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            cam.DofEnabled = true;
+            cam.SetLensSet(new LensSet("Test Zoom", 24f, 200f, false, 1.0f));
+            cam.SnapFocalLength = false;
+            cam.FocalLength = 150f;
+
+            // Wait one frame — focal length should be mid-lerp
+            yield return null;
+
+            var dof = GetDof();
+            // DOF focal length should match the Unity Camera's displayed focal length,
+            // NOT the Core target (150mm). Both use _displayedFocalLength.
+            Assert.AreEqual(this._camera.focalLength, dof.focalLength.value, 0.01f);
+        }
+
+        // --- Crane through coordinate conversion ---
+
+        [UnityTest]
+        public IEnumerator Sync__CraneMoveWorldY__When__CameraRotated()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            cam.Pan(0.5f);
+            cam.Tilt(-0.3f);
+            yield return null;
+
+            var yBefore = this._go.transform.position.y;
+            cam.Crane(2.0f);
+            yield return null;
+
+            // Crane is world-relative: Y should increase regardless of camera rotation
+            Assert.AreEqual(yBefore + 2.0f, this._go.transform.position.y, 0.01f);
+        }
+
+        // --- DollyZoom at zoom boundary end-to-end (FRA-123) ---
+
+        [UnityTest]
+        public IEnumerator DollyZoom__UnityCameraStaysAtZoomMax__When__AtBoundary()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+            cam.SetFocalLengthPreset(70f);
+            var posBefore = this._go.transform.position;
+
+            cam.DollyZoom(-1.0f);
+            yield return null;
+
+            // At zoom max, DollyZoom should be a no-op — both position and FL unchanged
+            Assert.AreEqual(70f, this._camera.focalLength, 0.01f);
+            Assert.AreEqual(posBefore.x, this._go.transform.position.x, 0.01f);
+            Assert.AreEqual(posBefore.z, this._go.transform.position.z, 0.01f);
+        }
+
+        // --- Backward aspect ratio cycling ---
+
+        [UnityTest]
+        public IEnumerator CycleAspectRatioBackward__ChangesAspectRatio__When__Called()
+        {
+            yield return null;
+
+            var before = this._behaviour.ActiveAspectRatio;
+            this._behaviour.CycleAspectRatioBackward();
+
+            Assert.AreNotSame(before, this._behaviour.ActiveAspectRatio);
+        }
+
         // --- Helpers ---
 
         private DepthOfField GetDof()

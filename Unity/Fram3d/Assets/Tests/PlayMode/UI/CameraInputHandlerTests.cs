@@ -3,12 +3,13 @@ using System.Reflection;
 using Fram3d.Core.Camera;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
+using Fram3d.UI.Panels;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.TestTools;
-using SysVector3 = System.Numerics.Vector3;
+using UnityEngine.UIElements;
 
 namespace Fram3d.Tests.UI
 {
@@ -382,6 +383,169 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._mouse, new MouseState());
 
             Assert.AreNotEqual(posBefore, this._cam.Position);
+        }
+
+        // --- Scroll bleed momentum guard (150ms cooldown) ---
+
+        [UnityTest]
+        public IEnumerator ScrollBleed__BlocksMomentumScroll__When__WithinCooldownPeriod()
+        {
+            yield return null;
+
+            this._cam = this._behaviour.CameraElement;
+            this._cam.SetLensSet(new LensSet("Zoom", 24f, 200f, false, 1.0f));
+            this._cam.SetFocalLengthPreset(50f);
+
+            // Wait for any stale momentum from previous tests to expire
+            yield return new WaitForSeconds(0.3f);
+
+            // Modifier+scroll to set _lastModifierScrollTime
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl));
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { scroll = new Vector2(0, 5f) });
+            yield return null;
+
+            // Release modifier, clear scroll
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+            yield return null;
+
+            var flAfterModifier = this._cam.FocalLength;
+
+            // Immediately send unmodified scroll — should be BLOCKED (within 150ms)
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { scroll = new Vector2(0, 5f) });
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+
+            Assert.AreEqual(flAfterModifier, this._cam.FocalLength, 0.001f,
+                "Unmodified scroll should be blocked within momentum cooldown");
+        }
+
+        [UnityTest]
+        public IEnumerator ScrollBleed__AllowsScroll__When__AfterCooldownExpires()
+        {
+            yield return null;
+
+            this._cam = this._behaviour.CameraElement;
+            this._cam.SetLensSet(new LensSet("Zoom", 24f, 200f, false, 1.0f));
+            this._cam.SetFocalLengthPreset(50f);
+
+            // Wait for any stale momentum
+            yield return new WaitForSeconds(0.3f);
+
+            // Modifier+scroll to set _lastModifierScrollTime
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl));
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { scroll = new Vector2(0, 5f) });
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+            yield return null;
+
+            var flBefore = this._cam.FocalLength;
+
+            // Wait for cooldown to expire (150ms + 50ms margin)
+            yield return new WaitForSeconds(0.2f);
+
+            // Now unmodified scroll should pass through
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { scroll = new Vector2(0, 5f) });
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+
+            Assert.AreNotEqual(flBefore, this._cam.FocalLength,
+                "Unmodified scroll should work after cooldown expires");
+        }
+
+        // --- HasFocusedTextField guard (typing in search shouldn't trigger shortcuts) ---
+
+        [UnityTest]
+        public IEnumerator HasFocusedTextField__BlocksKeyboardShortcuts__When__SearchFieldOpen()
+        {
+            yield return null;
+
+            this._cam = this._behaviour.CameraElement;
+
+            // Create a PropertiesPanelView and wire it to the handler
+            var panelGo    = new GameObject("TestPanel");
+            var uiDocument = panelGo.AddComponent<UIDocument>();
+
+            var guids = UnityEditor.AssetDatabase.FindAssets("t:PanelSettings");
+
+            if (guids.Length > 0)
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                uiDocument.panelSettings = UnityEditor.AssetDatabase.LoadAssetAtPath<PanelSettings>(path);
+            }
+
+            var panel = panelGo.AddComponent<PropertiesPanelView>();
+
+            // Wire the propertiesPanel SerializeField
+            var panelField = typeof(CameraInputHandler).GetField("propertiesPanel",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            panelField.SetValue(this._handler, panel);
+
+            // Wait for panel to initialize
+            yield return null;
+            yield return null;
+
+            // Simulate a dropdown being open (HasFocusedTextField = true)
+            // Access the body section's dropdown and open it
+            var bodySectionField = typeof(PropertiesPanelView).GetField("_bodySection",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var bodySection = bodySectionField?.GetValue(panel);
+
+            if (bodySection == null)
+            {
+                Object.DestroyImmediate(panelGo);
+                Assert.Inconclusive("Could not access body section for focus test");
+                yield break;
+            }
+
+            // CameraBodySection wraps a SearchableDropdown — open it to set HasFocus = true
+            var dropdownField = bodySection.GetType().GetField("_dropdown",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var dropdown = dropdownField?.GetValue(bodySection);
+
+            if (dropdown == null)
+            {
+                Object.DestroyImmediate(panelGo);
+                Assert.Inconclusive("Could not access dropdown for focus test");
+                yield break;
+            }
+
+            // Open the dropdown (sets HasFocus = true)
+            var openMethod = dropdown.GetType().GetMethod("Open",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            openMethod.Invoke(dropdown, null);
+            yield return null;
+
+            var before = this._cam.ActiveAspectRatio;
+
+            // Press A — should NOT cycle aspect ratio because search field has focus
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.A));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+
+            Assert.AreSame(before, this._cam.ActiveAspectRatio,
+                "A key should not cycle aspect ratio when search field has focus");
+
+            // Close dropdown and verify A key works again
+            var closeMethod = dropdown.GetType().GetMethod("Close",
+                BindingFlags.Public | BindingFlags.Instance);
+            closeMethod.Invoke(dropdown, null);
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.A));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+
+            Assert.AreNotSame(before, this._cam.ActiveAspectRatio,
+                "A key should cycle aspect ratio after search field closes");
+
+            Object.DestroyImmediate(panelGo);
         }
     }
 }

@@ -107,11 +107,7 @@ namespace Fram3d.UI.Views
             if (this._container == null || this._cameraBehaviour == null)
                 return;
 
-            // Constrain overlay to the available viewport (exclude properties panel)
-            var panelWidth = this._cameraBehaviour.AvailableViewportWidth < 1f
-                ? Screen.width * (1f - this._cameraBehaviour.AvailableViewportWidth)
-                : 0f;
-            this._container.style.right = panelWidth;
+            this._container.style.right = this._cameraBehaviour.RightInsetPixels;
 
             var viewWidth  = this._container.resolvedStyle.width;
             var viewHeight = this._container.resolvedStyle.height;

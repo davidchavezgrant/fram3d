@@ -68,7 +68,7 @@ namespace Fram3d.Engine.Integration
             this.SyncDof(cam);
             this._unityCamera.focalLength = this._displayedFocalLength;
             this._unityCamera.sensorSize  = new Vector2(cam.SensorWidth, cam.SensorHeight);
-            this.SyncViewportRect(cam);
+            this.SyncViewportRect();
             this.ApplyShake(cam);
         }
 
@@ -96,10 +96,10 @@ namespace Fram3d.Engine.Integration
         }
 
         /// <summary>
-        /// The normalized width of the viewport available after subtracting any
-        /// right-side inset (e.g., properties panel). 1.0 when no inset.
+        /// The right-side inset in pixels reserved for the properties panel.
+        /// Overlay views read this to constrain their containers.
         /// </summary>
-        public float AvailableViewportWidth { get; private set; } = 1f;
+        public float RightInsetPixels => this._rightInsetPixels;
 
         /// <summary>
         /// Called by the UI layer to reserve screen space on the right side.
@@ -107,26 +107,20 @@ namespace Fram3d.Engine.Integration
         /// </summary>
         public void SetRightInset(float pixels) => this._rightInsetPixels = pixels;
 
-        private void SyncViewportRect(CameraElement cam)
+        private void SyncViewportRect()
         {
-            var screenWidth  = (float)Screen.width;
-            var screenHeight = (float)Screen.height;
+            var screenWidth = (float)Screen.width;
 
-            if (screenWidth <= 0 || screenHeight <= 0)
+            if (screenWidth <= 0)
+            {
+                this._unityCamera.rect = new Rect(0, 0, 1, 1);
                 return;
+            }
 
-            var availableWidth = screenWidth - this._rightInsetPixels;
-            this.AvailableViewportWidth = availableWidth / screenWidth;
-            var availableAspect = availableWidth / screenHeight;
-            var sensorAspect   = cam.SensorWidth / cam.SensorHeight;
-            var vp             = ViewportRect.Compute(sensorAspect, availableAspect);
-
-            // Scale and offset the viewport rect into the available area (left side of screen)
-            this._unityCamera.rect = new Rect(
-                vp.X * this.AvailableViewportWidth,
-                vp.Y,
-                vp.Width * this.AvailableViewportWidth,
-                vp.Height);
+            // Camera.rect only accounts for the panel inset.
+            // Sensor aspect masking is handled by the UI mask bars.
+            var availableWidth = (screenWidth - this._rightInsetPixels) / screenWidth;
+            this._unityCamera.rect = new Rect(0, 0, availableWidth, 1);
         }
 
         private void Awake()

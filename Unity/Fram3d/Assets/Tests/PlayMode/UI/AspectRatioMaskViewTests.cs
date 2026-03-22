@@ -95,8 +95,8 @@ namespace Fram3d.Tests.UI
                 yield break;
 
             // 4:3 on a wider screen → pillarbox: left and right bars have width > 0
-            var leftWidth  = bars.left.resolvedStyle.width;
-            var rightWidth = bars.right.resolvedStyle.width;
+            var leftWidth  = bars.Value.left.resolvedStyle.width;
+            var rightWidth = bars.Value.right.resolvedStyle.width;
 
             if (float.IsNaN(leftWidth))
                 yield break; // Layout not resolved yet, skip
@@ -105,7 +105,7 @@ namespace Fram3d.Tests.UI
             Assert.Greater(rightWidth, 0f, "Right bar should have width for pillarbox");
 
             // Top and bottom bars should have zero height (no letterbox)
-            Assert.AreEqual(0f, bars.top.resolvedStyle.height, 0.5f, "Top bar should have no height for pillarbox");
+            Assert.AreEqual(0f, bars.Value.top.resolvedStyle.height, 0.5f, "Top bar should have no height for pillarbox");
         }
 
         // --- Letterbox (2.39:1 on 16:9 screen) ---
@@ -128,8 +128,8 @@ namespace Fram3d.Tests.UI
             if (bars == null)
                 yield break;
 
-            var topHeight    = bars.top.resolvedStyle.height;
-            var bottomHeight = bars.bottom.resolvedStyle.height;
+            var topHeight    = bars.Value.top.resolvedStyle.height;
+            var bottomHeight = bars.Value.bottom.resolvedStyle.height;
 
             if (float.IsNaN(topHeight))
                 yield break;
@@ -138,7 +138,7 @@ namespace Fram3d.Tests.UI
             Assert.Greater(bottomHeight, 0f, "Bottom bar should have height for letterbox");
 
             // Left and right bars should have zero width (no pillarbox)
-            Assert.AreEqual(0f, bars.left.resolvedStyle.width, 0.5f, "Left bar should have no width for letterbox");
+            Assert.AreEqual(0f, bars.Value.left.resolvedStyle.width, 0.5f, "Left bar should have no width for letterbox");
         }
 
         // --- Bars are centered ---
@@ -161,8 +161,8 @@ namespace Fram3d.Tests.UI
             if (bars == null)
                 yield break;
 
-            var leftWidth  = bars.left.resolvedStyle.width;
-            var rightWidth = bars.right.resolvedStyle.width;
+            var leftWidth  = bars.Value.left.resolvedStyle.width;
+            var rightWidth = bars.Value.right.resolvedStyle.width;
 
             if (float.IsNaN(leftWidth))
                 yield break;
@@ -189,8 +189,8 @@ namespace Fram3d.Tests.UI
             if (bars == null)
                 yield break;
 
-            var topHeight    = bars.top.resolvedStyle.height;
-            var bottomHeight = bars.bottom.resolvedStyle.height;
+            var topHeight    = bars.Value.top.resolvedStyle.height;
+            var bottomHeight = bars.Value.bottom.resolvedStyle.height;
 
             if (float.IsNaN(topHeight))
                 yield break;
@@ -227,14 +227,14 @@ namespace Fram3d.Tests.UI
             var viewHeight = container.resolvedStyle.height;
 
             // Left bar + unmasked area + right bar should equal view width
-            var leftW    = bars.left.resolvedStyle.width;
-            var rightW   = bars.right.resolvedStyle.width;
+            var leftW    = bars.Value.left.resolvedStyle.width;
+            var rightW   = bars.Value.right.resolvedStyle.width;
             var unmaskedW = viewWidth - leftW - rightW;
             Assert.AreEqual(viewWidth, leftW + unmaskedW + rightW, 1f, "Bars + unmasked should fill width");
 
             // Top bar + unmasked area + bottom bar should equal view height
-            var topH     = bars.top.resolvedStyle.height;
-            var bottomH  = bars.bottom.resolvedStyle.height;
+            var topH     = bars.Value.top.resolvedStyle.height;
+            var bottomH  = bars.Value.bottom.resolvedStyle.height;
             var unmaskedH = viewHeight - topH - bottomH;
             Assert.AreEqual(viewHeight, topH + unmaskedH + bottomH, 1f, "Bars + unmasked should fill height");
         }

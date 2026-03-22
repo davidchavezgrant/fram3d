@@ -252,6 +252,7 @@ namespace Fram3d.Tests.UI
         public IEnumerator UpdateBars__TransitionsCorrectly__When__SwitchingFromPillarboxToLetterbox()
         {
             yield return null;
+            yield return null;
 
             var cam = this._behaviour.CameraElement;
 
@@ -259,6 +260,8 @@ namespace Fram3d.Tests.UI
             while (cam.ActiveAspectRatio != AspectRatio.RATIO_4_3)
                 this._behaviour.CycleAspectRatioForward();
 
+            // Extra frames for layout to settle after root size change
+            yield return null;
             yield return null;
             yield return null;
 

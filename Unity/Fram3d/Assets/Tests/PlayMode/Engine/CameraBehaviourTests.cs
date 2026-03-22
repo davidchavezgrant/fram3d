@@ -383,6 +383,164 @@ namespace Fram3d.Tests.Engine
             Assert.AreNotEqual(0f, rot.y);
         }
 
+        // --- Sensor mode → Unity Camera sync ---
+
+        [UnityTest]
+        public IEnumerator Sync__UpdatesSensorSize__When__SensorModeChanged()
+        {
+            yield return null;
+
+            var cam      = this._behaviour.CameraElement;
+            var openGate = new SensorMode("Open Gate", 4448, 3096, 36.70f, 25.54f, 40);
+            var crop     = new SensorMode("16:9", 4448, 2502, 36.70f, 20.64f, 60);
+            var body     = new CameraBody("Test LF", "Test", 2020, 36.70f, 25.54f, "LF", "",
+                new[] { 4448, 3096 }, new[] { 24 }, new[] { openGate, crop });
+            cam.SetBody(body);
+            cam.SetSensorMode(openGate);
+            yield return null;
+
+            var sensorBefore = this._camera.sensorSize;
+
+            cam.SetSensorMode(crop);
+            yield return null;
+
+            var sensorAfter = this._camera.sensorSize;
+            // Sensor size should change when mode changes
+            Assert.AreNotEqual(sensorBefore.y, sensorAfter.y, 0.1f);
+            // And should match Core's effective dims
+            Assert.AreEqual(cam.SensorWidth,  sensorAfter.x, 0.01f);
+            Assert.AreEqual(cam.SensorHeight, sensorAfter.y, 0.01f);
+        }
+
+        [UnityTest]
+        public IEnumerator Sync__UpdatesViewportRect__When__SensorModeChanged()
+        {
+            yield return null;
+
+            var cam      = this._behaviour.CameraElement;
+            // Use Full Screen so viewport rect is driven by sensor mode, not delivery ratio
+            while (cam.ActiveAspectRatio != AspectRatio.FULL_SCREEN)
+                this._behaviour.CycleAspectRatioBackward();
+
+            var openGate = new SensorMode("Open Gate", 4448, 3096, 36.70f, 25.54f, 40);
+            var body     = new CameraBody("Test LF", "Test", 2020, 36.70f, 25.54f, "LF", "",
+                new[] { 4448, 3096 }, new[] { 24 }, new[] { openGate });
+            cam.SetBody(body);
+            cam.SetSensorMode(openGate);
+            yield return null;
+
+            // Open gate is ~1.44:1, most screens are 16:9 → pillarbox
+            var rect = this._camera.rect;
+            Assert.Less(rect.width, 1f);
+        }
+
+        // --- Lens set switch → focal length ---
+
+        [UnityTest]
+        public IEnumerator Sync__UpdatesFocalLength__When__LensSetSwitched()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            cam.SetFocalLengthPreset(200f);
+            yield return null;
+
+            // Switch to a zoom lens that maxes out at 70mm — should clamp
+            cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+            yield return null;
+
+            Assert.AreEqual(70f, this._camera.focalLength, 0.01f);
+        }
+
+        // --- Full Screen viewport ---
+
+        [UnityTest]
+        public IEnumerator Sync__FullViewport__When__FullScreenAspectRatio()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            while (cam.ActiveAspectRatio != AspectRatio.FULL_SCREEN)
+                this._behaviour.CycleAspectRatioBackward();
+
+            yield return null;
+
+            // Full Screen with no sensor mode on a 16:9 body → sensor matches screen → full viewport
+            var rect = this._camera.rect;
+            Assert.AreEqual(0f, rect.x, 0.01f);
+            Assert.AreEqual(0f, rect.y, 0.01f);
+        }
+
+        // --- Shake disabled → exact rotation match ---
+
+        [UnityTest]
+        public IEnumerator Sync__RotationMatchesCore__When__ShakeDisabled()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            cam.Pan(0.4f);
+            cam.Tilt(0.2f);
+            cam.ShakeEnabled = false;
+            yield return null;
+
+            // With shake off, Unity rotation should exactly match converted Core rotation
+            var coreRot  = cam.Rotation;
+            var unityRot = this._go.transform.rotation;
+            // Conversion: X negated, Y negated, Z preserved, W preserved
+            Assert.AreEqual(-coreRot.X, unityRot.x, 0.001f);
+            Assert.AreEqual(-coreRot.Y, unityRot.y, 0.001f);
+            Assert.AreEqual(coreRot.Z,  unityRot.z, 0.001f);
+            Assert.AreEqual(coreRot.W,  unityRot.w, 0.001f);
+        }
+
+        // --- Compound workflow ---
+
+        [UnityTest]
+        public IEnumerator Sync__AllPropertiesConsistent__When__BodyModeAndRatioChanged()
+        {
+            yield return null;
+
+            var cam      = this._behaviour.CameraElement;
+            var openGate = new SensorMode("Open Gate", 5120, 2700, 29.90f, 15.77f, 60);
+            var body     = new CameraBody("RED DSMC2", "RED", 2016, 29.90f, 15.77f, "S35", "RF",
+                new[] { 5120, 2700 }, new[] { 24 }, new[] { openGate });
+
+            // Change all three inputs
+            cam.SetBody(body);
+            cam.SetSensorMode(openGate);
+            while (cam.ActiveAspectRatio != AspectRatio.RATIO_239_1)
+                this._behaviour.CycleAspectRatioForward();
+
+            yield return null;
+
+            // Unity Camera should reflect all changes
+            var sensor = this._camera.sensorSize;
+            Assert.AreEqual(cam.SensorWidth,  sensor.x, 0.01f);
+            Assert.AreEqual(cam.SensorHeight, sensor.y, 0.01f);
+
+            // Viewport rect should be constrained (2.39:1 on ~1.9:1 gate → letterbox)
+            var rect = this._camera.rect;
+            Assert.Less(rect.height, 1f);
+        }
+
+        // --- Tilt rotation conversion ---
+
+        [UnityTest]
+        public IEnumerator Sync__ConvertsRotation__When__CameraTilted()
+        {
+            yield return null;
+
+            this._behaviour.CameraElement.Tilt(0.5f);
+            yield return null;
+
+            // Tilt rotates around the local X axis. In the conversion, X is negated.
+            var rot = this._go.transform.rotation;
+            Assert.AreNotEqual(Quaternion.identity, rot);
+            // X component should be non-zero (tilt axis)
+            Assert.AreNotEqual(0f, rot.x);
+        }
+
         // --- Helpers ---
 
         private DepthOfField GetDof()

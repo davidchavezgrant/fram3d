@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Fram3d.Core.Camera;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
+using Fram3d.UI.Views;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -32,6 +33,9 @@ namespace Fram3d.UI.Input
 
         [SerializeField]
         private CameraBehaviour cameraBehaviour;
+
+        [SerializeField]
+        private CompositionGuideView compositionGuides;
 
         [SerializeField]
         private PropertiesPanelView propertiesPanel;
@@ -167,6 +171,33 @@ namespace Fram3d.UI.Input
             {
                 this._camera.ShakeEnabled = !this._camera.ShakeEnabled;
                 return;
+            }
+
+            if (keyboard.gKey.wasPressedThisFrame && this.compositionGuides != null)
+            {
+                if (!keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed && !keyboard.shiftKey.isPressed)
+                {
+                    this.compositionGuides.Settings.ToggleAll();
+                    return;
+                }
+
+                if (keyboard.shiftKey.isPressed && !keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed)
+                {
+                    this.compositionGuides.Settings.ToggleThirds();
+                    return;
+                }
+
+                if (keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed && !keyboard.shiftKey.isPressed)
+                {
+                    this.compositionGuides.Settings.ToggleCenterCross();
+                    return;
+                }
+
+                if (keyboard.altKey.isPressed && !keyboard.ctrlKey.isPressed && !keyboard.shiftKey.isPressed)
+                {
+                    this.compositionGuides.Settings.ToggleSafeZones();
+                    return;
+                }
             }
 
             // Number keys 1–9 = focal length presets

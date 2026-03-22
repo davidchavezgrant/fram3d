@@ -19,6 +19,7 @@ namespace Fram3d.Editor
         {
             SetupCamera();
             SetupAspectRatioMask();
+            SetupCompositionGuides();
             SetupPropertiesPanel();
             SetupGroundPlane();
             SetupReferenceObjects();
@@ -80,6 +81,41 @@ namespace Fram3d.Editor
                 maskGo.AddComponent<AspectRatioMaskView>();
 
             EditorUtility.SetDirty(maskGo);
+        }
+
+        private static void SetupCompositionGuides()
+        {
+            var guidesGo = GameObject.Find("Composition Guides");
+
+            if (guidesGo == null)
+                guidesGo = new GameObject("Composition Guides");
+
+            var uiDoc = guidesGo.GetComponent<UIDocument>();
+
+            if (uiDoc == null)
+            {
+                uiDoc               = guidesGo.AddComponent<UIDocument>();
+                uiDoc.panelSettings = GetOrCreatePanelSettings();
+            }
+
+            uiDoc.sortingOrder = 1;
+
+            if (guidesGo.GetComponent<CompositionGuideView>() == null)
+                guidesGo.AddComponent<CompositionGuideView>();
+
+            // Wire composition guides reference on the input handler
+            var cameraGo     = GameObject.Find("Main Camera");
+            var inputHandler = cameraGo.GetComponent<CameraInputHandler>();
+
+            if (inputHandler != null)
+            {
+                var so   = new SerializedObject(inputHandler);
+                var prop = so.FindProperty("compositionGuides");
+                prop.objectReferenceValue = guidesGo.GetComponent<CompositionGuideView>();
+                so.ApplyModifiedProperties();
+            }
+
+            EditorUtility.SetDirty(guidesGo);
         }
 
         private static void SetupCamera()
@@ -145,7 +181,7 @@ namespace Fram3d.Editor
                 panelUiDoc.panelSettings = GetOrCreatePanelSettings();
             }
 
-            panelUiDoc.sortingOrder = 1;
+            panelUiDoc.sortingOrder = 2;
 
             if (panelGo.GetComponent<PropertiesPanelView>() == null)
                 panelGo.AddComponent<PropertiesPanelView>();

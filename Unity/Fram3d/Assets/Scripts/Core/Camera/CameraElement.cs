@@ -5,10 +5,9 @@ namespace Fram3d.Core.Camera
 {
     public class CameraElement: Element
     {
-        private const           float          DEFAULT_SENSOR_HEIGHT = 18.66f;
-        private const           float          DEFAULT_SENSOR_WIDTH  = 24.89f;
-        private static readonly Vector3        DEFAULT_POSITION      = new(0f, 1.6f, 5f);
-        private readonly        LensController _lens                 = new();
+        private static readonly Vector3        DEFAULT_POSITION = new(0f, 1.6f, 5f);
+        private readonly        BodyController _body            = new();
+        private readonly        LensController _lens            = new();
 
         public CameraElement(ElementId id, string name): base(id, name)
         {
@@ -16,11 +15,11 @@ namespace Fram3d.Core.Camera
             this.Rotation = Quaternion.Identity;
         }
 
-        public AspectRatio ActiveAspectRatio { get; private set; } = AspectRatio.DEFAULT;
+        public AspectRatio ActiveAspectRatio => this._body.ActiveAspectRatio;
         public LensSet     ActiveLensSet     => this._lens.ActiveLensSet;
-        public SensorMode  ActiveSensorMode  { get; private set; }
+        public SensorMode  ActiveSensorMode  => this._body.ActiveSensorMode;
         public float       Aperture          => this._lens.Aperture;
-        public CameraBody  Body              { get; private set; }
+        public CameraBody  Body              => this._body.Body;
         public bool        CanDollyZoom      => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
         public bool        DofEnabled        { get; set; }
 
@@ -43,12 +42,12 @@ namespace Fram3d.Core.Camera
             set => this._lens.FocusDistance = value;
         }
 
-        public Vector3 OrbitPivotPoint { get; set; } = Vector3.Zero;
-        public float   SensorHeight    { get; private set; } = DEFAULT_SENSOR_HEIGHT;
-        public float   SensorWidth     { get; private set; } = DEFAULT_SENSOR_WIDTH;
-        public float   ShakeAmplitude  { get; set; } = 0.1f;
+        public Vector3 OrbitPivotPoint { get; set; }    = Vector3.Zero;
+        public float   SensorHeight    => this._body.SensorHeight;
+        public float   SensorWidth     => this._body.SensorWidth;
+        public float   ShakeAmplitude  { get; set; }    = 0.1f;
         public bool    ShakeEnabled    { get; set; }
-        public float   ShakeFrequency  { get; set; } = 1.0f;
+        public float   ShakeFrequency  { get; set; }    = 1.0f;
 
         /// <summary>
         /// When true, CameraBehaviour applies focal length instantly instead of lerping.
@@ -77,17 +76,8 @@ namespace Fram3d.Core.Camera
         /// </summary>
         private Vector3 LookDirection => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
 
-        public void CycleAspectRatioBackward()
-        {
-            this.ActiveAspectRatio = this.ActiveAspectRatio.Previous();
-            this.SyncEffectiveSensor();
-        }
-
-        public void CycleAspectRatioForward()
-        {
-            this.ActiveAspectRatio = this.ActiveAspectRatio.Next();
-            this.SyncEffectiveSensor();
-        }
+        public void CycleAspectRatioBackward() => this._body.CycleAspectRatioBackward();
+        public void CycleAspectRatioForward()  => this._body.CycleAspectRatioForward();
 
         /// <summary>
         /// Translate vertically along the world Y axis.
@@ -182,11 +172,7 @@ namespace Fram3d.Core.Camera
         /// Sets the camera body, updating sensor dimensions. FOV recalculates automatically.
         /// Focal length is preserved.
         /// </summary>
-        public void SetBody(CameraBody body)
-        {
-            this.Body = body;
-            this.SyncEffectiveSensor();
-        }
+        public void SetBody(CameraBody body) => this._body.SetBody(body);
 
         /// <summary>
         /// Sets focal length to a specific preset value, bypassing prime lens restrictions.
@@ -200,11 +186,7 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public void SetLensSet(LensSet lensSet) => this._lens.SetLensSet(lensSet);
 
-        public void SetSensorMode(SensorMode mode)
-        {
-            this.ActiveSensorMode = mode;
-            this.SyncEffectiveSensor();
-        }
+        public void SetSensorMode(SensorMode mode) => this._body.SetSensorMode(mode);
 
         public void StepApertureNarrower() => this._lens.StepApertureNarrower();
         public void StepApertureWider()    => this._lens.StepApertureWider();
@@ -251,51 +233,6 @@ namespace Fram3d.Core.Camera
             this.Rotation        = Quaternion.Identity;
             this.OrbitPivotPoint = Vector3.Zero;
             this._lens.Reset();
-        }
-
-        /// <summary>
-        /// Computes the effective sensor area from the active sensor mode and
-        /// the selected aspect ratio. When a mode lacks sensor_area_mm, the gate
-        /// width is derived from the first mode (open gate) scaled by resolution —
-        /// this handles sensor-windowed crop modes (RED, ARRI, Blackmagic).
-        /// </summary>
-        private void SyncEffectiveSensor()
-        {
-            var mode      = this.ActiveSensorMode;
-            var body      = this.Body;
-            var gateWidth = body != null ? body.ComputeGateWidth(mode) : DEFAULT_SENSOR_WIDTH;
-
-            // The gate ratio comes from the RESOLUTION (what the mode actually outputs),
-            // not from the physical sensor dimensions. Many cameras (DSLRs, mirrorless)
-            // have a photo sensor wider than their video active area.
-            var gateRatio = mode != null && mode.ResolutionWidth > 0 && mode.ResolutionHeight > 0
-                ? (float)mode.ResolutionWidth / mode.ResolutionHeight
-                : gateWidth / (mode != null && mode.SensorAreaHeightMm > 0
-                    ? mode.SensorAreaHeightMm
-                    : body?.SensorHeightMm ?? DEFAULT_SENSOR_HEIGHT);
-
-            var gateHeight = gateWidth / gateRatio;
-            var ratio      = this.ActiveAspectRatio;
-
-            if (ratio.Value == null)
-            {
-                this.SensorWidth  = gateWidth;
-                this.SensorHeight = gateHeight;
-                return;
-            }
-
-            var deliveryRatio = ratio.Value.Value;
-
-            if (deliveryRatio > gateRatio)
-            {
-                this.SensorWidth  = gateWidth;
-                this.SensorHeight = gateWidth / deliveryRatio;
-            }
-            else
-            {
-                this.SensorWidth  = gateHeight * deliveryRatio;
-                this.SensorHeight = gateHeight;
-            }
         }
     }
 }

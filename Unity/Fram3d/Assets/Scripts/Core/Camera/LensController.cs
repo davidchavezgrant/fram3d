@@ -4,8 +4,7 @@ namespace Fram3d.Core.Camera
     /// <summary>
     /// Manages focal length, aperture, focus distance, and lens set selection.
     /// Owns all lens-related state — CameraElement delegates lens operations through this.
-    /// Does NOT own sensor dimensions or camera body — those belong to CameraElement
-    /// because they are properties of the camera, not the lens.
+    /// Does NOT own sensor dimensions or camera body — those belong to BodyController.
     /// </summary>
     public sealed class LensController
     {

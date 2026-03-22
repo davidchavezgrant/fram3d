@@ -17,14 +17,13 @@ namespace Fram3d.Engine.Integration
         private       float          _displayedFocalLength;
         private       DepthOfField   _dof;
         private       Camera         _unityCamera;
-        public        AspectRatio    ActiveAspectRatio => this._cameraElement.ActiveAspectRatio;
-        public        SensorMode     ActiveSensorMode  => this._cameraElement.ActiveSensorMode;
-        public        CameraElement  CameraElement     => this._cameraElement;
-        public        CameraDatabase Database          => this._database;
-
-        public void CycleAspectRatioBackward() => this._cameraElement.CycleAspectRatioBackward();
-        public void CycleAspectRatioForward()  => this._cameraElement.CycleAspectRatioForward();
-        public void SetSensorMode(SensorMode mode) => this._cameraElement.SetSensorMode(mode);
+        public        AspectRatio    ActiveAspectRatio              => this._cameraElement.ActiveAspectRatio;
+        public        SensorMode     ActiveSensorMode               => this._cameraElement.ActiveSensorMode;
+        public        CameraElement  CameraElement                  => this._cameraElement;
+        public        CameraDatabase Database                       => this._database;
+        public        void           CycleAspectRatioBackward()     => this._cameraElement.CycleAspectRatioBackward();
+        public        void           CycleAspectRatioForward()      => this._cameraElement.CycleAspectRatioForward();
+        public        void           SetSensorMode(SensorMode mode) => this._cameraElement.SetSensorMode(mode);
 
         private void ApplyShake(CameraElement cam)
         {

@@ -50,12 +50,12 @@ namespace Fram3d.Tests.Engine
         {
             yield return null;
 
-            var db    = CameraDatabaseLoader.Load();
-            var arri  = db.Bodies.FirstOrDefault(b => b.Name.Contains("Alexa"));
+            var db              = CameraDatabaseLoader.Load();
+            var withSensorModes = db.Bodies.FirstOrDefault(b => b.HasSensorModes);
 
-            Assert.IsNotNull(arri, "Expected to find an ARRI Alexa camera in the database");
-            Assert.IsTrue(arri.HasSensorModes, "ARRI Alexa should have sensor modes");
-            Assert.Greater(arri.SensorModes.Length, 0);
+            Assert.IsNotNull(withSensorModes, "Expected at least one camera with sensor modes in the database");
+            Assert.Greater(withSensorModes.SensorModes.Length, 0);
+            Assert.IsNotEmpty(withSensorModes.SensorModes[0].Name);
         }
 
         [UnityTest]

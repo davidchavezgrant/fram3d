@@ -156,11 +156,13 @@ namespace Fram3d.Tests.Engine
             this._behaviour.CameraElement.Dolly(3.0f);
             yield return null;
 
+            // System.Numerics is right-handed (-Z forward), Unity is left-handed (+Z forward).
+            // ToUnity() negates Z, so compare against the converted position.
             var expected = this._behaviour.CameraElement.Position;
             var actual   = this._go.transform.position;
-            Assert.AreEqual(expected.X, actual.x, 0.01f);
-            Assert.AreEqual(expected.Y, actual.y, 0.01f);
-            Assert.AreEqual(expected.Z, actual.z, 0.01f);
+            Assert.AreEqual(expected.X,  actual.x, 0.01f);
+            Assert.AreEqual(expected.Y,  actual.y, 0.01f);
+            Assert.AreEqual(-expected.Z, actual.z, 0.01f);
         }
 
         // --- Pass-through methods ---

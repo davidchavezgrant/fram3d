@@ -29,13 +29,13 @@ namespace Fram3d.Core.Camera
         }
 
         public string       Format              { get; }
-        public bool         HasSensorModes       => this.SensorModes.Length > 0;
+        public bool         HasSensorModes      => this.SensorModes.Length > 0;
         public string       Manufacturer        { get; }
         public string       Mount               { get; }
         public string       Name                { get; }
         public int[]        NativeResolution    { get; }
         public float        SensorHeightMm      { get; }
-        public SensorMode[] SensorModes          { get; }
+        public SensorMode[] SensorModes         { get; }
         public float        SensorWidthMm       { get; }
         public int[]        SupportedFrameRates { get; }
         public int          Year                { get; }

@@ -12,13 +12,13 @@ namespace Fram3d.Core.Camera
                        bool       isAnamorphic,
                        float      squeezeFactor)
         {
-            this.CloseFocusM    = specs.Length > 0 ? specs.Where(s => s.CloseFocusM > 0).Select(s => s.CloseFocusM).DefaultIfEmpty(0f).Min() : 0f;
+            this.CloseFocusM    = specs.Length > 0? specs.Where(s => s.CloseFocusM > 0).Select(s => s.CloseFocusM).DefaultIfEmpty(0f).Min() : 0f;
             this.FocalLengths   = specs.Select(s => s.FocalLength).ToArray();
             this.IsAnamorphic   = isAnamorphic;
             this.IsZoom         = false;
-            this.MaxAperture    = specs.Length > 0 ? specs.Where(s => s.MaxAperture > 0).Select(s => s.MaxAperture).DefaultIfEmpty(0f).Min() : 0f;
-            this.MaxFocalLength = this.FocalLengths.Length > 0 ? this.FocalLengths[this.FocalLengths.Length - 1] : 0;
-            this.MinFocalLength = this.FocalLengths.Length > 0 ? this.FocalLengths[0] : 0;
+            this.MaxAperture    = specs.Length > 0? specs.Where(s => s.MaxAperture > 0).Select(s => s.MaxAperture).DefaultIfEmpty(0f).Min() : 0f;
+            this.MaxFocalLength = this.FocalLengths.Length > 0? this.FocalLengths[this.FocalLengths.Length - 1] : 0;
+            this.MinFocalLength = this.FocalLengths.Length > 0? this.FocalLengths[0] : 0;
             this.Name           = name;
             this.Specs          = specs;
             this.SqueezeFactor  = squeezeFactor;
@@ -33,13 +33,10 @@ namespace Fram3d.Core.Camera
                        bool    isAnamorphic,
                        float   squeezeFactor,
                        float   maxAperture = 0f,
-                       float   closeFocusM = 0f)
-            : this(name,
-                   focalLengths.Select(f => new LensSpec(f, maxAperture, closeFocusM)).ToArray(),
-                   isAnamorphic,
-                   squeezeFactor)
-        {
-        }
+                       float   closeFocusM = 0f): this(name,
+                                                       focalLengths.Select(f => new LensSpec(f, maxAperture, closeFocusM)).ToArray(),
+                                                       isAnamorphic,
+                                                       squeezeFactor) {}
 
         /// <summary>
         /// Creates a zoom lens set from a continuous focal range.
@@ -81,16 +78,16 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public float MaxAperture { get; }
 
-        public float      MaxFocalLength { get; }
-        public float      MinFocalLength { get; }
-        public string     Name           { get; }
+        public float  MaxFocalLength { get; }
+        public float  MinFocalLength { get; }
+        public string Name           { get; }
 
         /// <summary>
         /// Per-lens specs for prime sets. Empty for zoom sets.
         /// Ordered by focal length (shortest to longest).
         /// </summary>
-        public LensSpec[] Specs          { get; }
+        public LensSpec[] Specs { get; }
 
-        public float      SqueezeFactor  { get; }
+        public float SqueezeFactor { get; }
     }
 }

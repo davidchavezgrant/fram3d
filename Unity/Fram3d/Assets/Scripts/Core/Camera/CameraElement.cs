@@ -21,7 +21,6 @@ namespace Fram3d.Core.Camera
         public CameraBody Body          { get; private set; }
         public bool       CanDollyZoom  => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
         public bool       DofEnabled    { get; set; }
-        public bool       FocusAtInfinity => this._lens.FocusAtInfinity;
 
         /// <summary>
         /// Current focal length in mm. Setting this value respects lens constraints:
@@ -34,18 +33,20 @@ namespace Fram3d.Core.Camera
             set => this._lens.SetFocalLength(value);
         }
 
+        public bool FocusAtInfinity => this._lens.FocusAtInfinity;
+
         public float FocusDistance
         {
             get => this._lens.FocusDistance;
             set => this._lens.FocusDistance = value;
         }
 
-        public Vector3 OrbitPivotPoint  { get; set; }         = Vector3.Zero;
-        public float SensorHeight { get; set; } = DEFAULT_SENSOR_HEIGHT;
-        public float SensorWidth  { get; set; } = DEFAULT_SENSOR_WIDTH;
-        public float   ShakeAmplitude   { get; set; }         = 0.1f;
-        public bool    ShakeEnabled     { get; set; }
-        public float   ShakeFrequency   { get; set; }         = 1.0f;
+        public Vector3 OrbitPivotPoint { get; set; } = Vector3.Zero;
+        public float   SensorHeight    { get; set; } = DEFAULT_SENSOR_HEIGHT;
+        public float   SensorWidth     { get; set; } = DEFAULT_SENSOR_WIDTH;
+        public float   ShakeAmplitude  { get; set; } = 0.1f;
+        public bool    ShakeEnabled    { get; set; }
+        public float   ShakeFrequency  { get; set; } = 1.0f;
 
         /// <summary>
         /// When true, CameraBehaviour applies focal length instantly instead of lerping.
@@ -153,19 +154,6 @@ namespace Fram3d.Core.Camera
         }
 
         /// <summary>
-        /// Restore camera to default position, rotation, and focal length.
-        /// Preserves camera body, lens set, and DOF settings — reset reframes the shot,
-        /// it doesn't change the equipment.
-        /// </summary>
-        public void Reset()
-        {
-            this.Position        = DEFAULT_POSITION;
-            this.Rotation        = Quaternion.Identity;
-            this.OrbitPivotPoint = Vector3.Zero;
-            this._lens.Reset();
-        }
-
-        /// <summary>
         /// Rotate around the camera's local forward axis.
         /// Positive amount tilts the top of the frame rightward (clockwise from camera's perspective).
         /// </summary>
@@ -231,6 +219,19 @@ namespace Fram3d.Core.Camera
         {
             var right = Vector3.Transform(Vector3.UnitX, this.Rotation);
             this.Position += right * amount;
+        }
+
+        /// <summary>
+        /// Restore camera to default position, rotation, and focal length.
+        /// Preserves camera body, lens set, and DOF settings — reset reframes the shot,
+        /// it doesn't change the equipment.
+        /// </summary>
+        public void Reset()
+        {
+            this.Position        = DEFAULT_POSITION;
+            this.Rotation        = Quaternion.Identity;
+            this.OrbitPivotPoint = Vector3.Zero;
+            this._lens.Reset();
         }
     }
 }

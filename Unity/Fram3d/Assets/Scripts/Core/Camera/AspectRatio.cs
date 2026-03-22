@@ -9,15 +9,15 @@ namespace Fram3d.Core.Camera
     public sealed class AspectRatio
     {
         public static readonly AspectRatio FULL_SCREEN = new("Full Screen", null);
-        public static readonly AspectRatio RATIO_16_9  = new("16:9",       16f / 9f);
-        public static readonly AspectRatio RATIO_16_10 = new("16:10",      16f / 10f);
-        public static readonly AspectRatio RATIO_185_1 = new("1.85:1",     1.85f);
-        public static readonly AspectRatio RATIO_2_1   = new("2:1",        2f);
-        public static readonly AspectRatio RATIO_235_1 = new("2.35:1",     2.35f);
-        public static readonly AspectRatio RATIO_239_1 = new("2.39:1",     2.39f);
-        public static readonly AspectRatio RATIO_4_3   = new("4:3",        4f / 3f);
-        public static readonly AspectRatio RATIO_1_1   = new("1:1",        1f);
-        public static readonly AspectRatio RATIO_9_16  = new("9:16",       9f / 16f);
+        public static readonly AspectRatio RATIO_1_1   = new("1:1", 1f);
+        public static readonly AspectRatio RATIO_16_10 = new("16:10", 16f / 10f);
+        public static readonly AspectRatio RATIO_16_9  = new("16:9", 16f  / 9f);
+        public static readonly AspectRatio RATIO_185_1 = new("1.85:1", 1.85f);
+        public static readonly AspectRatio RATIO_2_1   = new("2:1", 2f);
+        public static readonly AspectRatio RATIO_235_1 = new("2.35:1", 2.35f);
+        public static readonly AspectRatio RATIO_239_1 = new("2.39:1", 2.39f);
+        public static readonly AspectRatio RATIO_4_3   = new("4:3", 4f  / 3f);
+        public static readonly AspectRatio RATIO_9_16  = new("9:16", 9f / 16f);
 
         public static readonly AspectRatio[] ALL =
         {
@@ -46,7 +46,10 @@ namespace Fram3d.Core.Camera
         public UnmaskedRect ComputeUnmaskedRect(float viewWidth, float viewHeight, SensorMode activeSensorMode = null)
         {
             if (viewWidth <= 0f || viewHeight <= 0f)
-                return new UnmaskedRect(0f, 0f, viewWidth, viewHeight);
+                return new UnmaskedRect(0f,
+                                        0f,
+                                        viewWidth,
+                                        viewHeight);
 
             float targetRatio;
 
@@ -63,26 +66,40 @@ namespace Fram3d.Core.Camera
             else
             {
                 // Full Screen without sensor mode → no bars
-                return new UnmaskedRect(0f, 0f, viewWidth, viewHeight);
+                return new UnmaskedRect(0f,
+                                        0f,
+                                        viewWidth,
+                                        viewHeight);
             }
 
             var viewRatio = viewWidth / viewHeight;
 
             if (targetRatio > viewRatio)
             {
-                var height = viewWidth / targetRatio;
+                var height = viewWidth             / targetRatio;
                 var y      = (viewHeight - height) / 2f;
-                return new UnmaskedRect(0f, y, viewWidth, height);
+
+                return new UnmaskedRect(0f,
+                                        y,
+                                        viewWidth,
+                                        height);
             }
 
             if (targetRatio < viewRatio)
             {
-                var width = viewHeight * targetRatio;
+                var width = viewHeight          * targetRatio;
                 var x     = (viewWidth - width) / 2f;
-                return new UnmaskedRect(x, 0f, width, viewHeight);
+
+                return new UnmaskedRect(x,
+                                        0f,
+                                        width,
+                                        viewHeight);
             }
 
-            return new UnmaskedRect(0f, 0f, viewWidth, viewHeight);
+            return new UnmaskedRect(0f,
+                                    0f,
+                                    viewWidth,
+                                    viewHeight);
         }
 
         public AspectRatio Next()
@@ -100,9 +117,13 @@ namespace Fram3d.Core.Camera
         public override string ToString() => this.DisplayName;
     }
 
+
     public readonly struct UnmaskedRect
     {
-        public UnmaskedRect(float x, float y, float width, float height)
+        public UnmaskedRect(float x,
+                            float y,
+                            float width,
+                            float height)
         {
             this.X      = x;
             this.Y      = y;

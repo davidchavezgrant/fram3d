@@ -50,9 +50,9 @@ namespace Fram3d.Editor
             EditorGUILayout.LabelField("Lens Set",      cam.ActiveLensSet?.Name ?? "(none)");
             EditorGUILayout.LabelField("Focal Length",  $"{cam.FocalLength:F1} mm");
             EditorGUILayout.LabelField("Vertical FOV",  $"{cam.VerticalFov * Mathf.Rad2Deg:F1}°");
-            var focusDist = cam.FocusAtInfinity ? "\u221E" : $"{cam.FocusDistance:F1}m";
-            EditorGUILayout.LabelField("DOF",           cam.DofEnabled ? $"ON  f/{cam.Aperture:G}  @ {focusDist}" : "OFF");
-            EditorGUILayout.LabelField("Shake",         cam.ShakeEnabled ? $"ON  amp:{cam.ShakeAmplitude:F2}  freq:{cam.ShakeFrequency:F1}" : "OFF");
+            var focusDist = cam.FocusAtInfinity? "\u221E" : $"{cam.FocusDistance:F1}m";
+            EditorGUILayout.LabelField("DOF",   cam.DofEnabled? $"ON  f/{cam.Aperture:G}  @ {focusDist}" : "OFF");
+            EditorGUILayout.LabelField("Shake", cam.ShakeEnabled? $"ON  amp:{cam.ShakeAmplitude:F2}  freq:{cam.ShakeFrequency:F1}" : "OFF");
             EditorGUILayout.Space();
         }
 

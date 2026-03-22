@@ -3,6 +3,8 @@ using Fram3d.Core.Camera;
 using Fram3d.Engine.Integration;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.TestTools;
 
 namespace Fram3d.Tests.Engine
@@ -187,6 +189,199 @@ namespace Fram3d.Tests.Engine
             this._behaviour.SetSensorMode(mode);
 
             Assert.AreSame(mode, this._behaviour.ActiveSensorMode);
+        }
+
+        // --- FRA-37: Dolly zoom snap (prevents jitter from lerp/position desync) ---
+
+        [UnityTest]
+        public IEnumerator DollyZoom__FocalLengthMatchesTarget__When__Applied()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            cam.FocalLength = 50f;
+            cam.DollyZoom(2.0f);
+            yield return null;
+
+            // DollyZoom sets SnapFocalLength — focal length should match Core value
+            // exactly after one frame, not be mid-lerp (the jitter bug from FRA-37)
+            Assert.AreEqual(cam.FocalLength, this._camera.focalLength, 0.01f);
+        }
+
+        [UnityTest]
+        public IEnumerator DollyZoom__SnapFlagConsumed__When__SyncRuns()
+        {
+            yield return null;
+
+            this._behaviour.CameraElement.DollyZoom(1.0f);
+            yield return null;
+
+            // Snap flag should be cleared after Sync consumes it
+            Assert.IsFalse(this._behaviour.CameraElement.SnapFocalLength);
+        }
+
+        // --- FRA-38: Focal length lerp convergence ---
+
+        [UnityTest]
+        public IEnumerator SyncFocalLength__ConvergesToTarget__When__LerpingOverFrames()
+        {
+            yield return null;
+
+            // Change focal length without snap — should lerp
+            this._behaviour.CameraElement.FocalLength = 135f;
+            // Wait several frames for lerp to converge
+            for (var i = 0; i < 60; i++)
+                yield return null;
+
+            // Should have converged within 0.01mm (the snap threshold in SyncFocalLength)
+            Assert.AreEqual(135f, this._camera.focalLength, 0.01f);
+        }
+
+        // --- DOF wiring ---
+
+        [UnityTest]
+        public IEnumerator SyncDof__SetsBokehMode__When__DofEnabled()
+        {
+            yield return null;
+
+            this._behaviour.CameraElement.DofEnabled = true;
+            yield return null;
+
+            var dof = GetDof();
+            Assert.IsNotNull(dof, "DepthOfField override not found on camera Volume");
+            Assert.AreEqual(DepthOfFieldMode.Bokeh, dof.mode.value);
+        }
+
+        [UnityTest]
+        public IEnumerator SyncDof__SetsOffMode__When__DofDisabled()
+        {
+            yield return null;
+
+            this._behaviour.CameraElement.DofEnabled = false;
+            yield return null;
+
+            var dof = GetDof();
+            Assert.IsNotNull(dof);
+            Assert.AreEqual(DepthOfFieldMode.Off, dof.mode.value);
+        }
+
+        [UnityTest]
+        public IEnumerator SyncDof__PropagatesAperture__When__ApertureChanged()
+        {
+            yield return null;
+
+            this._behaviour.CameraElement.DofEnabled = true;
+            this._behaviour.CameraElement.StepApertureWider(); // f/5.6 → f/4
+            yield return null;
+
+            var dof = GetDof();
+            Assert.AreEqual(this._behaviour.CameraElement.Aperture, dof.aperture.value, 0.01f);
+        }
+
+        [UnityTest]
+        public IEnumerator SyncDof__PropagatesFocusDistance__When__FocusChanged()
+        {
+            yield return null;
+
+            this._behaviour.CameraElement.DofEnabled = true;
+            this._behaviour.CameraElement.FocusDistance = 3.5f;
+            yield return null;
+
+            var dof = GetDof();
+            Assert.AreEqual(3.5f, dof.focusDistance.value, 0.01f);
+        }
+
+        // --- Shake: no drift (prior-codebase-lessons anti-pattern) ---
+
+        [UnityTest]
+        public IEnumerator Shake__DoesNotDriftBaseRotation__When__EnabledOverManyFrames()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            cam.Pan(0.3f); // set a known rotation
+            var baseRotation = cam.Rotation;
+
+            cam.ShakeEnabled   = true;
+            cam.ShakeAmplitude = 0.5f;
+            cam.ShakeFrequency = 2.0f;
+
+            // Run for many frames with shake
+            for (var i = 0; i < 120; i++)
+                yield return null;
+
+            // Core rotation should be unchanged — shake is applied in Engine only
+            Assert.AreEqual(baseRotation.X, cam.Rotation.X, 0.0001f);
+            Assert.AreEqual(baseRotation.Y, cam.Rotation.Y, 0.0001f);
+            Assert.AreEqual(baseRotation.Z, cam.Rotation.Z, 0.0001f);
+            Assert.AreEqual(baseRotation.W, cam.Rotation.W, 0.0001f);
+        }
+
+        // --- Reset integration ---
+
+        [UnityTest]
+        public IEnumerator Reset__PreservesSensorSize__When__BodyWasSet()
+        {
+            yield return null;
+
+            var body = new CameraBody("Large", "Test", 2020,
+                54.12f, 25.58f, "LF", "", new[] { 8192, 3840 }, new[] { 24 });
+            this._behaviour.CameraElement.SetBody(body);
+            yield return null;
+
+            this._behaviour.CameraElement.Reset();
+            yield return null;
+
+            // Reset reframes, doesn't change equipment — sensor should match body
+            var sensor = this._camera.sensorSize;
+            Assert.AreEqual(this._behaviour.CameraElement.SensorWidth,  sensor.x, 0.01f);
+            Assert.AreEqual(this._behaviour.CameraElement.SensorHeight, sensor.y, 0.01f);
+        }
+
+        [UnityTest]
+        public IEnumerator Reset__RestoresDefaultFocalLength__When__FocalLengthChanged()
+        {
+            yield return null;
+
+            this._behaviour.CameraElement.SetFocalLengthPreset(200f);
+            yield return null;
+
+            this._behaviour.CameraElement.Reset();
+            yield return null;
+
+            Assert.AreEqual(50f, this._camera.focalLength, 0.01f);
+        }
+
+        // --- Rotation coordinate conversion ---
+
+        [UnityTest]
+        public IEnumerator Sync__ConvertsRotation__When__CameraPanned()
+        {
+            yield return null;
+
+            this._behaviour.CameraElement.Pan(0.5f);
+            yield return null;
+
+            // After pan, Unity transform rotation should differ from identity
+            var rot = this._go.transform.rotation;
+            Assert.AreNotEqual(Quaternion.identity, rot);
+
+            // The Y component should be non-zero (pan rotates around Y)
+            // In the conversion, X and Y are negated, Z is preserved, W is preserved
+            Assert.AreNotEqual(0f, rot.y);
+        }
+
+        // --- Helpers ---
+
+        private DepthOfField GetDof()
+        {
+            var volume = this._go.GetComponent<Volume>();
+
+            if (volume == null || volume.profile == null)
+                return null;
+
+            volume.profile.TryGet(out DepthOfField dof);
+            return dof;
         }
     }
 }

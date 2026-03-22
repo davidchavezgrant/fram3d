@@ -637,6 +637,18 @@ namespace Fram3d.Core.Tests.Camera
 			cam.FocalLength.Should().Be(16f);
 		}
 
+		[Fact]
+		public void DollyZoom__SetsSnapFlag__When__FocalLengthChanges()
+		{
+			var cam = CreateCamera();
+			cam.OrbitPivotPoint = Vector3.Zero;
+			cam.SnapFocalLength = false;
+
+			cam.DollyZoom(0.5f);
+
+			cam.SnapFocalLength.Should().BeTrue();
+		}
+
 		// --- Camera Body (1.1.3) ---
 
 		[Fact]
@@ -976,6 +988,34 @@ namespace Fram3d.Core.Tests.Camera
 		{
 			var cam = CreateCamera();
 			cam.FocusDistance.Should().Be(10f);
+		}
+
+		[Fact]
+		public void FocusAtInfinity__ReturnsTrue__When__AtMaxDistance()
+		{
+			var cam = CreateCamera();
+			cam.FocusDistance = 100f;
+
+			cam.FocusAtInfinity.Should().BeTrue();
+		}
+
+		[Fact]
+		public void FocusAtInfinity__ReturnsFalse__When__BelowMaxDistance()
+		{
+			var cam = CreateCamera();
+			cam.FocusDistance = 99.9f;
+
+			cam.FocusAtInfinity.Should().BeFalse();
+		}
+
+		[Fact]
+		public void FocusDistance__ClampsToMax__When__SetAbove100m()
+		{
+			var cam = CreateCamera();
+
+			cam.FocusDistance = 500f;
+
+			cam.FocusDistance.Should().Be(100f);
 		}
 
 		[Fact]

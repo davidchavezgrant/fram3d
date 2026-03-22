@@ -227,8 +227,12 @@ namespace Fram3d.Tests.Engine
         {
             yield return null;
 
-            // Change focal length without snap — should lerp
-            this._behaviour.CameraElement.FocalLength = 135f;
+            // Need a zoom lens — prime lens blocks continuous FocalLength writes
+            var cam = this._behaviour.CameraElement;
+            cam.SetLensSet(new LensSet("Test Zoom", 24f, 200f, false, 1.0f));
+            cam.SnapFocalLength = false;
+
+            cam.FocalLength = 135f;
             // Wait several frames for lerp to converge
             for (var i = 0; i < 60; i++)
                 yield return null;

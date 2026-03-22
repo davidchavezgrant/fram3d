@@ -73,15 +73,21 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            if (mouse.middleButton.isPressed)
+            // Cmd+left click drag: pan/tilt (trackpad-friendly)
+            if ((keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed)
+             && mouse.leftButton.isPressed)
             {
                 this._camera.Pan(delta.x   * panSpeed);
                 this._camera.Tilt(-delta.y * panSpeed);
                 return;
             }
 
-            if (keyboard.altKey.isPressed && mouse.rightButton.isPressed)
-                this._camera.Dolly(delta.y * MovementSpeeds.DOLLY * dt);
+            // Middle mouse: pan/tilt (external mouse fallback)
+            if (mouse.middleButton.isPressed)
+            {
+                this._camera.Pan(delta.x   * panSpeed);
+                this._camera.Tilt(-delta.y * panSpeed);
+            }
         }
 
         // ── Event interception ─────────────────────────────────────────────

@@ -133,7 +133,7 @@ namespace Fram3d.UI.Panels
 
         private void Start()
         {
-            this._cameraBehaviour = FindObjectOfType<CameraBehaviour>();
+            this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
 
             if (this._cameraBehaviour == null)
             {

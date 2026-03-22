@@ -76,7 +76,7 @@ namespace Fram3d.Editor
 
         private void RefreshReferences()
         {
-            this._cameraBehaviour = FindObjectOfType<CameraBehaviour>();
+            this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
 
             if (this._cameraBehaviour != null)
                 this.BuildDropdowns(this._cameraBehaviour.Database);

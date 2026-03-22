@@ -47,6 +47,13 @@ namespace Fram3d.Tests.UI
             }
 
             this._uiDocument.panelSettings = panelSettings;
+
+            // Force a known size on the root so layout resolves to non-zero dimensions.
+            // Without this, the container resolves to 0×0 in the test environment.
+            var root = this._uiDocument.rootVisualElement;
+            root.style.width  = 1920;
+            root.style.height = 1080;
+
             this._maskView = this._uiGo.AddComponent<AspectRatioMaskView>();
         }
 

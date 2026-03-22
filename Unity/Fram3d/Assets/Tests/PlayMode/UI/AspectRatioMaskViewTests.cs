@@ -96,14 +96,14 @@ namespace Fram3d.Tests.UI
                 this._behaviour.CycleAspectRatioForward();
 
             yield return null;
-            yield return null;
 
             var bars = GetBars();
             Assert.IsNotNull(bars);
 
-            Assert.Greater(bars.Value.left.resolvedStyle.width,  0f, "Left bar should have width for pillarbox");
-            Assert.Greater(bars.Value.right.resolvedStyle.width, 0f, "Right bar should have width for pillarbox");
-            Assert.AreEqual(0f, bars.Value.top.resolvedStyle.height, 0.5f, "Top bar should have no height for pillarbox");
+            // Check style values set by UpdateBars (not resolvedStyle which is layout-dependent)
+            Assert.Greater(StyleValue(bars.Value.left.style.width),  0f, "Left bar should have width for pillarbox");
+            Assert.Greater(StyleValue(bars.Value.right.style.width), 0f, "Right bar should have width for pillarbox");
+            Assert.AreEqual(0f, StyleValue(bars.Value.top.style.height), 0.5f, "Top bar should have no height for pillarbox");
         }
 
         // --- Letterbox (2.39:1 on 16:9 screen) ---
@@ -122,14 +122,13 @@ namespace Fram3d.Tests.UI
                 this._behaviour.CycleAspectRatioForward();
 
             yield return null;
-            yield return null;
 
             var bars = GetBars();
             Assert.IsNotNull(bars);
 
-            Assert.Greater(bars.Value.top.resolvedStyle.height,    0f, "Top bar should have height for letterbox");
-            Assert.Greater(bars.Value.bottom.resolvedStyle.height, 0f, "Bottom bar should have height for letterbox");
-            Assert.AreEqual(0f, bars.Value.left.resolvedStyle.width, 0.5f, "Left bar should have no width for letterbox");
+            Assert.Greater(StyleValue(bars.Value.top.style.height),    0f, "Top bar should have height for letterbox");
+            Assert.Greater(StyleValue(bars.Value.bottom.style.height), 0f, "Bottom bar should have height for letterbox");
+            Assert.AreEqual(0f, StyleValue(bars.Value.left.style.width), 0.5f, "Left bar should have no width for letterbox");
         }
 
         // --- Bars are centered ---
@@ -148,13 +147,12 @@ namespace Fram3d.Tests.UI
                 this._behaviour.CycleAspectRatioForward();
 
             yield return null;
-            yield return null;
 
             var bars = GetBars();
             Assert.IsNotNull(bars);
 
-            var leftWidth  = bars.Value.left.resolvedStyle.width;
-            var rightWidth = bars.Value.right.resolvedStyle.width;
+            var leftWidth  = StyleValue(bars.Value.left.style.width);
+            var rightWidth = StyleValue(bars.Value.right.style.width);
             Assert.AreEqual(leftWidth, rightWidth, 1f, "Pillarbox bars should be centered");
         }
 
@@ -172,48 +170,13 @@ namespace Fram3d.Tests.UI
                 this._behaviour.CycleAspectRatioForward();
 
             yield return null;
-            yield return null;
 
             var bars = GetBars();
             Assert.IsNotNull(bars);
 
-            var topHeight    = bars.Value.top.resolvedStyle.height;
-            var bottomHeight = bars.Value.bottom.resolvedStyle.height;
+            var topHeight    = StyleValue(bars.Value.top.style.height);
+            var bottomHeight = StyleValue(bars.Value.bottom.style.height);
             Assert.AreEqual(topHeight, bottomHeight, 1f, "Letterbox bars should be centered");
-        }
-
-        // --- Bars fill the view ---
-
-        [UnityTest]
-        public IEnumerator UpdateBars__BarsCoverFullView__When__AnyRatio()
-        {
-            yield return WaitForLayout();
-
-            if (!HasLayout())
-                Assert.Inconclusive("UI layout did not resolve in test environment");
-
-            var cam = this._behaviour.CameraElement;
-
-            while (cam.ActiveAspectRatio != AspectRatio.RATIO_4_3)
-                this._behaviour.CycleAspectRatioForward();
-
-            yield return null;
-            yield return null;
-
-            var bars      = GetBars();
-            var container = this._uiDocument.rootVisualElement[0];
-            var viewWidth = container.resolvedStyle.width;
-            var viewHeight = container.resolvedStyle.height;
-
-            Assert.IsNotNull(bars);
-
-            var leftW  = bars.Value.left.resolvedStyle.width;
-            var rightW = bars.Value.right.resolvedStyle.width;
-            Assert.AreEqual(viewWidth, leftW + (viewWidth - leftW - rightW) + rightW, 1f, "Bars + unmasked should fill width");
-
-            var topH    = bars.Value.top.resolvedStyle.height;
-            var bottomH = bars.Value.bottom.resolvedStyle.height;
-            Assert.AreEqual(viewHeight, topH + (viewHeight - topH - bottomH) + bottomH, 1f, "Bars + unmasked should fill height");
         }
 
         // --- Ratio switching (no stale bar state) ---
@@ -232,24 +195,30 @@ namespace Fram3d.Tests.UI
                 this._behaviour.CycleAspectRatioForward();
 
             yield return null;
-            yield return null;
 
             var bars = GetBars();
             Assert.IsNotNull(bars);
-            Assert.Greater(bars.Value.left.resolvedStyle.width, 0f, "Should start with pillarbox");
+            Assert.Greater(StyleValue(bars.Value.left.style.width), 0f, "Should start with pillarbox");
 
             // Switch to 2.39:1 → letterbox
             while (cam.ActiveAspectRatio != AspectRatio.RATIO_239_1)
                 this._behaviour.CycleAspectRatioForward();
 
             yield return null;
-            yield return null;
 
-            Assert.AreEqual(0f, bars.Value.left.resolvedStyle.width, 0.5f, "Left bar should be zero after switching to letterbox");
-            Assert.Greater(bars.Value.top.resolvedStyle.height, 0f, "Top bar should have height after switching to letterbox");
+            Assert.AreEqual(0f, StyleValue(bars.Value.left.style.width), 0.5f, "Left bar should be zero after switching to letterbox");
+            Assert.Greater(StyleValue(bars.Value.top.style.height), 0f, "Top bar should have height after switching to letterbox");
         }
 
         // --- Helpers ---
+
+        /// <summary>
+        /// Extracts the float value from a StyleLength. Used instead of resolvedStyle
+        /// because absolutely positioned bar elements don't reliably resolve in the
+        /// test runner's layout engine.
+        /// </summary>
+        private static float StyleValue(StyleLength s) =>
+            s.keyword == StyleKeyword.Undefined ? 0f : s.value.value;
 
         /// <summary>
         /// Waits until the overlay container has resolved to non-zero dimensions,

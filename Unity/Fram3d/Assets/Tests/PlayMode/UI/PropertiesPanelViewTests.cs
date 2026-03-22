@@ -44,8 +44,8 @@ namespace Fram3d.Tests.UI
         [TearDown]
         public void TearDown()
         {
-            Object.Destroy(this._uiGo);
-            Object.Destroy(this._cameraGo);
+            Object.DestroyImmediate(this._uiGo);
+            Object.DestroyImmediate(this._cameraGo);
         }
 
         [UnityTest]

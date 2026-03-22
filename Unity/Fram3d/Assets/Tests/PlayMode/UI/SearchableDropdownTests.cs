@@ -65,7 +65,7 @@ namespace Fram3d.Tests.UI
         public void TearDown()
         {
             this._dropdown.Close();
-            UnityEngine.Object.Destroy(this._uiGo);
+            UnityEngine.Object.DestroyImmediate(this._uiGo);
         }
 
         // --- Search filtering ---

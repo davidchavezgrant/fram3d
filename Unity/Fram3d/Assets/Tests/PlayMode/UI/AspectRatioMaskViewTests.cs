@@ -19,6 +19,8 @@ namespace Fram3d.Tests.UI
         private CameraBehaviour     _behaviour;
         private GameObject          _cameraGo;
         private AspectRatioMaskView _maskView;
+        private PanelSettings       _panelSettings;
+        private RenderTexture       _renderTexture;
         private GameObject          _uiGo;
         private UIDocument          _uiDocument;
 
@@ -31,13 +33,24 @@ namespace Fram3d.Tests.UI
             this._uiGo      = new GameObject("TestUI");
             this._uiDocument = this._uiGo.AddComponent<UIDocument>();
 
+            // Render to a fixed-size texture so layout resolves to deterministic
+            // 1920×1080 dimensions regardless of Game view size.
             var guids = UnityEditor.AssetDatabase.FindAssets("t:PanelSettings");
 
             if (guids.Length > 0)
             {
-                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
-                this._uiDocument.panelSettings = UnityEditor.AssetDatabase.LoadAssetAtPath<PanelSettings>(path);
+                var path     = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                var original = UnityEditor.AssetDatabase.LoadAssetAtPath<PanelSettings>(path);
+                this._panelSettings = Object.Instantiate(original);
             }
+            else
+            {
+                this._panelSettings = ScriptableObject.CreateInstance<PanelSettings>();
+            }
+
+            this._renderTexture              = new RenderTexture(1920, 1080, 0);
+            this._panelSettings.targetTexture = this._renderTexture;
+            this._uiDocument.panelSettings   = this._panelSettings;
 
             this._maskView = this._uiGo.AddComponent<AspectRatioMaskView>();
         }
@@ -45,8 +58,17 @@ namespace Fram3d.Tests.UI
         [TearDown]
         public void TearDown()
         {
-            Object.Destroy(this._uiGo);
-            Object.Destroy(this._cameraGo);
+            Object.DestroyImmediate(this._uiGo);
+            Object.DestroyImmediate(this._cameraGo);
+
+            if (this._renderTexture != null)
+            {
+                this._renderTexture.Release();
+                Object.DestroyImmediate(this._renderTexture);
+            }
+
+            if (this._panelSettings != null)
+                Object.DestroyImmediate(this._panelSettings);
         }
 
         // --- Structure ---
@@ -257,7 +279,8 @@ namespace Fram3d.Tests.UI
                 return false;
 
             var w = root[0].resolvedStyle.width;
-            return !float.IsNaN(w) && w > 0;
+            var h = root[0].resolvedStyle.height;
+            return !float.IsNaN(w) && w > 0 && !float.IsNaN(h) && h > 0;
         }
 
         private (VisualElement top, VisualElement bottom, VisualElement left, VisualElement right)? GetBars()

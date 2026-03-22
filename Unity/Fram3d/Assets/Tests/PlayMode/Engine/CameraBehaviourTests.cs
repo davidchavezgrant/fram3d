@@ -640,7 +640,7 @@ namespace Fram3d.Tests.Engine
         [TearDown]
         public void TearDown()
         {
-            Object.Destroy(this._go);
+            Object.DestroyImmediate(this._go);
         }
 
         // --- Shake applies offset ---

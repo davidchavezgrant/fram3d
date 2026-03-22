@@ -49,7 +49,7 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._mouse, new MouseState());
             InputSystem.RemoveDevice(this._keyboard);
             InputSystem.RemoveDevice(this._mouse);
-            Object.Destroy(this._go);
+            Object.DestroyImmediate(this._go);
         }
 
         // --- A key: cycle aspect ratio ---

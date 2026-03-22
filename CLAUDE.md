@@ -63,11 +63,17 @@ Each directory has a `.asmdef` file defining the assembly and its references. Se
 Tests live outside Unity as a standalone .NET project:
 
 ```
+tests/Fram3d.Core/
+  Fram3d.Core.csproj          ← class library compiling Core sources
 tests/Fram3d.Core.Tests/
-  Fram3d.Core.Tests.csproj    ← xUnit + FluentAssertions
+  Fram3d.Core.Tests.csproj    ← xUnit + FluentAssertions, references Fram3d.Core
+  stryker-config.json         ← Stryker.NET mutation testing config
 ```
 
-The test project compiles Core's source files directly via `<Compile Include="../../Unity/Fram3d/Assets/Scripts/Core/**/*.cs" />` — one copy of source, two compilation targets (Unity asmdef + .NET for `dotnet test`).
+Run tests: `dotnet test tests/Fram3d.Core.Tests`
+Run mutation tests: `cd tests/Fram3d.Core.Tests && dotnet stryker`
+
+**After writing or modifying tests, always run Stryker** to verify the mutation score hasn't regressed. Current baseline: ~85%. Thresholds: green ≥85%, yellow ≥75%, break <60%.
 
 ## Input Handling
 

@@ -85,33 +85,24 @@ namespace Fram3d.Tests.UI
         [UnityTest]
         public IEnumerator UpdateBars__LeftAndRightBarsVisible__When__PillarboxRatio()
         {
-            yield return null;
+            yield return WaitForLayout();
+
+            if (!HasLayout())
+                Assert.Inconclusive("UI layout did not resolve in test environment");
 
             var cam = this._behaviour.CameraElement;
 
             while (cam.ActiveAspectRatio != AspectRatio.RATIO_4_3)
                 this._behaviour.CycleAspectRatioForward();
 
-            // Wait for layout + UpdateBars
             yield return null;
             yield return null;
 
             var bars = GetBars();
+            Assert.IsNotNull(bars);
 
-            if (bars == null)
-                yield break;
-
-            // 4:3 on a wider screen → pillarbox: left and right bars have width > 0
-            var leftWidth  = bars.Value.left.resolvedStyle.width;
-            var rightWidth = bars.Value.right.resolvedStyle.width;
-
-            if (float.IsNaN(leftWidth))
-                yield break; // Layout not resolved yet, skip
-
-            Assert.Greater(leftWidth,  0f, "Left bar should have width for pillarbox");
-            Assert.Greater(rightWidth, 0f, "Right bar should have width for pillarbox");
-
-            // Top and bottom bars should have zero height (no letterbox)
+            Assert.Greater(bars.Value.left.resolvedStyle.width,  0f, "Left bar should have width for pillarbox");
+            Assert.Greater(bars.Value.right.resolvedStyle.width, 0f, "Right bar should have width for pillarbox");
             Assert.AreEqual(0f, bars.Value.top.resolvedStyle.height, 0.5f, "Top bar should have no height for pillarbox");
         }
 
@@ -120,7 +111,10 @@ namespace Fram3d.Tests.UI
         [UnityTest]
         public IEnumerator UpdateBars__TopAndBottomBarsVisible__When__LetterboxRatio()
         {
-            yield return null;
+            yield return WaitForLayout();
+
+            if (!HasLayout())
+                Assert.Inconclusive("UI layout did not resolve in test environment");
 
             var cam = this._behaviour.CameraElement;
 
@@ -131,20 +125,10 @@ namespace Fram3d.Tests.UI
             yield return null;
 
             var bars = GetBars();
+            Assert.IsNotNull(bars);
 
-            if (bars == null)
-                yield break;
-
-            var topHeight    = bars.Value.top.resolvedStyle.height;
-            var bottomHeight = bars.Value.bottom.resolvedStyle.height;
-
-            if (float.IsNaN(topHeight))
-                yield break;
-
-            Assert.Greater(topHeight,    0f, "Top bar should have height for letterbox");
-            Assert.Greater(bottomHeight, 0f, "Bottom bar should have height for letterbox");
-
-            // Left and right bars should have zero width (no pillarbox)
+            Assert.Greater(bars.Value.top.resolvedStyle.height,    0f, "Top bar should have height for letterbox");
+            Assert.Greater(bars.Value.bottom.resolvedStyle.height, 0f, "Bottom bar should have height for letterbox");
             Assert.AreEqual(0f, bars.Value.left.resolvedStyle.width, 0.5f, "Left bar should have no width for letterbox");
         }
 
@@ -153,7 +137,10 @@ namespace Fram3d.Tests.UI
         [UnityTest]
         public IEnumerator UpdateBars__BarsAreCentered__When__PillarboxRatio()
         {
-            yield return null;
+            yield return WaitForLayout();
+
+            if (!HasLayout())
+                Assert.Inconclusive("UI layout did not resolve in test environment");
 
             var cam = this._behaviour.CameraElement;
 
@@ -164,24 +151,20 @@ namespace Fram3d.Tests.UI
             yield return null;
 
             var bars = GetBars();
-
-            if (bars == null)
-                yield break;
+            Assert.IsNotNull(bars);
 
             var leftWidth  = bars.Value.left.resolvedStyle.width;
             var rightWidth = bars.Value.right.resolvedStyle.width;
-
-            if (float.IsNaN(leftWidth))
-                yield break;
-
-            // Left and right bars should be equal width (centered)
             Assert.AreEqual(leftWidth, rightWidth, 1f, "Pillarbox bars should be centered");
         }
 
         [UnityTest]
         public IEnumerator UpdateBars__BarsAreCentered__When__LetterboxRatio()
         {
-            yield return null;
+            yield return WaitForLayout();
+
+            if (!HasLayout())
+                Assert.Inconclusive("UI layout did not resolve in test environment");
 
             var cam = this._behaviour.CameraElement;
 
@@ -192,16 +175,10 @@ namespace Fram3d.Tests.UI
             yield return null;
 
             var bars = GetBars();
-
-            if (bars == null)
-                yield break;
+            Assert.IsNotNull(bars);
 
             var topHeight    = bars.Value.top.resolvedStyle.height;
             var bottomHeight = bars.Value.bottom.resolvedStyle.height;
-
-            if (float.IsNaN(topHeight))
-                yield break;
-
             Assert.AreEqual(topHeight, bottomHeight, 1f, "Letterbox bars should be centered");
         }
 
@@ -210,7 +187,10 @@ namespace Fram3d.Tests.UI
         [UnityTest]
         public IEnumerator UpdateBars__BarsCoverFullView__When__AnyRatio()
         {
-            yield return null;
+            yield return WaitForLayout();
+
+            if (!HasLayout())
+                Assert.Inconclusive("UI layout did not resolve in test environment");
 
             var cam = this._behaviour.CameraElement;
 
@@ -220,30 +200,20 @@ namespace Fram3d.Tests.UI
             yield return null;
             yield return null;
 
-            var bars = GetBars();
-
-            if (bars == null)
-                yield break;
-
+            var bars      = GetBars();
             var container = this._uiDocument.rootVisualElement[0];
             var viewWidth = container.resolvedStyle.width;
-
-            if (float.IsNaN(viewWidth) || viewWidth <= 0)
-                yield break;
-
             var viewHeight = container.resolvedStyle.height;
 
-            // Left bar + unmasked area + right bar should equal view width
-            var leftW    = bars.Value.left.resolvedStyle.width;
-            var rightW   = bars.Value.right.resolvedStyle.width;
-            var unmaskedW = viewWidth - leftW - rightW;
-            Assert.AreEqual(viewWidth, leftW + unmaskedW + rightW, 1f, "Bars + unmasked should fill width");
+            Assert.IsNotNull(bars);
 
-            // Top bar + unmasked area + bottom bar should equal view height
-            var topH     = bars.Value.top.resolvedStyle.height;
-            var bottomH  = bars.Value.bottom.resolvedStyle.height;
-            var unmaskedH = viewHeight - topH - bottomH;
-            Assert.AreEqual(viewHeight, topH + unmaskedH + bottomH, 1f, "Bars + unmasked should fill height");
+            var leftW  = bars.Value.left.resolvedStyle.width;
+            var rightW = bars.Value.right.resolvedStyle.width;
+            Assert.AreEqual(viewWidth, leftW + (viewWidth - leftW - rightW) + rightW, 1f, "Bars + unmasked should fill width");
+
+            var topH    = bars.Value.top.resolvedStyle.height;
+            var bottomH = bars.Value.bottom.resolvedStyle.height;
+            Assert.AreEqual(viewHeight, topH + (viewHeight - topH - bottomH) + bottomH, 1f, "Bars + unmasked should fill height");
         }
 
         // --- Ratio switching (no stale bar state) ---
@@ -251,31 +221,22 @@ namespace Fram3d.Tests.UI
         [UnityTest]
         public IEnumerator UpdateBars__TransitionsCorrectly__When__SwitchingFromPillarboxToLetterbox()
         {
-            yield return null;
-            yield return null;
+            yield return WaitForLayout();
+
+            if (!HasLayout())
+                Assert.Inconclusive("UI layout did not resolve in test environment");
 
             var cam = this._behaviour.CameraElement;
 
-            // Start with 4:3 → pillarbox
             while (cam.ActiveAspectRatio != AspectRatio.RATIO_4_3)
                 this._behaviour.CycleAspectRatioForward();
 
-            // Extra frames for layout to settle after root size change
-            yield return null;
             yield return null;
             yield return null;
 
             var bars = GetBars();
-
-            if (bars == null)
-                yield break;
-
-            var leftBefore = bars.Value.left.resolvedStyle.width;
-
-            if (float.IsNaN(leftBefore))
-                yield break;
-
-            Assert.Greater(leftBefore, 0f, "Should start with pillarbox");
+            Assert.IsNotNull(bars);
+            Assert.Greater(bars.Value.left.resolvedStyle.width, 0f, "Should start with pillarbox");
 
             // Switch to 2.39:1 → letterbox
             while (cam.ActiveAspectRatio != AspectRatio.RATIO_239_1)
@@ -284,16 +245,47 @@ namespace Fram3d.Tests.UI
             yield return null;
             yield return null;
 
-            // Left bar should now be zero (no more pillarbox)
-            var leftAfter = bars.Value.left.resolvedStyle.width;
-            Assert.AreEqual(0f, leftAfter, 0.5f, "Left bar should be zero after switching to letterbox");
-
-            // Top bar should now have height (letterbox)
-            var topAfter = bars.Value.top.resolvedStyle.height;
-            Assert.Greater(topAfter, 0f, "Top bar should have height after switching to letterbox");
+            Assert.AreEqual(0f, bars.Value.left.resolvedStyle.width, 0.5f, "Left bar should be zero after switching to letterbox");
+            Assert.Greater(bars.Value.top.resolvedStyle.height, 0f, "Top bar should have height after switching to letterbox");
         }
 
         // --- Helpers ---
+
+        /// <summary>
+        /// Waits until the overlay container has resolved to non-zero dimensions,
+        /// or returns false after timeout. UI Toolkit layout needs a variable number
+        /// of frames to resolve in the test runner.
+        /// </summary>
+        private IEnumerator WaitForLayout()
+        {
+            for (var i = 0; i < 30; i++)
+            {
+                yield return null;
+
+                var root = this._uiDocument.rootVisualElement;
+
+                if (root == null || root.childCount == 0)
+                    continue;
+
+                var container = root[0];
+                var w         = container.resolvedStyle.width;
+                var h         = container.resolvedStyle.height;
+
+                if (!float.IsNaN(w) && w > 0 && !float.IsNaN(h) && h > 0)
+                    yield break;
+            }
+        }
+
+        private bool HasLayout()
+        {
+            var root = this._uiDocument.rootVisualElement;
+
+            if (root == null || root.childCount == 0)
+                return false;
+
+            var w = root[0].resolvedStyle.width;
+            return !float.IsNaN(w) && w > 0;
+        }
 
         private (VisualElement top, VisualElement bottom, VisualElement left, VisualElement right)? GetBars()
         {

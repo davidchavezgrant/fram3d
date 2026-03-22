@@ -6,7 +6,6 @@ using Fram3d.UI.Input;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.TestTools;
 
@@ -14,8 +13,8 @@ namespace Fram3d.Tests.UI
 {
     /// <summary>
     /// Play Mode tests for CameraInputHandler keyboard shortcuts.
-    /// Uses Input System test infrastructure to simulate key presses
-    /// and verifies the correct CameraElement state changes.
+    /// Queues Input System state events and lets the frame process them
+    /// naturally — no manual InputSystem.Update() calls.
     /// </summary>
     public sealed class CameraInputHandlerTests
     {
@@ -32,18 +31,18 @@ namespace Fram3d.Tests.UI
             this._behaviour = this._go.AddComponent<CameraBehaviour>();
             this._handler   = this._go.AddComponent<CameraInputHandler>();
 
-            // Wire the [SerializeField] fields via reflection
             var behaviourField = typeof(CameraInputHandler).GetField("cameraBehaviour",
                 BindingFlags.NonPublic | BindingFlags.Instance);
             behaviourField.SetValue(this._handler, this._behaviour);
 
-            // Add a virtual keyboard for input simulation
             this._keyboard = InputSystem.AddDevice<Keyboard>();
         }
 
         [TearDown]
         public void TearDown()
         {
+            // Release all keys before removing device
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             InputSystem.RemoveDevice(this._keyboard);
             Object.Destroy(this._go);
         }
@@ -58,9 +57,10 @@ namespace Fram3d.Tests.UI
             this._cam = this._behaviour.CameraElement;
             var before = this._cam.ActiveAspectRatio;
 
-            PressAndRelease(this._keyboard.aKey);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.A));
             yield return null;
 
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             Assert.AreNotSame(before, this._cam.ActiveAspectRatio);
         }
 
@@ -72,11 +72,10 @@ namespace Fram3d.Tests.UI
             this._cam = this._behaviour.CameraElement;
             var before = this._cam.ActiveAspectRatio;
 
-            Press(this._keyboard.leftShiftKey);
-            PressAndRelease(this._keyboard.aKey);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftShift, Key.A));
             yield return null;
 
-            Release(this._keyboard.leftShiftKey);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             Assert.AreNotSame(before, this._cam.ActiveAspectRatio);
         }
 
@@ -90,9 +89,10 @@ namespace Fram3d.Tests.UI
             this._cam = this._behaviour.CameraElement;
             var before = this._cam.DofEnabled;
 
-            PressAndRelease(this._keyboard.dKey);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.D));
             yield return null;
 
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             Assert.AreNotEqual(before, this._cam.DofEnabled);
         }
 
@@ -106,9 +106,10 @@ namespace Fram3d.Tests.UI
             this._cam = this._behaviour.CameraElement;
             var before = this._cam.ShakeEnabled;
 
-            PressAndRelease(this._keyboard.sKey);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.S));
             yield return null;
 
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             Assert.AreNotEqual(before, this._cam.ShakeEnabled);
         }
 
@@ -120,11 +121,12 @@ namespace Fram3d.Tests.UI
             yield return null;
 
             this._cam = this._behaviour.CameraElement;
-            var before = this._cam.Aperture; // f/5.6
+            var before = this._cam.Aperture;
 
-            PressAndRelease(this._keyboard.leftBracketKey);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftBracket));
             yield return null;
 
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             Assert.Less(this._cam.Aperture, before);
         }
 
@@ -134,11 +136,12 @@ namespace Fram3d.Tests.UI
             yield return null;
 
             this._cam = this._behaviour.CameraElement;
-            var before = this._cam.Aperture; // f/5.6
+            var before = this._cam.Aperture;
 
-            PressAndRelease(this._keyboard.rightBracketKey);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.RightBracket));
             yield return null;
 
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             Assert.Greater(this._cam.Aperture, before);
         }
 
@@ -152,13 +155,11 @@ namespace Fram3d.Tests.UI
             this._cam = this._behaviour.CameraElement;
             this._cam.Dolly(5.0f);
             this._cam.Pan(1.0f);
-            var movedPos = this._cam.Position;
 
-            Press(this._keyboard.leftCtrlKey);
-            PressAndRelease(this._keyboard.rKey);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl, Key.R));
             yield return null;
 
-            Release(this._keyboard.leftCtrlKey);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
 
             var defaultPos = new System.Numerics.Vector3(0f, 1.6f, 5f);
             Assert.AreEqual(defaultPos.X, this._cam.Position.X, 0.01f);
@@ -176,10 +177,10 @@ namespace Fram3d.Tests.UI
             this._cam = this._behaviour.CameraElement;
             var before = this._cam.FocalLength;
 
-            PressAndRelease(this._keyboard.digit1Key);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.Digit1));
             yield return null;
 
-            // Digit 1 maps to first preset in the active lens set
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             Assert.AreNotEqual(before, this._cam.FocalLength);
         }
 
@@ -193,34 +194,11 @@ namespace Fram3d.Tests.UI
             this._cam = this._behaviour.CameraElement;
             var before = this._cam.ActiveAspectRatio;
 
-            Press(this._keyboard.leftCtrlKey);
-            PressAndRelease(this._keyboard.aKey);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl, Key.A));
             yield return null;
 
-            Release(this._keyboard.leftCtrlKey);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             Assert.AreSame(before, this._cam.ActiveAspectRatio);
-        }
-
-        // --- Helpers ---
-
-        private static void Press(KeyControl key)
-        {
-            InputSystem.QueueStateEvent(key.device, new KeyboardState(key.keyCode));
-            InputSystem.Update();
-        }
-
-        private static void Release(KeyControl key)
-        {
-            InputSystem.QueueStateEvent(key.device, new KeyboardState());
-            InputSystem.Update();
-        }
-
-        private static void PressAndRelease(KeyControl key)
-        {
-            InputSystem.QueueStateEvent(key.device, new KeyboardState(key.keyCode));
-            InputSystem.Update();
-            InputSystem.QueueStateEvent(key.device, new KeyboardState());
-            InputSystem.Update();
         }
     }
 }

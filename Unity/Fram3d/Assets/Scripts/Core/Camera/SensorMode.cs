@@ -16,29 +16,25 @@ namespace Fram3d.Core.Camera
                           float  sensorAreaHeightMm,
                           int    maxFps)
         {
-            this.Name                = name;
-            this.ResolutionWidth     = resolutionWidth;
-            this.ResolutionHeight    = resolutionHeight;
-            this.SensorAreaWidthMm   = sensorAreaWidthMm;
+            this.Name               = name;
+            this.ResolutionWidth    = resolutionWidth;
+            this.ResolutionHeight   = resolutionHeight;
+            this.SensorAreaWidthMm  = sensorAreaWidthMm;
             this.SensorAreaHeightMm = sensorAreaHeightMm;
-            this.MaxFps              = maxFps;
+            this.MaxFps             = maxFps;
         }
-
-        public int    MaxFps              { get; }
-        public string Name                { get; }
-        public int    ResolutionHeight    { get; }
-        public int    ResolutionWidth     { get; }
-        public float  SensorAreaHeightMm { get; }
-        public float  SensorAreaWidthMm   { get; }
 
         /// <summary>
         /// The native aspect ratio of this sensor mode, derived from resolution.
         /// </summary>
-        public float AspectRatio => this.ResolutionHeight > 0
-            ? (float)this.ResolutionWidth / this.ResolutionHeight
-            : 0f;
+        public float AspectRatio => this.ResolutionHeight > 0? (float)this.ResolutionWidth / this.ResolutionHeight : 0f;
 
-        public override string ToString() =>
-            $"{this.Name} ({this.ResolutionWidth}x{this.ResolutionHeight}, max {this.MaxFps}fps)";
+        public          int    MaxFps             { get; }
+        public          string Name               { get; }
+        public          int    ResolutionHeight   { get; }
+        public          int    ResolutionWidth    { get; }
+        public          float  SensorAreaHeightMm { get; }
+        public          float  SensorAreaWidthMm  { get; }
+        public override string ToString()         => $"{this.Name} ({this.ResolutionWidth}x{this.ResolutionHeight}, max {this.MaxFps}fps)";
     }
 }

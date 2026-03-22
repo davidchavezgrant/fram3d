@@ -16,11 +16,13 @@ namespace Fram3d.Core.Camera
             this.Rotation = Quaternion.Identity;
         }
 
-        public LensSet    ActiveLensSet => this._lens.ActiveLensSet;
-        public float      Aperture      => this._lens.Aperture;
-        public CameraBody Body          { get; private set; }
-        public bool       CanDollyZoom  => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
-        public bool       DofEnabled    { get; set; }
+        public AspectRatio ActiveAspectRatio { get; private set; } = AspectRatio.DEFAULT;
+        public LensSet     ActiveLensSet     => this._lens.ActiveLensSet;
+        public SensorMode  ActiveSensorMode  { get; private set; }
+        public float       Aperture          => this._lens.Aperture;
+        public CameraBody  Body              { get; private set; }
+        public bool        CanDollyZoom      => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
+        public bool        DofEnabled        { get; set; }
 
         /// <summary>
         /// Current focal length in mm. Setting this value respects lens constraints:
@@ -42,8 +44,8 @@ namespace Fram3d.Core.Camera
         }
 
         public Vector3 OrbitPivotPoint { get; set; } = Vector3.Zero;
-        public float   SensorHeight    { get; set; } = DEFAULT_SENSOR_HEIGHT;
-        public float   SensorWidth     { get; set; } = DEFAULT_SENSOR_WIDTH;
+        public float   SensorHeight    { get; private set; } = DEFAULT_SENSOR_HEIGHT;
+        public float   SensorWidth     { get; private set; } = DEFAULT_SENSOR_WIDTH;
         public float   ShakeAmplitude  { get; set; } = 0.1f;
         public bool    ShakeEnabled    { get; set; }
         public float   ShakeFrequency  { get; set; } = 1.0f;
@@ -74,6 +76,18 @@ namespace Fram3d.Core.Camera
         /// by the camera's current rotation.
         /// </summary>
         private Vector3 LookDirection => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
+
+        public void CycleAspectRatioBackward()
+        {
+            this.ActiveAspectRatio = this.ActiveAspectRatio.Previous();
+            this.SyncEffectiveSensor();
+        }
+
+        public void CycleAspectRatioForward()
+        {
+            this.ActiveAspectRatio = this.ActiveAspectRatio.Next();
+            this.SyncEffectiveSensor();
+        }
 
         /// <summary>
         /// Translate vertically along the world Y axis.
@@ -170,9 +184,8 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public void SetBody(CameraBody body)
         {
-            this.Body         = body;
-            this.SensorWidth  = body.SensorWidthMm;
-            this.SensorHeight = body.SensorHeightMm;
+            this.Body = body;
+            this.SyncEffectiveSensor();
         }
 
         /// <summary>
@@ -186,6 +199,12 @@ namespace Fram3d.Core.Camera
         /// Also clamps aperture and focus distance to the lens's physical limits.
         /// </summary>
         public void SetLensSet(LensSet lensSet) => this._lens.SetLensSet(lensSet);
+
+        public void SetSensorMode(SensorMode mode)
+        {
+            this.ActiveSensorMode = mode;
+            this.SyncEffectiveSensor();
+        }
 
         public void StepApertureNarrower() => this._lens.StepApertureNarrower();
         public void StepApertureWider()    => this._lens.StepApertureWider();
@@ -232,6 +251,51 @@ namespace Fram3d.Core.Camera
             this.Rotation        = Quaternion.Identity;
             this.OrbitPivotPoint = Vector3.Zero;
             this._lens.Reset();
+        }
+
+        /// <summary>
+        /// Computes the effective sensor area from the active sensor mode and
+        /// the selected aspect ratio. When a mode lacks sensor_area_mm, the gate
+        /// width is derived from the first mode (open gate) scaled by resolution —
+        /// this handles sensor-windowed crop modes (RED, ARRI, Blackmagic).
+        /// </summary>
+        private void SyncEffectiveSensor()
+        {
+            var mode      = this.ActiveSensorMode;
+            var body      = this.Body;
+            var gateWidth = body != null ? body.ComputeGateWidth(mode) : DEFAULT_SENSOR_WIDTH;
+
+            // The gate ratio comes from the RESOLUTION (what the mode actually outputs),
+            // not from the physical sensor dimensions. Many cameras (DSLRs, mirrorless)
+            // have a photo sensor wider than their video active area.
+            var gateRatio = mode != null && mode.ResolutionWidth > 0 && mode.ResolutionHeight > 0
+                ? (float)mode.ResolutionWidth / mode.ResolutionHeight
+                : gateWidth / (mode != null && mode.SensorAreaHeightMm > 0
+                    ? mode.SensorAreaHeightMm
+                    : body?.SensorHeightMm ?? DEFAULT_SENSOR_HEIGHT);
+
+            var gateHeight = gateWidth / gateRatio;
+            var ratio      = this.ActiveAspectRatio;
+
+            if (ratio.Value == null)
+            {
+                this.SensorWidth  = gateWidth;
+                this.SensorHeight = gateHeight;
+                return;
+            }
+
+            var deliveryRatio = ratio.Value.Value;
+
+            if (deliveryRatio > gateRatio)
+            {
+                this.SensorWidth  = gateWidth;
+                this.SensorHeight = gateWidth / deliveryRatio;
+            }
+            else
+            {
+                this.SensorWidth  = gateHeight * deliveryRatio;
+                this.SensorHeight = gateHeight;
+            }
         }
     }
 }

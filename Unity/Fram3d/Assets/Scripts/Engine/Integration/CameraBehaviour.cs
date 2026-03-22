@@ -12,35 +12,19 @@ namespace Fram3d.Engine.Integration
         private const float          FOCAL_LENGTH_LERP_SPEED = 10f;
         private const float          SHAKE_ROTATION_SCALE    = 0.5f;
         private const float          SHAKE_TIME_OFFSET       = 100f;
-        private       AspectRatio    _activeAspectRatio      = AspectRatio.DEFAULT;
-        private       SensorMode     _activeSensorMode;
         private       CameraElement  _cameraElement;
         private       CameraDatabase _database;
         private       float          _displayedFocalLength;
         private       DepthOfField   _dof;
         private       Camera         _unityCamera;
-        public        AspectRatio    ActiveAspectRatio => this._activeAspectRatio;
-        public        SensorMode     ActiveSensorMode  => this._activeSensorMode;
+        public        AspectRatio    ActiveAspectRatio => this._cameraElement.ActiveAspectRatio;
+        public        SensorMode     ActiveSensorMode  => this._cameraElement.ActiveSensorMode;
         public        CameraElement  CameraElement     => this._cameraElement;
         public        CameraDatabase Database          => this._database;
 
-        public void CycleAspectRatioBackward()
-        {
-            this._activeAspectRatio = this._activeAspectRatio.Previous();
-            this.SyncEffectiveSensor();
-        }
-
-        public void CycleAspectRatioForward()
-        {
-            this._activeAspectRatio = this._activeAspectRatio.Next();
-            this.SyncEffectiveSensor();
-        }
-
-        public void SetSensorMode(SensorMode mode)
-        {
-            this._activeSensorMode = mode;
-            this.SyncEffectiveSensor();
-        }
+        public void CycleAspectRatioBackward() => this._cameraElement.CycleAspectRatioBackward();
+        public void CycleAspectRatioForward()  => this._cameraElement.CycleAspectRatioForward();
+        public void SetSensorMode(SensorMode mode) => this._cameraElement.SetSensorMode(mode);
 
         private void ApplyShake(CameraElement cam)
         {
@@ -94,55 +78,6 @@ namespace Fram3d.Engine.Integration
             this._dof.focusDistance.value = cam.FocusDistance;
             this._dof.aperture.value      = cam.Aperture;
             this._dof.focalLength.value   = this._displayedFocalLength;
-        }
-
-        /// <summary>
-        /// Computes the effective sensor area from the active sensor mode and
-        /// the selected delivery ratio. When a mode lacks sensor_area_mm, it's
-        /// derived from the first mode (open gate) scaled by the resolution ratio —
-        /// this handles sensor-windowed crop modes (RED, ARRI, Blackmagic) where
-        /// lower resolutions read a smaller center portion of the sensor.
-        /// </summary>
-        private void SyncEffectiveSensor()
-        {
-            var cam = this._cameraElement;
-
-            if (cam == null)
-                return;
-
-            var mode      = this._activeSensorMode;
-            var body      = cam.Body;
-            var gateWidth = ComputeGateWidth(mode, body);
-
-            // The gate ratio comes from the RESOLUTION (what the mode actually outputs),
-            // not from the physical sensor dimensions. Many cameras (DSLRs, mirrorless)
-            // have a photo sensor wider than their video active area.
-            var gateRatio = mode != null && mode.ResolutionWidth > 0 && mode.ResolutionHeight > 0?
-                                (float)mode.ResolutionWidth / mode.ResolutionHeight :
-                                gateWidth / (mode != null && mode.SensorAreaHeightMm > 0? mode.SensorAreaHeightMm : body?.SensorHeightMm ?? 18.66f);
-
-            var gateHeight = gateWidth / gateRatio;
-            var ratio      = this._activeAspectRatio;
-
-            if (ratio.Value == null)
-            {
-                cam.SensorWidth  = gateWidth;
-                cam.SensorHeight = gateHeight;
-                return;
-            }
-
-            var deliveryRatio = ratio.Value.Value;
-
-            if (deliveryRatio > gateRatio)
-            {
-                cam.SensorWidth  = gateWidth;
-                cam.SensorHeight = gateWidth / deliveryRatio;
-            }
-            else
-            {
-                cam.SensorWidth  = gateHeight * deliveryRatio;
-                cam.SensorHeight = gateHeight;
-            }
         }
 
         private void SyncFocalLength(CameraElement cam, float targetFocalLength)
@@ -208,32 +143,6 @@ namespace Fram3d.Engine.Integration
             }
         }
 
-        /// <summary>
-        /// Determines the physical sensor width for a mode. If the mode has explicit
-        /// sensor_area_mm, uses that. Otherwise, derives it from the first mode (open gate)
-        /// by scaling proportionally to the resolution — this handles sensor-windowed
-        /// crop modes where lower resolutions read a smaller center portion of the sensor.
-        /// </summary>
-        private static float ComputeGateWidth(SensorMode mode, CameraBody body)
-        {
-            // Mode has explicit sensor area → use it
-            if (mode != null && mode.SensorAreaWidthMm > 0)
-                return mode.SensorAreaWidthMm;
-
-            // No mode → fall back to body
-            if (mode == null || body == null || !body.HasSensorModes)
-                return body?.SensorWidthMm ?? 24.89f;
-
-            // Mode has no sensor area → derive from the first mode (open gate)
-            // by scaling proportionally to resolution width
-            var openGate = body.SensorModes[0];
-
-            if (openGate.SensorAreaWidthMm <= 0 || openGate.ResolutionWidth <= 0 || mode.ResolutionWidth <= 0)
-                return body.SensorWidthMm;
-
-            return openGate.SensorAreaWidthMm * ((float)mode.ResolutionWidth / openGate.ResolutionWidth);
-        }
-
         private void Awake()
         {
             this._unityCamera                       = this.GetComponent<Camera>();
@@ -253,8 +162,7 @@ namespace Fram3d.Engine.Integration
             if (defaultLensSet != null)
                 cam.SetLensSet(defaultLensSet);
 
-            this._displayedFocalLength = cam.FocalLength;
-            this.SyncEffectiveSensor();
+            this._displayedFocalLength   = cam.FocalLength;
             this._unityCamera.sensorSize = new Vector2(cam.SensorWidth, cam.SensorHeight);
             this.SetupDofVolume();
             this.Sync();

@@ -1286,5 +1286,162 @@ namespace Fram3d.Core.Tests.Camera
 			cam.ShakeAmplitude.Should().Be(0.5f);
 			cam.ShakeFrequency.Should().Be(3.0f);
 		}
+
+		// --- Effective Sensor (1.2.1) ---
+
+		private static readonly SensorMode LF_OPEN_GATE = new("LF Open Gate", 4448, 3096, 36.70f, 25.54f, 40);
+		private static readonly SensorMode LF_16X9      = new("LF 16:9", 4448, 2502, 36.70f, 20.64f, 60);
+
+		private static CameraBody CreateAlexaMiniLF() =>
+			new("ARRI Alexa Mini LF", "ARRI", 2020, 36.70f, 25.54f, "LF", "LPL",
+				new[] { 4448, 3096 }, new[] { 24, 60 },
+				new[] { LF_OPEN_GATE, LF_16X9 });
+
+		[Fact]
+		public void SetBody__UsesFullSensor__When__FullScreenNoSensorMode()
+		{
+			var cam = CreateCamera();
+			cam.CycleAspectRatioBackward(); // 16:9 → Full Screen
+			var body = CreateAlexaMiniLF();
+
+			cam.SetBody(body);
+
+			cam.SensorWidth.Should().Be(36.70f);
+			cam.SensorHeight.Should().Be(25.54f);
+		}
+
+		[Fact]
+		public void SetBody__AdjustsForAspectRatio__When__DeliveryWiderThanGate()
+		{
+			var cam  = CreateCamera(); // default 16:9
+			var body = CreateAlexaMiniLF(); // ≈1.437:1, narrower than 16:9
+
+			cam.SetBody(body);
+
+			// 16:9 wider than gate → width preserved, height cropped
+			cam.SensorWidth.Should().Be(36.70f);
+			cam.SensorHeight.Should().BeApproximately(36.70f / (16f / 9f), 0.01f);
+		}
+
+		[Fact]
+		public void SetBody__AdjustsForAspectRatio__When__DeliveryNarrowerThanGate()
+		{
+			var cam  = CreateCamera();
+			cam.CycleAspectRatioBackward(); // 16:9 → Full Screen
+			cam.CycleAspectRatioBackward(); // Full Screen → 9:16
+
+			var body = CreateAlexaMiniLF(); // ≈1.437:1
+
+			cam.SetBody(body);
+
+			// 9:16 (0.5625) narrower than gate → height preserved, width cropped
+			cam.SensorHeight.Should().Be(25.54f);
+			cam.SensorWidth.Should().BeApproximately(25.54f * (9f / 16f), 0.01f);
+		}
+
+		[Fact]
+		public void SetSensorMode__UsesModeArea__When__ModeHasExplicitSensorArea()
+		{
+			var cam  = CreateCamera();
+			cam.CycleAspectRatioBackward(); // Full Screen
+			var body = CreateAlexaMiniLF();
+			cam.SetBody(body);
+
+			cam.SetSensorMode(LF_16X9);
+
+			// LF 16:9 mode: 4448x2502 ≈ 1.778:1 with 36.70 × 20.64mm
+			cam.SensorWidth.Should().Be(36.70f);
+			cam.SensorHeight.Should().BeApproximately(36.70f / LF_16X9.AspectRatio, 0.5f);
+		}
+
+		[Fact]
+		public void SetSensorMode__DerivesFromOpenGate__When__CropModeHasNoSensorArea()
+		{
+			var openGate = new SensorMode("Open Gate", 5120, 2700, 29.90f, 15.77f, 60);
+			var crop     = new SensorMode("2.5K Crop", 2560, 1350, 0f, 0f, 120);
+			var body     = new CameraBody("RED DSMC2", "RED", 2016, 29.90f, 15.77f, "S35", "RF",
+				new[] { 5120, 2700 }, new[] { 24, 60, 120 },
+				new[] { openGate, crop });
+			var cam = CreateCamera();
+			cam.CycleAspectRatioBackward(); // Full Screen
+			cam.SetBody(body);
+
+			cam.SetSensorMode(crop);
+
+			// Derived: 29.90 * (2560/5120) = 14.95mm width
+			cam.SensorWidth.Should().BeApproximately(14.95f, 0.01f);
+		}
+
+		[Fact]
+		public void CycleAspectRatioForward__UpdatesSensorDims__When__Called()
+		{
+			var cam  = CreateCamera();
+			cam.CycleAspectRatioBackward(); // Full Screen
+			var body = CreateAlexaMiniLF();
+			cam.SetBody(body);
+			cam.SensorWidth.Should().Be(36.70f);
+			cam.SensorHeight.Should().Be(25.54f);
+
+			cam.CycleAspectRatioForward(); // Full Screen → 16:9
+
+			// Now 16:9 constrains the sensor
+			cam.SensorWidth.Should().Be(36.70f);
+			cam.SensorHeight.Should().BeApproximately(36.70f / (16f / 9f), 0.01f);
+		}
+
+		[Fact]
+		public void SetSensorMode__FullScreenUsesOpenGateRatio__When__ModeIsWiderThanScreen()
+		{
+			var cam  = CreateCamera();
+			cam.CycleAspectRatioBackward(); // Full Screen
+			var body = CreateAlexaMiniLF();
+			cam.SetBody(body);
+
+			cam.SetSensorMode(LF_OPEN_GATE);
+
+			// Full Screen with open gate → gate ratio from resolution (4448/3096 ≈ 1.437)
+			// Height derived from gateWidth / gateRatio, not physical sensor — slight float difference
+			cam.SensorWidth.Should().Be(36.70f);
+			cam.SensorHeight.Should().BeApproximately(25.54f, 0.01f);
+		}
+
+		[Fact]
+		public void ActiveAspectRatio__DefaultsTo16x9__When__Constructed()
+		{
+			var cam = CreateCamera();
+			cam.ActiveAspectRatio.Should().BeSameAs(AspectRatio.DEFAULT);
+		}
+
+		[Fact]
+		public void ActiveSensorMode__DefaultsToNull__When__Constructed()
+		{
+			var cam = CreateCamera();
+			cam.ActiveSensorMode.Should().BeNull();
+		}
+
+		[Fact]
+		public void Reset__PreservesAspectRatio__When__AspectRatioWasChanged()
+		{
+			var cam = CreateCamera();
+			cam.CycleAspectRatioForward(); // 16:9 → 16:10
+			var ratioBeforeReset = cam.ActiveAspectRatio;
+
+			cam.Reset();
+
+			cam.ActiveAspectRatio.Should().BeSameAs(ratioBeforeReset);
+		}
+
+		[Fact]
+		public void Reset__PreservesSensorMode__When__SensorModeWasSet()
+		{
+			var cam  = CreateCamera();
+			var body = CreateAlexaMiniLF();
+			cam.SetBody(body);
+			cam.SetSensorMode(LF_16X9);
+
+			cam.Reset();
+
+			cam.ActiveSensorMode.Should().BeSameAs(LF_16X9);
+		}
 	}
 }

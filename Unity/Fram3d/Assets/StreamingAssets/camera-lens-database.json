@@ -26,6 +26,20 @@
         30,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "sensor_area_mm": [
+            36.0,
+            20.25
+          ],
+          "max_fps": 30
+        }
       ]
     },
     {
@@ -47,6 +61,20 @@
         30,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "sensor_area_mm": [
+            36.0,
+            20.25
+          ],
+          "max_fps": 30
+        }
       ]
     },
     {
@@ -74,6 +102,32 @@
         60,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "sensor_area_mm": [
+            36.0,
+            20.25
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K DCI Crop",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "sensor_area_mm": [
+            20.7,
+            10.9
+          ],
+          "max_fps": 30
+        }
       ]
     },
     {
@@ -95,6 +149,20 @@
         30,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "sensor_area_mm": [
+            36.0,
+            20.25
+          ],
+          "max_fps": 30
+        }
       ]
     },
     {
@@ -127,6 +195,32 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "sensor_area_mm": [
+            26.9,
+            14.2
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "sensor_area_mm": [
+            36.0,
+            20.25
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -159,6 +253,44 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "5.5K RAW",
+          "resolution": [
+            5496,
+            2904
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            36.0,
+            19.0
+          ]
+        },
+        {
+          "name": "4K DCI Crop",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            27.7,
+            14.6
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            36.0,
+            20.25
+          ]
+        }
       ]
     },
     {
@@ -184,6 +316,20 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "sensor_area_mm": [
+            22.4,
+            12.6
+          ],
+          "max_fps": 60
+        }
       ]
     },
     {
@@ -209,6 +355,20 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "sensor_area_mm": [
+            36.0,
+            20.25
+          ],
+          "max_fps": 60
+        }
       ]
     },
     {
@@ -240,6 +400,44 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "sensor_area_mm": [
+            22.3,
+            12.5
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "4K UHD Crop",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "sensor_area_mm": [
+            18.5,
+            10.4
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "sensor_area_mm": [
+            22.3,
+            12.5
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -265,6 +463,32 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "sensor_area_mm": [
+            36.0,
+            20.25
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD Crop",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "sensor_area_mm": [
+            20.6,
+            11.6
+          ],
+          "max_fps": 30
+        }
       ]
     },
     {
@@ -292,6 +516,40 @@
         60,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K RAW",
+          "resolution": [
+            6000,
+            3164
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            36.0,
+            24.0
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            36.0,
+            20.25
+          ]
+        }
       ]
     },
     {
@@ -324,6 +582,44 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K DCI RAW",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            36.0,
+            19.0
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            36.0,
+            20.3
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            36.0,
+            20.25
+          ]
+        }
       ]
     },
     {
@@ -343,6 +639,56 @@
         30,
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K DCI RAW",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.9,
+            18.9
+          ]
+        },
+        {
+          "name": "8K DCI",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.9,
+            18.9
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.9,
+            20.2
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.9,
+            20.19
+          ]
+        }
       ]
     },
     {
@@ -362,6 +708,56 @@
         60,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K DCI RAW",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.9,
+            18.9
+          ]
+        },
+        {
+          "name": "4K UHD FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.9,
+            20.2
+          ]
+        },
+        {
+          "name": "4K UHD S35 Crop",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            22.4,
+            12.6
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            35.9,
+            20.19
+          ]
+        }
       ]
     },
     {
@@ -394,6 +790,32 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.9,
+            20.2
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.9,
+            20.19
+          ]
+        }
       ]
     },
     {
@@ -429,6 +851,56 @@
         150,
         168,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K RAW ext",
+          "resolution": [
+            6000,
+            3164
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.9,
+            19.0
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.9,
+            20.2
+          ]
+        },
+        {
+          "name": "4K UHD Crop",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            22.4,
+            12.6
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            35.9,
+            20.19
+          ]
+        }
       ]
     },
     {
@@ -461,6 +933,44 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            22.3,
+            12.5
+          ]
+        },
+        {
+          "name": "4K UHD Crop",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            12.3,
+            6.9
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            22.3,
+            12.54
+          ]
+        }
       ]
     },
     {
@@ -496,6 +1006,44 @@
         150,
         168,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            36.0,
+            20.3
+          ]
+        },
+        {
+          "name": "4K UHD Crop",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            22.5,
+            12.7
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            36.0,
+            20.25
+          ]
+        }
       ]
     },
     {
@@ -528,6 +1076,44 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            22.2,
+            12.5
+          ]
+        },
+        {
+          "name": "4K UHD Crop",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            14.2,
+            8.0
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            22.2,
+            12.49
+          ]
+        }
       ]
     },
     {
@@ -560,6 +1146,32 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "sensor_area_mm": [
+            22.3,
+            12.5
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "sensor_area_mm": [
+            22.3,
+            12.5
+          ],
+          "max_fps": 60
+        }
       ]
     },
     {
@@ -587,6 +1199,32 @@
         60,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "sensor_area_mm": [
+            22.3,
+            12.5
+          ],
+          "max_fps": 24
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "sensor_area_mm": [
+            22.3,
+            12.5
+          ],
+          "max_fps": 60
+        }
       ]
     },
     {
@@ -606,6 +1244,20 @@
         24,
         25,
         30
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            24.6,
+            13.8
+          ]
+        }
       ]
     },
     {
@@ -631,6 +1283,20 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.6,
+            13.8
+          ]
+        }
       ]
     },
     {
@@ -663,6 +1329,40 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI RAW",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.6,
+            13.8
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.6,
+            13.84
+          ]
+        }
       ]
     },
     {
@@ -698,6 +1398,20 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            24.6,
+            13.8
+          ]
+        }
       ]
     },
     {
@@ -724,6 +1438,40 @@
         50,
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            24.6,
+            13.8
+          ]
+        },
+        {
+          "name": "2K Crop",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.6,
+            13.84
+          ]
+        }
       ]
     },
     {
@@ -763,6 +1511,40 @@
         150,
         168,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI S35",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.6,
+            13.8
+          ]
+        },
+        {
+          "name": "2K S16 Crop",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 180
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.6,
+            13.84
+          ]
+        }
       ]
     },
     {
@@ -788,6 +1570,40 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI RAW",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.6,
+            13.8
+          ]
+        },
+        {
+          "name": "2K DCI",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.6,
+            13.84
+          ]
+        }
       ]
     },
     {
@@ -823,6 +1639,52 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "5.9K FF",
+          "resolution": [
+            5952,
+            3140
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            38.1,
+            20.1
+          ]
+        },
+        {
+          "name": "4K DCI S35",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.6,
+            13.8
+          ]
+        },
+        {
+          "name": "2K S16 Crop",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 180
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            38.1,
+            21.43
+          ]
+        }
       ]
     },
     {
@@ -842,6 +1704,48 @@
         60,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.6,
+            13.8
+          ]
+        },
+        {
+          "name": "4K DCI Crop",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K DCI",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            24.6,
+            13.84
+          ]
+        }
       ]
     },
     {
@@ -861,6 +1765,48 @@
         30,
         72,
         168
+      ],
+      "sensor_modes": [
+        {
+          "name": "5.9K FF",
+          "resolution": [
+            5952,
+            3140
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            38.1,
+            20.1
+          ]
+        },
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "2K DCI Crop",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 168
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 168,
+          "sensor_area_mm": [
+            38.1,
+            21.43
+          ]
+        }
       ]
     },
     {
@@ -878,6 +1824,40 @@
       ],
       "supported_fps": [
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.6,
+            13.8
+          ]
+        },
+        {
+          "name": "2K DCI Crop",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.6,
+            13.84
+          ]
+        }
       ]
     },
     {
@@ -916,6 +1896,40 @@
         150,
         168,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI S35",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.6,
+            13.8
+          ]
+        },
+        {
+          "name": "2K S16 Crop",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 180
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.6,
+            13.84
+          ]
+        }
       ]
     },
     {
@@ -935,6 +1949,36 @@
         60,
         120,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K FF",
+          "resolution": [
+            6000,
+            3164
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.7,
+            18.8
+          ]
+        },
+        {
+          "name": "4K DCI FF",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K S16 Crop",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 180
+        }
       ]
     },
     {
@@ -954,6 +1998,36 @@
         30,
         120,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K FF",
+          "resolution": [
+            6000,
+            3164
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.7,
+            18.8
+          ]
+        },
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K S16 Crop",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 180
+        }
       ]
     },
     {
@@ -979,6 +2053,24 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60
+        }
       ]
     },
     {
@@ -1004,6 +2096,24 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60
+        }
       ]
     },
     {
@@ -1040,6 +2150,40 @@
         50,
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K 2:1",
+          "resolution": [
+            8182,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.7,
+            13.1
+          ]
+        },
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.7,
+            13.1
+          ]
+        },
+        {
+          "name": "2K DCI",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -1060,6 +2204,20 @@
         25,
         30,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            23.6,
+            13.3
+          ]
+        }
       ]
     },
     {
@@ -1107,6 +2265,40 @@
         180,
         200,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI RAW",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.0,
+            12.7
+          ]
+        },
+        {
+          "name": "2K DCI RAW",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.0,
+            13.5
+          ]
+        }
       ]
     },
     {
@@ -1127,6 +2319,40 @@
         180,
         200,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI RAW",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.0,
+            12.7
+          ]
+        },
+        {
+          "name": "2K DCI RAW",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            24.0,
+            13.5
+          ]
+        }
       ]
     },
     {
@@ -1145,6 +2371,60 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K 3:2 FF",
+          "resolution": [
+            6048,
+            4032
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            36.0,
+            24.0
+          ]
+        },
+        {
+          "name": "6K 2.39:1",
+          "resolution": [
+            6048,
+            2520
+          ],
+          "max_fps": 90,
+          "sensor_area_mm": [
+            36.0,
+            24.0
+          ]
+        },
+        {
+          "name": "4K 16:9 FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            36.0,
+            24.0
+          ]
+        },
+        {
+          "name": "4K 2.39:1",
+          "resolution": [
+            4096,
+            1716
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "4K 4:3 Anamorphic",
+          "resolution": [
+            3840,
+            2880
+          ],
+          "max_fps": 60
+        }
       ]
     },
     {
@@ -1163,6 +2443,52 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "8.6K FF",
+          "resolution": [
+            8640,
+            5760
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            36.0,
+            24.0
+          ]
+        },
+        {
+          "name": "5.8K 16:9",
+          "resolution": [
+            5760,
+            3240
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            36.0,
+            24.0
+          ]
+        },
+        {
+          "name": "4K 16:9 FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            36.0,
+            24.0
+          ]
+        },
+        {
+          "name": "4K 2.39:1",
+          "resolution": [
+            4096,
+            1716
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -1181,6 +2507,48 @@
       "supported_fps": [
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "8.6K FF",
+          "resolution": [
+            8632,
+            4856
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.9,
+            24.0
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6048,
+            3400
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.9,
+            24.0
+          ]
+        },
+        {
+          "name": "4K 16:9 FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "1.9K",
+          "resolution": [
+            1920,
+            1008
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -1199,6 +2567,56 @@
       "supported_fps": [
         60,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K FF",
+          "resolution": [
+            6048,
+            3180
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.7,
+            18.8
+          ]
+        },
+        {
+          "name": "4K DCI S35",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "2K S35",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 180
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            35.7,
+            20.08
+          ]
+        }
       ]
     },
     {
@@ -1218,6 +2636,32 @@
         60,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -1236,6 +2680,32 @@
       "supported_fps": [
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -1254,6 +2724,32 @@
       "supported_fps": [
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            25.1,
+            16.7
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            25.1,
+            14.12
+          ]
+        }
       ]
     },
     {
@@ -1273,6 +2769,36 @@
         60,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD S35 S&Q",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -1298,6 +2824,20 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.6,
+            13.3
+          ]
+        }
       ]
     },
     {
@@ -1324,6 +2864,28 @@
         50,
         60,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI RAW ext",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.0,
+            12.7
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -1344,6 +2906,28 @@
         25,
         30,
         960
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.6,
+            13.3
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -1364,6 +2948,28 @@
         25,
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.6,
+            13.3
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -1382,6 +2988,36 @@
       "supported_fps": [
         60,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.6,
+            13.3
+          ]
+        },
+        {
+          "name": "2K DCI RAW ext",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180
+        }
       ]
     },
     {
@@ -1400,6 +3036,36 @@
       "supported_fps": [
         60,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.6,
+            13.3
+          ]
+        },
+        {
+          "name": "2K DCI RAW ext",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180
+        }
       ]
     },
     {
@@ -1419,6 +3085,20 @@
         30,
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        }
       ]
     },
     {
@@ -1439,6 +3119,32 @@
         25,
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.6,
+            20.0
+          ]
+        }
       ]
     },
     {
@@ -1457,6 +3163,32 @@
       "supported_fps": [
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -1477,6 +3209,32 @@
         25,
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.6,
+            20.0
+          ]
+        }
       ]
     },
     {
@@ -1495,6 +3253,32 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD S35",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.6,
+            13.3
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.6,
+            13.28
+          ]
+        }
       ]
     },
     {
@@ -1514,6 +3298,32 @@
         60,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD S35",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.6,
+            13.3
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            23.6,
+            13.28
+          ]
+        }
       ]
     },
     {
@@ -1539,6 +3349,20 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.9,
+            24.0
+          ]
+        }
       ]
     },
     {
@@ -1559,6 +3383,32 @@
         25,
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.9,
+            24.0
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.9,
+            20.2
+          ]
+        }
       ]
     },
     {
@@ -1579,6 +3429,32 @@
         25,
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.9,
+            24.0
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.9,
+            20.2
+          ]
+        }
       ]
     },
     {
@@ -1599,6 +3475,32 @@
         25,
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.7,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.7,
+            20.1
+          ]
+        }
       ]
     },
     {
@@ -1617,6 +3519,32 @@
       "supported_fps": [
         25,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            28.8,
+            16.2
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            28.8,
+            16.2
+          ]
+        }
       ]
     },
     {
@@ -1637,6 +3565,32 @@
         25,
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.6,
+            20.0
+          ]
+        }
       ]
     },
     {
@@ -1657,6 +3611,32 @@
         25,
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.6,
+            20.0
+          ]
+        }
       ]
     },
     {
@@ -1674,6 +3654,32 @@
       ],
       "supported_fps": [
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -1693,6 +3699,40 @@
         30,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K UHD",
+          "resolution": [
+            7680,
+            4320
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -1712,6 +3752,40 @@
         30,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K UHD",
+          "resolution": [
+            7680,
+            4320
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -1732,6 +3806,32 @@
         25,
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.6,
+            20.0
+          ]
+        }
       ]
     },
     {
@@ -1750,6 +3850,32 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD S35",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.6,
+            13.3
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.6,
+            13.28
+          ]
+        }
       ]
     },
     {
@@ -1768,6 +3894,32 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.9,
+            24.0
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.9,
+            20.19
+          ]
+        }
       ]
     },
     {
@@ -1786,6 +3938,32 @@
       "supported_fps": [
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -1806,6 +3984,32 @@
         25,
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            23.5,
+            15.6
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.5,
+            13.22
+          ]
+        }
       ]
     },
     {
@@ -1823,6 +4027,32 @@
       ],
       "supported_fps": [
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.5,
+            15.6
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.5,
+            13.22
+          ]
+        }
       ]
     },
     {
@@ -1858,6 +4088,32 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "Data 4:3 ARRIRAW",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            23.76,
+            17.82
+          ]
+        },
+        {
+          "name": "HD 16:9",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -1884,6 +4140,44 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "Data 4:3 ARRIRAW",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 25,
+          "sensor_area_mm": [
+            23.76,
+            17.82
+          ]
+        },
+        {
+          "name": "Data 16:9 ARRIRAW",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "HD 16:9",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -1927,6 +4221,44 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "16:9 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "16:9 2K",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "16:9 HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -1970,6 +4302,44 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "16:9 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "16:9 2K",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "16:9 HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -2013,6 +4383,44 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4:3 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            17.82
+          ]
+        },
+        {
+          "name": "16:9 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "16:9 HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -2049,6 +4457,44 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "4:3 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            17.82
+          ]
+        },
+        {
+          "name": "16:9 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "16:9 HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -2092,6 +4538,44 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4:3 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            17.82
+          ]
+        },
+        {
+          "name": "16:9 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "16:9 HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -2135,6 +4619,56 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "16:9 3.2K ARRIRAW",
+          "resolution": [
+            3164,
+            1778
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            26.14,
+            14.7
+          ]
+        },
+        {
+          "name": "16:9 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "16:9 2K",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.66,
+            13.32
+          ]
+        },
+        {
+          "name": "16:9 HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -2178,6 +4712,56 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4:3 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 96,
+          "sensor_area_mm": [
+            23.76,
+            17.82
+          ]
+        },
+        {
+          "name": "16:9 3.2K ARRIRAW",
+          "resolution": [
+            3164,
+            1778
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            26.14,
+            14.7
+          ]
+        },
+        {
+          "name": "16:9 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "16:9 HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -2219,6 +4803,68 @@
         80,
         90,
         96
+      ],
+      "sensor_modes": [
+        {
+          "name": "Open Gate 3.4K",
+          "resolution": [
+            3414,
+            2198
+          ],
+          "max_fps": 75,
+          "sensor_area_mm": [
+            28.17,
+            18.13
+          ]
+        },
+        {
+          "name": "4:3 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 96,
+          "sensor_area_mm": [
+            23.76,
+            17.82
+          ]
+        },
+        {
+          "name": "16:9 3.2K ARRIRAW",
+          "resolution": [
+            3164,
+            1778
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            26.14,
+            14.7
+          ]
+        },
+        {
+          "name": "16:9 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "16:9 HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -2266,6 +4912,80 @@
         168,
         180,
         200
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD 16:9",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            26.4,
+            14.85
+          ]
+        },
+        {
+          "name": "3.2K 16:9",
+          "resolution": [
+            3200,
+            1800
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            26.4,
+            14.85
+          ]
+        },
+        {
+          "name": "ARRIRAW 2.8K 16:9",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 48,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 200,
+          "sensor_area_mm": [
+            23.66,
+            13.3
+          ]
+        },
+        {
+          "name": "HD 16:9",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 200,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "S16 HD 16:9",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 200,
+          "sensor_area_mm": [
+            13.2,
+            7.43
+          ]
+        }
       ]
     },
     {
@@ -2313,6 +5033,104 @@
         168,
         180,
         200
+      ],
+      "sensor_modes": [
+        {
+          "name": "Open Gate 3.4K",
+          "resolution": [
+            3424,
+            2202
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            28.25,
+            18.17
+          ]
+        },
+        {
+          "name": "4K UHD 16:9",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            26.4,
+            14.85
+          ]
+        },
+        {
+          "name": "4:3 2.8K",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 50,
+          "sensor_area_mm": [
+            23.76,
+            17.82
+          ]
+        },
+        {
+          "name": "3.2K 16:9",
+          "resolution": [
+            3200,
+            1800
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            26.4,
+            14.85
+          ]
+        },
+        {
+          "name": "ARRIRAW 2.8K 16:9",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 48,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 200,
+          "sensor_area_mm": [
+            23.66,
+            13.3
+          ]
+        },
+        {
+          "name": "HD 16:9",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 200,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "S16 HD 16:9",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 200,
+          "sensor_area_mm": [
+            13.2,
+            7.43
+          ]
+        }
       ]
     },
     {
@@ -2339,6 +5157,52 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "Open Gate 6.5K",
+          "resolution": [
+            6560,
+            3100
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            54.12,
+            25.58
+          ]
+        },
+        {
+          "name": "16:9 Crop",
+          "resolution": [
+            5120,
+            2880
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            42.24,
+            23.76
+          ]
+        },
+        {
+          "name": "LF Open Gate",
+          "resolution": [
+            4448,
+            3096
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            36.7,
+            25.54
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        }
       ]
     },
     {
@@ -2382,6 +5246,92 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "Open Gate ARRIRAW",
+          "resolution": [
+            3424,
+            2202
+          ],
+          "max_fps": 90,
+          "sensor_area_mm": [
+            28.25,
+            18.17
+          ]
+        },
+        {
+          "name": "4:3 ARRIRAW",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 96,
+          "sensor_area_mm": [
+            23.76,
+            17.82
+          ]
+        },
+        {
+          "name": "6:5 ARRIRAW",
+          "resolution": [
+            2578,
+            2160
+          ],
+          "max_fps": 96,
+          "sensor_area_mm": [
+            21.38,
+            17.82
+          ]
+        },
+        {
+          "name": "16:9 3.2K ARRIRAW",
+          "resolution": [
+            3200,
+            1800
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            26.4,
+            14.85
+          ]
+        },
+        {
+          "name": "16:9 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            26.4,
+            14.85
+          ]
+        },
+        {
+          "name": "16:9 HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -2425,6 +5375,92 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "Open Gate ARRIRAW",
+          "resolution": [
+            3424,
+            2202
+          ],
+          "max_fps": 90,
+          "sensor_area_mm": [
+            28.25,
+            18.17
+          ]
+        },
+        {
+          "name": "4:3 ARRIRAW",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 96,
+          "sensor_area_mm": [
+            23.76,
+            17.82
+          ]
+        },
+        {
+          "name": "6:5 ARRIRAW",
+          "resolution": [
+            2578,
+            2160
+          ],
+          "max_fps": 96,
+          "sensor_area_mm": [
+            21.38,
+            17.82
+          ]
+        },
+        {
+          "name": "16:9 3.2K ARRIRAW",
+          "resolution": [
+            3200,
+            1800
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            26.4,
+            14.85
+          ]
+        },
+        {
+          "name": "16:9 2.8K ARRIRAW",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            26.4,
+            14.85
+          ]
+        },
+        {
+          "name": "16:9 HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -2442,6 +5478,44 @@
       ],
       "supported_fps": [
         90
+      ],
+      "sensor_modes": [
+        {
+          "name": "LF Open Gate 3:2",
+          "resolution": [
+            4448,
+            3096
+          ],
+          "max_fps": 90,
+          "sensor_area_mm": [
+            36.7,
+            25.54
+          ]
+        },
+        {
+          "name": "LF 16:9 UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 90,
+          "sensor_area_mm": [
+            31.68,
+            17.82
+          ]
+        },
+        {
+          "name": "LF 2.39:1",
+          "resolution": [
+            4448,
+            1856
+          ],
+          "max_fps": 150,
+          "sensor_area_mm": [
+            36.7,
+            15.31
+          ]
+        }
       ]
     },
     {
@@ -2460,6 +5534,116 @@
       "supported_fps": [
         40,
         90
+      ],
+      "sensor_modes": [
+        {
+          "name": "4.5K LF 3:2 Open Gate",
+          "resolution": [
+            4448,
+            3096
+          ],
+          "max_fps": 40,
+          "sensor_area_mm": [
+            36.7,
+            25.54
+          ]
+        },
+        {
+          "name": "4.5K LF 2.39:1",
+          "resolution": [
+            4448,
+            1856
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            36.7,
+            15.31
+          ]
+        },
+        {
+          "name": "4.3K LF 16:9 UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 48,
+          "sensor_area_mm": [
+            35.64,
+            20.05
+          ]
+        },
+        {
+          "name": "3.8K LF 16:9 UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            31.68,
+            17.82
+          ]
+        },
+        {
+          "name": "2.8K LF 1:1",
+          "resolution": [
+            2880,
+            2880
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.76,
+            23.76
+          ]
+        },
+        {
+          "name": "3.4K S35 3:2",
+          "resolution": [
+            3424,
+            2202
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            28.25,
+            18.17
+          ]
+        },
+        {
+          "name": "3.2K S35 16:9",
+          "resolution": [
+            3200,
+            1800
+          ],
+          "max_fps": 75,
+          "sensor_area_mm": [
+            26.4,
+            14.85
+          ]
+        },
+        {
+          "name": "3.2K S35 4:3",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 75,
+          "sensor_area_mm": [
+            23.76,
+            17.82
+          ]
+        },
+        {
+          "name": "2.8K S35 16:9",
+          "resolution": [
+            2880,
+            1620
+          ],
+          "max_fps": 100,
+          "sensor_area_mm": [
+            23.76,
+            13.37
+          ]
+        }
       ]
     },
     {
@@ -2503,6 +5687,104 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4.6K 3:2 Open Gate",
+          "resolution": [
+            4608,
+            3164
+          ],
+          "max_fps": 75,
+          "sensor_area_mm": [
+            28.0,
+            19.2
+          ]
+        },
+        {
+          "name": "4.6K 16:9",
+          "resolution": [
+            4608,
+            2592
+          ],
+          "max_fps": 75,
+          "sensor_area_mm": [
+            28.0,
+            15.7
+          ]
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2304
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.9,
+            14.0
+          ]
+        },
+        {
+          "name": "4K 2:1",
+          "resolution": [
+            4096,
+            2048
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.9,
+            12.4
+          ]
+        },
+        {
+          "name": "3.8K 16:9 UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.3,
+            13.1
+          ]
+        },
+        {
+          "name": "3.3K 6:5",
+          "resolution": [
+            3328,
+            2790
+          ],
+          "max_fps": 100,
+          "sensor_area_mm": [
+            20.22,
+            16.95
+          ]
+        },
+        {
+          "name": "3K 1:1",
+          "resolution": [
+            3072,
+            3072
+          ],
+          "max_fps": 100,
+          "sensor_area_mm": [
+            18.7,
+            18.7
+          ]
+        },
+        {
+          "name": "2K 16:9 S16",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            12.4,
+            7.0
+          ]
+        }
       ]
     },
     {
@@ -2539,6 +5821,44 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "6.5K Open Gate",
+          "resolution": [
+            6560,
+            3100
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            54.12,
+            25.58
+          ]
+        },
+        {
+          "name": "5.1K 1.65:1",
+          "resolution": [
+            5120,
+            3100
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            42.24,
+            25.58
+          ]
+        },
+        {
+          "name": "4.5K LF 3:2",
+          "resolution": [
+            4448,
+            3096
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            36.7,
+            25.54
+          ]
+        }
       ]
     },
     {
@@ -2590,6 +5910,80 @@
         300,
         330,
         660
+      ],
+      "sensor_modes": [
+        {
+          "name": "4.6K 3:2 Open Gate",
+          "resolution": [
+            4608,
+            3164
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            28.0,
+            19.2
+          ]
+        },
+        {
+          "name": "4.6K 16:9",
+          "resolution": [
+            4608,
+            2592
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            28.0,
+            15.7
+          ]
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2304
+          ],
+          "max_fps": 150,
+          "sensor_area_mm": [
+            24.9,
+            14.0
+          ]
+        },
+        {
+          "name": "3.8K 16:9 UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 150,
+          "sensor_area_mm": [
+            23.3,
+            13.1
+          ]
+        },
+        {
+          "name": "3.8K 2.39:1",
+          "resolution": [
+            3840,
+            1608
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            23.3,
+            9.8
+          ]
+        },
+        {
+          "name": "2K 16:9 S16",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 330,
+          "sensor_area_mm": [
+            12.4,
+            7.0
+          ]
+        }
       ]
     },
     {
@@ -2608,6 +6002,36 @@
       "supported_fps": [
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K 2:1",
+          "resolution": [
+            4096,
+            2048
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            24.4,
+            12.2
+          ]
+        },
+        {
+          "name": "3K 2:1",
+          "resolution": [
+            3072,
+            1536
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "2K 2:1",
+          "resolution": [
+            2048,
+            1024
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -2626,6 +6050,48 @@
       "supported_fps": [
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4.5K WS",
+          "resolution": [
+            4480,
+            1920
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            24.4,
+            13.7
+          ]
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2304
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            24.4,
+            13.7
+          ]
+        },
+        {
+          "name": "3K 16:9",
+          "resolution": [
+            3072,
+            1728
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -2643,6 +6109,48 @@
       ],
       "supported_fps": [
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "5K FF",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96,
+          "sensor_area_mm": [
+            27.7,
+            14.6
+          ]
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            27.7,
+            14.6
+          ]
+        },
+        {
+          "name": "3K 16:9",
+          "resolution": [
+            3072,
+            1620
+          ],
+          "max_fps": 160
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2661,6 +6169,52 @@
       "supported_fps": [
         30,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "5K FF",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 12,
+          "sensor_area_mm": [
+            27.7,
+            14.6
+          ]
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "3K 16:9",
+          "resolution": [
+            3072,
+            1620
+          ],
+          "max_fps": 48
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "1K 16:9",
+          "resolution": [
+            1024,
+            540
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -2680,6 +6234,52 @@
         75,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K FF",
+          "resolution": [
+            6144,
+            3160
+          ],
+          "max_fps": 75,
+          "sensor_area_mm": [
+            30.7,
+            15.8
+          ]
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "3K 16:9",
+          "resolution": [
+            3072,
+            1620
+          ],
+          "max_fps": 150
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2699,6 +6299,52 @@
         48,
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K FF",
+          "resolution": [
+            6144,
+            3160
+          ],
+          "max_fps": 12,
+          "sensor_area_mm": [
+            30.7,
+            15.8
+          ]
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 48
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "3K 16:9",
+          "resolution": [
+            3072,
+            1620
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -2718,6 +6364,44 @@
         50,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "5K FF",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            25.6,
+            13.5
+          ]
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "3K 16:9",
+          "resolution": [
+            3072,
+            1620
+          ],
+          "max_fps": 150
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2737,6 +6421,52 @@
         75,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K FF",
+          "resolution": [
+            6144,
+            3160
+          ],
+          "max_fps": 75,
+          "sensor_area_mm": [
+            30.7,
+            15.8
+          ]
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "3K 16:9",
+          "resolution": [
+            3072,
+            1620
+          ],
+          "max_fps": 150
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2756,6 +6486,60 @@
         60,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            29.9,
+            15.77
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "3K 16:9",
+          "resolution": [
+            3072,
+            1620
+          ],
+          "max_fps": 150
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2775,6 +6559,52 @@
         30,
         75,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            29.9,
+            15.77
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2794,6 +6624,20 @@
         120,
         150,
         300
+      ],
+      "sensor_modes": [
+        {
+          "name": "4.5K FF",
+          "resolution": [
+            4608,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.0,
+            10.8
+          ]
+        }
       ]
     },
     {
@@ -2813,6 +6657,52 @@
         60,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            40.96,
+            21.6
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2832,6 +6722,56 @@
         96,
         120,
         300
+      ],
+      "sensor_modes": [
+        {
+          "name": "5K FF 1.7:1",
+          "resolution": [
+            5120,
+            3000
+          ],
+          "max_fps": 75,
+          "sensor_area_mm": [
+            30.72,
+            18.0
+          ]
+        },
+        {
+          "name": "5K 17:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96,
+          "sensor_area_mm": [
+            30.72,
+            18.0
+          ]
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "3K 16:9",
+          "resolution": [
+            3072,
+            1620
+          ],
+          "max_fps": 150
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2851,6 +6791,44 @@
         96,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "5K FF",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96,
+          "sensor_area_mm": [
+            25.6,
+            13.5
+          ]
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "3K 16:9",
+          "resolution": [
+            3072,
+            1620
+          ],
+          "max_fps": 150
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2870,6 +6848,44 @@
         75,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K FF",
+          "resolution": [
+            6144,
+            3160
+          ],
+          "max_fps": 75,
+          "sensor_area_mm": [
+            30.7,
+            15.8
+          ]
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2889,6 +6905,52 @@
         60,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            29.9,
+            15.77
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2908,6 +6970,48 @@
         96,
         120,
         300
+      ],
+      "sensor_modes": [
+        {
+          "name": "5K FF 1.7:1",
+          "resolution": [
+            5120,
+            3000
+          ],
+          "max_fps": 75,
+          "sensor_area_mm": [
+            30.72,
+            18.0
+          ]
+        },
+        {
+          "name": "5K 17:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96,
+          "sensor_area_mm": [
+            30.72,
+            18.0
+          ]
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2927,6 +7031,52 @@
         60,
         120,
         300
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            40.96,
+            21.6
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2945,6 +7095,44 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            40.96,
+            21.6
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2962,6 +7150,44 @@
       ],
       "supported_fps": [
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            29.9,
+            15.77
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2979,6 +7205,36 @@
       ],
       "supported_fps": [
         96
+      ],
+      "sensor_modes": [
+        {
+          "name": "5K FF 1.7:1",
+          "resolution": [
+            5120,
+            3000
+          ],
+          "max_fps": 75,
+          "sensor_area_mm": [
+            30.72,
+            18.0
+          ]
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -2998,6 +7254,56 @@
         40,
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K 17:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 40,
+          "sensor_area_mm": [
+            27.03,
+            14.26
+          ]
+        },
+        {
+          "name": "6K 2.4:1",
+          "resolution": [
+            6144,
+            2560
+          ],
+          "max_fps": 50,
+          "sensor_area_mm": [
+            27.03,
+            14.26
+          ]
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 48
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -3017,6 +7323,44 @@
         80,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K 17:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 80,
+          "sensor_area_mm": [
+            27.03,
+            14.26
+          ]
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 96
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -3036,6 +7380,52 @@
         120,
         240,
         480
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            40.96,
+            21.6
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 160
+        },
+        {
+          "name": "5K 16:9",
+          "resolution": [
+            5120,
+            2700
+          ],
+          "max_fps": 192
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 240
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 480
+        }
       ]
     },
     {
@@ -3055,6 +7445,44 @@
         120,
         240,
         480
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            40.96,
+            21.6
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 160
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 240
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 480
+        }
       ]
     },
     {
@@ -3074,6 +7502,44 @@
         120,
         240,
         480
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            26.21,
+            13.82
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 200
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 300
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 600
+        }
       ]
     },
     {
@@ -3093,6 +7559,44 @@
         120,
         240,
         480
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            40.96,
+            21.6
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 160
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 240
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 480
+        }
       ]
     },
     {
@@ -3112,6 +7616,44 @@
         60,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            40.96,
+            21.6
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 110
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 150
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 300
+        }
       ]
     },
     {
@@ -3130,6 +7672,36 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6048,
+            3402
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.9,
+            23.9
+          ]
+        },
+        {
+          "name": "4K DCI DX Crop",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -3149,6 +7721,20 @@
         24,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "1080i",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 24,
+          "sensor_area_mm": [
+            17.3,
+            13.0
+          ]
+        }
       ]
     },
     {
@@ -3167,6 +7753,20 @@
       "supported_fps": [
         24,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "1080p",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            17.3,
+            13.0
+          ]
+        }
       ]
     },
     {
@@ -3192,6 +7792,20 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "1080p",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            17.3,
+            13.0
+          ]
+        }
       ]
     },
     {
@@ -3212,6 +7826,40 @@
         25,
         30,
         96
+      ],
+      "sensor_modes": [
+        {
+          "name": "C4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 24,
+          "sensor_area_mm": [
+            17.3,
+            13.0
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 96,
+          "sensor_area_mm": [
+            17.3,
+            9.73
+          ]
+        }
       ]
     },
     {
@@ -3230,6 +7878,40 @@
       "supported_fps": [
         60,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "C4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 48,
+          "sensor_area_mm": [
+            17.3,
+            13.0
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            17.3,
+            9.73
+          ]
+        }
       ]
     },
     {
@@ -3248,6 +7930,40 @@
       "supported_fps": [
         60,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "C4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            17.3,
+            13.0
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            17.3,
+            9.73
+          ]
+        }
       ]
     },
     {
@@ -3266,6 +7982,40 @@
       "supported_fps": [
         60,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "C4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            17.3,
+            13.0
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            17.3,
+            9.73
+          ]
+        }
       ]
     },
     {
@@ -3285,6 +8035,48 @@
         60,
         120,
         300
+      ],
+      "sensor_modes": [
+        {
+          "name": "5.7K 17:9",
+          "resolution": [
+            5728,
+            3024
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            17.3,
+            13.0
+          ]
+        },
+        {
+          "name": "C4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 300,
+          "sensor_area_mm": [
+            17.3,
+            9.73
+          ]
+        }
       ]
     },
     {
@@ -3304,6 +8096,48 @@
         60,
         120,
         300
+      ],
+      "sensor_modes": [
+        {
+          "name": "5.7K 17:9",
+          "resolution": [
+            5728,
+            3024
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            17.3,
+            13.0
+          ]
+        },
+        {
+          "name": "C4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 300,
+          "sensor_area_mm": [
+            17.3,
+            9.73
+          ]
+        }
       ]
     },
     {
@@ -3322,6 +8156,40 @@
       "supported_fps": [
         60,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "C4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            17.3,
+            13.0
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            17.3,
+            9.73
+          ]
+        }
       ]
     },
     {
@@ -3340,6 +8208,32 @@
       "supported_fps": [
         60,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -3360,6 +8254,80 @@
         30,
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K 3:2",
+          "resolution": [
+            5952,
+            3968
+          ],
+          "max_fps": 24,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "5.9K 16:9",
+          "resolution": [
+            5888,
+            3312
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "C4K FF",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "C4K S35 Crop",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "4K UHD S35 Crop",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "Anamorphic 4:3",
+          "resolution": [
+            3328,
+            2496
+          ],
+          "max_fps": 50
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -3378,6 +8346,32 @@
       "supported_fps": [
         60,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -3396,6 +8390,48 @@
       "supported_fps": [
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K UHD",
+          "resolution": [
+            7680,
+            4320
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "5.8K 16:9",
+          "resolution": [
+            5888,
+            3312
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -3415,6 +8451,32 @@
         30,
         60,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -3434,6 +8496,56 @@
         30,
         60,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K 3:2",
+          "resolution": [
+            5952,
+            3968
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "5.9K 16:9",
+          "resolution": [
+            5888,
+            3312
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "C4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -3453,6 +8565,56 @@
         30,
         60,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K 3:2",
+          "resolution": [
+            5952,
+            3968
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "5.9K 16:9",
+          "resolution": [
+            5888,
+            3312
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "C4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -3471,6 +8633,48 @@
       "supported_fps": [
         30,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K 3:2",
+          "resolution": [
+            5952,
+            3968
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "C4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -3490,6 +8694,64 @@
         24,
         60,
         180
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K 3:2",
+          "resolution": [
+            5952,
+            3968
+          ],
+          "max_fps": 24,
+          "sensor_area_mm": [
+            35.6,
+            23.8
+          ]
+        },
+        {
+          "name": "5.9K 16:9",
+          "resolution": [
+            5888,
+            3312
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "C4K S35 Crop",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD FF",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "Anamorphic 4:3",
+          "resolution": [
+            3536,
+            2656
+          ],
+          "max_fps": 50
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 180,
+          "sensor_area_mm": [
+            35.6,
+            20.03
+          ]
+        }
       ]
     },
     {
@@ -3508,6 +8770,56 @@
       "supported_fps": [
         60,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "5.7K RAW",
+          "resolution": [
+            5720,
+            3016
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            24.6,
+            12.97
+          ]
+        },
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "2K",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            24.6,
+            13.84
+          ]
+        }
       ]
     },
     {
@@ -3550,6 +8862,48 @@
         96,
         100,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            24.6,
+            13.3
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K DCI",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            24.6,
+            13.84
+          ]
+        }
       ]
     },
     {
@@ -3568,6 +8922,48 @@
       "supported_fps": [
         60,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            24.6,
+            13.3
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "2K DCI",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            24.6,
+            13.84
+          ]
+        }
       ]
     },
     {
@@ -3587,6 +8983,28 @@
         24,
         25,
         30
+      ],
+      "sensor_modes": [
+        {
+          "name": "2.5K RAW",
+          "resolution": [
+            2432,
+            1366
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            15.81,
+            8.88
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 30
+        }
       ]
     },
     {
@@ -3606,6 +9024,28 @@
         24,
         25,
         30
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K",
+          "resolution": [
+            4000,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            21.12,
+            11.88
+          ]
+        },
+        {
+          "name": "UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30
+        }
       ]
     },
     {
@@ -3625,6 +9065,20 @@
         24,
         25,
         30
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            12.48,
+            7.02
+          ]
+        }
       ]
     },
     {
@@ -3650,6 +9104,20 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            12.48,
+            7.02
+          ]
+        }
       ]
     },
     {
@@ -3668,6 +9136,60 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            18.96,
+            10.0
+          ]
+        },
+        {
+          "name": "4K 2.4:1",
+          "resolution": [
+            4096,
+            1720
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "2.8K Anamorphic",
+          "resolution": [
+            2880,
+            2160
+          ],
+          "max_fps": 80
+        },
+        {
+          "name": "2.6K 16:9",
+          "resolution": [
+            2688,
+            1512
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -3687,6 +9209,60 @@
         50,
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K",
+          "resolution": [
+            6144,
+            3456
+          ],
+          "max_fps": 50,
+          "sensor_area_mm": [
+            23.1,
+            12.99
+          ]
+        },
+        {
+          "name": "6K 2.4:1",
+          "resolution": [
+            6144,
+            2560
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "5.7K 17:9",
+          "resolution": [
+            5744,
+            3024
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "3.7K 6:5 Anamorphic",
+          "resolution": [
+            3728,
+            3104
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "2.8K 17:9",
+          "resolution": [
+            2880,
+            1512
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -3706,6 +9282,60 @@
         50,
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K",
+          "resolution": [
+            6144,
+            3456
+          ],
+          "max_fps": 50,
+          "sensor_area_mm": [
+            23.1,
+            12.99
+          ]
+        },
+        {
+          "name": "6K 2.4:1",
+          "resolution": [
+            6144,
+            2560
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "5.7K 17:9",
+          "resolution": [
+            5744,
+            3024
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "3.7K 6:5 Anamorphic",
+          "resolution": [
+            3728,
+            3104
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "2.8K 17:9",
+          "resolution": [
+            2880,
+            1512
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -3725,6 +9355,60 @@
         50,
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "6K",
+          "resolution": [
+            6144,
+            3456
+          ],
+          "max_fps": 50,
+          "sensor_area_mm": [
+            23.1,
+            12.99
+          ]
+        },
+        {
+          "name": "6K 2.4:1",
+          "resolution": [
+            6144,
+            2560
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "5.7K 17:9",
+          "resolution": [
+            5744,
+            3024
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "3.7K 6:5 Anamorphic",
+          "resolution": [
+            3728,
+            3104
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "2.8K 17:9",
+          "resolution": [
+            2880,
+            1512
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -3743,6 +9427,28 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K",
+          "resolution": [
+            4000,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            21.12,
+            11.88
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -3760,6 +9466,44 @@
       ],
       "supported_fps": [
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "4.6K",
+          "resolution": [
+            4608,
+            2592
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            25.34,
+            14.25
+          ]
+        },
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "3K Anamorphic",
+          "resolution": [
+            3072,
+            2560
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -3778,6 +9522,44 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4.6K",
+          "resolution": [
+            4608,
+            2592
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            25.34,
+            14.25
+          ]
+        },
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "3K Anamorphic",
+          "resolution": [
+            3072,
+            2560
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -3796,6 +9578,44 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "4.6K",
+          "resolution": [
+            4608,
+            2592
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            25.34,
+            14.25
+          ]
+        },
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "3K Anamorphic",
+          "resolution": [
+            3072,
+            2560
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -3815,6 +9635,52 @@
         120,
         150,
         300
+      ],
+      "sensor_modes": [
+        {
+          "name": "4.6K",
+          "resolution": [
+            4608,
+            2592
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            25.34,
+            14.25
+          ]
+        },
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 150
+        },
+        {
+          "name": "3K Anamorphic",
+          "resolution": [
+            3072,
+            2560
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 300
+        }
       ]
     },
     {
@@ -3833,6 +9699,68 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "12K DCI",
+          "resolution": [
+            12288,
+            6480
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            27.03,
+            14.25
+          ]
+        },
+        {
+          "name": "8K DCI",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "8K 2.4:1",
+          "resolution": [
+            8192,
+            3408
+          ],
+          "max_fps": 160
+        },
+        {
+          "name": "6K S16",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "4K 2.4:1",
+          "resolution": [
+            4096,
+            1704
+          ],
+          "max_fps": 160
+        },
+        {
+          "name": "4K S16",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -3850,6 +9778,76 @@
       ],
       "supported_fps": [
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "12K 3:2 Open Gate",
+          "resolution": [
+            12288,
+            8040
+          ],
+          "max_fps": 80,
+          "sensor_area_mm": [
+            35.64,
+            23.32
+          ]
+        },
+        {
+          "name": "12K 16:9",
+          "resolution": [
+            12288,
+            6912
+          ],
+          "max_fps": 100
+        },
+        {
+          "name": "12K 2.4:1",
+          "resolution": [
+            12288,
+            5112
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "9K S35 3:2",
+          "resolution": [
+            9408,
+            6264
+          ],
+          "max_fps": 100
+        },
+        {
+          "name": "8K 3:2 scaled",
+          "resolution": [
+            8192,
+            5360
+          ],
+          "max_fps": 144
+        },
+        {
+          "name": "8K 2.4:1 scaled",
+          "resolution": [
+            8192,
+            3408
+          ],
+          "max_fps": 224
+        },
+        {
+          "name": "4K 3:2 scaled",
+          "resolution": [
+            4096,
+            2680
+          ],
+          "max_fps": 144
+        },
+        {
+          "name": "4K 2.4:1 scaled",
+          "resolution": [
+            4096,
+            1704
+          ],
+          "max_fps": 224
+        }
       ]
     },
     {
@@ -3868,6 +9866,68 @@
       "supported_fps": [
         36,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "Open Gate 3:2",
+          "resolution": [
+            6048,
+            4032
+          ],
+          "max_fps": 36,
+          "sensor_area_mm": [
+            36.0,
+            24.0
+          ]
+        },
+        {
+          "name": "6K DCI 17:9",
+          "resolution": [
+            6048,
+            3200
+          ],
+          "max_fps": 48
+        },
+        {
+          "name": "6K 2.4:1",
+          "resolution": [
+            6048,
+            2520
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "S35 4:3",
+          "resolution": [
+            4096,
+            3072
+          ],
+          "max_fps": 50
+        },
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "S16 HD",
+          "resolution": [
+            2112,
+            1184
+          ],
+          "max_fps": 100
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -3886,6 +9946,68 @@
       "supported_fps": [
         36,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "Open Gate 3:2",
+          "resolution": [
+            6048,
+            4032
+          ],
+          "max_fps": 36,
+          "sensor_area_mm": [
+            36.0,
+            24.0
+          ]
+        },
+        {
+          "name": "6K DCI 17:9",
+          "resolution": [
+            6048,
+            3200
+          ],
+          "max_fps": 48
+        },
+        {
+          "name": "6K 2.4:1",
+          "resolution": [
+            6048,
+            2520
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "S35 4:3",
+          "resolution": [
+            4096,
+            3072
+          ],
+          "max_fps": 50
+        },
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "S16 HD",
+          "resolution": [
+            2112,
+            1184
+          ],
+          "max_fps": 100
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120
+        }
       ]
     },
     {
@@ -3906,6 +10028,32 @@
         25,
         30,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            23.6,
+            15.6
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.6,
+            13.28
+          ]
+        }
       ]
     },
     {
@@ -3924,6 +10072,40 @@
       "supported_fps": [
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "DCI 4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.5,
+            15.6
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.5,
+            13.22
+          ]
+        }
       ]
     },
     {
@@ -3942,6 +10124,40 @@
       "supported_fps": [
         60,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "DCI 4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            23.5,
+            15.6
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            23.5,
+            13.22
+          ]
+        }
       ]
     },
     {
@@ -3961,6 +10177,48 @@
         30,
         60,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "6.2K Open Gate",
+          "resolution": [
+            6240,
+            4160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            23.5,
+            15.6
+          ]
+        },
+        {
+          "name": "DCI 4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            23.5,
+            13.22
+          ]
+        }
       ]
     },
     {
@@ -3979,6 +10237,40 @@
       "supported_fps": [
         24,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "DCI 4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 24,
+          "sensor_area_mm": [
+            23.5,
+            15.6
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            23.5,
+            13.22
+          ]
+        }
       ]
     },
     {
@@ -3997,6 +10289,48 @@
       "supported_fps": [
         30,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K UHD",
+          "resolution": [
+            7680,
+            4320
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            23.5,
+            15.6
+          ]
+        },
+        {
+          "name": "DCI 4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            23.5,
+            13.22
+          ]
+        }
       ]
     },
     {
@@ -4016,6 +10350,48 @@
         30,
         120,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "6.2K Open Gate 3:2",
+          "resolution": [
+            6240,
+            4160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            23.5,
+            15.6
+          ]
+        },
+        {
+          "name": "DCI 4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            23.5,
+            13.22
+          ]
+        }
       ]
     },
     {
@@ -4035,6 +10411,48 @@
         30,
         60,
         240
+      ],
+      "sensor_modes": [
+        {
+          "name": "6.2K Open Gate",
+          "resolution": [
+            6240,
+            4160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            23.5,
+            15.6
+          ]
+        },
+        {
+          "name": "DCI 4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 240,
+          "sensor_area_mm": [
+            23.5,
+            13.22
+          ]
+        }
       ]
     },
     {
@@ -4054,6 +10472,20 @@
         24,
         25,
         30
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            43.8,
+            32.9
+          ]
+        }
       ]
     },
     {
@@ -4073,6 +10505,20 @@
         24,
         25,
         30
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            43.8,
+            32.9
+          ]
+        }
       ]
     },
     {
@@ -4092,6 +10538,20 @@
         24,
         25,
         30
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            43.8,
+            32.9
+          ]
+        }
       ]
     },
     {
@@ -4117,6 +10577,44 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "DCI 4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            43.8,
+            24.6
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            43.8,
+            24.6
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            43.8,
+            24.64
+          ]
+        }
       ]
     },
     {
@@ -4142,6 +10640,44 @@
         48,
         50,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "DCI 4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            43.8,
+            24.6
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            43.8,
+            24.6
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            43.8,
+            24.64
+          ]
+        }
       ]
     },
     {
@@ -4161,6 +10697,32 @@
         24,
         25,
         30
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            43.8,
+            24.6
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            43.8,
+            24.64
+          ]
+        }
       ]
     },
     {
@@ -4180,6 +10742,68 @@
         20,
         60,
         120
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K DCI",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 24,
+          "sensor_area_mm": [
+            29.0,
+            16.0
+          ]
+        },
+        {
+          "name": "8K UHD",
+          "resolution": [
+            7680,
+            4320
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            29.0,
+            16.0
+          ]
+        },
+        {
+          "name": "DCI 4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            43.8,
+            24.6
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            43.8,
+            24.6
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 120,
+          "sensor_area_mm": [
+            29.0,
+            16.31
+          ]
+        }
       ]
     },
     {
@@ -4199,6 +10823,44 @@
         24,
         25,
         30
+      ],
+      "sensor_modes": [
+        {
+          "name": "DCI 4K",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            43.8,
+            24.6
+          ]
+        },
+        {
+          "name": "4K UHD",
+          "resolution": [
+            3840,
+            2160
+          ],
+          "max_fps": 30,
+          "sensor_area_mm": [
+            43.8,
+            24.6
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            43.8,
+            24.64
+          ]
+        }
       ]
     },
     {
@@ -4233,6 +10895,20 @@
         40,
         48,
         50
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 50,
+          "sensor_area_mm": [
+            23.62,
+            13.28
+          ]
+        }
       ]
     },
     {
@@ -4250,6 +10926,44 @@
       ],
       "supported_fps": [
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            40.96,
+            21.6
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -4267,6 +10981,44 @@
       ],
       "supported_fps": [
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            40.96,
+            21.6
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -4288,6 +11040,44 @@
         30,
         48,
         60
+      ],
+      "sensor_modes": [
+        {
+          "name": "8K FF",
+          "resolution": [
+            8192,
+            4320
+          ],
+          "max_fps": 60,
+          "sensor_area_mm": [
+            40.96,
+            21.6
+          ]
+        },
+        {
+          "name": "6K 16:9",
+          "resolution": [
+            6144,
+            3240
+          ],
+          "max_fps": 75
+        },
+        {
+          "name": "4K 16:9",
+          "resolution": [
+            4096,
+            2160
+          ],
+          "max_fps": 120
+        },
+        {
+          "name": "2K 16:9",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 240
+        }
       ]
     },
     {
@@ -5311,8 +12101,53 @@
       "sensor_height_mm": 16.0,
       "format": "S35",
       "mount": "PL",
-      "native_resolution": [2560, 1600],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 150, 300, 500, 1000, 1560]
+      "native_resolution": [
+        2560,
+        1600
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        150,
+        300,
+        500,
+        1000,
+        1560
+      ],
+      "sensor_modes": [
+        {
+          "name": "2K",
+          "resolution": [
+            2048,
+            1080
+          ],
+          "max_fps": 725,
+          "sensor_area_mm": [
+            25.6,
+            16.0
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 1455
+        },
+        {
+          "name": "1K",
+          "resolution": [
+            1024,
+            1024
+          ],
+          "max_fps": 2570
+        }
+      ]
     },
     {
       "name": "Phantom Miro M320S",
@@ -5323,8 +12158,45 @@
       "sensor_height_mm": 12.0,
       "format": "Custom",
       "mount": "PL",
-      "native_resolution": [1920, 1200],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 1000, 1320, 1540]
+      "native_resolution": [
+        1920,
+        1200
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        1000,
+        1320,
+        1540
+      ],
+      "sensor_modes": [
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 1540,
+          "sensor_area_mm": [
+            13.9,
+            9.3
+          ]
+        },
+        {
+          "name": "720p",
+          "resolution": [
+            1280,
+            720
+          ],
+          "max_fps": 3200
+        }
+      ]
     },
     {
       "name": "Phantom Flex4K",
@@ -5335,8 +12207,54 @@
       "sensor_height_mm": 15.5,
       "format": "S35",
       "mount": "PL",
-      "native_resolution": [4096, 2304],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 938, 1000, 1984, 2949]
+      "native_resolution": [
+        4096,
+        2304
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        938,
+        1000,
+        1984,
+        2949
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2304
+          ],
+          "max_fps": 938,
+          "sensor_area_mm": [
+            27.6,
+            15.5
+          ]
+        },
+        {
+          "name": "2K DCI",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 1975
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 2000
+        }
+      ]
     },
     {
       "name": "Phantom VEO 640",
@@ -5347,8 +12265,44 @@
       "sensor_height_mm": 16.0,
       "format": "S35",
       "mount": "PL",
-      "native_resolution": [2560, 1600],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 1000, 1490]
+      "native_resolution": [
+        2560,
+        1600
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        1000,
+        1490
+      ],
+      "sensor_modes": [
+        {
+          "name": "2.5MP",
+          "resolution": [
+            2560,
+            1600
+          ],
+          "max_fps": 1420,
+          "sensor_area_mm": [
+            25.6,
+            16.0
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 2800
+        }
+      ]
     },
     {
       "name": "Phantom v2512",
@@ -5359,8 +12313,38 @@
       "sensor_height_mm": 22.4,
       "format": "Custom",
       "mount": "PL",
-      "native_resolution": [1280, 800],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 1000, 5000, 10000, 25700]
+      "native_resolution": [
+        1280,
+        800
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        1000,
+        5000,
+        10000,
+        25700
+      ],
+      "sensor_modes": [
+        {
+          "name": "1MP",
+          "resolution": [
+            1280,
+            800
+          ],
+          "max_fps": 25700,
+          "sensor_area_mm": [
+            12.8,
+            8.0
+          ]
+        }
+      ]
     },
     {
       "name": "Phantom VEO4K-PL",
@@ -5371,8 +12355,53 @@
       "sensor_height_mm": 15.5,
       "format": "S35",
       "mount": "PL",
-      "native_resolution": [4096, 2304],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 938, 1000, 1970]
+      "native_resolution": [
+        4096,
+        2304
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        938,
+        1000,
+        1970
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2304
+          ],
+          "max_fps": 938,
+          "sensor_area_mm": [
+            27.6,
+            15.5
+          ]
+        },
+        {
+          "name": "2K DCI",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 1975
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 2000
+        }
+      ]
     },
     {
       "name": "Phantom VEO4K 990",
@@ -5383,8 +12412,53 @@
       "sensor_height_mm": 15.5,
       "format": "S35",
       "mount": "Nikon F",
-      "native_resolution": [4096, 2304],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 938, 1000, 1970]
+      "native_resolution": [
+        4096,
+        2304
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        938,
+        1000,
+        1970
+      ],
+      "sensor_modes": [
+        {
+          "name": "4K DCI",
+          "resolution": [
+            4096,
+            2304
+          ],
+          "max_fps": 938,
+          "sensor_area_mm": [
+            27.6,
+            15.5
+          ]
+        },
+        {
+          "name": "2K DCI",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 1975
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 2000
+        }
+      ]
     },
     {
       "name": "Phantom v2640",
@@ -5395,8 +12469,45 @@
       "sensor_height_mm": 26.3,
       "format": "Custom",
       "mount": "PL",
-      "native_resolution": [2048, 1952],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 1000, 5000, 6600]
+      "native_resolution": [
+        2048,
+        1952
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        1000,
+        5000,
+        6600
+      ],
+      "sensor_modes": [
+        {
+          "name": "4MP FF",
+          "resolution": [
+            2048,
+            1952
+          ],
+          "max_fps": 6600,
+          "sensor_area_mm": [
+            27.6,
+            26.3
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 11750
+        }
+      ]
     },
     {
       "name": "Phantom T1340",
@@ -5407,8 +12518,44 @@
       "sensor_height_mm": 26.3,
       "format": "Custom",
       "mount": "PL",
-      "native_resolution": [2048, 1952],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 1000, 3270]
+      "native_resolution": [
+        2048,
+        1952
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        1000,
+        3270
+      ],
+      "sensor_modes": [
+        {
+          "name": "4MP",
+          "resolution": [
+            2048,
+            1952
+          ],
+          "max_fps": 3270,
+          "sensor_area_mm": [
+            27.6,
+            26.3
+          ]
+        },
+        {
+          "name": "HD",
+          "resolution": [
+            1920,
+            1080
+          ],
+          "max_fps": 6060
+        }
+      ]
     },
     {
       "name": "Phantom VEO 1310",
@@ -5419,8 +12566,37 @@
       "sensor_height_mm": 17.3,
       "format": "Custom",
       "mount": "PL",
-      "native_resolution": [1280, 960],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 1000, 5000, 10800]
+      "native_resolution": [
+        1280,
+        960
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        1000,
+        5000,
+        10800
+      ],
+      "sensor_modes": [
+        {
+          "name": "1.2MP",
+          "resolution": [
+            1280,
+            960
+          ],
+          "max_fps": 10750,
+          "sensor_area_mm": [
+            23.0,
+            17.3
+          ]
+        }
+      ]
     },
     {
       "name": "Phantom TMX 7510",
@@ -5431,8 +12607,39 @@
       "sensor_height_mm": 14.8,
       "format": "Custom",
       "mount": "PL",
-      "native_resolution": [1280, 800],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 1000, 5000, 10000, 50000, 76000]
+      "native_resolution": [
+        1280,
+        800
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        1000,
+        5000,
+        10000,
+        50000,
+        76000
+      ],
+      "sensor_modes": [
+        {
+          "name": "1MP",
+          "resolution": [
+            1280,
+            800
+          ],
+          "max_fps": 76000,
+          "sensor_area_mm": [
+            12.8,
+            8.0
+          ]
+        }
+      ]
     },
     {
       "name": "Phantom T4040",
@@ -5443,8 +12650,45 @@
       "sensor_height_mm": 15.4,
       "format": "S35",
       "mount": "PL",
-      "native_resolution": [2560, 1664],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 1000, 5000, 9350]
+      "native_resolution": [
+        2560,
+        1664
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        1000,
+        5000,
+        9350
+      ],
+      "sensor_modes": [
+        {
+          "name": "4.3MP",
+          "resolution": [
+            2560,
+            1664
+          ],
+          "max_fps": 9350,
+          "sensor_area_mm": [
+            25.6,
+            16.6
+          ]
+        },
+        {
+          "name": "2K DCI",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 12000
+        }
+      ]
     },
     {
       "name": "Phantom T2540",
@@ -5455,8 +12699,45 @@
       "sensor_height_mm": 15.4,
       "format": "S35",
       "mount": "PL",
-      "native_resolution": [2560, 1664],
-      "supported_fps": [24, 25, 30, 48, 60, 120, 240, 500, 1000, 5000, 5840]
+      "native_resolution": [
+        2560,
+        1664
+      ],
+      "supported_fps": [
+        24,
+        25,
+        30,
+        48,
+        60,
+        120,
+        240,
+        500,
+        1000,
+        5000,
+        5840
+      ],
+      "sensor_modes": [
+        {
+          "name": "4.3MP",
+          "resolution": [
+            2560,
+            1664
+          ],
+          "max_fps": 5840,
+          "sensor_area_mm": [
+            25.6,
+            16.6
+          ]
+        },
+        {
+          "name": "2K DCI",
+          "resolution": [
+            2048,
+            1152
+          ],
+          "max_fps": 7500
+        }
+      ]
     }
   ],
   "lenses": [

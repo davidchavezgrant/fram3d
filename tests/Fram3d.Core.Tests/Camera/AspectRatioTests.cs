@@ -99,13 +99,73 @@ namespace Fram3d.Core.Tests.Camera
 		// --- ComputeUnmaskedRect: Full Screen ---
 
 		[Fact]
-		public void ComputeUnmaskedRect__ReturnsFullView__When__FullScreen()
+		public void ComputeUnmaskedRect__ReturnsFullView__When__FullScreenNoSensorMode()
 		{
 			var rect = AspectRatio.FULL_SCREEN.ComputeUnmaskedRect(1920f, 1080f);
 			rect.X.Should().Be(0f);
 			rect.Y.Should().Be(0f);
 			rect.Width.Should().Be(1920f);
 			rect.Height.Should().Be(1080f);
+		}
+
+		// --- ComputeUnmaskedRect: Full Screen with sensor mode (open gate) ---
+
+		[Fact]
+		public void ComputeUnmaskedRect__UsesOpenGateRatio__When__FullScreenWithSensorMode()
+		{
+			// C4K mode: 4096x2160 ≈ 1.896:1 on a 16:9 window → letterbox
+			var c4kMode = new SensorMode("C4K", 4096, 2160, 24.89f, 13.12f, 60);
+			var rect    = AspectRatio.FULL_SCREEN.ComputeUnmaskedRect(1920f, 1080f, c4kMode);
+			rect.X.Should().Be(0f);
+			rect.Width.Should().Be(1920f);
+			// 1920 / 1.896 ≈ 1012.7 — shorter than 1080, so letterbox
+			rect.Height.Should().BeApproximately(1920f / c4kMode.AspectRatio, 0.5f);
+		}
+
+		[Fact]
+		public void ComputeUnmaskedRect__UsesSensorRatio__When__FullScreenWith4x3Sensor()
+		{
+			// 3:2 open gate on a 16:9 window → pillarbox (like ALEXA Mini LF)
+			var mode = new SensorMode("LF Open Gate", 4448, 3096, 36.70f, 25.54f, 40);
+			var rect = AspectRatio.FULL_SCREEN.ComputeUnmaskedRect(1920f, 1080f, mode);
+			rect.Y.Should().Be(0f);
+			rect.Height.Should().Be(1080f);
+			// 1080 * (4448/3096) ≈ 1551 — pillarbox
+			rect.Width.Should().BeApproximately(1080f * mode.AspectRatio, 0.5f);
+		}
+
+		// --- ComputeUnmaskedRect: Named ratios fit to window (not nested in gate) ---
+
+		[Fact]
+		public void ComputeUnmaskedRect__FitsToWindow__When__16x9WithSensorMode()
+		{
+			// 16:9 on a 16:9 window fills it completely — sensor mode doesn't affect display
+			var mode = new SensorMode("LF Open Gate", 4448, 3096, 36.70f, 25.54f, 40);
+			var rect = AspectRatio.RATIO_16_9.ComputeUnmaskedRect(1920f, 1080f, mode);
+			rect.X.Should().BeApproximately(0f, 0.1f);
+			rect.Y.Should().BeApproximately(0f, 0.1f);
+			rect.Width.Should().BeApproximately(1920f, 0.1f);
+			rect.Height.Should().BeApproximately(1080f, 0.1f);
+		}
+
+		[Fact]
+		public void ComputeUnmaskedRect__FitsToWindow__When__239WithSensorMode()
+		{
+			// 2.39:1 on a 16:9 window → letterbox only, no pillarbox from gate
+			var mode = new SensorMode("C4K", 4096, 2160, 24.89f, 13.12f, 60);
+			var rect = AspectRatio.RATIO_239_1.ComputeUnmaskedRect(1920f, 1080f, mode);
+			rect.X.Should().Be(0f);
+			rect.Width.Should().Be(1920f);
+			rect.Height.Should().BeApproximately(1920f / 2.39f, 0.1f);
+		}
+
+		[Fact]
+		public void ComputeUnmaskedRect__FitsToWindow__When__NoSensorMode()
+		{
+			var rect = AspectRatio.RATIO_239_1.ComputeUnmaskedRect(1920f, 1080f);
+			rect.X.Should().Be(0f);
+			rect.Width.Should().Be(1920f);
+			rect.Height.Should().BeApproximately(1920f / 2.39f, 0.1f);
 		}
 
 		// --- ComputeUnmaskedRect: Letterbox (wider ratio than view) ---

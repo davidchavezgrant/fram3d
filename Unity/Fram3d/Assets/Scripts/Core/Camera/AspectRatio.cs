@@ -38,21 +38,38 @@ namespace Fram3d.Core.Camera
 
         /// <summary>
         /// Computes the unmasked rectangle within a view of the given dimensions.
-        /// Returns (x, y, width, height) where (x, y) is the top-left corner.
-        /// Full Screen returns the full view. Other ratios are centered with
-        /// letterbox (horizontal bars) or pillarbox (vertical bars) as needed.
+        /// Full Screen uses the sensor's open gate ratio when a sensor mode is active.
+        /// Named ratios (16:9, 2.39:1, etc.) always fit directly to the window — the
+        /// sensor constrains which modes are available, but the display fills the window
+        /// in at least one dimension (no nested bars).
         /// </summary>
-        public UnmaskedRect ComputeUnmaskedRect(float viewWidth, float viewHeight)
+        public UnmaskedRect ComputeUnmaskedRect(float viewWidth, float viewHeight, SensorMode activeSensorMode = null)
         {
-            if (this.Value == null || viewWidth <= 0f || viewHeight <= 0f)
+            if (viewWidth <= 0f || viewHeight <= 0f)
                 return new UnmaskedRect(0f, 0f, viewWidth, viewHeight);
 
-            var targetRatio = this.Value.Value;
-            var viewRatio   = viewWidth / viewHeight;
+            float targetRatio;
+
+            if (this.Value != null)
+            {
+                // Named ratio — fit directly to window
+                targetRatio = this.Value.Value;
+            }
+            else if (activeSensorMode != null && activeSensorMode.AspectRatio > 0f)
+            {
+                // Full Screen with sensor mode → open gate
+                targetRatio = activeSensorMode.AspectRatio;
+            }
+            else
+            {
+                // Full Screen without sensor mode → no bars
+                return new UnmaskedRect(0f, 0f, viewWidth, viewHeight);
+            }
+
+            var viewRatio = viewWidth / viewHeight;
 
             if (targetRatio > viewRatio)
             {
-                // Wider than view → letterbox (horizontal bars top/bottom)
                 var height = viewWidth / targetRatio;
                 var y      = (viewHeight - height) / 2f;
                 return new UnmaskedRect(0f, y, viewWidth, height);
@@ -60,13 +77,11 @@ namespace Fram3d.Core.Camera
 
             if (targetRatio < viewRatio)
             {
-                // Narrower than view → pillarbox (vertical bars left/right)
                 var width = viewHeight * targetRatio;
                 var x     = (viewWidth - width) / 2f;
                 return new UnmaskedRect(x, 0f, width, viewHeight);
             }
 
-            // Exact match — no bars
             return new UnmaskedRect(0f, 0f, viewWidth, viewHeight);
         }
 

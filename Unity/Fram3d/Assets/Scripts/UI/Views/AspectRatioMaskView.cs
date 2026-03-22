@@ -62,7 +62,7 @@ namespace Fram3d.UI.Views
             if (float.IsNaN(viewWidth) || float.IsNaN(viewHeight))
                 return;
 
-            var rect = this._cameraBehaviour.ActiveAspectRatio.ComputeUnmaskedRect(viewWidth, viewHeight);
+            var rect = this._cameraBehaviour.ActiveAspectRatio.ComputeUnmaskedRect(viewWidth, viewHeight, this._cameraBehaviour.ActiveSensorMode);
 
             // Top bar
             this._barTop.style.left   = 0;

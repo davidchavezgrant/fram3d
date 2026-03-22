@@ -233,12 +233,20 @@ namespace Fram3d.Tests.Engine
             cam.SnapFocalLength = false;
 
             cam.FocalLength = 135f;
-            // Wait several frames for lerp to converge
-            for (var i = 0; i < 60; i++)
+
+            // Wait until convergence or timeout — lerp rate depends on framerate
+            for (var i = 0; i < 600; i++)
+            {
                 yield return null;
 
-            // Should have converged within 0.01mm (the snap threshold in SyncFocalLength)
-            Assert.AreEqual(135f, this._camera.focalLength, 0.01f);
+                if (Mathf.Abs(this._camera.focalLength - 135f) < 0.01f)
+                {
+                    Assert.AreEqual(135f, this._camera.focalLength, 0.01f);
+                    yield break;
+                }
+            }
+
+            Assert.Fail($"Focal length did not converge after 600 frames (stuck at {this._camera.focalLength:F2}mm)");
         }
 
         // --- DOF wiring ---

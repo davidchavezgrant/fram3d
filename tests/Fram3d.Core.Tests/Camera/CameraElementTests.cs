@@ -1443,5 +1443,92 @@ namespace Fram3d.Core.Tests.Camera
 
 			cam.ActiveSensorMode.Should().BeSameAs(LF_16X9);
 		}
+
+		[Fact]
+		public void SetSensorMode__RevertsToBodyDims__When__ModeSetToNull()
+		{
+			var cam  = CreateCamera();
+			cam.CycleAspectRatioBackward(); // Full Screen
+			var body = CreateAlexaMiniLF();
+			cam.SetBody(body);
+			cam.SetSensorMode(LF_16X9);
+			cam.SensorHeight.Should().NotBe(25.54f); // mode constrains it
+
+			cam.SetSensorMode(null);
+
+			// Back to body-only dims with Full Screen
+			cam.SensorWidth.Should().Be(36.70f);
+			cam.SensorHeight.Should().Be(25.54f);
+		}
+
+		[Fact]
+		public void SetBody__NoCropping__When__DeliveryRatioMatchesGateRatio()
+		{
+			var cam = CreateCamera(); // default 16:9
+			// Body with exactly 16:9 sensor: 32.0 × 18.0mm
+			var body = new CameraBody("16:9 Body", "Test", 2020, 32.0f, 18.0f, "S35", "",
+				new[] { 3840, 2160 }, new[] { 24 });
+
+			cam.SetBody(body);
+
+			// 16:9 delivery on 16:9 sensor → no cropping
+			cam.SensorWidth.Should().BeApproximately(32.0f, 0.01f);
+			cam.SensorHeight.Should().BeApproximately(18.0f, 0.01f);
+		}
+
+		[Fact]
+		public void VerticalFov__Changes__When__AspectRatioCycled()
+		{
+			var cam  = CreateCamera();
+			cam.CycleAspectRatioBackward(); // Full Screen
+			var body = CreateAlexaMiniLF();
+			cam.SetBody(body);
+			var fovFullScreen = cam.VerticalFov;
+
+			cam.CycleAspectRatioForward(); // → 16:9
+
+			// 16:9 crops height on this body → smaller sensor height → narrower vertical FOV
+			cam.VerticalFov.Should().BeLessThan(fovFullScreen);
+		}
+
+		[Fact]
+		public void SetSensorMode__CombinesWithAspectRatio__When__BothActive()
+		{
+			var cam  = CreateCamera(); // default 16:9
+			var body = CreateAlexaMiniLF();
+			cam.SetBody(body);
+
+			cam.SetSensorMode(LF_OPEN_GATE);
+
+			// Open gate is ≈1.437:1, 16:9 is ≈1.778
+			// Delivery (1.778) > gate (1.437) → width = gate width, height = width / 1.778
+			cam.SensorWidth.Should().Be(36.70f);
+			cam.SensorHeight.Should().BeApproximately(36.70f / (16f / 9f), 0.01f);
+		}
+
+		[Fact]
+		public void SetSensorMode__NarrowGateWithWideRatio__When__CropModeWith239()
+		{
+			// RED DSMC2 with a 2.5K crop mode (sensor-windowed, narrower FOV)
+			var openGate = new SensorMode("Open Gate", 5120, 2700, 29.90f, 15.77f, 60);
+			var crop     = new SensorMode("2.5K Crop", 2560, 1350, 0f, 0f, 120);
+			var body = new CameraBody("RED DSMC2", "RED", 2016, 29.90f, 15.77f, "S35", "RF",
+				new[] { 5120, 2700 }, new[] { 24, 60, 120 },
+				new[] { openGate, crop });
+			var cam = CreateCamera();
+			cam.SetBody(body);
+
+			// Set 2.39:1 aspect ratio
+			while (cam.ActiveAspectRatio != AspectRatio.RATIO_239_1)
+				cam.CycleAspectRatioForward();
+
+			cam.SetSensorMode(crop);
+
+			// Crop gate: 14.95mm × (2560/1350 ≈ 1.896:1)
+			// 2.39 > 1.896 → width = 14.95, height = 14.95 / 2.39
+			var expectedWidth = 29.90f * (2560f / 5120f);
+			cam.SensorWidth.Should().BeApproximately(expectedWidth, 0.01f);
+			cam.SensorHeight.Should().BeApproximately(expectedWidth / 2.39f, 0.01f);
+		}
 	}
 }

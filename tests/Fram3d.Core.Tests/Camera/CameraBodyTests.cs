@@ -62,5 +62,31 @@ namespace Fram3d.Core.Tests.Camera
 
 			body.ComputeGateWidth(OPEN_GATE).Should().Be(29.90f);
 		}
+
+		[Fact]
+		public void ComputeGateWidth__ReturnsBodyWidth__When__OpenGateHasNoSensorArea()
+		{
+			var badOpenGate = new SensorMode("Open Gate", 5120, 2700, 0f, 0f, 60);
+			var crop        = new SensorMode("Crop", 2560, 1350, 0f, 0f, 120);
+			var body = new CameraBody("Broken DB", "Test", 2020, 29.90f, 15.77f, "S35", "RF",
+				new[] { 5120, 2700 }, new[] { 24 },
+				new[] { badOpenGate, crop });
+
+			// Open gate has no sensor area → can't derive, fall back to body width
+			body.ComputeGateWidth(crop).Should().Be(29.90f);
+		}
+
+		[Fact]
+		public void ComputeGateWidth__ReturnsBodyWidth__When__ModeHasZeroResolution()
+		{
+			var openGate    = new SensorMode("Open Gate", 5120, 2700, 29.90f, 15.77f, 60);
+			var brokenMode = new SensorMode("Bad Mode", 0, 0, 0f, 0f, 60);
+			var body = new CameraBody("Test", "Test", 2020, 29.90f, 15.77f, "S35", "RF",
+				new[] { 5120, 2700 }, new[] { 24 },
+				new[] { openGate, brokenMode });
+
+			// Mode has zero resolution → can't derive, fall back to body width
+			body.ComputeGateWidth(brokenMode).Should().Be(29.90f);
+		}
 	}
 }

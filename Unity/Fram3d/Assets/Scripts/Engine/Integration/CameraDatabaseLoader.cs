@@ -38,6 +38,7 @@ namespace Fram3d.Engine.Integration
 
             foreach (var raw in rawDb.cameras)
             {
+                var sensorModes = ParseSensorModes(raw.sensor_modes);
                 db.AddBody(new CameraBody(raw.name,
                                           raw.manufacturer,
                                           raw.year,
@@ -46,8 +47,32 @@ namespace Fram3d.Engine.Integration
                                           raw.format,
                                           raw.mount,
                                           raw.native_resolution,
-                                          raw.supported_fps));
+                                          raw.supported_fps,
+                                          sensorModes));
             }
+        }
+
+        private static SensorMode[] ParseSensorModes(RawSensorMode[] rawModes)
+        {
+            if (rawModes == null || rawModes.Length == 0)
+                return null;
+
+            var modes = new SensorMode[rawModes.Length];
+
+            for (var i = 0; i < rawModes.Length; i++)
+            {
+                var raw        = rawModes[i];
+                var res        = raw.resolution;
+                var sensorArea = raw.sensor_area_mm;
+                modes[i] = new SensorMode(raw.name,
+                                          res        != null && res.Length        >= 2? res[0]        : 0,
+                                          res        != null && res.Length        >= 2? res[1]        : 0,
+                                          sensorArea != null && sensorArea.Length >= 2? sensorArea[0] : 0f,
+                                          sensorArea != null && sensorArea.Length >= 2? sensorArea[1] : 0f,
+                                          raw.max_fps);
+            }
+
+            return modes;
         }
 
         private static void LoadLensSets(CameraDatabase db, RawDatabase rawDb)
@@ -113,15 +138,26 @@ namespace Fram3d.Engine.Integration
         [System.Serializable]
         private class RawCamera
         {
-            public string format;
-            public string manufacturer;
-            public string mount;
-            public string name;
-            public int[]  native_resolution;
-            public float  sensor_height_mm;
-            public float  sensor_width_mm;
-            public int[]  supported_fps;
-            public int    year;
+            public string          format;
+            public string          manufacturer;
+            public string          mount;
+            public string          name;
+            public int[]           native_resolution;
+            public float           sensor_height_mm;
+            public RawSensorMode[] sensor_modes;
+            public float           sensor_width_mm;
+            public int[]           supported_fps;
+            public int             year;
+        }
+
+
+        [System.Serializable]
+        private class RawSensorMode
+        {
+            public int     max_fps;
+            public string  name;
+            public int[]   resolution;
+            public float[] sensor_area_mm;
         }
 
 

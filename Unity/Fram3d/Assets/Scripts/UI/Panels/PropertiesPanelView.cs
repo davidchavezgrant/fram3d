@@ -1,3 +1,4 @@
+using Fram3d.Core.Camera;
 using Fram3d.Engine.Integration;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,13 +13,14 @@ namespace Fram3d.UI.Panels
     public sealed class PropertiesPanelView: MonoBehaviour
     {
         private const float             PANEL_WIDTH = 440f;
-        private       CameraBodySection _bodySection;
-        private       CameraBehaviour   _cameraBehaviour;
-        private       CameraInfoSection _infoSection;
-        private       LensSetSection    _lensSetSection;
-        private       VisualElement     _panel;
-        private       ShakeSection      _shakeSection;
-        private       VisualElement     _root;
+        private       CameraBodySection  _bodySection;
+        private       CameraBehaviour    _cameraBehaviour;
+        private       CameraInfoSection  _infoSection;
+        private       LensSetSection     _lensSetSection;
+        private       VisualElement      _panel;
+        private       SensorModeSection  _sensorModeSection;
+        private       ShakeSection       _shakeSection;
+        private       VisualElement      _root;
         private       bool              _visible = true;
 
         /// <summary>
@@ -60,12 +62,18 @@ namespace Fram3d.UI.Panels
             content.style.paddingLeft  = 10;
             content.style.paddingRight = 10;
             this._infoSection          = new CameraInfoSection();
-            this._infoSection.UpdateValues(cam);
+            this._infoSection.UpdateValues(cam, this._cameraBehaviour.ActiveAspectRatio);
             content.Add(this._infoSection);
             content.Add(Theme.CreateSeparator());
             this._bodySection             =  new CameraBodySection(db.Bodies, cam.Body);
-            this._bodySection.BodyChanged += body => cam.SetBody(body);
+            this._bodySection.BodyChanged += this.OnBodyChanged;
             content.Add(this._bodySection);
+            content.Add(Theme.CreateSeparator());
+            var initialModes   = cam.Body?.HasSensorModes == true? cam.Body.SensorModes : null;
+            var initialMode    = this._cameraBehaviour.ActiveSensorMode;
+            this._sensorModeSection              =  new SensorModeSection(initialModes, initialMode);
+            this._sensorModeSection.ModeChanged += mode => this._cameraBehaviour.SetSensorMode(mode);
+            content.Add(this._sensorModeSection);
             content.Add(Theme.CreateSeparator());
             this._lensSetSection                =  new LensSetSection(db.LensSets, cam.ActiveLensSet);
             this._lensSetSection.LensSetChanged += lensSet => cam.SetLensSet(lensSet);
@@ -113,6 +121,16 @@ namespace Fram3d.UI.Panels
             return header;
         }
 
+        private void OnBodyChanged(CameraBody body)
+        {
+            this._cameraBehaviour.CameraElement.SetBody(body);
+            var firstMode = body.HasSensorModes? body.SensorModes[0] : null;
+            this._cameraBehaviour.SetSensorMode(firstMode);
+            this._sensorModeSection?.SetModes(
+                body.HasSensorModes? body.SensorModes : null,
+                firstMode);
+        }
+
         private void Start()
         {
             this._cameraBehaviour = FindObjectOfType<CameraBehaviour>();
@@ -141,7 +159,7 @@ namespace Fram3d.UI.Panels
                 return;
 
             var cam = this._cameraBehaviour.CameraElement;
-            this._infoSection?.UpdateValues(cam);
+            this._infoSection?.UpdateValues(cam, this._cameraBehaviour.ActiveAspectRatio);
             this._shakeSection?.UpdateValues(cam);
         }
     }

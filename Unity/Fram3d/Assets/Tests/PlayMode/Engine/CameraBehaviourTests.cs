@@ -742,6 +742,69 @@ namespace Fram3d.Tests.Engine
             Assert.AreNotSame(before, this._behaviour.ActiveAspectRatio);
         }
 
+        // --- Viewport rect: panel inset only, no sensor aspect constraint ---
+
+        [UnityTest]
+        public IEnumerator SyncViewportRect__FullHeight__When__AnyAspectRatio()
+        {
+            yield return null;
+
+            // Camera.rect should always be full height — mask bars handle sensor aspect,
+            // not Camera.rect. If Camera.rect constrains height for sensor aspect,
+            // black bands appear above/below the viewport.
+            var cam = this._behaviour.CameraElement;
+
+            while (cam.ActiveAspectRatio != AspectRatio.RATIO_239_1)
+                this._behaviour.CycleAspectRatioForward();
+
+            yield return null;
+
+            Assert.AreEqual(0f, this._camera.rect.y, 0.001f, "Camera.rect.y should be 0 (full height)");
+            Assert.AreEqual(1f, this._camera.rect.height, 0.001f, "Camera.rect.height should be 1 (full height)");
+        }
+
+        [UnityTest]
+        public IEnumerator SyncViewportRect__FullWidth__When__NoPanelInset()
+        {
+            yield return null;
+
+            // With no panel inset, Camera.rect should be full screen
+            this._behaviour.SetRightInset(0f);
+            yield return null;
+
+            Assert.AreEqual(0f, this._camera.rect.x, 0.001f);
+            Assert.AreEqual(1f, this._camera.rect.width, 0.001f);
+        }
+
+        [UnityTest]
+        public IEnumerator SyncViewportRect__ReducedWidth__When__PanelInsetSet()
+        {
+            yield return null;
+
+            this._behaviour.SetRightInset(440f);
+            yield return null;
+
+            // Width should be reduced by 440px / screen width
+            var expectedWidth = (Screen.width - 440f) / Screen.width;
+            Assert.AreEqual(expectedWidth, this._camera.rect.width, 0.01f);
+            Assert.AreEqual(0f, this._camera.rect.x, 0.001f, "Viewport should be left-aligned");
+            Assert.AreEqual(1f, this._camera.rect.height, 0.001f, "Height should remain full");
+        }
+
+        [UnityTest]
+        public IEnumerator SyncViewportRect__RestoresFullWidth__When__PanelInsetCleared()
+        {
+            yield return null;
+
+            this._behaviour.SetRightInset(440f);
+            yield return null;
+
+            this._behaviour.SetRightInset(0f);
+            yield return null;
+
+            Assert.AreEqual(1f, this._camera.rect.width, 0.001f, "Width should restore to full");
+        }
+
         // --- Helpers ---
 
         private DepthOfField GetDof()

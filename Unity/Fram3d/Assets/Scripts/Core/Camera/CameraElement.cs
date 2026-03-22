@@ -42,12 +42,12 @@ namespace Fram3d.Core.Camera
             set => this._lens.FocusDistance = value;
         }
 
-        public Vector3 OrbitPivotPoint { get; set; }    = Vector3.Zero;
+        public Vector3 OrbitPivotPoint { get; set; } = Vector3.Zero;
         public float   SensorHeight    => this._body.SensorHeight;
         public float   SensorWidth     => this._body.SensorWidth;
-        public float   ShakeAmplitude  { get; set; }    = 0.1f;
+        public float   ShakeAmplitude  { get; set; } = 0.1f;
         public bool    ShakeEnabled    { get; set; }
-        public float   ShakeFrequency  { get; set; }    = 1.0f;
+        public float   ShakeFrequency  { get; set; } = 1.0f;
 
         /// <summary>
         /// When true, CameraBehaviour applies focal length instantly instead of lerping.
@@ -76,9 +76,6 @@ namespace Fram3d.Core.Camera
         /// </summary>
         private Vector3 LookDirection => Vector3.Transform(-Vector3.UnitZ, this.Rotation);
 
-        public void CycleAspectRatioBackward() => this._body.CycleAspectRatioBackward();
-        public void CycleAspectRatioForward()  => this._body.CycleAspectRatioForward();
-
         /// <summary>
         /// Translate vertically along the world Y axis.
         /// Positive amount moves upward. World-relative, not camera-relative.
@@ -87,6 +84,9 @@ namespace Fram3d.Core.Camera
         {
             this.Position += Vector3.UnitY * amount;
         }
+
+        public void CycleAspectRatioBackward() => this._body.CycleAspectRatioBackward();
+        public void CycleAspectRatioForward()  => this._body.CycleAspectRatioForward();
 
         /// <summary>
         /// Translate along the camera's local forward axis.
@@ -187,9 +187,8 @@ namespace Fram3d.Core.Camera
         public void SetLensSet(LensSet lensSet) => this._lens.SetLensSet(lensSet);
 
         public void SetSensorMode(SensorMode mode) => this._body.SetSensorMode(mode);
-
-        public void StepApertureNarrower() => this._lens.StepApertureNarrower();
-        public void StepApertureWider()    => this._lens.StepApertureWider();
+        public void StepApertureNarrower()         => this._lens.StepApertureNarrower();
+        public void StepApertureWider()            => this._lens.StepApertureWider();
 
         /// <summary>
         /// Steps to the next shorter focal length in the active prime lens set.

@@ -7,14 +7,13 @@ namespace Fram3d.Core.Camera
     /// </summary>
     public sealed class BodyController
     {
-        private const float DEFAULT_SENSOR_HEIGHT = 18.66f;
-        private const float DEFAULT_SENSOR_WIDTH  = 24.89f;
-
-        public AspectRatio ActiveAspectRatio { get; private set; } = AspectRatio.DEFAULT;
-        public SensorMode  ActiveSensorMode  { get; private set; }
-        public CameraBody  Body              { get; private set; }
-        public float       SensorHeight      { get; private set; } = DEFAULT_SENSOR_HEIGHT;
-        public float       SensorWidth       { get; private set; } = DEFAULT_SENSOR_WIDTH;
+        private const float       DEFAULT_SENSOR_HEIGHT = 18.66f;
+        private const float       DEFAULT_SENSOR_WIDTH  = 24.89f;
+        public        AspectRatio ActiveAspectRatio { get; private set; } = AspectRatio.DEFAULT;
+        public        SensorMode  ActiveSensorMode  { get; private set; }
+        public        CameraBody  Body              { get; private set; }
+        public        float       SensorHeight      { get; private set; } = DEFAULT_SENSOR_HEIGHT;
+        public        float       SensorWidth       { get; private set; } = DEFAULT_SENSOR_WIDTH;
 
         public void CycleAspectRatioBackward()
         {
@@ -48,11 +47,10 @@ namespace Fram3d.Core.Camera
         /// </summary>
         private void SyncEffectiveSensor()
         {
-            var mode      = this.ActiveSensorMode;
-            var body      = this.Body;
-            var gateWidth = body != null? body.ComputeGateWidth(mode) : DEFAULT_SENSOR_WIDTH;
-            var gateRatio = computeGateRatio(mode, body, gateWidth);
-
+            var mode       = this.ActiveSensorMode;
+            var body       = this.Body;
+            var gateWidth  = body != null? body.ComputeGateWidth(mode) : DEFAULT_SENSOR_WIDTH;
+            var gateRatio  = computeGateRatio(mode, body, gateWidth);
             var gateHeight = gateWidth / gateRatio;
             var ratio      = this.ActiveAspectRatio;
 
@@ -89,10 +87,7 @@ namespace Fram3d.Core.Camera
             if (mode != null && mode.ResolutionWidth > 0 && mode.ResolutionHeight > 0)
                 return (float)mode.ResolutionWidth / mode.ResolutionHeight;
 
-            var gateHeight = mode != null && mode.SensorAreaHeightMm > 0
-                ? mode.SensorAreaHeightMm
-                : body?.SensorHeightMm ?? DEFAULT_SENSOR_HEIGHT;
-
+            var gateHeight = mode != null && mode.SensorAreaHeightMm > 0? mode.SensorAreaHeightMm : body?.SensorHeightMm ?? DEFAULT_SENSOR_HEIGHT;
             return gateWidth / gateHeight;
         }
     }

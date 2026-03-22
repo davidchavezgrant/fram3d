@@ -4,6 +4,7 @@ using Fram3d.Core.Camera;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
 using Fram3d.UI.Panels;
+using Fram3d.UI.Views;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -20,13 +21,14 @@ namespace Fram3d.Tests.UI
     /// </summary>
     public sealed class CameraInputHandlerTests
     {
-        private CameraBehaviour    _behaviour;
-        private CameraElement      _cam;
-        private GameObject         _go;
-        private CameraInputHandler _handler;
-        private Keyboard           _keyboard;
-
-        private Mouse _mouse;
+        private CameraBehaviour      _behaviour;
+        private CameraElement        _cam;
+        private CompositionGuideView _guideView;
+        private GameObject           _go;
+        private GameObject           _guideGo;
+        private CameraInputHandler   _handler;
+        private Keyboard             _keyboard;
+        private Mouse                _mouse;
 
         [SetUp]
         public void SetUp()
@@ -39,6 +41,22 @@ namespace Fram3d.Tests.UI
                 BindingFlags.NonPublic | BindingFlags.Instance);
             behaviourField.SetValue(this._handler, this._behaviour);
 
+            // Wire composition guides
+            this._guideGo = new GameObject("TestGuides");
+            var uiDoc     = this._guideGo.AddComponent<UIDocument>();
+            var guids     = UnityEditor.AssetDatabase.FindAssets("t:PanelSettings");
+
+            if (guids.Length > 0)
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                uiDoc.panelSettings = UnityEditor.AssetDatabase.LoadAssetAtPath<PanelSettings>(path);
+            }
+
+            this._guideView = this._guideGo.AddComponent<CompositionGuideView>();
+            var guidesField = typeof(CameraInputHandler).GetField("compositionGuides",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            guidesField.SetValue(this._handler, this._guideView);
+
             this._keyboard = InputSystem.AddDevice<Keyboard>();
             this._mouse    = InputSystem.AddDevice<Mouse>();
         }
@@ -50,6 +68,7 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._mouse, new MouseState());
             InputSystem.RemoveDevice(this._keyboard);
             InputSystem.RemoveDevice(this._mouse);
+            Object.DestroyImmediate(this._guideGo);
             Object.DestroyImmediate(this._go);
         }
 
@@ -546,6 +565,74 @@ namespace Fram3d.Tests.UI
                 "A key should cycle aspect ratio after search field closes");
 
             Object.DestroyImmediate(panelGo);
+        }
+
+        // --- Composition guide shortcuts ---
+
+        [UnityTest]
+        public IEnumerator GKey__TogglesAllGuides__When__Pressed()
+        {
+            yield return null;
+            yield return null;
+
+            Assert.IsFalse(this._guideView.Settings.AnyVisible);
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.G));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+
+            Assert.IsTrue(this._guideView.Settings.ThirdsVisible);
+            Assert.IsTrue(this._guideView.Settings.CenterCrossVisible);
+            Assert.IsTrue(this._guideView.Settings.SafeZonesVisible);
+        }
+
+        [UnityTest]
+        public IEnumerator ShiftG__TogglesThirds__When__Pressed()
+        {
+            yield return null;
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftShift, Key.G));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+
+            Assert.IsTrue(this._guideView.Settings.ThirdsVisible);
+            Assert.IsFalse(this._guideView.Settings.CenterCrossVisible);
+            Assert.IsFalse(this._guideView.Settings.SafeZonesVisible);
+        }
+
+        [UnityTest]
+        public IEnumerator CtrlG__TogglesCenterCross__When__Pressed()
+        {
+            yield return null;
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl, Key.G));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+
+            Assert.IsFalse(this._guideView.Settings.ThirdsVisible);
+            Assert.IsTrue(this._guideView.Settings.CenterCrossVisible);
+            Assert.IsFalse(this._guideView.Settings.SafeZonesVisible);
+        }
+
+        [UnityTest]
+        public IEnumerator AltG__TogglesSafeZones__When__Pressed()
+        {
+            yield return null;
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftAlt, Key.G));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+
+            Assert.IsFalse(this._guideView.Settings.ThirdsVisible);
+            Assert.IsFalse(this._guideView.Settings.CenterCrossVisible);
+            Assert.IsTrue(this._guideView.Settings.SafeZonesVisible);
         }
     }
 }

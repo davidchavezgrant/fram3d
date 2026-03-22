@@ -1,0 +1,19 @@
+{
+  "stryker-config": {
+    "mutation-level": "Complete",
+    "thresholds": {
+      "high": 100,
+      "low": 100,
+      "break": 100
+    },
+    "mutate": [
+      "../../Unity/Fram3d/Assets/Scripts/Core/**/*.cs"
+    ],
+    "reporters": [
+      "html",
+      "json",
+      "progress",
+      "cleartext"
+    ]
+  }
+}

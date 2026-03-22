@@ -31,6 +31,9 @@ Unity/*/Assets/AssetStoreTools*
 **/bin/
 **/obj/
 
+# Stryker mutation testing
+**/StrykerOutput/
+
 # OS
 .DS_Store
 Thumbs.db

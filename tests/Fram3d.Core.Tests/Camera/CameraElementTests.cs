@@ -147,6 +147,18 @@ namespace Fram3d.Core.Tests.Camera
 		}
 
 		[Fact]
+		public void Truck__MovesExactAmount__When__NonUnitAmount()
+		{
+			var cam = CreateCamera();
+			var originalX = cam.Position.X;
+
+			cam.Truck(3.0f);
+
+			// Default camera right is +X, displacement should be exactly 3.0
+			cam.Position.X.Should().BeApproximately(originalX + 3.0f, 0.001f);
+		}
+
+		[Fact]
 		public void Truck__DoesNotChangeRotation__When__AnyAmount()
 		{
 			var cam = CreateCamera();
@@ -163,6 +175,17 @@ namespace Fram3d.Core.Tests.Camera
 			var originalY = cam.Position.Y;
 			cam.Crane(1.0f);
 			cam.Position.Y.Should().BeGreaterThan(originalY);
+		}
+
+		[Fact]
+		public void Crane__MovesExactAmount__When__NonUnitAmount()
+		{
+			var cam = CreateCamera();
+			var originalY = cam.Position.Y;
+
+			cam.Crane(2.5f);
+
+			cam.Position.Y.Should().BeApproximately(originalY + 2.5f, 0.001f);
 		}
 
 		[Fact]
@@ -274,6 +297,133 @@ namespace Fram3d.Core.Tests.Camera
 			cam.Position.Y.Should().NotBeApproximately(originalPos.Y, 0.01f);
 		}
 
+		[Fact]
+		public void Orbit__MovesLeftward__When__PositiveHorizontalAmount()
+		{
+			var cam = CreateCamera();
+			cam.OrbitPivotPoint = Vector3.Zero;
+			// Camera at (0, 1.6, 5). Positive horizontal = -Y rotation (right-handed),
+			// which moves camera from +Z toward -X when viewed from above.
+			cam.Orbit(0.5f, 0.0f);
+
+			cam.Position.X.Should().BeNegative();
+		}
+
+		[Fact]
+		public void Orbit__PositionDerivedFromPivot__When__Orbiting()
+		{
+			var cam = CreateCamera();
+			var pivot = new Vector3(0f, 0f, 0f);
+			cam.OrbitPivotPoint = pivot;
+
+			cam.Orbit(0.5f, 0.0f);
+
+			// Position should be pivot + rotated offset, not pivot - rotated offset
+			var distance = Vector3.Distance(cam.Position, pivot);
+			distance.Should().BeGreaterThan(0.1f);
+		}
+
+		[Fact]
+		public void Pan__RotationComposedCorrectly__When__Applied()
+		{
+			var cam = CreateCamera();
+			// Pan then check forward direction — the rotation must be pre-multiplied
+			cam.Pan(0.5f);
+			var forward = Vector3.Transform(-Vector3.UnitZ, cam.Rotation);
+
+			// After panning right, the forward Z component should still be negative
+			// (we haven't turned 180 degrees)
+			forward.Z.Should().BeNegative();
+		}
+
+		[Fact]
+		public void Roll__RotationComposedCorrectly__When__Applied()
+		{
+			var cam = CreateCamera();
+			cam.Roll(0.3f);
+
+			// After rolling, up should tilt sideways but forward should still face -Z
+			var forward = Vector3.Transform(-Vector3.UnitZ, cam.Rotation);
+			forward.Z.Should().BeNegative();
+		}
+
+		[Fact]
+		public void Tilt__RotationComposedCorrectly__When__Applied()
+		{
+			var cam = CreateCamera();
+			cam.Tilt(0.3f);
+
+			// After tilting up, forward should gain +Y but still have significant -Z
+			var forward = Vector3.Transform(-Vector3.UnitZ, cam.Rotation);
+			forward.Z.Should().BeNegative();
+			forward.Y.Should().BePositive();
+		}
+
+		[Fact]
+		public void Pan__ComposesWithExistingRotation__When__AlreadyRotated()
+		{
+			var cam = CreateCamera();
+			cam.Tilt(0.3f); // pre-rotate so rotation is non-identity
+			var rotAfterTilt = cam.Rotation;
+
+			cam.Pan(0.5f);
+
+			// Pan should compose with (not cancel) the existing tilt
+			// Forward should have BOTH +Y (from tilt) and +X (from pan)
+			var forward = Vector3.Transform(-Vector3.UnitZ, cam.Rotation);
+			forward.Y.Should().BePositive();
+			forward.X.Should().BePositive();
+		}
+
+		[Fact]
+		public void Orbit__ComposesRotation__When__AlreadyRotated()
+		{
+			var cam = CreateCamera();
+			cam.Pan(0.3f); // pre-rotate
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var rotBefore = cam.Rotation;
+
+			cam.Orbit(0.4f, 0.0f);
+
+			// Orbit should compose with existing rotation, not replace it
+			cam.Rotation.Should().NotBe(rotBefore);
+			// The result should be different from just the orbit rotation alone
+			var fresh = CreateCamera();
+			fresh.OrbitPivotPoint = Vector3.Zero;
+			fresh.Orbit(0.4f, 0.0f);
+			cam.Rotation.Should().NotBe(fresh.Rotation);
+		}
+
+		[Fact]
+		public void Roll__ComposesWithExistingRotation__When__AlreadyRotated()
+		{
+			var cam = CreateCamera();
+			cam.Pan(0.5f); // pre-rotate
+			var rotAfterPan = cam.Rotation;
+
+			cam.Roll(0.3f);
+
+			// Roll axis depends on current forward direction — result differs from identity roll
+			var fresh = CreateCamera();
+			fresh.Roll(0.3f);
+			cam.Rotation.Should().NotBe(fresh.Rotation);
+		}
+
+		[Fact]
+		public void Tilt__ComposesWithExistingRotation__When__AlreadyRotated()
+		{
+			var cam = CreateCamera();
+			cam.Pan(0.5f); // pre-rotate
+			var rotAfterPan = cam.Rotation;
+
+			cam.Tilt(0.3f);
+
+			// Result should differ from tilting from identity
+			var fresh = CreateCamera();
+			fresh.Tilt(0.3f);
+			cam.Rotation.Should().NotBe(fresh.Rotation);
+		}
+
 		// --- Dolly Zoom ---
 
 		[Fact]
@@ -283,6 +433,91 @@ namespace Fram3d.Core.Tests.Camera
 			var originalPos = cam.Position;
 			cam.DollyZoom(1.0f);
 			cam.Position.Should().NotBe(originalPos);
+		}
+
+		[Fact]
+		public void DollyZoom__MovesTowardPivot__When__PositiveAmount()
+		{
+			var cam = CreateCamera();
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var distBefore = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
+
+			cam.DollyZoom(2.0f);
+
+			// Positive dolly zoom moves TOWARD the pivot (closer)
+			var distAfter = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
+			distAfter.Should().BeLessThan(distBefore);
+		}
+
+		[Fact]
+		public void DollyZoom__ShortensWithNonUnitAmount__When__Applied()
+		{
+			var cam = CreateCamera();
+			cam.OrbitPivotPoint = Vector3.Zero;
+			cam.FocalLength = 50f;
+
+			cam.DollyZoom(2.0f);
+
+			// Focal length should decrease (shorter lens) when moving closer
+			cam.FocalLength.Should().BeLessThan(50f);
+		}
+
+		[Fact]
+		public void DollyZoom__NoOp__When__DistanceToPivotNearZero()
+		{
+			var cam = CreateCamera();
+			cam.OrbitPivotPoint = cam.Position; // distance ≈ 0
+			var posBefore = cam.Position;
+
+			cam.DollyZoom(1.0f);
+
+			cam.Position.Should().Be(posBefore);
+		}
+
+		[Fact]
+		public void DollyZoom__StopsMoving__When__AtZoomMaxFocalLength()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+			cam.SetFocalLengthPreset(70f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var posBefore = cam.Position;
+
+			cam.DollyZoom(-1.0f);
+
+			cam.Position.Should().Be(posBefore);
+		}
+
+		[Fact]
+		public void DollyZoom__StopsMoving__When__AtZoomMinFocalLength()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+			cam.SetFocalLengthPreset(24f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+			var posBefore = cam.Position;
+
+			cam.DollyZoom(1.0f);
+
+			cam.Position.Should().Be(posBefore);
+		}
+
+		[Fact]
+		public void DollyZoom__PositionConsistentWithFocalLength__When__NonUnitAmount()
+		{
+			var cam = CreateCamera();
+			cam.OrbitPivotPoint = Vector3.Zero;
+			cam.FocalLength = 50f;
+			var distBefore = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
+
+			cam.DollyZoom(2.0f);
+
+			// Position moves toward pivot, focal length decreases.
+			// newFL / oldFL ≈ newDist / oldDist (the dolly zoom invariant)
+			var distAfter = Vector3.Distance(cam.Position, cam.OrbitPivotPoint);
+			var ratio     = cam.FocalLength / 50f;
+			var distRatio = distAfter / distBefore;
+			ratio.Should().BeApproximately(distRatio, 0.01f);
 		}
 
 		// --- Reset ---
@@ -991,6 +1226,16 @@ namespace Fram3d.Core.Tests.Camera
 		}
 
 		[Fact]
+		public void FocusDistance__ClampsToMinimum__When__NoLensSetAndBelowMin()
+		{
+			var cam = CreateCamera();
+			// No lens set → close focus = 0 → falls back to MIN_FOCUS_DISTANCE (0.1)
+			cam.FocusDistance = 0.05f;
+
+			cam.FocusDistance.Should().Be(0.1f);
+		}
+
+		[Fact]
 		public void FocusAtInfinity__ReturnsTrue__When__AtMaxDistance()
 		{
 			var cam = CreateCamera();
@@ -1126,6 +1371,148 @@ namespace Fram3d.Core.Tests.Camera
 			cam.DofEnabled.Should().BeTrue();
 			cam.Aperture.Should().Be(2.8f);
 			cam.FocusDistance.Should().Be(3f);
+		}
+
+		// --- EffectiveMaxFocalLength / SnapFocalLength boundaries ---
+
+		[Fact]
+		public void DollyZoom__ClampsToEffectiveMax__When__ZoomLensActive()
+		{
+			// Zoom lens with max 70mm. DollyZoom moving away should increase focal length
+			// but clamp at 70mm, not 400mm (the global max)
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+			cam.SetFocalLengthPreset(65f);
+			cam.OrbitPivotPoint = Vector3.Zero;
+
+			// Move away from pivot — increases focal length
+			cam.DollyZoom(-3.0f);
+
+			cam.FocalLength.Should().BeLessOrEqualTo(70f);
+		}
+
+		[Fact]
+		public void SetLensSet__SetsSnapFlag__When__ZoomLensClampsFocalLength()
+		{
+			var cam = CreateCamera();
+			cam.FocalLength = 100f;
+			cam.SnapFocalLength = false;
+
+			cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
+
+			cam.SnapFocalLength.Should().BeTrue();
+			cam.FocalLength.Should().Be(70f);
+		}
+
+		[Fact]
+		public void SetFocalLengthPreset__SetsSnapFlag__When__Called()
+		{
+			var cam = CreateCamera();
+			cam.SnapFocalLength = false;
+
+			cam.SetFocalLengthPreset(85f);
+
+			cam.SnapFocalLength.Should().BeTrue();
+		}
+
+		[Fact]
+		public void Reset__SetsSnapFlag__When__Called()
+		{
+			var cam = CreateCamera();
+			cam.FocalLength = 85f;
+			cam.SnapFocalLength = false;
+
+			cam.Reset();
+
+			cam.SnapFocalLength.Should().BeTrue();
+		}
+
+		[Fact]
+		public void SetLensSet__FocalLengthUnchanged__When__EmptyPrimeLensSet()
+		{
+			var cam = CreateCamera();
+			cam.FocalLength = 50f;
+
+			cam.SetLensSet(new LensSet("Empty", new LensSpec[0], false, 1.0f));
+
+			cam.FocalLength.Should().Be(50f);
+		}
+
+		[Fact]
+		public void StepApertureWider__RespectsExactBoundary__When__ApertureEqualsMaxAperture()
+		{
+			// Lens with T2.8 max aperture. Camera at f/2.8. Stepping wider should be no-op.
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Slow", new float[] { 50 }, false, 1.0f, maxAperture: 2.8f));
+			// Step to f/2.8
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(2.8f);
+
+			// One more step — should stay at 2.8
+			cam.StepApertureWider();
+			cam.Aperture.Should().Be(2.8f);
+		}
+
+		[Fact]
+		public void SetLensSet__NoOpOnClampAperture__When__NoMaxApertureConstraint()
+		{
+			var cam = CreateCamera();
+			// Step to widest aperture
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(1.4f);
+
+			// Set lens with maxAperture = 0 (unconstrained)
+			cam.SetLensSet(new LensSet("No Constraint", new float[] { 50 }, false, 1.0f, maxAperture: 0f));
+
+			cam.Aperture.Should().Be(1.4f);
+		}
+
+		[Fact]
+		public void SetLensSet__ClampsAperture__When__SwitchingToLensWithNarrowerMaxAperture()
+		{
+			var cam = CreateCamera();
+			// Start at f/1.4 (widest)
+			for (var i = 0; i < 20; i++)
+				cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(1.4f);
+
+			// Switch to lens with T4.0 max — ClampAperture should step up to 4.0
+			cam.SetLensSet(new LensSet("Slow Zoom", 24f, 70f, false, 1.0f, maxAperture: 4.0f));
+
+			cam.Aperture.Should().BeGreaterThanOrEqualTo(4.0f);
+		}
+
+		[Fact]
+		public void SetLensSet__ClampsFocusDistance__When__SwitchingToLensWithLongerCloseFocus()
+		{
+			var cam = CreateCamera();
+			cam.FocusDistance = 0.5f;
+
+			cam.SetLensSet(new LensSet("Long Lens", 200f, 400f, false, 1.0f, closeFocusM: 2.0f));
+
+			cam.FocusDistance.Should().BeGreaterThanOrEqualTo(2.0f);
+		}
+
+		[Fact]
+		public void StepFocalLengthUp__SnapsToNearestOnTie__When__EquidistantFocalLengths()
+		{
+			// If current FL is exactly between two primes, should pick one deterministically
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Test", new float[] { 20, 40, 60 }, false, 1.0f));
+			cam.SetFocalLengthPreset(40f);
+
+			// At 40mm, step up should go to 60
+			cam.StepFocalLengthUp();
+			cam.FocalLength.Should().Be(60f);
+
+			// Step back down should return to 40
+			cam.StepFocalLengthDown();
+			cam.FocalLength.Should().Be(40f);
 		}
 
 		// --- Lens-constrained aperture (1.1.5) ---

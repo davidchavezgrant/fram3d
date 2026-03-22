@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <RootNamespace>Fram3d.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../Unity/Fram3d/Assets/Scripts/Core/**/*.cs" LinkBase="Core" />
+  </ItemGroup>
+
+</Project>

@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="../../Unity/Fram3d/Assets/Scripts/Core/**/*.cs" LinkBase="Core" />
+    <ProjectReference Include="../Fram3d.Core/Fram3d.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

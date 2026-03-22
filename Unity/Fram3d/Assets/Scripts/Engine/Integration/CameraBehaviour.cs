@@ -16,6 +16,7 @@ namespace Fram3d.Engine.Integration
         private       CameraDatabase _database;
         private       float          _displayedFocalLength;
         private       DepthOfField   _dof;
+        private       float          _rightInsetPixels;
         private       Camera         _unityCamera;
         public        AspectRatio    ActiveAspectRatio              => this._cameraElement.ActiveAspectRatio;
         public        SensorMode     ActiveSensorMode               => this._cameraElement.ActiveSensorMode;
@@ -94,12 +95,38 @@ namespace Fram3d.Engine.Integration
                 this._displayedFocalLength = targetFocalLength;
         }
 
+        /// <summary>
+        /// The normalized width of the viewport available after subtracting any
+        /// right-side inset (e.g., properties panel). 1.0 when no inset.
+        /// </summary>
+        public float AvailableViewportWidth { get; private set; } = 1f;
+
+        /// <summary>
+        /// Called by the UI layer to reserve screen space on the right side.
+        /// The 3D viewport and overlays shrink to avoid this area.
+        /// </summary>
+        public void SetRightInset(float pixels) => this._rightInsetPixels = pixels;
+
         private void SyncViewportRect(CameraElement cam)
         {
-            var screenAspect = (float)Screen.width / Screen.height;
-            var sensorAspect = cam.SensorWidth     / cam.SensorHeight;
-            var vp           = ViewportRect.Compute(sensorAspect, screenAspect);
-            this._unityCamera.rect = new Rect(vp.X, vp.Y, vp.Width, vp.Height);
+            var screenWidth  = (float)Screen.width;
+            var screenHeight = (float)Screen.height;
+
+            if (screenWidth <= 0 || screenHeight <= 0)
+                return;
+
+            var availableWidth = screenWidth - this._rightInsetPixels;
+            this.AvailableViewportWidth = availableWidth / screenWidth;
+            var availableAspect = availableWidth / screenHeight;
+            var sensorAspect   = cam.SensorWidth / cam.SensorHeight;
+            var vp             = ViewportRect.Compute(sensorAspect, availableAspect);
+
+            // Scale and offset the viewport rect into the available area (left side of screen)
+            this._unityCamera.rect = new Rect(
+                vp.X * this.AvailableViewportWidth,
+                vp.Y,
+                vp.Width * this.AvailableViewportWidth,
+                vp.Height);
         }
 
         private void Awake()

@@ -67,7 +67,8 @@ namespace Fram3d.Core.Camera
         // TODO: When anamorphic lens is active, compute horizontal FOV using squeeze factor:
         //   hFov = 2 * atan((sensorWidth * squeezeFactor) / (2 * focalLength))
         //   Also auto-lock aspect ratio to the computed delivery format (see 1.2.1).
-        public float VerticalFov => 2f * MathF.Atan(this.SensorHeight / (2f * this._lens.FocalLength));
+        public float HorizontalFov => 2f * MathF.Atan(this.SensorWidth  / (2f * this._lens.FocalLength));
+        public float VerticalFov   => 2f * MathF.Atan(this.SensorHeight / (2f * this._lens.FocalLength));
 
         /// <summary>
         /// The world-space direction the camera is currently looking at.

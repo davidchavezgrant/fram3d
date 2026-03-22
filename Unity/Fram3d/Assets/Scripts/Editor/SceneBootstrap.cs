@@ -186,15 +186,17 @@ namespace Fram3d.Editor
             if (panelGo.GetComponent<PropertiesPanelView>() == null)
                 panelGo.AddComponent<PropertiesPanelView>();
 
+            var cameraGo    = GameObject.Find("Main Camera");
+            var panelView   = panelGo.GetComponent<PropertiesPanelView>();
+
             // Wire properties panel reference on the input handler
-            var cameraGo     = GameObject.Find("Main Camera");
             var inputHandler = cameraGo.GetComponent<CameraInputHandler>();
 
             if (inputHandler != null)
             {
                 var so   = new SerializedObject(inputHandler);
                 var prop = so.FindProperty("propertiesPanel");
-                prop.objectReferenceValue = panelGo.GetComponent<PropertiesPanelView>();
+                prop.objectReferenceValue = panelView;
                 so.ApplyModifiedProperties();
             }
 

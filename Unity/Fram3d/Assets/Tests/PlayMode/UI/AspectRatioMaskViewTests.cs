@@ -239,6 +239,50 @@ namespace Fram3d.Tests.UI
             Assert.AreEqual(viewHeight, topH + unmaskedH + bottomH, 1f, "Bars + unmasked should fill height");
         }
 
+        // --- Ratio switching (no stale bar state) ---
+
+        [UnityTest]
+        public IEnumerator UpdateBars__TransitionsCorrectly__When__SwitchingFromPillarboxToLetterbox()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+
+            // Start with 4:3 → pillarbox
+            while (cam.ActiveAspectRatio != AspectRatio.RATIO_4_3)
+                this._behaviour.CycleAspectRatioForward();
+
+            yield return null;
+            yield return null;
+
+            var bars = GetBars();
+
+            if (bars == null)
+                yield break;
+
+            var leftBefore = bars.Value.left.resolvedStyle.width;
+
+            if (float.IsNaN(leftBefore))
+                yield break;
+
+            Assert.Greater(leftBefore, 0f, "Should start with pillarbox");
+
+            // Switch to 2.39:1 → letterbox
+            while (cam.ActiveAspectRatio != AspectRatio.RATIO_239_1)
+                this._behaviour.CycleAspectRatioForward();
+
+            yield return null;
+            yield return null;
+
+            // Left bar should now be zero (no more pillarbox)
+            var leftAfter = bars.Value.left.resolvedStyle.width;
+            Assert.AreEqual(0f, leftAfter, 0.5f, "Left bar should be zero after switching to letterbox");
+
+            // Top bar should now have height (letterbox)
+            var topAfter = bars.Value.top.resolvedStyle.height;
+            Assert.Greater(topAfter, 0f, "Top bar should have height after switching to letterbox");
+        }
+
         // --- Helpers ---
 
         private (VisualElement top, VisualElement bottom, VisualElement left, VisualElement right)? GetBars()

@@ -94,52 +94,12 @@ namespace Fram3d.Engine.Integration
                 this._displayedFocalLength = targetFocalLength;
         }
 
-        /// <summary>
-        /// Constrains the camera viewport to the effective sensor aspect ratio.
-        /// This prevents Unity from rendering scene content beyond the sensor gate —
-        /// without it, Unity derives hFov from vFov × screenAspect, which produces
-        /// wider-than-sensor horizontal content when the sensor is narrower than the screen.
-        /// </summary>
         private void SyncViewportRect(CameraElement cam)
         {
             var screenAspect = (float)Screen.width / Screen.height;
             var sensorAspect = cam.SensorWidth     / cam.SensorHeight;
-
-            if (screenAspect <= 0f || sensorAspect <= 0f)
-            {
-                this._unityCamera.rect = new Rect(0,
-                                                  0,
-                                                  1,
-                                                  1);
-
-                return;
-            }
-
-            if (sensorAspect > screenAspect + 0.001f)
-            {
-                var height = screenAspect / sensorAspect;
-
-                this._unityCamera.rect = new Rect(0,
-                                                  (1 - height) / 2f,
-                                                  1,
-                                                  height);
-            }
-            else if (sensorAspect < screenAspect - 0.001f)
-            {
-                var width = sensorAspect / screenAspect;
-
-                this._unityCamera.rect = new Rect((1 - width) / 2f,
-                                                  0,
-                                                  width,
-                                                  1);
-            }
-            else
-            {
-                this._unityCamera.rect = new Rect(0,
-                                                  0,
-                                                  1,
-                                                  1);
-            }
+            var vp           = ViewportRect.Compute(sensorAspect, screenAspect);
+            this._unityCamera.rect = new Rect(vp.X, vp.Y, vp.Width, vp.Height);
         }
 
         private void Awake()

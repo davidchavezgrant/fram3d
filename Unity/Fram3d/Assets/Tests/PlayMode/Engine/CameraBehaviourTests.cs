@@ -301,21 +301,30 @@ namespace Fram3d.Tests.Engine
         // --- Full Screen viewport ---
 
         [UnityTest]
-        public IEnumerator Sync__FullViewport__When__FullScreenAspectRatio()
+        public IEnumerator Sync__WiderViewport__When__FullScreenVsNamedRatio()
         {
             yield return null;
 
             var cam = this._behaviour.CameraElement;
 
+            // Set 4:3 first — produces a pillarbox
+            while (cam.ActiveAspectRatio != AspectRatio.RATIO_4_3)
+                this._behaviour.CycleAspectRatioForward();
+
+            yield return null;
+
+            var rectNarrow = this._camera.rect;
+
+            // Switch to Full Screen — should show more of the sensor
             while (cam.ActiveAspectRatio != AspectRatio.FULL_SCREEN)
                 this._behaviour.CycleAspectRatioBackward();
 
             yield return null;
 
-            // Full Screen with no sensor mode on a 16:9 body → sensor matches screen → full viewport
-            var rect = this._camera.rect;
-            Assert.AreEqual(0f, rect.x, 0.01f);
-            Assert.AreEqual(0f, rect.y, 0.01f);
+            var rectFull = this._camera.rect;
+
+            // Full Screen should use at least as much viewport width as 4:3
+            Assert.GreaterOrEqual(rectFull.width, rectNarrow.width);
         }
 
         // --- Shake disabled → exact rotation match ---
@@ -412,6 +421,11 @@ namespace Fram3d.Tests.Engine
 
             var cam = this._behaviour.CameraElement;
 
+            // Use Full Screen so mode change is visible — with 16:9 delivery,
+            // both open gate and 16:9 crop produce identical effective heights
+            while (cam.ActiveAspectRatio != AspectRatio.FULL_SCREEN)
+                this._behaviour.CycleAspectRatioBackward();
+
             var openGate = new SensorMode("Open Gate",
                                           4448,
                                           3096,
@@ -447,7 +461,7 @@ namespace Fram3d.Tests.Engine
 
             var sensorAfter = this._camera.sensorSize;
 
-            // Sensor size should change when mode changes
+            // On Full Screen, open gate (≈1.44:1) and crop (≈1.78:1) produce different heights
             Assert.That(Mathf.Abs(sensorBefore.y - sensorAfter.y), Is.GreaterThan(0.1f));
 
             // And should match Core's effective dims

@@ -634,5 +634,131 @@ namespace Fram3d.Tests.UI
             Assert.IsFalse(this._guideView.Settings.CenterCrossVisible);
             Assert.IsTrue(this._guideView.Settings.SafeZonesVisible);
         }
+
+        // --- FRA-126: Delta spike rejection (orbit throw) ---
+
+        [UnityTest]
+        public IEnumerator DeltaSpike__DoesNotOrbit__When__DeltaExceedsThreshold()
+        {
+            yield return null;
+
+            this._cam = this._behaviour.CameraElement;
+            var posBefore = this._cam.Position;
+            var rotBefore = this._cam.Rotation;
+
+            // Simulate Alt+left-drag with a massive delta (500px) — a focus
+            // change artifact. Should be rejected by the MAX_DELTA_SQR_MAGNITUDE guard.
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftAlt));
+            InputSystem.QueueStateEvent(this._mouse, new MouseState
+            {
+                delta   = new Vector2(500f, 300f),
+                buttons = 1
+            });
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+
+            Assert.AreEqual(posBefore.X, this._cam.Position.X, 0.001f,
+                "Camera should not move from a delta spike");
+            Assert.AreEqual(posBefore.Z, this._cam.Position.Z, 0.001f,
+                "Camera should not move from a delta spike");
+        }
+
+        [UnityTest]
+        public IEnumerator NormalDelta__DoesOrbit__When__DeltaWithinThreshold()
+        {
+            yield return null;
+
+            this._cam = this._behaviour.CameraElement;
+            var posBefore = this._cam.Position;
+
+            // Normal-sized delta (50px) should be processed normally
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftAlt));
+            InputSystem.QueueStateEvent(this._mouse, new MouseState
+            {
+                delta   = new Vector2(50f, 0f),
+                buttons = 1
+            });
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+
+            Assert.AreNotEqual(posBefore, this._cam.Position,
+                "Camera should orbit with a normal delta");
+        }
+
+        // --- FRA-127: Modifier state resync on focus regain ---
+
+        [UnityTest]
+        public IEnumerator OnApplicationFocus__ResyncsModifiers__When__CtrlStuckAfterFocusLoss()
+        {
+            yield return null;
+
+            this._cam = this._behaviour.CameraElement;
+            this._cam.SetLensSet(new LensSet("Zoom", 24f, 200f, false, 1.0f));
+            this._cam.SetFocalLengthPreset(50f);
+
+            // Wait for any stale momentum
+            yield return new WaitForSeconds(0.3f);
+
+            // Simulate Ctrl getting "stuck" — send key-down but NO key-up
+            // (as if the user Cmd-tabbed away while Ctrl was held)
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl));
+            yield return null;
+
+            // Now simulate focus regain — Ctrl is physically released, but
+            // the event-tracked state still thinks it's held. Calling
+            // OnApplicationFocus should resync from polled state.
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            yield return null;
+
+            this._handler.SendMessage("OnApplicationFocus", true);
+            yield return null;
+
+            var flBefore = this._cam.FocalLength;
+
+            // Wait for cooldown
+            yield return new WaitForSeconds(0.3f);
+
+            // Unmodified scroll should now correctly route to focal length
+            // (not dolly), because OnApplicationFocus resynced the Ctrl state
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { scroll = new Vector2(0, 5f) });
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+
+            Assert.AreNotEqual(flBefore, this._cam.FocalLength,
+                "After focus resync, unmodified scroll should change focal length, not dolly");
+        }
+
+        [UnityTest]
+        public IEnumerator OnApplicationFocus__ClearsStaleScrollSamples__When__FocusRegained()
+        {
+            yield return null;
+
+            this._cam = this._behaviour.CameraElement;
+            this._cam.SetLensSet(new LensSet("Zoom", 24f, 200f, false, 1.0f));
+            this._cam.SetFocalLengthPreset(50f);
+
+            // Queue a Ctrl+scroll event but DON'T let it process yet
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl));
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { scroll = new Vector2(0, 10f) });
+
+            // Simulate focus loss and regain before the scroll processes
+            this._handler.SendMessage("OnApplicationFocus", true);
+            yield return null;
+
+            var posBefore = this._cam.Position;
+
+            // Wait for cooldown
+            yield return new WaitForSeconds(0.3f);
+
+            // The stale Ctrl+scroll sample should have been cleared.
+            // Camera position should not have changed from dolly.
+            Assert.AreEqual(posBefore.Z, this._cam.Position.Z, 0.01f,
+                "Stale scroll samples should be cleared on focus regain");
+        }
     }
 }

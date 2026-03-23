@@ -1,4 +1,5 @@
 using Fram3d.Core.Camera;
+using Fram3d.Core.Viewport;
 using Fram3d.Engine.Integration;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -61,10 +62,7 @@ namespace Fram3d.UI.Panels
             var cam     = this._cameraBehaviour.CameraElement;
             var db      = this._cameraBehaviour.Database;
             var content = new VisualElement();
-            content.style.flexGrow     = 1;
-            content.style.paddingTop   = 8;
-            content.style.paddingLeft  = 10;
-            content.style.paddingRight = 10;
+            content.AddToClassList("panel-content");
             this._infoSection          = new CameraInfoSection();
             this._infoSection.UpdateValues(cam, this._cameraBehaviour.ActiveAspectRatio);
             content.Add(this._infoSection);
@@ -90,16 +88,9 @@ namespace Fram3d.UI.Panels
 
         private void BuildPanel()
         {
-            this._panel                       = new VisualElement();
-            this._panel.style.position        = Position.Absolute;
-            this._panel.style.right           = 0;
-            this._panel.style.top             = 0;
-            this._panel.style.bottom          = 0;
-            this._panel.style.width           = PANEL_WIDTH;
-            this._panel.style.backgroundColor = Theme.PANEL_BACKGROUND;
-            this._panel.style.borderLeftWidth = 1;
-            this._panel.style.borderLeftColor = Theme.BORDER;
-            this._panel.style.overflow        = Overflow.Hidden;
+            this._panel             = new VisualElement();
+            this._panel.style.width = PANEL_WIDTH;
+            this._panel.AddToClassList("properties-panel");
             this._panel.Add(BuildHeader());
             this._panel.Add(this.BuildContent());
             this._root.Add(this._panel);
@@ -116,19 +107,9 @@ namespace Fram3d.UI.Panels
         private static VisualElement BuildHeader()
         {
             var header = new VisualElement();
-            header.style.height            = Theme.HEADER_HEIGHT;
-            header.style.backgroundColor   = Theme.HEADER_BACKGROUND;
-            header.style.borderBottomWidth = 1;
-            header.style.borderBottomColor = Theme.BORDER;
-            header.style.alignItems        = Align.Center;
-            header.style.justifyContent    = Justify.FlexStart;
-            header.style.flexDirection     = FlexDirection.Row;
-            header.style.paddingLeft       = 10;
-            header.style.flexShrink        = 0;
+            header.AddToClassList("panel-header");
             var title = new Label("PROPERTIES");
-            title.style.fontSize      = Theme.FONT_HEADER;
-            title.style.color         = Theme.LABEL_DIM;
-            title.style.letterSpacing = 1;
+            title.AddToClassList("panel-header-title");
             header.Add(title);
             return header;
         }
@@ -152,6 +133,7 @@ namespace Fram3d.UI.Panels
             }
 
             this._root = uiDocument.rootVisualElement;
+            StyleSheetLoader.Apply(this._root);
             this.BuildPanel();
             this._cameraBehaviour.SetRightInset(this._visible? PANEL_WIDTH : 0f);
         }

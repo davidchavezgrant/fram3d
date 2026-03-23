@@ -1,8 +1,9 @@
 using FluentAssertions;
 using Fram3d.Core.Camera;
+using Fram3d.Core.Viewport;
 using Xunit;
 
-namespace Fram3d.Core.Tests.Camera
+namespace Fram3d.Core.Tests.Viewport
 {
 	public class CompositionGuideSettingsTests
 	{

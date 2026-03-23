@@ -1,11 +1,9 @@
-using System;
 using System.Collections.Generic;
 using Fram3d.Core.Common;
 using Fram3d.Core.Scene;
 using Fram3d.Engine.Conversion;
 using UnityEngine;
 using SysVector3 = System.Numerics.Vector3;
-using SysQuaternion = System.Numerics.Quaternion;
 namespace Fram3d.Engine.Integration
 {
     /// <summary>
@@ -18,9 +16,6 @@ namespace Fram3d.Engine.Integration
     {
         private const float CONSTANT_SCREEN_SIZE = 0.15f;
         public const  int   GIZMO_LAYER_INDEX    = 6;
-        private const float MIN_SCALE            = 0.01f;
-        private const float ROTATE_SENSITIVITY   = 0.5f;
-        private const float SCALE_SENSITIVITY    = 0.005f;
 
         private static readonly Color AXIS_X = new(0.9f,
                                                    0.2f,
@@ -53,21 +48,13 @@ namespace Fram3d.Engine.Integration
                                                         1f);
 
         private static readonly int                         SHADER_COLOR = Shader.PropertyToID("_Color");
+        private                 DragSession                 _activeDrag;
         private readonly        Dictionary<Renderer, Color> _axisColors  = new();
-        private                 GizmoAxis                   _dragAxis;
-        private                 Element                     _dragElement;
         private                 Renderer                    _draggedRenderer;
-        private                 SysVector3                  _dragStartAxisOffset;
-        private                 float                       _dragStartMouseX;
-        private                 float                       _dragStartMouseY;
-        private                 SysVector3                  _dragStartPosition;
-        private                 SysQuaternion               _dragStartRotation;
-        private                 float                       _dragStartScale;
+        private readonly        GizmoState                  _gizmoState  = new();
         private                 GameObject                  _gizmoRoot;
         private                 Material                    _handleMaterial;
         private                 Renderer                    _hoveredRenderer;
-        private                 bool                        _isDragging;
-        private                 ElementId                   _lastSelectedId;
         private                 GameObject                  _rotateGroup;
         private                 GameObject                  _scaleGroup;
         private                 Selection                   _selection;
@@ -79,8 +66,8 @@ namespace Fram3d.Engine.Integration
         [SerializeField]
         private Camera targetCamera;
 
-        public ActiveTool ActiveTool       { get; private set; } = ActiveTool.TRANSLATE;
-        public bool       IsDragging       => this._isDragging;
+        public ActiveTool ActiveTool       => this._gizmoState.ActiveTool;
+        public bool       IsDragging       => this._activeDrag != null;
         public bool       IsHoveringHandle => this._hoveredRenderer != null;
         public bool       IsVisible        => this._gizmoRoot != null && this._gizmoRoot.activeSelf;
 
@@ -88,13 +75,12 @@ namespace Fram3d.Engine.Integration
         {
             // Future: create ICommand with before/after state here (milestone 4.1)
             this.ClearDragHighlight();
-            this._isDragging  = false;
-            this._dragElement = null;
+            this._activeDrag = null;
         }
 
         public void SetActiveTool(ActiveTool tool)
         {
-            this.ActiveTool = tool;
+            this._gizmoState.SetActiveTool(tool);
             this.ClearHoverHighlight();
             this.UpdateToolVisibility();
         }
@@ -136,25 +122,27 @@ namespace Fram3d.Engine.Integration
                 return false;
             }
 
-            this._dragElement       = element;
-            this._dragStartPosition = element.Position;
-            this._dragStartRotation = element.Rotation;
-            this._dragStartScale    = element.Scale;
-            this._dragStartMouseX   = screenPosition.x;
-            this._dragStartMouseY   = screenPosition.y;
-            this._dragAxis          = ParseAxis(handleName);
-            this._isDragging        = true;
+            var axis       = GizmoAxis.Parse(handleName);
+            var axisOffset = SysVector3.Zero;
 
             // Capture the initial offset so the element doesn't snap
             // to the mouse position on first drag frame
             if (this.ActiveTool == ActiveTool.TRANSLATE)
             {
-                var axisWorld    = GetWorldAxis(this._dragAxis);
-                var origin       = this._dragStartPosition.ToUnity();
-                var projected    = this.ProjectMouseOntoAxis(screenPosition, axisWorld, origin);
-                var initialDelta = projected - origin;
-                this._dragStartAxisOffset = (Vector3.Dot(initialDelta, axisWorld) * axisWorld).ToSystem();
+                var projected = TransformOperations.ProjectOntoAxis(element.Position,
+                                                                    axis.Direction,
+                                                                    ray.origin.ToSystem(),
+                                                                    ray.direction.ToSystem());
+
+                var delta = projected - element.Position;
+                axisOffset = SysVector3.Dot(delta, axis.Direction) * axis.Direction;
             }
+
+            this._activeDrag = new DragSession(axis,
+                                               element,
+                                               screenPosition.x,
+                                               screenPosition.y,
+                                               axisOffset);
 
             // Highlight the dragged handle cyan
             var renderer = hit.collider.GetComponent<Renderer>();
@@ -170,51 +158,29 @@ namespace Fram3d.Engine.Integration
         public bool TryResetActiveTool()
         {
             var element = this.FindSelectedElement();
-
-            if (element == null)
-            {
-                return false;
-            }
-
-            if (this.ActiveTool == ActiveTool.TRANSLATE)
-            {
-                element.Position = SysVector3.Zero;
-                return true;
-            }
-
-            if (this.ActiveTool == ActiveTool.ROTATE)
-            {
-                element.Rotation = SysQuaternion.Identity;
-                return true;
-            }
-
-            if (this.ActiveTool == ActiveTool.SCALE)
-            {
-                element.Scale = 1f;
-                return true;
-            }
-
-            return false;
+            return this._gizmoState.TryResetActiveTool(element);
         }
 
         public void UpdateDrag(Vector2 screenPosition)
         {
-            if (!this._isDragging || this._dragElement == null)
+            if (this._activeDrag == null)
             {
                 return;
             }
 
             if (this.ActiveTool == ActiveTool.TRANSLATE)
             {
-                this.UpdateTranslateDrag(screenPosition);
+                var ray = this.targetCamera.ScreenPointToRay(screenPosition);
+                this._activeDrag.UpdateTranslation(ray.origin.ToSystem(),
+                                                   ray.direction.ToSystem());
             }
             else if (this.ActiveTool == ActiveTool.ROTATE)
             {
-                this.UpdateRotateDrag(screenPosition);
+                this._activeDrag.UpdateRotation(screenPosition.x);
             }
             else if (this.ActiveTool == ActiveTool.SCALE)
             {
-                this.UpdateScaleDrag(screenPosition);
+                this._activeDrag.UpdateScale(screenPosition.y);
             }
         }
 
@@ -391,32 +357,6 @@ namespace Fram3d.Engine.Integration
             return null;
         }
 
-        private Vector3 ProjectMouseOntoAxis(Vector2 screenPos, Vector3 axisWorld, Vector3 origin)
-        {
-            var ray = this.targetCamera.ScreenPointToRay(screenPos);
-
-            // Find the closest point between the ray and the axis line.
-            // Use the standard closest-point-between-two-lines formula.
-            var d1    = ray.direction;
-            var d2    = axisWorld;
-            var w     = ray.origin - origin;
-            var a     = Vector3.Dot(d1, d1);
-            var b     = Vector3.Dot(d1, d2);
-            var c     = Vector3.Dot(d2, d2);
-            var d     = Vector3.Dot(d1, w);
-            var e     = Vector3.Dot(d2, w);
-            var denom = a * c - b * b;
-
-            if (Mathf.Abs(denom) < 0.0001f)
-            {
-                return origin;
-            }
-
-            var t = (b * e - c * d) / denom;
-            var s = (a * e - b * d) / denom;
-            return origin + d2 * s;
-        }
-
         private void RestoreAxisColor(Renderer renderer)
         {
             if (this._axisColors.TryGetValue(renderer, out var axisColor))
@@ -452,90 +392,11 @@ namespace Fram3d.Engine.Integration
             renderer.material.SetColor(SHADER_COLOR, DRAG_COLOR);
         }
 
-        private void UpdateRotateDrag(Vector2 screenPosition)
-        {
-            var deltaX   = screenPosition.x - this._dragStartMouseX;
-            var angle    = deltaX * ROTATE_SENSITIVITY * Mathf.Deg2Rad;
-            var axis     = GetSystemAxis(this._dragAxis);
-            var rotation = SysQuaternion.CreateFromAxisAngle(axis, angle);
-            this._dragElement.Rotation = SysQuaternion.Normalize(rotation * this._dragStartRotation);
-        }
-
-        private void UpdateScaleDrag(Vector2 screenPosition)
-        {
-            var deltaY   = screenPosition.y - this._dragStartMouseY;
-            var factor   = 1f               + deltaY * SCALE_SENSITIVITY;
-            var newScale = this._dragStartScale * factor;
-            this._dragElement.Scale = Math.Max(MIN_SCALE, newScale);
-        }
-
         private void UpdateToolVisibility()
         {
             this._translateGroup.SetActive(this.ActiveTool == ActiveTool.TRANSLATE);
             this._rotateGroup.SetActive(this.ActiveTool    == ActiveTool.ROTATE);
             this._scaleGroup.SetActive(this.ActiveTool     == ActiveTool.SCALE);
-        }
-
-        // ── Drag logic ──────────────────────────────────────────────────
-
-        private void UpdateTranslateDrag(Vector2 screenPosition)
-        {
-            var axisWorld = GetWorldAxis(this._dragAxis);
-            var origin    = this._dragStartPosition.ToUnity();
-            var projected = this.ProjectMouseOntoAxis(screenPosition, axisWorld, origin);
-            var delta     = projected - origin;
-            var axisDelta = (Vector3.Dot(delta, axisWorld) * axisWorld).ToSystem();
-            this._dragElement.Position = this._dragStartPosition + axisDelta - this._dragStartAxisOffset;
-        }
-
-        private static SysVector3 GetSystemAxis(GizmoAxis axis)
-        {
-            if (axis == GizmoAxis.X)
-            {
-                return SysVector3.UnitX;
-            }
-
-            if (axis == GizmoAxis.Y)
-            {
-                return SysVector3.UnitY;
-            }
-
-            return -SysVector3.UnitZ;
-        }
-
-        private static Vector3 GetWorldAxis(GizmoAxis axis)
-        {
-            if (axis == GizmoAxis.X)
-            {
-                return Vector3.right;
-            }
-
-            if (axis == GizmoAxis.Y)
-            {
-                return Vector3.up;
-            }
-
-            return Vector3.forward;
-        }
-
-        private static GizmoAxis ParseAxis(string handleName)
-        {
-            if (handleName.Contains("X"))
-            {
-                return GizmoAxis.X;
-            }
-
-            if (handleName.Contains("Y"))
-            {
-                return GizmoAxis.Y;
-            }
-
-            if (handleName.Contains("Z"))
-            {
-                return GizmoAxis.Z;
-            }
-
-            return GizmoAxis.Uniform;
         }
 
         private static void SetLayerRecursive(GameObject go, int layer)
@@ -581,15 +442,12 @@ namespace Fram3d.Engine.Integration
             if (element == null)
             {
                 this._gizmoRoot.SetActive(false);
-                this._lastSelectedId = null;
                 return;
             }
 
             // Reset to translate tool on every new selection
-            if (currentId != this._lastSelectedId)
+            if (this._gizmoState.OnSelectionChanged(currentId))
             {
-                this._lastSelectedId = currentId;
-                this.ActiveTool      = ActiveTool.TRANSLATE;
                 this.ClearHoverHighlight();
             }
 
@@ -598,15 +456,6 @@ namespace Fram3d.Engine.Integration
             this._gizmoRoot.transform.rotation = Quaternion.identity;
             this.ScaleForConstantScreenSize();
             this.UpdateToolVisibility();
-        }
-
-
-        private enum GizmoAxis
-        {
-            X,
-            Y,
-            Z,
-            Uniform
         }
     }
 }

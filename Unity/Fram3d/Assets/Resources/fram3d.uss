@@ -1,0 +1,249 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Fram3d — UI Toolkit Stylesheet
+   Dark Premiere-style theme for the properties panel and overlays.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Design tokens ────────────────────────────────────────────────── */
+
+:root {
+    --color-panel-bg:         rgb(37, 37, 37);
+    --color-header-bg:        rgb(30, 30, 30);
+    --color-border:           rgb(60, 60, 60);
+    --color-selector-bg:      rgb(46, 46, 46);
+    --color-selector-border:  rgb(77, 77, 77);
+    --color-dropdown-bg:      rgb(41, 41, 41);
+    --color-highlight:        rgba(51, 102, 179, 0.4);
+    --color-highlight-strong: rgba(51, 102, 179, 0.6);
+    --color-text-white:       rgb(255, 255, 255);
+    --color-text-light:       rgb(204, 204, 204);
+    --color-text-default:     rgb(191, 191, 191);
+    --color-text-bright:      rgb(187, 187, 187);
+    --color-text-dim:         rgb(102, 102, 102);
+    --color-text-mid:         rgb(153, 153, 153);
+    --font-body:              11px;
+    --font-header:            10px;
+    --font-small:             9px;
+}
+
+/* ── Properties panel ─────────────────────────────────────────────── */
+
+.properties-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: var(--color-panel-bg);
+    border-left-width: 1px;
+    border-left-color: var(--color-border);
+    overflow: hidden;
+}
+
+.panel-header {
+    height: 28px;
+    background-color: var(--color-header-bg);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-border);
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: row;
+    padding-left: 10px;
+    flex-shrink: 0;
+}
+
+.panel-header-title {
+    font-size: var(--font-header);
+    color: var(--color-text-dim);
+    letter-spacing: 1px;
+}
+
+.panel-content {
+    flex-grow: 1;
+    padding-top: 8px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+/* ── Section elements ─────────────────────────────────────────────── */
+
+.section-label {
+    font-size: var(--font-header);
+    color: var(--color-text-dim);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.section-separator {
+    height: 1px;
+    background-color: var(--color-border);
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.section-toggle {
+    font-size: var(--font-small);
+    margin-top: 4px;
+}
+
+.section-toggle Label {
+    color: var(--color-text-default);
+}
+
+.section-toggle .unity-toggle__checkmark {
+    width: 12px;
+    height: 12px;
+}
+
+/* ── Info rows ────────────────────────────────────────────────────── */
+
+.info-row {
+    flex-direction: row;
+    margin-bottom: 3px;
+}
+
+.info-row__key {
+    width: 80px;
+    font-size: var(--font-body);
+    color: var(--color-text-dim);
+}
+
+.info-row__value {
+    font-size: var(--font-body);
+    color: var(--color-text-bright);
+}
+
+/* ── Dropdown selector (closed state) ─────────────────────────────── */
+
+.dropdown-selector {
+    flex-direction: row;
+    background-color: var(--color-selector-bg);
+    border-width: 1px;
+    border-color: var(--color-selector-border);
+    border-radius: 3px;
+    padding: 4px 6px;
+}
+
+.dropdown-selected-label {
+    font-size: var(--font-body);
+    color: var(--color-text-light);
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.dropdown-arrow {
+    font-size: var(--font-header);
+    color: var(--color-text-mid);
+}
+
+/* ── Dropdown overlay (open state) ────────────────────────────────── */
+
+.dropdown-overlay {
+    background-color: var(--color-dropdown-bg);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: var(--color-selector-border);
+    border-right-color: var(--color-selector-border);
+    border-bottom-color: var(--color-selector-border);
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+.dropdown-search-field {
+    margin: 4px 4px 2px 4px;
+    font-size: var(--font-body);
+}
+
+.dropdown-scroll-view {
+    max-height: 200px;
+}
+
+/* ── Dropdown list rows ───────────────────────────────────────────── */
+
+.dropdown-list-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 3px 3px 3px 6px;
+}
+
+.dropdown-list-label {
+    font-size: var(--font-body);
+    -unity-text-align: middle-left;
+    flex-grow: 1;
+    color: var(--color-text-default);
+}
+
+/* ── Sensor mode dropdown ─────────────────────────────────────────── */
+
+.sensor-dropdown {
+    font-size: var(--font-body);
+    background-color: var(--color-selector-bg);
+    border-width: 1px;
+    border-color: var(--color-selector-border);
+}
+
+/* ── Shake section ────────────────────────────────────────────────── */
+
+.shake-toggle {
+    margin-bottom: 4px;
+}
+
+.shake-slider {
+    margin-bottom: 4px;
+}
+
+.shake-slider Label {
+    min-width: 70px;
+    font-size: var(--font-body);
+    color: var(--color-text-dim);
+}
+
+/* ── Aspect ratio mask ────────────────────────────────────────────── */
+
+.aspect-mask-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.aspect-mask-bar {
+    position: absolute;
+    background-color: rgb(0, 0, 0);
+}
+
+/* ── Composition guides ───────────────────────────────────────────── */
+
+.guide-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.guide-line {
+    position: absolute;
+}
+
+.guide-line--thirds {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.guide-line--center {
+    background-color: rgba(255, 255, 255, 0.35);
+}
+
+.guide-safe-zone {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 1px;
+}
+
+.guide-safe-zone--action {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.guide-safe-zone--title {
+    border-color: rgba(255, 255, 255, 0.15);
+}

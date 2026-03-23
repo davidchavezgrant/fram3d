@@ -19,9 +19,9 @@ namespace Fram3d.UI.Panels
         public ShakeSection(CameraElement camera)
         {
             this.Add(Theme.CreateSectionLabel("SHAKE"));
-            this._toggle                    = new Toggle("Enabled");
-            this._toggle.value              = camera.ShakeEnabled;
-            this._toggle.style.marginBottom = 4;
+            this._toggle       = new Toggle("Enabled");
+            this._toggle.value = camera.ShakeEnabled;
+            this._toggle.AddToClassList("shake-toggle");
             this._toggle.RegisterValueChangedCallback(e => camera.ShakeEnabled = e.newValue);
             this.Add(this._toggle);
 
@@ -66,12 +66,9 @@ namespace Fram3d.UI.Panels
                                            float  value)
         {
             var slider = new Slider(label, min, max);
-            slider.value                       = value;
-            slider.showInputField              = true;
-            slider.style.marginBottom          = 4;
-            slider.labelElement.style.minWidth = 70;
-            slider.labelElement.style.fontSize = Theme.FONT_BODY;
-            slider.labelElement.style.color    = Theme.LABEL_DIM;
+            slider.value          = value;
+            slider.showInputField = true;
+            slider.AddToClassList("shake-slider");
             return slider;
         }
     }

@@ -1,5 +1,6 @@
 using System.Collections;
 using Fram3d.Core.Camera;
+using Fram3d.Core.Viewport;
 using Fram3d.Engine.Integration;
 using NUnit.Framework;
 using UnityEngine;
@@ -82,6 +83,18 @@ namespace Fram3d.Tests.Engine
             Assert.AreEqual(cam.SensorHeight, sensor.y, 0.01f);
         }
 
+        // --- Backward aspect ratio cycling ---
+
+        [UnityTest]
+        public IEnumerator CycleAspectRatioBackward__ChangesAspectRatio__When__Called()
+        {
+            yield return null;
+
+            var before = this._behaviour.ActiveAspectRatio;
+            this._behaviour.CycleAspectRatioBackward();
+            Assert.AreNotSame(before, this._behaviour.ActiveAspectRatio);
+        }
+
         // --- Pass-through methods ---
 
         [UnityTest]
@@ -121,6 +134,32 @@ namespace Fram3d.Tests.Engine
 
             // Snap flag should be cleared after Sync consumes it
             Assert.IsFalse(this._behaviour.CameraElement.SnapFocalLength);
+        }
+
+        // --- DollyZoom at zoom boundary end-to-end (FRA-123) ---
+
+        [UnityTest]
+        public IEnumerator DollyZoom__UnityCameraStaysAtZoomMax__When__AtBoundary()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+
+            cam.SetLensSet(new LensSet("Canon 24-70mm",
+                                       24f,
+                                       70f,
+                                       false,
+                                       1.0f));
+
+            cam.SetFocalLengthPreset(70f);
+            var posBefore = this._go.transform.position;
+            cam.DollyZoom(-1.0f);
+            yield return null;
+
+            // At zoom max, DollyZoom should be a no-op — both position and FL unchanged
+            Assert.AreEqual(70f,         this._camera.focalLength,      0.01f);
+            Assert.AreEqual(posBefore.x, this._go.transform.position.x, 0.01f);
+            Assert.AreEqual(posBefore.z, this._go.transform.position.z, 0.01f);
         }
 
         // --- Reset integration ---
@@ -188,6 +227,34 @@ namespace Fram3d.Tests.Engine
             this._go        = new GameObject("TestCamera");
             this._behaviour = this._go.AddComponent<CameraBehaviour>();
             this._camera    = this._go.GetComponent<Camera>();
+        }
+
+        // --- Shake applies offset ---
+
+        [UnityTest]
+        public IEnumerator Shake__AppliesRotationOffset__When__Enabled()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            cam.ShakeEnabled   = true;
+            cam.ShakeAmplitude = 1.0f;
+            cam.ShakeFrequency = 5.0f;
+
+            // Wait a few frames for shake to apply
+            for (var i = 0; i < 10; i++)
+                yield return null;
+
+            // Unity rotation should differ from Core rotation (shake added on top)
+            var coreRot  = cam.Rotation;
+            var unityRot = this._go.transform.rotation;
+
+            var converted = new Quaternion(-coreRot.X,
+                                           -coreRot.Y,
+                                           coreRot.Z,
+                                           coreRot.W);
+
+            Assert.AreNotEqual(converted, unityRot);
         }
 
         // --- Shake: no drift (prior-codebase-lessons anti-pattern) ---
@@ -297,33 +364,24 @@ namespace Fram3d.Tests.Engine
             Assert.AreNotEqual(0f, rot.x);
         }
 
-        // --- Full Screen viewport ---
+        // --- Crane through coordinate conversion ---
 
         [UnityTest]
-        public IEnumerator Sync__WiderViewport__When__FullScreenVsNamedRatio()
+        public IEnumerator Sync__CraneMoveWorldY__When__CameraRotated()
         {
             yield return null;
 
             var cam = this._behaviour.CameraElement;
-
-            // Set 4:3 first — produces a pillarbox
-            while (cam.ActiveAspectRatio != AspectRatio.RATIO_4_3)
-                this._behaviour.CycleAspectRatioForward();
-
+            cam.Pan(0.5f);
+            cam.Tilt(-0.3f);
             yield return null;
 
-            var rectNarrow = this._camera.rect;
-
-            // Switch to Full Screen — should show more of the sensor
-            while (cam.ActiveAspectRatio != AspectRatio.FULL_SCREEN)
-                this._behaviour.CycleAspectRatioBackward();
-
+            var yBefore = this._go.transform.position.y;
+            cam.Crane(2.0f);
             yield return null;
 
-            var rectFull = this._camera.rect;
-
-            // Full Screen should use at least as much viewport width as 4:3
-            Assert.GreaterOrEqual(rectFull.width, rectNarrow.width);
+            // Crane is world-relative: Y should increase regardless of camera rotation
+            Assert.AreEqual(yBefore + 2.0f, this._go.transform.position.y, 0.01f);
         }
 
         // --- Shake disabled → exact rotation match ---
@@ -504,8 +562,16 @@ namespace Fram3d.Tests.Engine
             yield return null;
 
             var rect = this._camera.rect;
-            Assert.AreEqual(1f, rect.width,  0.001f, "Width should stay full (no panel inset)");
-            Assert.AreEqual(1f, rect.height, 0.001f, "Height should stay full");
+
+            Assert.AreEqual(1f,
+                            rect.width,
+                            0.001f,
+                            "Width should stay full (no panel inset)");
+
+            Assert.AreEqual(1f,
+                            rect.height,
+                            0.001f,
+                            "Height should stay full");
         }
 
         [UnityTest]
@@ -543,6 +609,64 @@ namespace Fram3d.Tests.Engine
             // Camera.rect stays full — sensor aspect masking is handled by mask bars
             Assert.AreEqual(1f, this._camera.rect.width,  0.001f);
             Assert.AreEqual(1f, this._camera.rect.height, 0.001f);
+        }
+
+        // --- Full Screen viewport ---
+
+        [UnityTest]
+        public IEnumerator Sync__WiderViewport__When__FullScreenVsNamedRatio()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+
+            // Set 4:3 first — produces a pillarbox
+            while (cam.ActiveAspectRatio != AspectRatio.RATIO_4_3)
+                this._behaviour.CycleAspectRatioForward();
+
+            yield return null;
+
+            var rectNarrow = this._camera.rect;
+
+            // Switch to Full Screen — should show more of the sensor
+            while (cam.ActiveAspectRatio != AspectRatio.FULL_SCREEN)
+                this._behaviour.CycleAspectRatioBackward();
+
+            yield return null;
+
+            var rectFull = this._camera.rect;
+
+            // Full Screen should use at least as much viewport width as 4:3
+            Assert.GreaterOrEqual(rectFull.width, rectNarrow.width);
+        }
+
+        // --- DOF focal length tracks displayed value during lerp ---
+
+        [UnityTest]
+        public IEnumerator SyncDof__FocalLengthMatchesDisplayed__When__Lerping()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            cam.DofEnabled = true;
+
+            cam.SetLensSet(new LensSet("Test Zoom",
+                                       24f,
+                                       200f,
+                                       false,
+                                       1.0f));
+
+            cam.SnapFocalLength = false;
+            cam.FocalLength     = 150f;
+
+            // Wait one frame — focal length should be mid-lerp
+            yield return null;
+
+            var dof = GetDof();
+
+            // DOF focal length should match the Unity Camera's displayed focal length,
+            // NOT the Core target (150mm). Both use _displayedFocalLength.
+            Assert.AreEqual(this._camera.focalLength, dof.focalLength.value, 0.01f);
         }
 
         [UnityTest]
@@ -633,111 +757,6 @@ namespace Fram3d.Tests.Engine
             Assert.Fail($"Focal length did not converge after 600 frames (stuck at {this._camera.focalLength:F2}mm)");
         }
 
-        [TearDown]
-        public void TearDown()
-        {
-            Object.DestroyImmediate(this._go);
-        }
-
-        // --- Shake applies offset ---
-
-        [UnityTest]
-        public IEnumerator Shake__AppliesRotationOffset__When__Enabled()
-        {
-            yield return null;
-
-            var cam = this._behaviour.CameraElement;
-            cam.ShakeEnabled   = true;
-            cam.ShakeAmplitude = 1.0f;
-            cam.ShakeFrequency = 5.0f;
-
-            // Wait a few frames for shake to apply
-            for (var i = 0; i < 10; i++)
-                yield return null;
-
-            // Unity rotation should differ from Core rotation (shake added on top)
-            var coreRot  = cam.Rotation;
-            var unityRot = this._go.transform.rotation;
-            var converted = new Quaternion(-coreRot.X, -coreRot.Y, coreRot.Z, coreRot.W);
-            Assert.AreNotEqual(converted, unityRot);
-        }
-
-        // --- DOF focal length tracks displayed value during lerp ---
-
-        [UnityTest]
-        public IEnumerator SyncDof__FocalLengthMatchesDisplayed__When__Lerping()
-        {
-            yield return null;
-
-            var cam = this._behaviour.CameraElement;
-            cam.DofEnabled = true;
-            cam.SetLensSet(new LensSet("Test Zoom", 24f, 200f, false, 1.0f));
-            cam.SnapFocalLength = false;
-            cam.FocalLength = 150f;
-
-            // Wait one frame — focal length should be mid-lerp
-            yield return null;
-
-            var dof = GetDof();
-            // DOF focal length should match the Unity Camera's displayed focal length,
-            // NOT the Core target (150mm). Both use _displayedFocalLength.
-            Assert.AreEqual(this._camera.focalLength, dof.focalLength.value, 0.01f);
-        }
-
-        // --- Crane through coordinate conversion ---
-
-        [UnityTest]
-        public IEnumerator Sync__CraneMoveWorldY__When__CameraRotated()
-        {
-            yield return null;
-
-            var cam = this._behaviour.CameraElement;
-            cam.Pan(0.5f);
-            cam.Tilt(-0.3f);
-            yield return null;
-
-            var yBefore = this._go.transform.position.y;
-            cam.Crane(2.0f);
-            yield return null;
-
-            // Crane is world-relative: Y should increase regardless of camera rotation
-            Assert.AreEqual(yBefore + 2.0f, this._go.transform.position.y, 0.01f);
-        }
-
-        // --- DollyZoom at zoom boundary end-to-end (FRA-123) ---
-
-        [UnityTest]
-        public IEnumerator DollyZoom__UnityCameraStaysAtZoomMax__When__AtBoundary()
-        {
-            yield return null;
-
-            var cam = this._behaviour.CameraElement;
-            cam.SetLensSet(new LensSet("Canon 24-70mm", 24f, 70f, false, 1.0f));
-            cam.SetFocalLengthPreset(70f);
-            var posBefore = this._go.transform.position;
-
-            cam.DollyZoom(-1.0f);
-            yield return null;
-
-            // At zoom max, DollyZoom should be a no-op — both position and FL unchanged
-            Assert.AreEqual(70f, this._camera.focalLength, 0.01f);
-            Assert.AreEqual(posBefore.x, this._go.transform.position.x, 0.01f);
-            Assert.AreEqual(posBefore.z, this._go.transform.position.z, 0.01f);
-        }
-
-        // --- Backward aspect ratio cycling ---
-
-        [UnityTest]
-        public IEnumerator CycleAspectRatioBackward__ChangesAspectRatio__When__Called()
-        {
-            yield return null;
-
-            var before = this._behaviour.ActiveAspectRatio;
-            this._behaviour.CycleAspectRatioBackward();
-
-            Assert.AreNotSame(before, this._behaviour.ActiveAspectRatio);
-        }
-
         // --- Viewport rect: panel inset only, no sensor aspect constraint ---
 
         [UnityTest]
@@ -755,8 +774,15 @@ namespace Fram3d.Tests.Engine
 
             yield return null;
 
-            Assert.AreEqual(0f, this._camera.rect.y, 0.001f, "Camera.rect.y should be 0 (full height)");
-            Assert.AreEqual(1f, this._camera.rect.height, 0.001f, "Camera.rect.height should be 1 (full height)");
+            Assert.AreEqual(0f,
+                            this._camera.rect.y,
+                            0.001f,
+                            "Camera.rect.y should be 0 (full height)");
+
+            Assert.AreEqual(1f,
+                            this._camera.rect.height,
+                            0.001f,
+                            "Camera.rect.height should be 1 (full height)");
         }
 
         [UnityTest]
@@ -768,7 +794,7 @@ namespace Fram3d.Tests.Engine
             this._behaviour.SetRightInset(0f);
             yield return null;
 
-            Assert.AreEqual(0f, this._camera.rect.x, 0.001f);
+            Assert.AreEqual(0f, this._camera.rect.x,     0.001f);
             Assert.AreEqual(1f, this._camera.rect.width, 0.001f);
         }
 
@@ -783,8 +809,16 @@ namespace Fram3d.Tests.Engine
             // Width should be reduced by 440px / screen width
             var expectedWidth = (Screen.width - 440f) / Screen.width;
             Assert.AreEqual(expectedWidth, this._camera.rect.width, 0.01f);
-            Assert.AreEqual(0f, this._camera.rect.x, 0.001f, "Viewport should be left-aligned");
-            Assert.AreEqual(1f, this._camera.rect.height, 0.001f, "Height should remain full");
+
+            Assert.AreEqual(0f,
+                            this._camera.rect.x,
+                            0.001f,
+                            "Viewport should be left-aligned");
+
+            Assert.AreEqual(1f,
+                            this._camera.rect.height,
+                            0.001f,
+                            "Height should remain full");
         }
 
         [UnityTest]
@@ -798,7 +832,16 @@ namespace Fram3d.Tests.Engine
             this._behaviour.SetRightInset(0f);
             yield return null;
 
-            Assert.AreEqual(1f, this._camera.rect.width, 0.001f, "Width should restore to full");
+            Assert.AreEqual(1f,
+                            this._camera.rect.width,
+                            0.001f,
+                            "Width should restore to full");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(this._go);
         }
 
         // --- Helpers ---

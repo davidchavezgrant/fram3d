@@ -17,17 +17,8 @@ namespace Fram3d.UI.Panels
         public SensorModeSection(SensorMode[] modes, SensorMode currentMode)
         {
             this.Add(Theme.CreateSectionLabel("Sensor Mode"));
-            this._dropdown                         = new DropdownField();
-            this._dropdown.style.fontSize          = Theme.FONT_BODY;
-            this._dropdown.style.backgroundColor   = Theme.SELECTOR_BG;
-            this._dropdown.style.borderTopWidth    = 1;
-            this._dropdown.style.borderBottomWidth = 1;
-            this._dropdown.style.borderLeftWidth   = 1;
-            this._dropdown.style.borderRightWidth  = 1;
-            this._dropdown.style.borderTopColor    = Theme.SELECTOR_BORDER;
-            this._dropdown.style.borderBottomColor = Theme.SELECTOR_BORDER;
-            this._dropdown.style.borderLeftColor   = Theme.SELECTOR_BORDER;
-            this._dropdown.style.borderRightColor  = Theme.SELECTOR_BORDER;
+            this._dropdown = new DropdownField();
+            this._dropdown.AddToClassList("sensor-dropdown");
             this._dropdown.RegisterValueChangedCallback(this.OnSelectionChanged);
             this.Add(this._dropdown);
             this.SetModes(modes, currentMode);

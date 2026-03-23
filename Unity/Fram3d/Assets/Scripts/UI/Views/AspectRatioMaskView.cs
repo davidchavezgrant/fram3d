@@ -1,5 +1,7 @@
 using Fram3d.Core.Camera;
+using Fram3d.Core.Viewport;
 using Fram3d.Engine.Integration;
+using Fram3d.UI.Panels;
 using UnityEngine;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Views
@@ -12,24 +14,19 @@ namespace Fram3d.UI.Views
     /// </summary>
     public sealed class AspectRatioMaskView: MonoBehaviour
     {
-        private static readonly Color           BAR_COLOR = Color.black;
-        private                 VisualElement   _barBottom;
-        private                 VisualElement   _barLeft;
-        private                 VisualElement   _barRight;
-        private                 VisualElement   _barTop;
-        private                 CameraBehaviour _cameraBehaviour;
-        private                 VisualElement   _container;
-        private                 VisualElement   _root;
+        private VisualElement   _barBottom;
+        private VisualElement   _barLeft;
+        private VisualElement   _barRight;
+        private VisualElement   _barTop;
+        private CameraBehaviour _cameraBehaviour;
+        private VisualElement   _container;
+        private VisualElement   _root;
 
         private void BuildOverlay()
         {
-            this._container                = new VisualElement();
-            this._container.style.position = Position.Absolute;
-            this._container.style.left     = 0;
-            this._container.style.top      = 0;
-            this._container.style.right    = 0;
-            this._container.style.bottom   = 0;
-            this._container.pickingMode    = PickingMode.Ignore;
+            this._container             = new VisualElement();
+            this._container.pickingMode = PickingMode.Ignore;
+            this._container.AddToClassList("aspect-mask-container");
             this._barTop                   = CreateBar();
             this._barBottom                = CreateBar();
             this._barLeft                  = CreateBar();
@@ -92,9 +89,8 @@ namespace Fram3d.UI.Views
         private static VisualElement CreateBar()
         {
             var bar = new VisualElement();
-            bar.style.position        = Position.Absolute;
-            bar.style.backgroundColor = BAR_COLOR;
-            bar.pickingMode           = PickingMode.Ignore;
+            bar.pickingMode = PickingMode.Ignore;
+            bar.AddToClassList("aspect-mask-bar");
             return bar;
         }
 
@@ -117,6 +113,7 @@ namespace Fram3d.UI.Views
             }
 
             this._root = uiDocument.rootVisualElement;
+            StyleSheetLoader.Apply(this._root);
             this.BuildOverlay();
         }
 

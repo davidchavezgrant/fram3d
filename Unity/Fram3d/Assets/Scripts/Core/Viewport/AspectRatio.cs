@@ -1,5 +1,6 @@
 using System;
-namespace Fram3d.Core.Camera
+using Fram3d.Core.Camera;
+namespace Fram3d.Core.Viewport
 {
     /// <summary>
     /// A fixed set of aspect ratios for the camera view mask. Sealed class with private

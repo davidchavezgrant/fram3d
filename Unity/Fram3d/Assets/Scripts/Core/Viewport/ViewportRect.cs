@@ -1,4 +1,4 @@
-namespace Fram3d.Core.Camera
+namespace Fram3d.Core.Viewport
 {
     /// <summary>
     /// A normalized (0–1) viewport rectangle constraining the camera render area

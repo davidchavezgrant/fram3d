@@ -1,5 +1,7 @@
 using Fram3d.Core.Camera;
+using Fram3d.Core.Viewport;
 using Fram3d.Engine.Integration;
+using Fram3d.UI.Panels;
 using UnityEngine;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Views
@@ -11,10 +13,8 @@ namespace Fram3d.UI.Views
     /// </summary>
     public sealed class CompositionGuideView: MonoBehaviour
     {
-        private const float           CENTER_CROSS_ALPHA = 0.25f;
         private const float           CENTER_CROSS_ARM   = 20f;
         private const float           CENTER_CROSS_WIDTH = 1.5f;
-        private const float           GUIDE_LINE_ALPHA   = 0.15f;
         private const float           GUIDE_LINE_WIDTH   = 1f;
         private       VisualElement   _actionSafe;
         private       CameraBehaviour _cameraBehaviour;
@@ -36,33 +36,29 @@ namespace Fram3d.UI.Views
 
         private void BuildOverlay()
         {
-            this._container                = new VisualElement();
-            this._container.style.position = Position.Absolute;
-            this._container.style.left     = 0;
-            this._container.style.top      = 0;
-            this._container.style.right    = 0;
-            this._container.style.bottom   = 0;
-            this._container.pickingMode    = PickingMode.Ignore;
+            this._container             = new VisualElement();
+            this._container.pickingMode = PickingMode.Ignore;
+            this._container.AddToClassList("guide-container");
 
             // Rule of thirds
-            this._thirdsH1 = CreateLine(GUIDE_LINE_ALPHA, GUIDE_LINE_WIDTH);
-            this._thirdsH2 = CreateLine(GUIDE_LINE_ALPHA, GUIDE_LINE_WIDTH);
-            this._thirdsV1 = CreateLine(GUIDE_LINE_ALPHA, GUIDE_LINE_WIDTH);
-            this._thirdsV2 = CreateLine(GUIDE_LINE_ALPHA, GUIDE_LINE_WIDTH);
+            this._thirdsH1 = CreateLine("guide-line--thirds");
+            this._thirdsH2 = CreateLine("guide-line--thirds");
+            this._thirdsV1 = CreateLine("guide-line--thirds");
+            this._thirdsV2 = CreateLine("guide-line--thirds");
             this._container.Add(this._thirdsH1);
             this._container.Add(this._thirdsH2);
             this._container.Add(this._thirdsV1);
             this._container.Add(this._thirdsV2);
 
             // Center cross
-            this._crossH = CreateLine(CENTER_CROSS_ALPHA, CENTER_CROSS_WIDTH);
-            this._crossV = CreateLine(CENTER_CROSS_ALPHA, CENTER_CROSS_WIDTH);
+            this._crossH = CreateLine("guide-line--center");
+            this._crossV = CreateLine("guide-line--center");
             this._container.Add(this._crossH);
             this._container.Add(this._crossV);
 
             // Safe zones
-            this._titleSafe  = CreateSafeZone(0.12f);
-            this._actionSafe = CreateSafeZone(0.08f);
+            this._titleSafe  = CreateSafeZone("guide-safe-zone--title");
+            this._actionSafe = CreateSafeZone("guide-safe-zone--action");
             this._container.Add(this._titleSafe);
             this._container.Add(this._actionSafe);
             var uiDocument = this.GetComponent<UIDocument>();
@@ -174,45 +170,21 @@ namespace Fram3d.UI.Views
             this._thirdsV2.style.height = rect.Height;
         }
 
-        private static VisualElement CreateLine(float alpha, float thickness)
+        private static VisualElement CreateLine(string cssClass)
         {
             var line = new VisualElement();
-            line.style.position = Position.Absolute;
-
-            line.style.backgroundColor = new Color(1f,
-                                                   1f,
-                                                   1f,
-                                                   alpha);
-
             line.pickingMode = PickingMode.Ignore;
+            line.AddToClassList("guide-line");
+            line.AddToClassList(cssClass);
             return line;
         }
 
-        private static VisualElement CreateSafeZone(float alpha)
+        private static VisualElement CreateSafeZone(string cssClass)
         {
             var zone = new VisualElement();
-            zone.style.position = Position.Absolute;
-
-            zone.style.backgroundColor = new Color(0,
-                                                   0,
-                                                   0,
-                                                   0);
-
-            zone.style.borderTopWidth    = 1;
-            zone.style.borderBottomWidth = 1;
-            zone.style.borderLeftWidth   = 1;
-            zone.style.borderRightWidth  = 1;
-
-            var borderColor = new Color(1f,
-                                        1f,
-                                        1f,
-                                        alpha);
-
-            zone.style.borderTopColor    = borderColor;
-            zone.style.borderBottomColor = borderColor;
-            zone.style.borderLeftColor   = borderColor;
-            zone.style.borderRightColor  = borderColor;
-            zone.pickingMode             = PickingMode.Ignore;
+            zone.pickingMode = PickingMode.Ignore;
+            zone.AddToClassList("guide-safe-zone");
+            zone.AddToClassList(cssClass);
             return zone;
         }
 
@@ -244,6 +216,7 @@ namespace Fram3d.UI.Views
                 return;
             }
 
+            StyleSheetLoader.Apply(uiDocument.rootVisualElement);
             this.BuildOverlay();
         }
 

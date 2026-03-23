@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
 using Fram3d.Core.Common;
+using Fram3d.Core.Viewport;
 namespace Fram3d.Core.Camera
 {
     public class CameraElement: Element

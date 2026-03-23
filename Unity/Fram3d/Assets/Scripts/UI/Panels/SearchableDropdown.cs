@@ -56,7 +56,9 @@ namespace Fram3d.UI.Panels
             this._filteredItems.AddRange(this._browseItems);
 
             if (_currentlyOpen == this)
+            {
                 _currentlyOpen = null;
+            }
         }
 
         /// <summary>
@@ -81,30 +83,18 @@ namespace Fram3d.UI.Panels
 
         private void BuildOverlay(string placeholder)
         {
-            this._dropdownOverlay                               = new VisualElement();
-            this._dropdownOverlay.style.backgroundColor         = Theme.DROPDOWN_BG;
-            this._dropdownOverlay.style.borderBottomWidth       = 1;
-            this._dropdownOverlay.style.borderLeftWidth         = 1;
-            this._dropdownOverlay.style.borderRightWidth        = 1;
-            this._dropdownOverlay.style.borderBottomColor       = Theme.SELECTOR_BORDER;
-            this._dropdownOverlay.style.borderLeftColor         = Theme.SELECTOR_BORDER;
-            this._dropdownOverlay.style.borderRightColor        = Theme.SELECTOR_BORDER;
-            this._dropdownOverlay.style.borderBottomLeftRadius  = 3;
-            this._dropdownOverlay.style.borderBottomRightRadius = 3;
-            this._dropdownOverlay.style.display                 = DisplayStyle.None;
-            this._searchField                                   = new TextField();
-            this._searchField.style.marginLeft                  = 4;
-            this._searchField.style.marginRight                 = 4;
-            this._searchField.style.marginTop                   = 4;
-            this._searchField.style.marginBottom                = 2;
-            this._searchField.style.fontSize                    = Theme.FONT_BODY;
-            this._searchField.textEdition.placeholder           = placeholder;
+            this._dropdownOverlay = new VisualElement();
+            this._dropdownOverlay.AddToClassList("dropdown-overlay");
+            this._dropdownOverlay.style.display = DisplayStyle.None;
+            this._searchField                   = new TextField();
+            this._searchField.AddToClassList("dropdown-search-field");
+            this._searchField.textEdition.placeholder = placeholder;
             this._searchField.RegisterValueChangedCallback(this.OnSearchChanged);
             this._searchField.RegisterCallback<KeyDownEvent>(this.OnKeyDown, TrickleDown.TrickleDown);
             this._searchField.RegisterCallback<FocusOutEvent>(_ => this._searchField.schedule.Execute(this.Close).ExecuteLater(150));
             this._dropdownOverlay.Add(this._searchField);
-            this._scrollView                 = new ScrollView(ScrollViewMode.Vertical);
-            this._scrollView.style.maxHeight = 200;
+            this._scrollView = new ScrollView(ScrollViewMode.Vertical);
+            this._scrollView.AddToClassList("dropdown-scroll-view");
             this._dropdownOverlay.Add(this._scrollView);
             this._root.Add(this._dropdownOverlay);
         }
@@ -114,25 +104,25 @@ namespace Fram3d.UI.Panels
         private void BuildSelector()
         {
             var selector = new VisualElement();
-            StyleSelector(selector);
-            var initialText = this._allItems.Count > 0? this._allItems[this._selectedIndex] : "—";
-            this._selectedLabel                = new Label(initialText);
-            this._selectedLabel.style.fontSize = Theme.FONT_BODY;
-            this._selectedLabel.style.color    = Theme.TEXT_LIGHT;
-            this._selectedLabel.style.flexGrow = 1;
-            this._selectedLabel.style.overflow = Overflow.Hidden;
-            var arrow = new Label("▾");
-            arrow.style.fontSize = Theme.FONT_HEADER;
-            arrow.style.color    = Theme.LABEL_MID;
+            selector.AddToClassList("dropdown-selector");
+            var initialText = this._allItems.Count > 0 ? this._allItems[this._selectedIndex] : "\u2014";
+            this._selectedLabel = new Label(initialText);
+            this._selectedLabel.AddToClassList("dropdown-selected-label");
+            var arrow = new Label("\u25be");
+            arrow.AddToClassList("dropdown-arrow");
             selector.Add(this._selectedLabel);
             selector.Add(arrow);
 
             selector.RegisterCallback<ClickEvent>(_ =>
                                                   {
                                                       if (this._isOpen)
+                                                      {
                                                           this.Close();
+                                                      }
                                                       else
+                                                      {
                                                           this.Open();
+                                                      }
                                                   });
 
             this._root.Add(selector);
@@ -157,17 +147,21 @@ namespace Fram3d.UI.Panels
         private VisualElement CreateListRow(string text, int index, bool isHighlighted)
         {
             var row = new VisualElement();
-            row.style.flexDirection   = FlexDirection.Row;
-            row.style.alignItems      = Align.Center;
-            row.style.paddingLeft     = 6;
-            row.style.paddingTop      = 3;
-            row.style.paddingBottom   = 3;
-            row.style.backgroundColor = isHighlighted? Theme.HIGHLIGHT_STRONG : new StyleColor(StyleKeyword.Null);
+            row.AddToClassList("dropdown-list-row");
+
+            if (isHighlighted)
+            {
+                row.style.backgroundColor = Theme.HIGHLIGHT_STRONG;
+            }
+
             var label = new Label(text);
-            label.style.fontSize       = Theme.FONT_BODY;
-            label.style.unityTextAlign = TextAnchor.MiddleLeft;
-            label.style.flexGrow       = 1;
-            label.style.color          = isHighlighted? Theme.TEXT_WHITE : Theme.TEXT_DEFAULT;
+            label.AddToClassList("dropdown-list-label");
+
+            if (isHighlighted)
+            {
+                label.style.color = Theme.TEXT_WHITE;
+            }
+
             row.Add(label);
 
             row.RegisterCallback<PointerEnterEvent>(_ =>
@@ -181,9 +175,9 @@ namespace Fram3d.UI.Panels
                                                         var highlighted = index == this._highlightedIndex;
 
                                                         row.style.backgroundColor =
-                                                            highlighted? Theme.HIGHLIGHT_STRONG : new StyleColor(StyleKeyword.Null);
+                                                            highlighted ? Theme.HIGHLIGHT_STRONG : new StyleColor(StyleKeyword.Null);
 
-                                                        label.style.color = highlighted? Theme.TEXT_WHITE : Theme.TEXT_DEFAULT;
+                                                        label.style.color = highlighted ? Theme.TEXT_WHITE : Theme.TEXT_DEFAULT;
                                                     });
 
             row.RegisterCallback<ClickEvent>(_ => this.ConfirmSelection(index));
@@ -195,7 +189,9 @@ namespace Fram3d.UI.Panels
         private void OnKeyDown(KeyDownEvent evt)
         {
             if (this._filteredItems.Count == 0)
+            {
                 return;
+            }
 
             switch (evt.keyCode)
             {
@@ -243,11 +239,11 @@ namespace Fram3d.UI.Panels
             {
                 var words = search.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-                this._filteredItems.AddRange(this._allItems.Where(item => words.All(word => item.IndexOf(word, StringComparison.OrdinalIgnoreCase)
-                                                                                         >= 0)));
+                this._filteredItems.AddRange(this._allItems.Where(item =>
+                    words.All(word => item.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0)));
             }
 
-            this._highlightedIndex = this._filteredItems.Count > 0? 0 : -1;
+            this._highlightedIndex = this._filteredItems.Count > 0 ? 0 : -1;
             this.RebuildListItems();
         }
 
@@ -277,28 +273,6 @@ namespace Fram3d.UI.Panels
                 var row           = this.CreateListRow(this._filteredItems[i], index, isHighlighted);
                 this._scrollView.Add(row);
             }
-        }
-
-        private static void StyleSelector(VisualElement selector)
-        {
-            selector.style.flexDirection           = FlexDirection.Row;
-            selector.style.backgroundColor         = Theme.SELECTOR_BG;
-            selector.style.borderBottomWidth       = 1;
-            selector.style.borderTopWidth          = 1;
-            selector.style.borderLeftWidth         = 1;
-            selector.style.borderRightWidth        = 1;
-            selector.style.borderBottomColor       = Theme.SELECTOR_BORDER;
-            selector.style.borderTopColor          = Theme.SELECTOR_BORDER;
-            selector.style.borderLeftColor         = Theme.SELECTOR_BORDER;
-            selector.style.borderRightColor        = Theme.SELECTOR_BORDER;
-            selector.style.borderBottomLeftRadius  = 3;
-            selector.style.borderBottomRightRadius = 3;
-            selector.style.borderTopLeftRadius     = 3;
-            selector.style.borderTopRightRadius    = 3;
-            selector.style.paddingLeft             = 6;
-            selector.style.paddingRight            = 6;
-            selector.style.paddingTop              = 4;
-            selector.style.paddingBottom           = 4;
         }
     }
 }

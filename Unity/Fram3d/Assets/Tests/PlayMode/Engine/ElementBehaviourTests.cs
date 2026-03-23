@@ -12,32 +12,6 @@ namespace Fram3d.Tests.Engine
         private List<GameObject> _extras;
         private GameObject       _go;
 
-        // --- Awake tests: synchronous, no frame needed ---
-
-        [Test]
-        public void Awake__CreatesElement__When__Added()
-        {
-            var behaviour = this._go.GetComponent<ElementBehaviour>();
-            Assert.IsNotNull(behaviour.Element);
-        }
-
-        [Test]
-        public void Awake__ElementNameMatchesGameObject__When__Created()
-        {
-            var behaviour = this._go.GetComponent<ElementBehaviour>();
-            Assert.AreEqual("TestElement", behaviour.Element.Name);
-        }
-
-        [Test]
-        public void Awake__ElementIdIsUnique__When__MultipleCreated()
-        {
-            var go2 = CreateExtra("TestElement2");
-
-            var id1 = this._go.GetComponent<ElementBehaviour>().Element.Id;
-            var id2 = go2.GetComponent<ElementBehaviour>().Element.Id;
-            Assert.AreNotEqual(id1, id2);
-        }
-
         [Test]
         public void Awake__CapturesPosition__When__GameObjectAtNonOrigin()
         {
@@ -45,7 +19,6 @@ namespace Fram3d.Tests.Engine
             go.transform.position = new Vector3(3f, 1f, -5f);
             go.AddComponent<ElementBehaviour>();
             this._extras.Add(go);
-
             var element = go.GetComponent<ElementBehaviour>().Element;
 
             // Core uses System.Numerics (right-handed, -Z forward).
@@ -62,7 +35,6 @@ namespace Fram3d.Tests.Engine
             go.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
             go.AddComponent<ElementBehaviour>();
             this._extras.Add(go);
-
             var element  = go.GetComponent<ElementBehaviour>().Element;
             var coreRot  = element.Rotation;
             var expected = go.transform.rotation;
@@ -73,6 +45,59 @@ namespace Fram3d.Tests.Engine
             Assert.AreEqual(expected.y, roundTrip.y, 0.001f);
             Assert.AreEqual(expected.z, roundTrip.z, 0.001f);
             Assert.AreEqual(expected.w, roundTrip.w, 0.001f);
+        }
+
+        // --- Awake tests: synchronous, no frame needed ---
+
+        [Test]
+        public void Awake__CreatesElement__When__Added()
+        {
+            var behaviour = this._go.GetComponent<ElementBehaviour>();
+            Assert.IsNotNull(behaviour.Element);
+        }
+
+        [Test]
+        public void Awake__ElementIdIsUnique__When__MultipleCreated()
+        {
+            var go2 = CreateExtra("TestElement2");
+            var id1 = this._go.GetComponent<ElementBehaviour>().Element.Id;
+            var id2 = go2.GetComponent<ElementBehaviour>().Element.Id;
+            Assert.AreNotEqual(id1, id2);
+        }
+
+        [Test]
+        public void Awake__ElementNameMatchesGameObject__When__Created()
+        {
+            var behaviour = this._go.GetComponent<ElementBehaviour>();
+            Assert.AreEqual("TestElement", behaviour.Element.Name);
+        }
+
+        [UnityTest]
+        public IEnumerator LateUpdate__RoundTripsPosition__When__PositionSetFromTransform()
+        {
+            var go = new GameObject("RoundTrip");
+            go.transform.position = new Vector3(7f, -2f, 13f);
+            go.AddComponent<ElementBehaviour>();
+            this._extras.Add(go);
+            yield return null;
+            yield return null;
+
+            var pos = go.transform.position;
+
+            Assert.AreEqual(7f,
+                            pos.x,
+                            0.001f,
+                            "X should not drift");
+
+            Assert.AreEqual(-2f,
+                            pos.y,
+                            0.001f,
+                            "Y should not drift");
+
+            Assert.AreEqual(13f,
+                            pos.z,
+                            0.001f,
+                            "Z should not drift");
         }
 
         // --- LateUpdate sync: needs frames ---
@@ -122,32 +147,6 @@ namespace Fram3d.Tests.Engine
             Assert.AreEqual(2.5f, scale.z, 0.001f);
         }
 
-        [UnityTest]
-        public IEnumerator LateUpdate__RoundTripsPosition__When__PositionSetFromTransform()
-        {
-            var go = new GameObject("RoundTrip");
-            go.transform.position = new Vector3(7f, -2f, 13f);
-            go.AddComponent<ElementBehaviour>();
-            this._extras.Add(go);
-            yield return null;
-            yield return null;
-
-            var pos = go.transform.position;
-            Assert.AreEqual(7f,  pos.x, 0.001f, "X should not drift");
-            Assert.AreEqual(-2f, pos.y, 0.001f, "Y should not drift");
-            Assert.AreEqual(13f, pos.z, 0.001f, "Z should not drift");
-        }
-
-        // --- Helpers ---
-
-        private GameObject CreateExtra(string name)
-        {
-            var go = new GameObject(name);
-            go.AddComponent<ElementBehaviour>();
-            this._extras.Add(go);
-            return go;
-        }
-
         [SetUp]
         public void SetUp()
         {
@@ -168,6 +167,16 @@ namespace Fram3d.Tests.Engine
             }
 
             Object.DestroyImmediate(this._go);
+        }
+
+        // --- Helpers ---
+
+        private GameObject CreateExtra(string name)
+        {
+            var go = new GameObject(name);
+            go.AddComponent<ElementBehaviour>();
+            this._extras.Add(go);
+            return go;
         }
     }
 }

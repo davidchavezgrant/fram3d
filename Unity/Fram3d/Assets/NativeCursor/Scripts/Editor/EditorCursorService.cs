@@ -7,29 +7,33 @@ using UnityEngine.UIElements;
 namespace Riten.Native.Cursors.Editor
 {
     /// <summary>
-    /// Editor cursor service using NSCursor P/Invoke triggered from PointerMoveEvent
-    /// callbacks on the Game View's rootVisualElement.
+    /// Editor cursor service that prevents macOS cursor flickering by:
+    /// 1. [NSWindow disableCursorRects] — suppresses automatic cursor rect evaluation
+    /// 2. Continuous re-apply in EditorApplication.update — overpowers any resets
+    ///    Unity makes internally (e.g., during IMGUI repaint or [NSCursor set] calls)
+    /// 3. PointerMoveEvent callback — re-applies after each macOS mouse-moved event
     ///
-    /// Why this timing matters:
-    /// macOS evaluates NSTrackingArea cursor rects on every mouse move BEFORE dispatching
-    /// the event to the application. By setting NSCursor in a PointerMoveEvent callback
-    /// (which fires AFTER tracking area evaluation), we override the cursor after macOS
-    /// has already tried to reset it. Both happen within one event dispatch cycle, before
-    /// the next display refresh — so no visible flicker.
+    /// Why all three layers are needed:
+    /// - disableCursorRects alone fails if Unity re-enables cursor rects or calls
+    ///   [NSCursor set] directly during its repaint phase
+    /// - PointerMoveEvent alone failed (the previous approach) because the cursor
+    ///   still flickers between tracking area evaluation and our callback
+    /// - EditorApplication.update alone fires before repaint, so Unity can reset
+    ///   the cursor after our set
+    /// - Combined, they ensure at least one re-apply fires after every possible reset
     ///
-    /// Previous approaches that failed:
-    /// - EditorApplication.update + P/Invoke: fires during update loop, cursor is reset
-    ///   during the subsequent repaint phase
-    /// - Cursor.SetCursor(): overridden by Editor's IMGUI cursor management
-    /// - Harmony on Internal_AddCursorRect: native icall, can't be patched
-    /// - Harmony on GameView.OnGUI: patching exception
+    /// During mouse drag (NSMouseDragged), macOS skips cursor rect evaluation
+    /// entirely, which is why drag never flickered.
+    /// Same approach as Mozilla/Firefox (Bug 445567).
     /// </summary>
     public class EditorCursorService : ICursorService
     {
         NTCursors? _activeCursor;
-        bool _callbackRegistered;
+        bool       _callbackRegistered;
 
 #if UNITY_EDITOR_OSX
+        IntPtr _disabledWindow;
+
         [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_getClass")]
         static extern IntPtr objc_getClass(string className);
 
@@ -40,7 +44,12 @@ namespace Riten.Native.Cursors.Editor
         static extern IntPtr objc_msgSend(IntPtr receiver, IntPtr selector);
 
         static readonly IntPtr NSCursorClass                = objc_getClass("NSCursor");
+        static readonly IntPtr NSApplicationClass            = objc_getClass("NSApplication");
         static readonly IntPtr SetSel                       = sel_registerName("set");
+        static readonly IntPtr SharedApplicationSel          = sel_registerName("sharedApplication");
+        static readonly IntPtr KeyWindowSel                  = sel_registerName("keyWindow");
+        static readonly IntPtr DisableCursorRectsSel         = sel_registerName("disableCursorRects");
+        static readonly IntPtr EnableCursorRectsSel          = sel_registerName("enableCursorRects");
         static readonly IntPtr ArrowCursorSel               = sel_registerName("arrowCursor");
         static readonly IntPtr PointingHandCursorSel        = sel_registerName("pointingHandCursor");
         static readonly IntPtr IBeamCursorSel               = sel_registerName("IBeamCursor");
@@ -74,6 +83,37 @@ namespace Riten.Native.Cursors.Editor
                 case NTCursors.ResizeAll:         SetNSCursor(ArrowCursorSel); break;
             }
         }
+
+        /// <summary>
+        /// Unconditionally disables cursor rects on the key window.
+        /// Called every frame while a custom cursor is active, because Unity
+        /// may re-enable cursor rects during its IMGUI repaint. Idempotent
+        /// at the AppKit level (just sets a flag on NSWindow).
+        /// </summary>
+        void EnsureCursorRectsDisabled()
+        {
+            var app    = objc_msgSend(NSApplicationClass, SharedApplicationSel);
+            var window = objc_msgSend(app, KeyWindowSel);
+
+            if (window == IntPtr.Zero)
+                return;
+
+            // If the key window changed, re-enable the old one
+            if (_disabledWindow != IntPtr.Zero && _disabledWindow != window)
+                objc_msgSend(_disabledWindow, EnableCursorRectsSel);
+
+            objc_msgSend(window, DisableCursorRectsSel);
+            _disabledWindow = window;
+        }
+
+        void EnableWindowCursorRects()
+        {
+            if (_disabledWindow == IntPtr.Zero)
+                return;
+
+            objc_msgSend(_disabledWindow, EnableCursorRectsSel);
+            _disabledWindow = IntPtr.Zero;
+        }
 #endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -94,6 +134,17 @@ namespace Riten.Native.Cursors.Editor
         {
             if (!_callbackRegistered)
                 TryRegisterGameViewCallbacks();
+
+#if UNITY_EDITOR_OSX
+            // Continuously re-disable cursor rects and re-apply cursor.
+            // Unity's IMGUI repaint may re-enable cursor rects or call
+            // [NSCursor set] between update callbacks.
+            if (_activeCursor.HasValue)
+            {
+                EnsureCursorRectsDisabled();
+                ApplyNSCursor(_activeCursor.Value);
+            }
+#endif
         }
 
         void TryRegisterGameViewCallbacks()
@@ -121,8 +172,11 @@ namespace Riten.Native.Cursors.Editor
         void OnPointerMove(PointerMoveEvent evt)
         {
 #if UNITY_EDITOR_OSX
-            if (_activeCursor.HasValue)
-                ApplyNSCursor(_activeCursor.Value);
+            if (!_activeCursor.HasValue)
+                return;
+
+            EnsureCursorRectsDisabled();
+            ApplyNSCursor(_activeCursor.Value);
 #endif
         }
 
@@ -133,6 +187,10 @@ namespace Riten.Native.Cursors.Editor
 
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
             EditorApplication.update -= OnEditorUpdate;
+
+#if UNITY_EDITOR_OSX
+            EnableWindowCursorRects();
+#endif
             ResetCursor();
         }
 
@@ -142,6 +200,7 @@ namespace Riten.Native.Cursors.Editor
             {
                 _activeCursor = null;
 #if UNITY_EDITOR_OSX
+                EnableWindowCursorRects();
                 SetNSCursor(ArrowCursorSel);
 #endif
                 return true;
@@ -150,6 +209,7 @@ namespace Riten.Native.Cursors.Editor
             _activeCursor = ntCursorName;
 
 #if UNITY_EDITOR_OSX
+            EnsureCursorRectsDisabled();
             ApplyNSCursor(ntCursorName);
 #endif
             return true;
@@ -159,6 +219,7 @@ namespace Riten.Native.Cursors.Editor
         {
             _activeCursor = null;
 #if UNITY_EDITOR_OSX
+            EnableWindowCursorRects();
             SetNSCursor(ArrowCursorSel);
 #endif
         }

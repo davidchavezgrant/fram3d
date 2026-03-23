@@ -39,6 +39,11 @@ namespace Fram3d.UI.Input
             }
         }
 
+        private void OnDisable()
+        {
+            this.ResetPointerCursor();
+        }
+
         private void Update()
         {
             if (this._selection == null || this.raycaster == null)
@@ -85,16 +90,30 @@ namespace Fram3d.UI.Input
                            && this.gizmoController.IsHoveringHandle;
             var wantPointer = overElement || overGizmo;
 
+            if (wantPointer == this._cursorIsPointer)
+            {
+                return;
+            }
+
             if (wantPointer)
             {
                 NativeCursor.SetCursor(NTCursors.Link);
-            }
-            else if (this._cursorIsPointer)
-            {
-                NativeCursor.ResetCursor();
+                this._cursorIsPointer = true;
+                return;
             }
 
-            this._cursorIsPointer = wantPointer;
+            this.ResetPointerCursor();
+        }
+
+        private void ResetPointerCursor()
+        {
+            if (!this._cursorIsPointer)
+            {
+                return;
+            }
+
+            NativeCursor.ResetCursor();
+            this._cursorIsPointer = false;
         }
 
         private void UpdateGizmoDrag(Mouse mouse, Vector2 mousePosition)

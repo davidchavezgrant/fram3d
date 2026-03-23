@@ -4,8 +4,19 @@ using UnityEngine;
 
 namespace Riten.Native.Cursors
 {
-    public class MacOSCursorService : ICursorService
+    /// <summary>
+    /// Runtime macOS cursor service for standalone builds.
+    /// Keeps the native cursor under AppKit control through the native
+    /// CursorWrapper plugin, which installs a tracking area and refreshes
+    /// the active cursor during hover updates in the standalone player.
+    /// </summary>
+    public class MacOSCursorService : MonoBehaviour, ICursorService
     {
+        private NTCursors? _activeCursor;
+
+        [DllImport("CursorWrapper")]
+        private static extern void RefreshActiveCursor();
+
         [DllImport("CursorWrapper")]
         private static extern void SetCursorToArrow();
 
@@ -17,7 +28,7 @@ namespace Riten.Native.Cursors
 
         [DllImport("CursorWrapper")]
         private static extern void SetCursorToOpenHand();
-        
+
         [DllImport("CursorWrapper")]
         private static extern void SetCursorToClosedHand();
 
@@ -38,44 +49,103 @@ namespace Riten.Native.Cursors
 
         [DllImport("CursorWrapper")]
         private static extern void SetCursorToPointingHand();
-        
+
         [DllImport("CursorWrapper")]
         private static extern void SetCursorToBusy();
-        
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Setup()
         {
-            var service = new MacOSCursorService();
+            var go = new GameObject("NativeCursor#MacOSCursorService")
+            {
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            DontDestroyOnLoad(go);
+
+            var service = go.AddComponent<MacOSCursorService>();
             NativeCursor.SetFallbackService(service);
             NativeCursor.SetService(service);
         }
 
         public bool SetCursor(NTCursors cursor)
         {
+            if (cursor == NTCursors.Default || cursor == NTCursors.Arrow)
+            {
+                this.ResetCursor();
+                return true;
+            }
+
+            this._activeCursor = cursor;
+
             switch (cursor)
             {
-                case NTCursors.Default:
-                case NTCursors.Arrow: SetCursorToArrow(); return true;
-                
-                case NTCursors.IBeam: SetCursorToIBeam(); return true;
-                case NTCursors.Crosshair: SetCursorToCrosshair(); return true;
-                case NTCursors.Link: SetCursorToPointingHand(); return true;
-                case NTCursors.Busy: SetCursorToBusy(); return true;
-                case NTCursors.Invalid: SetCursorToOperationNotAllowed(); return true;
-                case NTCursors.ResizeVertical: SetCursorToResizeUpDown(); return true;
-                case NTCursors.ResizeHorizontal: SetCursorToResizeLeftRight(); return true;
-                case NTCursors.ResizeDiagonalLeft: SetCursorToResizeUp(); return true;
-                case NTCursors.ResizeDiagonalRight: SetCursorToResizeDown(); return true;
-                case NTCursors.ResizeAll: SetCursorToArrow(); return true;
-                case NTCursors.OpenHand: SetCursorToOpenHand(); return true;
-                case NTCursors.ClosedHand: SetCursorToClosedHand(); return true;
-                default: return false;
+                case NTCursors.IBeam:
+                    SetCursorToIBeam();
+                    return true;
+                case NTCursors.Crosshair:
+                    SetCursorToCrosshair();
+                    return true;
+                case NTCursors.Link:
+                    SetCursorToPointingHand();
+                    return true;
+                case NTCursors.Busy:
+                    SetCursorToBusy();
+                    return true;
+                case NTCursors.Invalid:
+                    SetCursorToOperationNotAllowed();
+                    return true;
+                case NTCursors.ResizeVertical:
+                    SetCursorToResizeUpDown();
+                    return true;
+                case NTCursors.ResizeHorizontal:
+                    SetCursorToResizeLeftRight();
+                    return true;
+                case NTCursors.ResizeDiagonalLeft:
+                    SetCursorToResizeUp();
+                    return true;
+                case NTCursors.ResizeDiagonalRight:
+                    SetCursorToResizeDown();
+                    return true;
+                case NTCursors.ResizeAll:
+                    this.ResetCursor();
+                    return true;
+                case NTCursors.OpenHand:
+                    SetCursorToOpenHand();
+                    return true;
+                case NTCursors.ClosedHand:
+                    SetCursorToClosedHand();
+                    return true;
+                default:
+                    this._activeCursor = null;
+                    return false;
             }
         }
 
         public void ResetCursor()
         {
+            this._activeCursor = null;
             SetCursorToArrow();
+        }
+
+        private void Update()
+        {
+            if (this._activeCursor.HasValue)
+            {
+                RefreshActiveCursor();
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus && this._activeCursor.HasValue)
+            {
+                RefreshActiveCursor();
+            }
+        }
+
+        private void OnDisable()
+        {
+            this.ResetCursor();
         }
     }
 }

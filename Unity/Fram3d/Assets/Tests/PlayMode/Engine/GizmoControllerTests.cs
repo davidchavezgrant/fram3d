@@ -10,12 +10,19 @@ namespace Fram3d.Tests.Engine
     /// <summary>
     /// Play Mode tests for GizmoController. Verifies tool switching,
     /// show/hide based on selection, and drag guard conditions.
+    ///
+    /// Important lifecycle detail: LateUpdate resets the tool to TRANSLATE
+    /// on every new selection. Tests that need a specific tool must:
+    /// 1. Select the element and yield (let LateUpdate process the change)
+    /// 2. THEN set the desired tool
+    /// 3. Call the method under test WITHOUT yielding again
     /// </summary>
     public sealed class GizmoControllerTests
     {
         private GameObject           _cameraGo;
         private GizmoController      _controller;
         private GameObject           _cube;
+        private GameObject           _gizmoRoot;
         private SelectionHighlighter _highlighter;
 
         // --- Tool switching ---
@@ -49,16 +56,9 @@ namespace Fram3d.Tests.Engine
             this._highlighter.Selection.Select(element.Id);
             yield return null;
 
-            var gizmoRoot = this._controller.transform.Find("GizmoRoot");
-
-            // GizmoRoot is a scene root — find it by name
-            if (gizmoRoot == null)
-            {
-                gizmoRoot = GameObject.Find("GizmoRoot")?.transform;
-            }
-
-            Assert.IsNotNull(gizmoRoot, "GizmoRoot should exist");
-            Assert.IsTrue(gizmoRoot.gameObject.activeSelf, "GizmoRoot should be visible when element is selected");
+            Assert.IsNotNull(this._gizmoRoot, "GizmoRoot should exist");
+            Assert.IsTrue(this._gizmoRoot.activeSelf,
+                          "GizmoRoot should be visible when element is selected");
         }
 
         [UnityTest]
@@ -74,9 +74,10 @@ namespace Fram3d.Tests.Engine
             this._highlighter.Selection.Deselect();
             yield return null;
 
-            var gizmoRoot = GameObject.Find("GizmoRoot");
-            Assert.IsNotNull(gizmoRoot, "GizmoRoot should exist");
-            Assert.IsFalse(gizmoRoot.activeSelf, "GizmoRoot should be hidden when nothing is selected");
+            // _gizmoRoot reference was captured while active — survives SetActive(false)
+            Assert.IsNotNull(this._gizmoRoot, "GizmoRoot should exist");
+            Assert.IsFalse(this._gizmoRoot.activeSelf,
+                           "GizmoRoot should be hidden when nothing is selected");
         }
 
         // --- Tool resets on new selection ---
@@ -88,10 +89,13 @@ namespace Fram3d.Tests.Engine
 
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
             this._highlighter.Selection.Select(element.Id);
-            this._controller.SetActiveTool(ActiveTool.SCALE);
             yield return null;
 
-            // Create a second element and select it
+            // Switch to Scale after selection settled
+            this._controller.SetActiveTool(ActiveTool.SCALE);
+            Assert.AreSame(ActiveTool.SCALE, this._controller.ActiveTool);
+
+            // Select a different element
             var cube2 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             cube2.AddComponent<ElementBehaviour>();
             yield return null;
@@ -116,9 +120,9 @@ namespace Fram3d.Tests.Engine
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
             element.Position = new System.Numerics.Vector3(5f, 3f, -2f);
             this._highlighter.Selection.Select(element.Id);
-            this._controller.SetActiveTool(ActiveTool.TRANSLATE);
-            yield return null;
+            yield return null; // LateUpdate processes selection, resets to TRANSLATE
 
+            // Tool is already TRANSLATE after selection — no need to set it
             var result = this._controller.TryResetActiveTool();
 
             Assert.IsTrue(result);
@@ -136,9 +140,10 @@ namespace Fram3d.Tests.Engine
             element.Rotation = System.Numerics.Quaternion.CreateFromAxisAngle(
                 System.Numerics.Vector3.UnitY, 1.0f);
             this._highlighter.Selection.Select(element.Id);
-            this._controller.SetActiveTool(ActiveTool.ROTATE);
-            yield return null;
+            yield return null; // LateUpdate processes selection
 
+            // Set tool AFTER selection settled, call reset WITHOUT yielding
+            this._controller.SetActiveTool(ActiveTool.ROTATE);
             var result = this._controller.TryResetActiveTool();
 
             Assert.IsTrue(result);
@@ -153,9 +158,9 @@ namespace Fram3d.Tests.Engine
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
             element.Scale = 3f;
             this._highlighter.Selection.Select(element.Id);
-            this._controller.SetActiveTool(ActiveTool.SCALE);
-            yield return null;
+            yield return null; // LateUpdate processes selection
 
+            this._controller.SetActiveTool(ActiveTool.SCALE);
             var result = this._controller.TryResetActiveTool();
 
             Assert.IsTrue(result);
@@ -181,9 +186,10 @@ namespace Fram3d.Tests.Engine
 
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
             this._highlighter.Selection.Select(element.Id);
-            this._controller.SetActiveTool(ActiveTool.SELECT);
-            yield return null;
+            yield return null; // LateUpdate processes selection
 
+            // Set to SELECT after selection settled, call without yielding
+            this._controller.SetActiveTool(ActiveTool.SELECT);
             var result = this._controller.TryResetActiveTool();
 
             Assert.IsFalse(result);
@@ -223,7 +229,6 @@ namespace Fram3d.Tests.Engine
             this._highlighter = this._cameraGo.AddComponent<SelectionHighlighter>();
             this._controller  = this._cameraGo.AddComponent<GizmoController>();
 
-            // Wire serialized fields via reflection
             SetField(this._controller, "selectionHighlighter", this._highlighter);
             SetField(this._controller, "targetCamera", this._cameraGo.GetComponent<Camera>());
 
@@ -231,16 +236,18 @@ namespace Fram3d.Tests.Engine
             this._cube.name               = "TestCube";
             this._cube.transform.position = new Vector3(0f, 0f, 5f);
             this._cube.AddComponent<ElementBehaviour>();
+
+            // Capture GizmoRoot reference while it exists (before any SetActive(false))
+            // GizmoController.Awake creates it as a scene root GameObject
+            this._gizmoRoot = GameObject.Find("GizmoRoot");
         }
 
         [TearDown]
         public void TearDown()
         {
-            var gizmoRoot = GameObject.Find("GizmoRoot");
-
-            if (gizmoRoot != null)
+            if (this._gizmoRoot != null)
             {
-                Object.DestroyImmediate(gizmoRoot);
+                Object.DestroyImmediate(this._gizmoRoot);
             }
 
             Object.DestroyImmediate(this._cube);

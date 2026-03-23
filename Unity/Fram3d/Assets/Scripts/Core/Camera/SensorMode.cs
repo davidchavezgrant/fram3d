@@ -29,12 +29,12 @@ namespace Fram3d.Core.Camera
         /// </summary>
         public float AspectRatio => this.ResolutionHeight > 0? (float)this.ResolutionWidth / this.ResolutionHeight : 0f;
 
-        public          int    MaxFps             { get; }
-        public          string Name               { get; }
-        public          int    ResolutionHeight   { get; }
-        public          int    ResolutionWidth    { get; }
-        public          float  SensorAreaHeightMm { get; }
-        public          float  SensorAreaWidthMm  { get; }
+        public int    MaxFps             { get; }
+        public string Name               { get; }
+        public int    ResolutionHeight   { get; }
+        public int    ResolutionWidth    { get; }
+        public float  SensorAreaHeightMm { get; }
+        public float  SensorAreaWidthMm  { get; }
         public override string ToString()         => $"{this.Name} ({this.ResolutionWidth}x{this.ResolutionHeight}, max {this.MaxFps}fps)";
     }
 }

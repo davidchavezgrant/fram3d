@@ -1,5 +1,6 @@
 using Fram3d.Core.Camera;
 using Fram3d.Core.Common;
+using Fram3d.Core.Viewport;
 using Fram3d.Engine.Conversion;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -18,13 +19,27 @@ namespace Fram3d.Engine.Integration
         private       DepthOfField   _dof;
         private       float          _rightInsetPixels;
         private       Camera         _unityCamera;
-        public        AspectRatio    ActiveAspectRatio              => this._cameraElement.ActiveAspectRatio;
-        public        SensorMode     ActiveSensorMode               => this._cameraElement.ActiveSensorMode;
-        public        CameraElement  CameraElement                  => this._cameraElement;
-        public        CameraDatabase Database                       => this._database;
-        public        void           CycleAspectRatioBackward()     => this._cameraElement.CycleAspectRatioBackward();
-        public        void           CycleAspectRatioForward()      => this._cameraElement.CycleAspectRatioForward();
-        public        void           SetSensorMode(SensorMode mode) => this._cameraElement.SetSensorMode(mode);
+        public        AspectRatio    ActiveAspectRatio => this._cameraElement.ActiveAspectRatio;
+        public        SensorMode     ActiveSensorMode  => this._cameraElement.ActiveSensorMode;
+        public        CameraElement  CameraElement     => this._cameraElement;
+        public        CameraDatabase Database          => this._database;
+
+        /// <summary>
+        /// The right-side inset in pixels reserved for the properties panel.
+        /// Overlay views read this to constrain their containers.
+        /// </summary>
+        public float RightInsetPixels => this._rightInsetPixels;
+
+        public void CycleAspectRatioBackward() => this._cameraElement.CycleAspectRatioBackward();
+        public void CycleAspectRatioForward()  => this._cameraElement.CycleAspectRatioForward();
+
+        /// <summary>
+        /// Called by the UI layer to reserve screen space on the right side.
+        /// The 3D viewport and overlays shrink to avoid this area.
+        /// </summary>
+        public void SetRightInset(float pixels) => this._rightInsetPixels = pixels;
+
+        public void SetSensorMode(SensorMode mode) => this._cameraElement.SetSensorMode(mode);
 
         private void ApplyShake(CameraElement cam)
         {
@@ -99,32 +114,28 @@ namespace Fram3d.Engine.Integration
             }
         }
 
-        /// <summary>
-        /// The right-side inset in pixels reserved for the properties panel.
-        /// Overlay views read this to constrain their containers.
-        /// </summary>
-        public float RightInsetPixels => this._rightInsetPixels;
-
-        /// <summary>
-        /// Called by the UI layer to reserve screen space on the right side.
-        /// The 3D viewport and overlays shrink to avoid this area.
-        /// </summary>
-        public void SetRightInset(float pixels) => this._rightInsetPixels = pixels;
-
         private void SyncViewportRect()
         {
             var screenWidth = (float)Screen.width;
 
             if (screenWidth <= 0)
             {
-                this._unityCamera.rect = new Rect(0, 0, 1, 1);
+                this._unityCamera.rect = new Rect(0,
+                                                  0,
+                                                  1,
+                                                  1);
+
                 return;
             }
 
             // Camera.rect only accounts for the panel inset.
             // Sensor aspect masking is handled by the UI mask bars.
             var availableWidth = (screenWidth - this._rightInsetPixels) / screenWidth;
-            this._unityCamera.rect = new Rect(0, 0, availableWidth, 1);
+
+            this._unityCamera.rect = new Rect(0,
+                                              0,
+                                              availableWidth,
+                                              1);
         }
 
         private void Awake()

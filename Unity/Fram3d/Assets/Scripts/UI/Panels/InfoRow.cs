@@ -11,15 +11,11 @@ namespace Fram3d.UI.Panels
 
         public InfoRow(string labelText)
         {
-            this.style.flexDirection = FlexDirection.Row;
-            this.style.marginBottom  = 3;
+            this.AddToClassList("info-row");
             var nameLabel = new Label(labelText);
-            nameLabel.style.width           = Theme.INFO_LABEL_WIDTH;
-            nameLabel.style.fontSize        = Theme.FONT_BODY;
-            nameLabel.style.color           = Theme.LABEL_DIM;
-            this._valueLabel                = new Label("—");
-            this._valueLabel.style.fontSize = Theme.FONT_BODY;
-            this._valueLabel.style.color    = Theme.LABEL_BRIGHT;
+            nameLabel.AddToClassList("info-row__key");
+            this._valueLabel = new Label("\u2014");
+            this._valueLabel.AddToClassList("info-row__value");
             this.Add(nameLabel);
             this.Add(this._valueLabel);
         }

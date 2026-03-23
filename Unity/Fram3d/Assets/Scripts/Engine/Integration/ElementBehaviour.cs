@@ -1,5 +1,6 @@
 using System;
 using Fram3d.Core.Common;
+using Fram3d.Engine.Conversion;
 using UnityEngine;
 namespace Fram3d.Engine.Integration
 {
@@ -10,9 +11,7 @@ namespace Fram3d.Engine.Integration
     /// compound elements (multi-mesh models) as single selectable units.
     ///
     /// Self-initializes in Awake — creates the domain Element from the
-    /// GameObject's name. Pure C# objects don't survive Unity's
-    /// editor→play mode serialization boundary, so the Element must be
-    /// created at runtime.
+    /// GameObject's name and syncs Core transform state to Unity each frame.
     /// </summary>
     public sealed class ElementBehaviour: MonoBehaviour
     {
@@ -21,6 +20,22 @@ namespace Fram3d.Engine.Integration
         private void Awake()
         {
             this.Element = new Element(new ElementId(Guid.NewGuid()), this.gameObject.name);
+
+            // Initialize Core position from the scene's editor-time placement
+            this.Element.Position = this.transform.position.ToSystem();
+            this.Element.Rotation = this.transform.rotation.ToSystem();
+        }
+
+        /// <summary>
+        /// Syncs Core domain state → Unity Transform each frame.
+        /// During gizmo drag, the gizmo writes directly to Element.Position;
+        /// this sync propagates that to the visible scene immediately.
+        /// </summary>
+        private void LateUpdate()
+        {
+            this.transform.position   = this.Element.Position.ToUnity();
+            this.transform.rotation   = this.Element.Rotation.ToUnity();
+            this.transform.localScale = Vector3.one * this.Element.Scale;
         }
     }
 }

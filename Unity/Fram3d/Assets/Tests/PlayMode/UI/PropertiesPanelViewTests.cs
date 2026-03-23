@@ -5,7 +5,6 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
-
 namespace Fram3d.Tests.UI
 {
     /// <summary>
@@ -15,21 +14,19 @@ namespace Fram3d.Tests.UI
     /// </summary>
     public sealed class PropertiesPanelViewTests
     {
-        private CameraBehaviour    _behaviour;
-        private GameObject         _cameraGo;
+        private CameraBehaviour     _behaviour;
+        private GameObject          _cameraGo;
         private PropertiesPanelView _panel;
-        private GameObject         _uiGo;
-        private UIDocument         _uiDocument;
+        private UIDocument          _uiDocument;
+        private GameObject          _uiGo;
 
         [SetUp]
         public void SetUp()
         {
-            this._cameraGo = new GameObject("TestCamera");
-            this._behaviour = this._cameraGo.AddComponent<CameraBehaviour>();
-
-            this._uiGo      = new GameObject("TestPanel");
+            this._cameraGo   = new GameObject("TestCamera");
+            this._behaviour  = this._cameraGo.AddComponent<CameraBehaviour>();
+            this._uiGo       = new GameObject("TestPanel");
             this._uiDocument = this._uiGo.AddComponent<UIDocument>();
-
             var guids = UnityEditor.AssetDatabase.FindAssets("t:PanelSettings");
 
             if (guids.Length > 0)
@@ -39,13 +36,6 @@ namespace Fram3d.Tests.UI
             }
 
             this._panel = this._uiGo.AddComponent<PropertiesPanelView>();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Object.DestroyImmediate(this._uiGo);
-            Object.DestroyImmediate(this._cameraGo);
         }
 
         [UnityTest]
@@ -59,6 +49,13 @@ namespace Fram3d.Tests.UI
             var root = this._uiDocument.rootVisualElement;
             Assert.IsNotNull(root);
             Assert.Greater(root.childCount, 0, "Panel should have added elements to the root");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(this._uiGo);
+            Object.DestroyImmediate(this._cameraGo);
         }
 
         [UnityTest]
@@ -83,7 +80,6 @@ namespace Fram3d.Tests.UI
 
             this._panel.Toggle(); // hide
             this._panel.Toggle(); // show again
-
             Assert.IsNotNull(this._panel);
         }
     }

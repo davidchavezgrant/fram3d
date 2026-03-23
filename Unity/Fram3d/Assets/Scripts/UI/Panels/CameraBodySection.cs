@@ -69,19 +69,12 @@ namespace Fram3d.UI.Panels
         {
             var labelColor = Theme.TEXT_DEFAULT;
             var toggle     = new Toggle("Show all cameras");
-            toggle.style.fontSize  = Theme.FONT_SMALL;
-            toggle.style.marginTop = 4;
+            toggle.AddToClassList("section-toggle");
             var toggleLabel = toggle.Q<Label>();
 
             if (toggleLabel != null)
-                toggleLabel.style.color = labelColor;
-
-            var checkmark = toggle.Q(className: "unity-toggle__checkmark");
-
-            if (checkmark != null)
             {
-                checkmark.style.width  = 12;
-                checkmark.style.height = 12;
+                toggleLabel.style.color = labelColor;
             }
 
             toggle.RegisterValueChangedCallback(evt =>
@@ -90,7 +83,9 @@ namespace Fram3d.UI.Panels
                                                     this.ApplyBrowseFilter();
 
                                                     if (toggleLabel != null)
+                                                    {
                                                         toggleLabel.style.color = labelColor;
+                                                    }
                                                 });
 
             this.Add(toggle);

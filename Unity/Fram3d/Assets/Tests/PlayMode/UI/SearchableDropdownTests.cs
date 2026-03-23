@@ -7,7 +7,6 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
-
 namespace Fram3d.Tests.UI
 {
     /// <summary>
@@ -35,50 +34,63 @@ namespace Fram3d.Tests.UI
         private SearchableDropdown _dropdown;
         private ScrollView         _scrollView;
         private TextField          _searchField;
-        private GameObject         _uiGo;
         private UIDocument         _uiDocument;
-
-        [SetUp]
-        public void SetUp()
-        {
-            this._dropdown = new SearchableDropdown(new List<string>(TEST_ITEMS), 0, "Search cameras...");
-
-            this._uiGo      = new GameObject("TestUI");
-            this._uiDocument = this._uiGo.AddComponent<UIDocument>();
-
-            var guids = UnityEditor.AssetDatabase.FindAssets("t:PanelSettings");
-
-            if (guids.Length > 0)
-            {
-                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
-                this._uiDocument.panelSettings = UnityEditor.AssetDatabase.LoadAssetAtPath<PanelSettings>(path);
-            }
-
-            this._uiDocument.rootVisualElement.Add(this._dropdown.Root);
-
-            // Access private members for test setup
-            this._searchField = GetPrivateField<TextField>("_searchField");
-            this._scrollView  = GetPrivateField<ScrollView>("_scrollView");
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            this._dropdown.Close();
-            UnityEngine.Object.DestroyImmediate(this._uiGo);
-        }
-
-        // --- Search filtering ---
+        private GameObject         _uiGo;
 
         [UnityTest]
-        public IEnumerator Search__ShowsAllBrowseItems__When__SearchIsEmpty()
+        public IEnumerator Close__ResetsHighlight__When__Called()
         {
             yield return null;
 
             CallPrivateMethod("Open");
+            SetPrivateField("_highlightedIndex", 3);
+            this._dropdown.Close();
+            Assert.AreEqual(-1, GetPrivateField<int>("_highlightedIndex"));
+        }
+
+        // --- Open / Close ---
+
+        [UnityTest]
+        public IEnumerator Close__ResetsSearchField__When__Called()
+        {
             yield return null;
 
-            Assert.AreEqual(TEST_ITEMS.Count, this._scrollView.childCount);
+            CallPrivateMethod("Open");
+            this._searchField.value = "test query";
+            yield return null;
+
+            this._dropdown.Close();
+            Assert.AreEqual("", this._searchField.value);
+        }
+
+        [UnityTest]
+        public IEnumerator Constructor__ClampsIndex__When__OutOfRange()
+        {
+            yield return null;
+
+            var dropdown = new SearchableDropdown(new List<string>(TEST_ITEMS), 999, "Search...");
+            Assert.AreEqual(TEST_ITEMS.Count - 1, dropdown.SelectedIndex);
+        }
+
+        // --- Initial state ---
+
+        [UnityTest]
+        public IEnumerator Constructor__SetsInitialIndex__When__Provided()
+        {
+            yield return null;
+
+            var dropdown = new SearchableDropdown(new List<string>(TEST_ITEMS), 3, "Search...");
+            Assert.AreEqual(3, dropdown.SelectedIndex);
+        }
+
+        [UnityTest]
+        public IEnumerator Open__SetsHasFocus__When__Called()
+        {
+            yield return null;
+
+            Assert.IsFalse(this._dropdown.HasFocus);
+            CallPrivateMethod("Open");
+            Assert.IsTrue(this._dropdown.HasFocus);
         }
 
         [UnityTest]
@@ -121,6 +133,24 @@ namespace Fram3d.Tests.UI
         }
 
         [UnityTest]
+        public IEnumerator Search__ResetsToBrowseItems__When__SearchCleared()
+        {
+            yield return null;
+
+            this._dropdown.SetBrowseFilter(new List<string> { "ARRI Alexa 35" });
+            CallPrivateMethod("Open");
+            this._searchField.value = "RED";
+            yield return null;
+
+            Assert.AreEqual(2, this._scrollView.childCount);
+            this._searchField.value = "";
+            yield return null;
+
+            // Back to browse items (just 1)
+            Assert.AreEqual(1, this._scrollView.childCount);
+        }
+
+        [UnityTest]
         public IEnumerator Search__ReturnsNoResults__When__NoMatch()
         {
             yield return null;
@@ -139,7 +169,6 @@ namespace Fram3d.Tests.UI
 
             // Set browse filter to only show ARRI cameras
             this._dropdown.SetBrowseFilter(new List<string> { "ARRI Alexa 35", "ARRI Alexa Mini LF" });
-
             CallPrivateMethod("Open");
             yield return null;
 
@@ -154,24 +183,29 @@ namespace Fram3d.Tests.UI
             Assert.AreEqual(2, this._scrollView.childCount);
         }
 
+        // --- Search filtering ---
+
         [UnityTest]
-        public IEnumerator Search__ResetsToBrowseItems__When__SearchCleared()
+        public IEnumerator Search__ShowsAllBrowseItems__When__SearchIsEmpty()
         {
             yield return null;
 
-            this._dropdown.SetBrowseFilter(new List<string> { "ARRI Alexa 35" });
+            CallPrivateMethod("Open");
+            yield return null;
+
+            Assert.AreEqual(TEST_ITEMS.Count, this._scrollView.childCount);
+        }
+
+        [UnityTest]
+        public IEnumerator Selection__ClosesDropdown__When__Confirmed()
+        {
+            yield return null;
 
             CallPrivateMethod("Open");
-            this._searchField.value = "RED";
-            yield return null;
-
-            Assert.AreEqual(2, this._scrollView.childCount);
-
-            this._searchField.value = "";
-            yield return null;
-
-            // Back to browse items (just 1)
-            Assert.AreEqual(1, this._scrollView.childCount);
+            Assert.IsTrue(this._dropdown.HasFocus);
+            SetPrivateField("_highlightedIndex", 0);
+            CallPrivateMethod("ConfirmSelection", 0);
+            Assert.IsFalse(this._dropdown.HasFocus);
         }
 
         // --- Selection ---
@@ -183,7 +217,6 @@ namespace Fram3d.Tests.UI
 
             var selectedIndex = -1;
             this._dropdown.SelectionChanged += i => selectedIndex = i;
-
             CallPrivateMethod("Open");
             this._searchField.value = "Sony VENICE";
             yield return null;
@@ -212,81 +245,38 @@ namespace Fram3d.Tests.UI
             Assert.AreEqual(6, this._dropdown.SelectedIndex);
         }
 
-        [UnityTest]
-        public IEnumerator Selection__ClosesDropdown__When__Confirmed()
+        [SetUp]
+        public void SetUp()
         {
-            yield return null;
+            this._dropdown   = new SearchableDropdown(new List<string>(TEST_ITEMS), 0, "Search cameras...");
+            this._uiGo       = new GameObject("TestUI");
+            this._uiDocument = this._uiGo.AddComponent<UIDocument>();
+            var guids = UnityEditor.AssetDatabase.FindAssets("t:PanelSettings");
 
-            CallPrivateMethod("Open");
-            Assert.IsTrue(this._dropdown.HasFocus);
+            if (guids.Length > 0)
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                this._uiDocument.panelSettings = UnityEditor.AssetDatabase.LoadAssetAtPath<PanelSettings>(path);
+            }
 
-            SetPrivateField("_highlightedIndex", 0);
-            CallPrivateMethod("ConfirmSelection", 0);
+            this._uiDocument.rootVisualElement.Add(this._dropdown.Root);
 
-            Assert.IsFalse(this._dropdown.HasFocus);
+            // Access private members for test setup
+            this._searchField = GetPrivateField<TextField>("_searchField");
+            this._scrollView  = GetPrivateField<ScrollView>("_scrollView");
         }
 
-        // --- Open / Close ---
-
-        [UnityTest]
-        public IEnumerator Close__ResetsSearchField__When__Called()
+        [TearDown]
+        public void TearDown()
         {
-            yield return null;
-
-            CallPrivateMethod("Open");
-            this._searchField.value = "test query";
-            yield return null;
-
             this._dropdown.Close();
-
-            Assert.AreEqual("", this._searchField.value);
+            UnityEngine.Object.DestroyImmediate(this._uiGo);
         }
 
-        [UnityTest]
-        public IEnumerator Close__ResetsHighlight__When__Called()
+        private void CallPrivateMethod(string methodName, params object[] args)
         {
-            yield return null;
-
-            CallPrivateMethod("Open");
-            SetPrivateField("_highlightedIndex", 3);
-
-            this._dropdown.Close();
-
-            Assert.AreEqual(-1, GetPrivateField<int>("_highlightedIndex"));
-        }
-
-        [UnityTest]
-        public IEnumerator Open__SetsHasFocus__When__Called()
-        {
-            yield return null;
-
-            Assert.IsFalse(this._dropdown.HasFocus);
-
-            CallPrivateMethod("Open");
-
-            Assert.IsTrue(this._dropdown.HasFocus);
-        }
-
-        // --- Initial state ---
-
-        [UnityTest]
-        public IEnumerator Constructor__SetsInitialIndex__When__Provided()
-        {
-            yield return null;
-
-            var dropdown = new SearchableDropdown(new List<string>(TEST_ITEMS), 3, "Search...");
-
-            Assert.AreEqual(3, dropdown.SelectedIndex);
-        }
-
-        [UnityTest]
-        public IEnumerator Constructor__ClampsIndex__When__OutOfRange()
-        {
-            yield return null;
-
-            var dropdown = new SearchableDropdown(new List<string>(TEST_ITEMS), 999, "Search...");
-
-            Assert.AreEqual(TEST_ITEMS.Count - 1, dropdown.SelectedIndex);
+            var method = typeof(SearchableDropdown).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+            method.Invoke(this._dropdown, args);
         }
 
         // --- Helpers ---
@@ -301,12 +291,6 @@ namespace Fram3d.Tests.UI
         {
             var field = typeof(SearchableDropdown).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
             field.SetValue(this._dropdown, value);
-        }
-
-        private void CallPrivateMethod(string methodName, params object[] args)
-        {
-            var method = typeof(SearchableDropdown).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
-            method.Invoke(this._dropdown, args);
         }
     }
 }

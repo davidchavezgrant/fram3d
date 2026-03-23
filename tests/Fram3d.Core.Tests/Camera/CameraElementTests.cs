@@ -3,6 +3,7 @@ using System.Numerics;
 using FluentAssertions;
 using Fram3d.Core.Camera;
 using Fram3d.Core.Common;
+using Fram3d.Core.Viewport;
 using Xunit;
 
 namespace Fram3d.Core.Tests.Camera

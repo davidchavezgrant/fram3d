@@ -14,6 +14,9 @@ Fram3d is a 3D previsualization tool for filmmakers. Unity project (Unity 6, URP
 
 The `.editorconfig` at the project root is the source of truth for formatting. These rules cover what editorconfig can't express.
 
+### Type patterns
+- **Sealed class over enum for closed value sets.** Use a sealed class with a private constructor and `static readonly` instances (see `AspectRatio`, `ActiveTool`). Each instance carries typed data (display name, shortcut key). No switch statements needed. The private constructor guarantees the set is closed at compile time.
+
 ### Language restrictions
 - **C# 9 maximum.** Unity 6 supports C# 9. Do not use C# 10+ features (`record struct`, `global using`, file-scoped namespaces, `required`, etc.). Do not use `record` or `init` — Unity's runtime lacks `IsExternalInit` and polyfilling it is a hack. Use plain classes or structs instead.
 - **No ternary expressions.** Use `if`/`else` instead.
@@ -96,12 +99,28 @@ Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 - **`FindObjectOfType` is deprecated.** Use `FindAnyObjectByType` (Unity 6).
 - **Input simulation: queue events, don't manually call `InputSystem.Update()`.** In Play Mode, the Input System updates automatically each frame. Manually calling `InputSystem.Update()` double-processes events and consumes `wasPressedThisFrame` before `MonoBehaviour.Update()` runs. Instead: `InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A))` then `yield return null`.
 - **Modifier + key: use `KeyboardState` with multiple keys.** `new KeyboardState(Key.LeftShift, Key.A)` sets both keys in a single state event.
+- **Click simulation spans 3 frames, not 2.** `wasPressedThisFrame` fires on frame 1. Frame 2 is the "held" state (`isPressed` true, `wasPressedThisFrame` false) where drag threshold is checked. `wasReleasedThisFrame` fires on frame 3 when buttons go from 1→0. Tests must yield 3 times: `queue press → yield → yield (held) → queue release → yield`. Skipping the held frame means the release never sees `_mouseDownValid` as true.
 - **`[SerializeField]` wiring in tests.** Use reflection to set private serialized fields: `typeof(T).GetField("fieldName", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(instance, value)`.
 - **UI Toolkit `resolvedStyle` vs `style`.** `resolvedStyle` depends on the layout engine resolving element sizes, which requires a rendering surface. For absolutely positioned elements, prefer reading `style` values (what code SET) over `resolvedStyle` (what layout computed). Use `s.keyword == StyleKeyword.Undefined ? s.value.value : 0f` to extract the float from a `StyleLength`.
 - **UI Toolkit layout needs a panel.** When testing UI elements that read `resolvedStyle` (like `AspectRatioMaskView.UpdateBars`), render to a `RenderTexture` with known dimensions so layout resolves deterministically: `panelSettings.targetTexture = new RenderTexture(1920, 1080, 0)`.
 - **Coordinate conversion in assertions.** System.Numerics is right-handed (-Z forward), Unity is left-handed (+Z forward). `ToUnity()` negates Z and negates quaternion X/Y. Position assertions: `Assert.AreEqual(-expected.Z, actual.z)`. Rotation assertions: `Assert.AreEqual(-coreRot.X, unityRot.x)`.
 - **Focal length lerp is frame-rate dependent.** Don't assert convergence after a fixed frame count. Poll until convergence or timeout: `for (var i = 0; i < 600; i++) { yield return null; if (converged) yield break; }`.
 - **`Assert.AreNotEqual` has no tolerance overload.** Use `Assert.That(Mathf.Abs(a - b), Is.GreaterThan(tolerance))` instead.
+
+- **Don't call `Tick()` explicitly when `Update()` delegates to it.** `CameraInputHandler.Update()` calls `this.Tick(Keyboard.current, Mouse.current)`. If a test also calls `handler.Tick(keyboard, mouse)` after `yield return null`, the keyboard shortcut fires twice in one frame. SET operations (Q/W/E/R tool switching, focal length presets) survive because they're idempotent. TOGGLE operations (`DofEnabled = !DofEnabled`, `ToggleAll()`, etc.) flip twice and return to the original value — the test sees no change and fails. Rule: if `Update()` delegates to a public test entry point, don't call both. Either disable the component during the input frame or let `Update()` handle it.
+- **`[Test]` vs `[UnityTest]`.** Use `[Test]` (synchronous) when no frames are needed. `Awake` runs synchronously on `AddComponent` — tests that only verify Awake state don't need `yield return null`. Use `[UnityTest]` only when testing `Start`, `LateUpdate`, `Update`, physics (`WaitForFixedUpdate`), or multi-frame behavior. `[Test]` is faster (no coroutine overhead).
+- **Track dynamically created objects for TearDown.** Objects created mid-test (`GameObject.CreatePrimitive`, `new GameObject`) must be destroyed in TearDown, not at the bottom of the test body. If an assertion fails before the cleanup line, the object leaks into subsequent tests. Pattern: maintain a `List<GameObject> _extras` field, add to it when creating objects, destroy all in TearDown.
+- **`GameObject.Find` cannot find inactive objects.** After `SetActive(false)`, `GameObject.Find("name")` returns null. Use `FindObjectsByType<T>(FindObjectsInactive.Include, ...)` for inactive objects, or keep a direct reference. Prefer testing observable behavior via public properties (e.g., `controller.IsVisible`) over finding internal GameObjects.
+- **Don't test implementation details.** Avoid reflection to read private fields for assertions. If a test needs to verify something, the component should expose it as a public computed property (e.g., `IsVisible`, `IsHoveringHandle`). This makes tests compile-safe and documents the component's observable API.
+- **Child GameObjects vs scene roots.** Runtime-created child objects (like gizmo handles) should be parented to the owning MonoBehaviour's transform, not left as scene roots. Child objects auto-destroy with their parent — no manual cleanup needed. Scene root orphans require complex TearDown and leak if cleanup is missed.
+
+## Unity Rendering
+
+**`mesh.triangles` returns a copy.** `Mesh.triangles` (and `vertices`, `normals`, `uv`) returns a COPY of the internal array. `Array.Copy(src, mesh.triangles, n)` copies into a throwaway — the mesh never receives the data. Always create the final array first, then assign: `mesh.triangles = finalArray`.
+
+**`MaterialPropertyBlock` for per-renderer visual variation.** Use `SetPropertyBlock(block)` to overlay properties without creating material instances. `SetPropertyBlock(null)` removes the overlay entirely. Never use `renderer.material` (creates instances that are hard to clean up) — use `renderer.sharedMaterial` for reads and `MaterialPropertyBlock` for writes. The `_EMISSION` keyword cannot be toggled via PropertyBlock (it's a shader compile variant, not a property).
+
+**`ZTest Always` for always-on-top rendering.** Gizmos use a shader with `ZTest Always` and `ZWrite Off` on a dedicated layer. The main camera renders them — no separate overlay camera needed. Objects on the Gizmo layer are excluded from `SelectionRaycaster` via layer mask.
 
 ## Input Handling
 
@@ -110,6 +129,10 @@ Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 **`CameraInputHandler` uses event-level interception via `InputSystem.onEvent`.** Each scroll event is paired with the modifier state at the time the raw event arrived, preserving temporal ordering. Scroll samples are queued and processed in `Update()`. Do not rewrite this to poll `ReadValue()` — the scroll bleed bug will return.
 
 **Trackpad momentum requires a gap-based guard.** macOS trackpads deliver momentum scroll events for 1-2 seconds after finger lift, with intermittent gaps where scroll drops to zero then resurfaces. The guard in `HandleScrollSample` blocks unmodified scroll within 150ms of the last modifier-associated scroll (`SCROLL_BLEED_COOLDOWN`). The timer resets on each blocked momentum event, so the guard stays active through the entire momentum period. Intentional new scroll after a 150ms+ gap passes through immediately. See `docs/reference/prior-codebase-lessons.md` for the full history.
+
+**Resync event-tracked state on focus change.** `InputSystem.onEvent` doesn't fire while the app is unfocused. Any state tracked incrementally from events (modifier booleans, accumulated deltas) can get stuck if the user releases a key while another app has focus. `OnApplicationFocus(true)` must resync from polled values (`keyboard.leftCtrlKey.isPressed` etc.) and clear stale event queues. Without this, modifier state permanently inverts after Cmd-tab (FRA-127).
+
+**Clamp mouse delta to reject focus-change spikes.** `mouse.delta.ReadValue()` can return a huge accumulated value (hundreds of pixels) when the app regains focus. Apply a `MAX_DELTA_SQR_MAGNITUDE` guard in drag handlers — anything above ~200px/frame is a focus artifact, not real user input (FRA-126).
 
 ## Implementation Workflow
 
@@ -151,6 +174,7 @@ When asked to implement a feature or milestone, follow this sequence exactly.
 
 - Clean, logical commits — separate scaffolding, config, and feature code.
 - Reference the Linear ticket ID (e.g., FRA-36) in the feature commit message.
+- **Never use `git add -A`.** The Unity project may contain large untracked directories (asset packages, cursor themes, test artifacts). Always stage specific files by name.
 
 ### 6. PR and Linear
 

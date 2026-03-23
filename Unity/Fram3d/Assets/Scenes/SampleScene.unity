@@ -368,7 +368,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
@@ -634,7 +634,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 0, b: 0, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 1, g: 0, b: 0, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
@@ -775,7 +775,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0, g: 1, b: 0, a: 1}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _Color: {r: 0, g: 1, b: 0, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
@@ -1265,6 +1265,7 @@ GameObject:
   - component: {fileID: 1800007007}
   - component: {fileID: 1800007006}
   - component: {fileID: 1800007005}
+  - component: {fileID: 1800007012}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1284,6 +1285,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30804377d0404103914806ae2e261f1f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Fram3d.UI::Fram3d.UI.Input.SelectionInputHandler
+  gizmoController: {fileID: 1800007012}
   selectionHighlighter: {fileID: 1800007006}
   raycaster: {fileID: 1800007007}
 --- !u!114 &1800007006
@@ -1325,6 +1327,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Fram3d.UI::Fram3d.UI.Input.CameraInputHandler
   cameraBehaviour: {fileID: 1800007009}
   compositionGuides: {fileID: 1735303404}
+  gizmoController: {fileID: 1800007012}
   propertiesPanel: {fileID: 1471556426}
 --- !u!114 &1800007009
 MonoBehaviour:
@@ -1404,6 +1407,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1800007012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1800007004}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 242b13f963d245d4a3d18a385070d00e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fram3d.Engine::Fram3d.Engine.Integration.GizmoController
+  selectionHighlighter: {fileID: 1800007006}
+  targetCamera: {fileID: 1800007010}
 --- !u!1 &1930631084
 GameObject:
   m_ObjectHideFlags: 0

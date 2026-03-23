@@ -1,4 +1,5 @@
 using Fram3d.Core.Camera;
+using Fram3d.Core.Viewport;
 using UnityEngine;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Panels
@@ -44,7 +45,7 @@ namespace Fram3d.UI.Panels
 
         public void UpdateValues(CameraElement camera, AspectRatio activeAspectRatio)
         {
-            this._bodyRow.Value        = camera.Body?.Name ?? "—";
+            this._bodyRow.Value        = camera.Body?.Name          ?? "—";
             this._lensSetRow.Value     = camera.ActiveLensSet?.Name ?? "—";
             this._sensorRow.Value      = $"{camera.SensorWidth:F1} × {camera.SensorHeight:F1} mm";
             this._focalLengthRow.Value = $"{camera.FocalLength:F0} mm";
@@ -52,10 +53,10 @@ namespace Fram3d.UI.Panels
             this._heightRow.Value      = $"{camera.Position.Y:F1} m";
             this._aspectRatioRow.Value = activeAspectRatio.DisplayName;
             var dofOn = camera.DofEnabled;
-            this._apertureRow.style.display      = dofOn ? DisplayStyle.Flex : DisplayStyle.None;
-            this._focusDistanceRow.style.display = dofOn ? DisplayStyle.Flex : DisplayStyle.None;
+            this._apertureRow.style.display      = dofOn? DisplayStyle.Flex : DisplayStyle.None;
+            this._focusDistanceRow.style.display = dofOn? DisplayStyle.Flex : DisplayStyle.None;
             this._apertureRow.Value              = $"f/{camera.Aperture:G}";
-            this._focusDistanceRow.Value         = camera.FocusAtInfinity ? "\u221E" : $"{camera.FocusDistance:F1} m";
+            this._focusDistanceRow.Value         = camera.FocusAtInfinity? "\u221E" : $"{camera.FocusDistance:F1} m";
         }
     }
 }

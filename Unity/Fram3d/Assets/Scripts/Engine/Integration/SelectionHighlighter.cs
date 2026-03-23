@@ -13,29 +13,32 @@ namespace Fram3d.Engine.Integration
     /// </summary>
     public sealed class SelectionHighlighter: MonoBehaviour
     {
-        private static readonly Color HOVER_COLOR  = new(1f, 0.92f, 0.016f, 1f);
-        private static readonly Color SELECT_COLOR = new(0f, 1f, 1f, 1f);
-        private static readonly int   BASE_COLOR   = Shader.PropertyToID("_BaseColor");
+        private static readonly int BASE_COLOR = Shader.PropertyToID("_BaseColor");
+
+        private static readonly Color HOVER_COLOR = new(1f,
+                                                        0.92f,
+                                                        0.016f,
+                                                        1f);
+
+        private static readonly Color SELECT_COLOR = new(0f,
+                                                         1f,
+                                                         1f,
+                                                         1f);
 
         private ElementBehaviour _currentHovered;
         private ElementBehaviour _currentSelected;
+        public  Selection        Selection { get; private set; }
 
-        public Selection Selection { get; private set; }
-
-        private static ElementBehaviour FindBehaviour(ElementId id)
+        private void UpdateHighlight(ref ElementBehaviour current, ElementId targetId, Color color)
         {
-            if (id == null)
-                return null;
+            var target = FindBehaviour(targetId);
 
-            var behaviours = FindObjectsByType<ElementBehaviour>(FindObjectsSortMode.None);
+            if (target == current)
+                return;
 
-            foreach (var behaviour in behaviours)
-            {
-                if (behaviour.Element != null && behaviour.Element.Id == id)
-                    return behaviour;
-            }
-
-            return null;
+            RemoveHighlight(current);
+            ApplyHighlight(target, color);
+            current = target;
         }
 
         private static void ApplyHighlight(ElementBehaviour behaviour, Color color)
@@ -52,6 +55,22 @@ namespace Fram3d.Engine.Integration
                 block.SetColor(BASE_COLOR, color);
                 renderer.SetPropertyBlock(block);
             }
+        }
+
+        private static ElementBehaviour FindBehaviour(ElementId id)
+        {
+            if (id == null)
+                return null;
+
+            var behaviours = FindObjectsByType<ElementBehaviour>(FindObjectsSortMode.None);
+
+            foreach (var behaviour in behaviours)
+            {
+                if (behaviour.Element != null && behaviour.Element.Id == id)
+                    return behaviour;
+            }
+
+            return null;
         }
 
         private static void RemoveHighlight(ElementBehaviour behaviour)
@@ -74,18 +93,6 @@ namespace Fram3d.Engine.Integration
 
             this.UpdateHighlight(ref this._currentHovered,  this.Selection.HoveredId,  HOVER_COLOR);
             this.UpdateHighlight(ref this._currentSelected, this.Selection.SelectedId, SELECT_COLOR);
-        }
-
-        private void UpdateHighlight(ref ElementBehaviour current, ElementId targetId, Color color)
-        {
-            var target = FindBehaviour(targetId);
-
-            if (target == current)
-                return;
-
-            RemoveHighlight(current);
-            ApplyHighlight(target, color);
-            current = target;
         }
     }
 }

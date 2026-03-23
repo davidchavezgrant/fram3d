@@ -18,9 +18,8 @@ namespace Fram3d.Core.Scene
             this.Shortcut = shortcut;
         }
 
-        public string Name     { get; }
-        public char   Shortcut { get; }
-
+        public          string Name       { get; }
+        public          char   Shortcut   { get; }
         public override string ToString() => this.Name;
     }
 }

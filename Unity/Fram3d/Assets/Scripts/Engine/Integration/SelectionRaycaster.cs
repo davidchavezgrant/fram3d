@@ -12,15 +12,15 @@ namespace Fram3d.Engine.Integration
     {
         private const float MAX_RAYCAST_DISTANCE = 1000f;
 
-        [SerializeField]
-        private Camera targetCamera;
-
         /// <summary>
         /// Layer mask excluding gizmos and UI. Set during Awake from the
         /// camera's culling mask, minus any layers we want to ignore.
         /// If a dedicated "Gizmo" layer exists, it is excluded automatically.
         /// </summary>
         private int _layerMask;
+
+        [SerializeField]
+        private Camera targetCamera;
 
         /// <summary>
         /// Casts a ray from the camera through the given screen position.
@@ -35,7 +35,10 @@ namespace Fram3d.Engine.Integration
 
             var ray = this.targetCamera.ScreenPointToRay(screenPosition);
 
-            if (!Physics.Raycast(ray, out var hit, MAX_RAYCAST_DISTANCE, this._layerMask))
+            if (!Physics.Raycast(ray,
+                                 out var hit,
+                                 MAX_RAYCAST_DISTANCE,
+                                 this._layerMask))
             {
                 return null;
             }

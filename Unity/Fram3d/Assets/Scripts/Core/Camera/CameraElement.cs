@@ -42,6 +42,16 @@ namespace Fram3d.Core.Camera
             set => this._lens.FocusDistance = value;
         }
 
+        /// <summary>
+        /// Computes the vertical field of view in radians from the current focal length and sensor height.
+        /// FOV = 2 * atan(sensorHeight / (2 * focalLength))
+        /// </summary>
+
+        // TODO: When anamorphic lens is active, compute horizontal FOV using squeeze factor:
+        //   hFov = 2 * atan((sensorWidth * squeezeFactor) / (2 * focalLength))
+        //   Also auto-lock aspect ratio to the computed delivery format (see 1.2.1).
+        public float HorizontalFov => 2f * MathF.Atan(this.SensorWidth / (2f * this._lens.FocalLength));
+
         public Vector3 OrbitPivotPoint { get; set; } = Vector3.Zero;
         public float   SensorHeight    => this._body.SensorHeight;
         public float   SensorWidth     => this._body.SensorWidth;
@@ -59,16 +69,7 @@ namespace Fram3d.Core.Camera
             set => this._lens.SnapFocalLength = value;
         }
 
-        /// <summary>
-        /// Computes the vertical field of view in radians from the current focal length and sensor height.
-        /// FOV = 2 * atan(sensorHeight / (2 * focalLength))
-        /// </summary>
-
-        // TODO: When anamorphic lens is active, compute horizontal FOV using squeeze factor:
-        //   hFov = 2 * atan((sensorWidth * squeezeFactor) / (2 * focalLength))
-        //   Also auto-lock aspect ratio to the computed delivery format (see 1.2.1).
-        public float HorizontalFov => 2f * MathF.Atan(this.SensorWidth  / (2f * this._lens.FocalLength));
-        public float VerticalFov   => 2f * MathF.Atan(this.SensorHeight / (2f * this._lens.FocalLength));
+        public float VerticalFov => 2f * MathF.Atan(this.SensorHeight / (2f * this._lens.FocalLength));
 
         /// <summary>
         /// The world-space direction the camera is currently looking at.

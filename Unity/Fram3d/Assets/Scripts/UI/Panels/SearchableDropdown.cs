@@ -203,14 +203,12 @@ namespace Fram3d.UI.Panels
                     this._highlightedIndex = Math.Min(this._highlightedIndex + 1, this._filteredItems.Count - 1);
                     this.RebuildListItems();
                     evt.StopPropagation();
-
                     break;
 
                 case KeyCode.UpArrow:
                     this._highlightedIndex = Math.Max(this._highlightedIndex - 1, 0);
                     this.RebuildListItems();
                     evt.StopPropagation();
-
                     break;
 
                 case KeyCode.Return:
@@ -219,7 +217,6 @@ namespace Fram3d.UI.Panels
                     {
                         this.ConfirmSelection(this._highlightedIndex);
                         evt.StopPropagation();
-    
                     }
 
                     break;
@@ -227,7 +224,6 @@ namespace Fram3d.UI.Panels
                 case KeyCode.Escape:
                     this.Close();
                     evt.StopPropagation();
-
                     break;
             }
         }

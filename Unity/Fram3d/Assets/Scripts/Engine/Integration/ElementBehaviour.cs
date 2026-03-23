@@ -20,6 +20,7 @@ namespace Fram3d.Engine.Integration
         private void Awake()
         {
             this.Element = new Element(new ElementId(Guid.NewGuid()), this.gameObject.name);
+
             // Initialize Core position from the scene's editor-time placement
             this.Element.Position = this.transform.position.ToSystem();
             this.Element.Rotation = this.transform.rotation.ToSystem();

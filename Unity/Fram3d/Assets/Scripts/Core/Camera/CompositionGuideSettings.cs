@@ -11,13 +11,12 @@ namespace Fram3d.Core.Camera
         private       bool  _rememberedCenterCross;
         private       bool  _rememberedSafeZones;
         private       bool  _rememberedThirds;
-
-        public float ActionSafePercent { get; set; } = DEFAULT_ACTION_SAFE_PERCENT;
-        public bool  AnyVisible        => this.ThirdsVisible || this.CenterCrossVisible || this.SafeZonesVisible;
-        public bool  CenterCrossVisible { get; private set; }
-        public bool  SafeZonesVisible   { get; private set; }
-        public bool  ThirdsVisible      { get; private set; }
-        public float TitleSafePercent   { get; set; } = DEFAULT_TITLE_SAFE_PERCENT;
+        public        float ActionSafePercent  { get; set; } = DEFAULT_ACTION_SAFE_PERCENT;
+        public        bool  AnyVisible         => this.ThirdsVisible || this.CenterCrossVisible || this.SafeZonesVisible;
+        public        bool  CenterCrossVisible { get; private set; }
+        public        bool  SafeZonesVisible   { get; private set; }
+        public        bool  ThirdsVisible      { get; private set; }
+        public        float TitleSafePercent   { get; set; } = DEFAULT_TITLE_SAFE_PERCENT;
 
         /// <summary>
         /// If any guide is visible, hide all and remember which were on.
@@ -31,9 +30,9 @@ namespace Fram3d.Core.Camera
                 this._rememberedThirds      = this.ThirdsVisible;
                 this._rememberedCenterCross = this.CenterCrossVisible;
                 this._rememberedSafeZones   = this.SafeZonesVisible;
-                this.ThirdsVisible      = false;
-                this.CenterCrossVisible = false;
-                this.SafeZonesVisible   = false;
+                this.ThirdsVisible          = false;
+                this.CenterCrossVisible     = false;
+                this.SafeZonesVisible       = false;
                 return;
             }
 
@@ -54,7 +53,7 @@ namespace Fram3d.Core.Camera
         }
 
         public void ToggleCenterCross() => this.CenterCrossVisible = !this.CenterCrossVisible;
-        public void ToggleSafeZones()   => this.SafeZonesVisible   = !this.SafeZonesVisible;
-        public void ToggleThirds()      => this.ThirdsVisible      = !this.ThirdsVisible;
+        public void ToggleSafeZones()   => this.SafeZonesVisible = !this.SafeZonesVisible;
+        public void ToggleThirds()      => this.ThirdsVisible = !this.ThirdsVisible;
     }
 }

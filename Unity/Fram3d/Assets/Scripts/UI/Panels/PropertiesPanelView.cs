@@ -13,14 +13,14 @@ namespace Fram3d.UI.Panels
     public sealed class PropertiesPanelView: MonoBehaviour
     {
         private const float             PANEL_WIDTH = 440f;
-        private       CameraBodySection  _bodySection;
-        private       CameraBehaviour    _cameraBehaviour;
-        private       CameraInfoSection  _infoSection;
-        private       LensSetSection     _lensSetSection;
-        private       VisualElement      _panel;
-        private       SensorModeSection  _sensorModeSection;
-        private       ShakeSection       _shakeSection;
-        private       VisualElement      _root;
+        private       CameraBodySection _bodySection;
+        private       CameraBehaviour   _cameraBehaviour;
+        private       CameraInfoSection _infoSection;
+        private       LensSetSection    _lensSetSection;
+        private       VisualElement     _panel;
+        private       VisualElement     _root;
+        private       SensorModeSection _sensorModeSection;
+        private       ShakeSection      _shakeSection;
         private       bool              _visible = true;
 
         /// <summary>
@@ -28,9 +28,6 @@ namespace Fram3d.UI.Panels
         /// </summary>
         public bool HasFocusedTextField => (this._bodySection    != null && this._bodySection.HasFocus)
                                         || (this._lensSetSection != null && this._lensSetSection.HasFocus);
-
-        public bool  IsVisible  => this._visible;
-        public float PanelWidth => PANEL_WIDTH;
 
         /// <summary>
         /// True when the mouse is over any UI Toolkit element (panel, dropdowns, popup menus).
@@ -49,11 +46,14 @@ namespace Fram3d.UI.Panels
             }
         }
 
+        public bool  IsVisible  => this._visible;
+        public float PanelWidth => PANEL_WIDTH;
+
         public void Toggle()
         {
             this._visible             = !this._visible;
-            this._panel.style.display = this._visible ? DisplayStyle.Flex : DisplayStyle.None;
-            this._cameraBehaviour?.SetRightInset(this._visible ? PANEL_WIDTH : 0f);
+            this._panel.style.display = this._visible? DisplayStyle.Flex : DisplayStyle.None;
+            this._cameraBehaviour?.SetRightInset(this._visible? PANEL_WIDTH : 0f);
         }
 
         private VisualElement BuildContent()
@@ -73,9 +73,9 @@ namespace Fram3d.UI.Panels
             this._bodySection.BodyChanged += this.OnBodyChanged;
             content.Add(this._bodySection);
             content.Add(Theme.CreateSeparator());
-            var initialModes   = cam.Body?.HasSensorModes == true? cam.Body.SensorModes : null;
-            var initialMode    = this._cameraBehaviour.ActiveSensorMode;
-            this._sensorModeSection              =  new SensorModeSection(initialModes, initialMode);
+            var initialModes = cam.Body?.HasSensorModes == true? cam.Body.SensorModes : null;
+            var initialMode  = this._cameraBehaviour.ActiveSensorMode;
+            this._sensorModeSection             =  new SensorModeSection(initialModes, initialMode);
             this._sensorModeSection.ModeChanged += mode => this._cameraBehaviour.SetSensorMode(mode);
             content.Add(this._sensorModeSection);
             content.Add(Theme.CreateSeparator());
@@ -105,6 +105,14 @@ namespace Fram3d.UI.Panels
             this._root.Add(this._panel);
         }
 
+        private void OnBodyChanged(CameraBody body)
+        {
+            this._cameraBehaviour.CameraElement.SetBody(body);
+            var firstMode = body.HasSensorModes? body.SensorModes[0] : null;
+            this._cameraBehaviour.SetSensorMode(firstMode);
+            this._sensorModeSection?.SetModes(body.HasSensorModes? body.SensorModes : null, firstMode);
+        }
+
         private static VisualElement BuildHeader()
         {
             var header = new VisualElement();
@@ -123,16 +131,6 @@ namespace Fram3d.UI.Panels
             title.style.letterSpacing = 1;
             header.Add(title);
             return header;
-        }
-
-        private void OnBodyChanged(CameraBody body)
-        {
-            this._cameraBehaviour.CameraElement.SetBody(body);
-            var firstMode = body.HasSensorModes? body.SensorModes[0] : null;
-            this._cameraBehaviour.SetSensorMode(firstMode);
-            this._sensorModeSection?.SetModes(
-                body.HasSensorModes? body.SensorModes : null,
-                firstMode);
         }
 
         private void Start()
@@ -155,7 +153,7 @@ namespace Fram3d.UI.Panels
 
             this._root = uiDocument.rootVisualElement;
             this.BuildPanel();
-            this._cameraBehaviour.SetRightInset(this._visible ? PANEL_WIDTH : 0f);
+            this._cameraBehaviour.SetRightInset(this._visible? PANEL_WIDTH : 0f);
         }
 
         private void Update()

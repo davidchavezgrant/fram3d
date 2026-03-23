@@ -21,7 +21,7 @@ namespace Fram3d.UI.Input
         private const    float               MAX_DELTA_SQR_MAGNITUDE = 40000f;
         private const    float               SCROLL_BLEED_COOLDOWN   = 0.15f;
         private const    float               SCROLL_DEADZONE         = 0.01f;
-        private readonly Queue<ScrollSample> _pendingScrollSamples = new();
+        private readonly Queue<ScrollSample> _pendingScrollSamples   = new();
         private          CameraElement       _camera;
         private          float               _lastModifierScrollTime;
         private          bool                _leftAltHeld;
@@ -91,13 +91,12 @@ namespace Fram3d.UI.Input
 
             if (keyboard.altKey.isPressed && mouse.leftButton.isPressed)
             {
-                this._camera.Orbit(delta.x * panSpeed, -delta.y * panSpeed);
+                this._camera.Orbit(delta.x * panSpeed, delta.y * panSpeed);
                 return;
             }
 
             // Cmd+left click drag: pan/tilt (trackpad-friendly)
-            if ((keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed)
-             && mouse.leftButton.isPressed)
+            if ((keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed) && mouse.leftButton.isPressed)
             {
                 this._camera.Pan(delta.x   * panSpeed);
                 this._camera.Tilt(-delta.y * panSpeed);
@@ -136,10 +135,7 @@ namespace Fram3d.UI.Input
         private void HandleKeyboardInput(Keyboard keyboard)
         {
             // Q/W/E/R — active tool switching
-            if (this.gizmoController != null
-             && !keyboard.ctrlKey.isPressed
-             && !keyboard.altKey.isPressed
-             && !keyboard.shiftKey.isPressed)
+            if (this.gizmoController != null && !keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed && !keyboard.shiftKey.isPressed)
             {
                 if (keyboard.qKey.wasPressedThisFrame)
                 {
@@ -176,9 +172,7 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            if (keyboard.aKey.wasPressedThisFrame
-             && !keyboard.ctrlKey.isPressed
-             && !keyboard.altKey.isPressed)
+            if (keyboard.aKey.wasPressedThisFrame && !keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed)
             {
                 if (keyboard.shiftKey.isPressed)
                     this.cameraBehaviour.CycleAspectRatioBackward();
@@ -201,10 +195,7 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            if (keyboard.dKey.wasPressedThisFrame
-             && !keyboard.ctrlKey.isPressed
-             && !keyboard.altKey.isPressed
-             && !keyboard.shiftKey.isPressed)
+            if (keyboard.dKey.wasPressedThisFrame && !keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed && !keyboard.shiftKey.isPressed)
             {
                 this._camera.DofEnabled = !this._camera.DofEnabled;
                 return;
@@ -222,10 +213,7 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            if (keyboard.sKey.wasPressedThisFrame
-             && !keyboard.ctrlKey.isPressed
-             && !keyboard.altKey.isPressed
-             && !keyboard.shiftKey.isPressed)
+            if (keyboard.sKey.wasPressedThisFrame && !keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed && !keyboard.shiftKey.isPressed)
             {
                 this._camera.ShakeEnabled = !this._camera.ShakeEnabled;
                 return;
@@ -295,7 +283,7 @@ namespace Fram3d.UI.Input
 
             if (sample.CommandHeld && !sample.AltHeld && Mathf.Abs(sample.Y) > SCROLL_DEADZONE)
             {
-                this._camera.FocusDistance = this._camera.FocusDistance + sample.Y * MovementSpeeds.FOCUS_DISTANCE;
+                this._camera.FocusDistance   = this._camera.FocusDistance + sample.Y * MovementSpeeds.FOCUS_DISTANCE;
                 this._lastModifierScrollTime = Time.time;
                 return;
             }
@@ -422,22 +410,6 @@ namespace Fram3d.UI.Input
                 held = value >= 0.5f;
         }
 
-        /// <summary>
-        /// Resyncs modifier state when the application regains focus.
-        /// Without this, event-tracked modifier booleans can get stuck
-        /// if the user releases a modifier key while another app is focused
-        /// — Unity never sees the key-up event. This is the root cause of
-        /// the "Ctrl+scroll mode flip" bug (FRA-127).
-        /// </summary>
-        private void OnApplicationFocus(bool hasFocus)
-        {
-            if (hasFocus)
-            {
-                this.SyncModifierState(Keyboard.current);
-                this._pendingScrollSamples.Clear();
-            }
-        }
-
         private void OnEnable()
         {
             InputSystem.onEvent += this.HandleInputEvent;
@@ -480,6 +452,22 @@ namespace Fram3d.UI.Input
 
             this.ProcessQueuedScroll();
             this.HandleDragInput(keyboard, mouse);
+        }
+
+        /// <summary>
+        /// Resyncs modifier state when the application regains focus.
+        /// Without this, event-tracked modifier booleans can get stuck
+        /// if the user releases a modifier key while another app is focused
+        /// — Unity never sees the key-up event. This is the root cause of
+        /// the "Ctrl+scroll mode flip" bug (FRA-127).
+        /// </summary>
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus)
+            {
+                this.SyncModifierState(Keyboard.current);
+                this._pendingScrollSamples.Clear();
+            }
         }
 
         private void OnDisable()

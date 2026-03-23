@@ -99,6 +99,37 @@ namespace Fram3d.Editor
             EditorUtility.SetDirty(maskGo);
         }
 
+        private static void SetupCamera()
+        {
+            var cameraGameObject = GameObject.Find("Main Camera");
+
+            if (cameraGameObject == null)
+            {
+                cameraGameObject = new GameObject("Main Camera");
+                cameraGameObject.AddComponent<Camera>();
+                cameraGameObject.tag = "MainCamera";
+            }
+
+            if (cameraGameObject.GetComponent<CameraBehaviour>() == null)
+            {
+                cameraGameObject.AddComponent<CameraBehaviour>();
+            }
+
+            var inputHandler = cameraGameObject.GetComponent<CameraInputHandler>();
+
+            if (inputHandler == null)
+            {
+                inputHandler = cameraGameObject.AddComponent<CameraInputHandler>();
+            }
+
+            // Wire the serialized reference
+            var serializedObject = new SerializedObject(inputHandler);
+            var prop             = serializedObject.FindProperty("cameraBehaviour");
+            prop.objectReferenceValue = cameraGameObject.GetComponent<CameraBehaviour>();
+            serializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(cameraGameObject);
+        }
+
         private static void SetupCompositionGuides()
         {
             var guidesGo = GameObject.Find("Composition Guides");
@@ -138,37 +169,6 @@ namespace Fram3d.Editor
             EditorUtility.SetDirty(guidesGo);
         }
 
-        private static void SetupCamera()
-        {
-            var cameraGameObject = GameObject.Find("Main Camera");
-
-            if (cameraGameObject == null)
-            {
-                cameraGameObject = new GameObject("Main Camera");
-                cameraGameObject.AddComponent<Camera>();
-                cameraGameObject.tag = "MainCamera";
-            }
-
-            if (cameraGameObject.GetComponent<CameraBehaviour>() == null)
-            {
-                cameraGameObject.AddComponent<CameraBehaviour>();
-            }
-
-            var inputHandler = cameraGameObject.GetComponent<CameraInputHandler>();
-
-            if (inputHandler == null)
-            {
-                inputHandler = cameraGameObject.AddComponent<CameraInputHandler>();
-            }
-
-            // Wire the serialized reference
-            var serializedObject = new SerializedObject(inputHandler);
-            var prop             = serializedObject.FindProperty("cameraBehaviour");
-            prop.objectReferenceValue = cameraGameObject.GetComponent<CameraBehaviour>();
-            serializedObject.ApplyModifiedProperties();
-            EditorUtility.SetDirty(cameraGameObject);
-        }
-
         private static void SetupGroundPlane()
         {
             if (GameObject.Find("Ground Plane") != null)
@@ -188,6 +188,65 @@ namespace Fram3d.Editor
             }
 
             EditorUtility.SetDirty(plane);
+        }
+
+        private static void SetupPropertiesPanel()
+        {
+            var panelGo = GameObject.Find("Properties Panel");
+
+            if (panelGo == null)
+            {
+                panelGo = new GameObject("Properties Panel");
+            }
+
+            var panelUiDoc = panelGo.GetComponent<UIDocument>();
+
+            if (panelUiDoc == null)
+            {
+                panelUiDoc               = panelGo.AddComponent<UIDocument>();
+                panelUiDoc.panelSettings = GetOrCreatePanelSettings();
+            }
+
+            panelUiDoc.sortingOrder = 2;
+
+            if (panelGo.GetComponent<PropertiesPanelView>() == null)
+            {
+                panelGo.AddComponent<PropertiesPanelView>();
+            }
+
+            var cameraGo  = GameObject.Find("Main Camera");
+            var panelView = panelGo.GetComponent<PropertiesPanelView>();
+
+            // Wire properties panel reference on the input handler
+            var inputHandler = cameraGo.GetComponent<CameraInputHandler>();
+
+            if (inputHandler != null)
+            {
+                var so   = new SerializedObject(inputHandler);
+                var prop = so.FindProperty("propertiesPanel");
+                prop.objectReferenceValue = panelView;
+                so.ApplyModifiedProperties();
+            }
+
+            EditorUtility.SetDirty(panelGo);
+        }
+
+        private static void SetupReferenceObjects()
+        {
+            CreateReferenceObject("Ref Cube A",
+                                  PrimitiveType.Cube,
+                                  new Vector3(0f, 0.5f, 3f),
+                                  Color.red);
+
+            CreateReferenceObject("Ref Cube B",
+                                  PrimitiveType.Cube,
+                                  new Vector3(3f, 0.5f, 0f),
+                                  Color.blue);
+
+            CreateReferenceObject("Ref Sphere",
+                                  PrimitiveType.Sphere,
+                                  new Vector3(-2f, 1f, 5f),
+                                  Color.green);
         }
 
         private static void SetupSelection()
@@ -247,65 +306,6 @@ namespace Fram3d.Editor
             cameraInputSo.FindProperty("gizmoController").objectReferenceValue = gizmoController;
             cameraInputSo.ApplyModifiedProperties();
             EditorUtility.SetDirty(cameraGo);
-        }
-
-        private static void SetupPropertiesPanel()
-        {
-            var panelGo = GameObject.Find("Properties Panel");
-
-            if (panelGo == null)
-            {
-                panelGo = new GameObject("Properties Panel");
-            }
-
-            var panelUiDoc = panelGo.GetComponent<UIDocument>();
-
-            if (panelUiDoc == null)
-            {
-                panelUiDoc               = panelGo.AddComponent<UIDocument>();
-                panelUiDoc.panelSettings = GetOrCreatePanelSettings();
-            }
-
-            panelUiDoc.sortingOrder = 2;
-
-            if (panelGo.GetComponent<PropertiesPanelView>() == null)
-            {
-                panelGo.AddComponent<PropertiesPanelView>();
-            }
-
-            var cameraGo    = GameObject.Find("Main Camera");
-            var panelView   = panelGo.GetComponent<PropertiesPanelView>();
-
-            // Wire properties panel reference on the input handler
-            var inputHandler = cameraGo.GetComponent<CameraInputHandler>();
-
-            if (inputHandler != null)
-            {
-                var so   = new SerializedObject(inputHandler);
-                var prop = so.FindProperty("propertiesPanel");
-                prop.objectReferenceValue = panelView;
-                so.ApplyModifiedProperties();
-            }
-
-            EditorUtility.SetDirty(panelGo);
-        }
-
-        private static void SetupReferenceObjects()
-        {
-            CreateReferenceObject("Ref Cube A",
-                                  PrimitiveType.Cube,
-                                  new Vector3(0f, 0.5f, 3f),
-                                  Color.red);
-
-            CreateReferenceObject("Ref Cube B",
-                                  PrimitiveType.Cube,
-                                  new Vector3(3f, 0.5f, 0f),
-                                  Color.blue);
-
-            CreateReferenceObject("Ref Sphere",
-                                  PrimitiveType.Sphere,
-                                  new Vector3(-2f, 1f, 5f),
-                                  Color.green);
         }
     }
 }

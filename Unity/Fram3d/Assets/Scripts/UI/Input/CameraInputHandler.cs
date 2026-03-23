@@ -182,6 +182,13 @@ namespace Fram3d.UI.Input
 
             if (keyboard.ctrlKey.isPressed && keyboard.rKey.wasPressedThisFrame)
             {
+                // If a gizmo tool is active on a selected element, reset that
+                // tool's property. Otherwise fall through to camera reset.
+                if (this.gizmoController != null && this.gizmoController.TryResetActiveTool())
+                {
+                    return;
+                }
+
                 this._camera.Reset();
                 return;
             }

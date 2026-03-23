@@ -23,10 +23,12 @@ namespace Fram3d.UI.Input
         [SerializeField]
         private SelectionRaycaster raycaster;
 
+        private bool      _cursorIsPointer;
         private bool      _isDragging;
         private bool      _isGizmoDragging;
         private bool      _mouseDownValid;
         private Vector2   _mouseDownPosition;
+        private Texture2D _pointerCursor;
         private Selection _selection;
 
         private void Start()
@@ -35,6 +37,8 @@ namespace Fram3d.UI.Input
             {
                 this._selection = this.selectionHighlighter.Selection;
             }
+
+            this._pointerCursor = CreatePointerCursor();
         }
 
         private void Update()
@@ -63,6 +67,7 @@ namespace Fram3d.UI.Input
 
             this.UpdateHover(mousePosition);
             this.UpdateGizmoHover(mousePosition);
+            this.UpdateCursor(mousePosition);
             this.UpdateSelection(mouse, keyboard, mousePosition);
         }
 
@@ -72,6 +77,90 @@ namespace Fram3d.UI.Input
             {
                 this.gizmoController.UpdateHover(mousePosition);
             }
+        }
+
+        private void UpdateCursor(Vector2 mousePosition)
+        {
+            var overElement = this._selection?.HoveredId != null;
+            var overGizmo   = this.gizmoController != null
+                           && this.gizmoController.ActiveTool != ActiveTool.SELECT
+                           && this.gizmoController.IsHoveringHandle;
+            var wantPointer = overElement || overGizmo;
+
+            if (wantPointer && !this._cursorIsPointer)
+            {
+                Cursor.SetCursor(this._pointerCursor, new Vector2(6f, 0f), CursorMode.Auto);
+                this._cursorIsPointer = true;
+            }
+            else if (!wantPointer && this._cursorIsPointer)
+            {
+                Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+                this._cursorIsPointer = false;
+            }
+        }
+
+        /// <summary>
+        /// Creates a minimal 16x16 pointer cursor texture (arrow shape).
+        /// </summary>
+        private static Texture2D CreatePointerCursor()
+        {
+            var tex = new Texture2D(16, 16, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+            var clear = new Color(0, 0, 0, 0);
+            var white = Color.white;
+            var black = Color.black;
+
+            // Clear all pixels
+            for (var y = 0; y < 16; y++)
+            {
+                for (var x = 0; x < 16; x++)
+                {
+                    tex.SetPixel(x, y, clear);
+                }
+            }
+
+            // Draw a simple arrow cursor (origin at top-left, pointing down-right)
+            // Unity textures are bottom-up, so flip Y
+            var shape = new[]
+            {
+                "X...............",
+                "XX..............",
+                "XWX.............",
+                "XWWX............",
+                "XWWWX...........",
+                "XWWWWX..........",
+                "XWWWWWX.........",
+                "XWWWWWWX........",
+                "XWWWWWWWX.......",
+                "XWWWWWXXXX......",
+                "XWWXWWX.........",
+                "XWXX.XWX........",
+                "XX...XWX........",
+                "X.....XWX.......",
+                "......XWX.......",
+                ".......XX.......",
+            };
+
+            for (var row = 0; row < 16; row++)
+            {
+                for (var col = 0; col < shape[row].Length; col++)
+                {
+                    var c = shape[row][col];
+                    var flippedY = 15 - row;
+
+                    if (c == 'X')
+                    {
+                        tex.SetPixel(col, flippedY, black);
+                    }
+                    else if (c == 'W')
+                    {
+                        tex.SetPixel(col, flippedY, white);
+                    }
+                }
+            }
+
+            tex.Apply();
+            return tex;
         }
 
         private void UpdateGizmoDrag(Mouse mouse, Vector2 mousePosition)

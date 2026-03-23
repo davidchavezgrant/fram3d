@@ -50,6 +50,7 @@ namespace Fram3d.Engine.Integration
         private          Material         _handleMaterial;
         private          Renderer         _hoveredRenderer;
         private          bool             _isDragging;
+        private          ElementId        _lastSelectedId;
         private          GameObject       _rotateGroup;
         private          GameObject       _scaleGroup;
         private          Selection        _selection;
@@ -146,7 +147,8 @@ namespace Fram3d.Engine.Integration
             this._dragElement = null;
         }
 
-        public bool IsDragging => this._isDragging;
+        public bool IsDragging      => this._isDragging;
+        public bool IsHoveringHandle => this._hoveredRenderer != null;
 
         /// <summary>
         /// Updates hover highlighting on gizmo handles. Called each frame
@@ -182,7 +184,43 @@ namespace Fram3d.Engine.Integration
         public void SetActiveTool(ActiveTool tool)
         {
             this.ActiveTool = tool;
+            this.ClearHoverHighlight();
             this.UpdateToolVisibility();
+        }
+
+        /// <summary>
+        /// Resets the selected element's transform property corresponding to
+        /// the active tool. Returns true if a reset was performed (element
+        /// selected + non-Select tool active), false otherwise.
+        /// </summary>
+        public bool TryResetActiveTool()
+        {
+            var element = this.FindSelectedElement();
+
+            if (element == null)
+            {
+                return false;
+            }
+
+            if (this.ActiveTool == ActiveTool.TRANSLATE)
+            {
+                element.Position = SysVector3.Zero;
+                return true;
+            }
+
+            if (this.ActiveTool == ActiveTool.ROTATE)
+            {
+                element.Rotation = SysQuaternion.Identity;
+                return true;
+            }
+
+            if (this.ActiveTool == ActiveTool.SCALE)
+            {
+                element.Scale = 1f;
+                return true;
+            }
+
+            return false;
         }
 
         // ── Lifecycle ───────────────────────────────────────────────────
@@ -212,12 +250,22 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
-            var element = FindSelectedElement();
+            var currentId = this._selection.SelectedId;
+            var element   = this.FindSelectedElement();
 
             if (element == null)
             {
                 this._gizmoRoot.SetActive(false);
+                this._lastSelectedId = null;
                 return;
+            }
+
+            // Reset to translate tool on every new selection
+            if (currentId != this._lastSelectedId)
+            {
+                this._lastSelectedId = currentId;
+                this.ActiveTool      = ActiveTool.TRANSLATE;
+                this.ClearHoverHighlight();
             }
 
             this._gizmoRoot.SetActive(this.ActiveTool != ActiveTool.SELECT);

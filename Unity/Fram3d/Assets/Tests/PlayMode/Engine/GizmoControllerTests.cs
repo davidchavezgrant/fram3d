@@ -237,16 +237,23 @@ namespace Fram3d.Tests.Engine
         [TearDown]
         public void TearDown()
         {
-            // GizmoRoot is a scene root object — clean it up by name.
-            // Use FindObjectsByType which finds inactive objects, unlike GameObject.Find.
-            var roots = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            // GizmoRoot is a scene root object created in GizmoController.Awake.
+            // Destroying the controller doesn't destroy it, so clean up manually.
+            // Collect first to avoid modifying the iterator when children are destroyed.
+            var toDestroy = new System.Collections.Generic.List<GameObject>();
+            var all       = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
-            foreach (var root in roots)
+            foreach (var t in all)
             {
-                if (root.gameObject.name == "GizmoRoot")
+                if (t != null && t.gameObject.name == "GizmoRoot" && t.parent == null)
                 {
-                    Object.DestroyImmediate(root.gameObject);
+                    toDestroy.Add(t.gameObject);
                 }
+            }
+
+            foreach (var go in toDestroy)
+            {
+                Object.DestroyImmediate(go);
             }
 
             Object.DestroyImmediate(this._cube);

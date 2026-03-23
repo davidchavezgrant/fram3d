@@ -64,13 +64,13 @@ namespace Fram3d.Tests.UI
             var corner = new Vector2(10f, Screen.height - 10f);
             InputSystem.QueueStateEvent(this._mouse, new MouseState { position = corner });
 
-            // Wait for the 100ms grace period to expire
-            var startTime = Time.unscaledTime;
-            for (var i = 0; i < 30; i++)
+            // Poll until cursor resets after the 100ms grace period expires.
+            // Editor frames can be as fast as 1-2ms, so we need many iterations.
+            for (var i = 0; i < 600; i++)
             {
                 yield return null;
 
-                if (Time.unscaledTime - startTime > 0.15f)
+                if (this._cursorService.ResetCallCount > 0)
                 {
                     break;
                 }

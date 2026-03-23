@@ -29,6 +29,9 @@ namespace Fram3d.UI.Panels
         public bool HasFocusedTextField => (this._bodySection    != null && this._bodySection.HasFocus)
                                         || (this._lensSetSection != null && this._lensSetSection.HasFocus);
 
+        public bool  IsVisible  => this._visible;
+        public float PanelWidth => PANEL_WIDTH;
+
         /// <summary>
         /// True when the mouse is over any UI Toolkit element (panel, dropdowns, popup menus).
         /// </summary>
@@ -49,7 +52,8 @@ namespace Fram3d.UI.Panels
         public void Toggle()
         {
             this._visible             = !this._visible;
-            this._panel.style.display = this._visible? DisplayStyle.Flex : DisplayStyle.None;
+            this._panel.style.display = this._visible ? DisplayStyle.Flex : DisplayStyle.None;
+            this._cameraBehaviour?.SetRightInset(this._visible ? PANEL_WIDTH : 0f);
         }
 
         private VisualElement BuildContent()
@@ -151,6 +155,7 @@ namespace Fram3d.UI.Panels
 
             this._root = uiDocument.rootVisualElement;
             this.BuildPanel();
+            this._cameraBehaviour.SetRightInset(this._visible ? PANEL_WIDTH : 0f);
         }
 
         private void Update()

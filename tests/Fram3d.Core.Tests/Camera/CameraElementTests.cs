@@ -686,6 +686,14 @@ namespace Fram3d.Core.Tests.Camera
 		// --- FOV (1.1.2) ---
 
 		[Fact]
+		public void HorizontalFov__IsWiderThanVertical__When__SensorIsWiderThanTall()
+		{
+			var cam = CreateCamera();
+
+			cam.HorizontalFov.Should().BeGreaterThan(cam.VerticalFov);
+		}
+
+		[Fact]
 		public void VerticalFov__ReturnsCorrectFov__When__50mmOnSuper35()
 		{
 			var cam = CreateCamera();

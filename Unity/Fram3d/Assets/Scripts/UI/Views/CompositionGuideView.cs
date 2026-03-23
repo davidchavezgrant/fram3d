@@ -107,6 +107,8 @@ namespace Fram3d.UI.Views
             if (this._container == null || this._cameraBehaviour == null)
                 return;
 
+            this._container.style.right = this._cameraBehaviour.RightInsetPixels;
+
             var viewWidth  = this._container.resolvedStyle.width;
             var viewHeight = this._container.resolvedStyle.height;
 

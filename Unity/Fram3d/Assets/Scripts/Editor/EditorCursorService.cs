@@ -29,7 +29,111 @@ namespace Fram3d.Editor
     public class EditorCursorService: ICursorService
     {
         private CursorType? _activeCursor;
-        private bool       _callbackRegistered;
+        private bool        _callbackRegistered;
+
+        public void ResetCursor()
+        {
+            _activeCursor = null;
+        #if UNITY_EDITOR_OSX
+            EnableWindowCursorRects();
+            SetNSCursor(ArrowCursorSel);
+        #endif
+        }
+
+        public bool SetCursor(CursorType ntCursorName)
+        {
+            if (ntCursorName == CursorType.Default)
+            {
+                _activeCursor = null;
+            #if UNITY_EDITOR_OSX
+                EnableWindowCursorRects();
+                SetNSCursor(ArrowCursorSel);
+            #endif
+                return true;
+            }
+
+            _activeCursor = ntCursorName;
+        #if UNITY_EDITOR_OSX
+            EnsureCursorRectsDisabled();
+            ApplyNSCursor(ntCursorName);
+        #endif
+            return true;
+        }
+
+        private void OnEditorUpdate()
+        {
+            if (!_callbackRegistered)
+                TryRegisterGameViewCallbacks();
+
+        #if UNITY_EDITOR_OSX
+
+            // Continuously re-disable cursor rects and re-apply cursor.
+            // Unity's IMGUI repaint may re-enable cursor rects or call
+            // [NSCursor set] between update callbacks.
+            if (_activeCursor.HasValue)
+            {
+                EnsureCursorRectsDisabled();
+                ApplyNSCursor(_activeCursor.Value);
+            }
+        #endif
+        }
+
+        private void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state != PlayModeStateChange.ExitingPlayMode)
+                return;
+
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.update               -= OnEditorUpdate;
+        #if UNITY_EDITOR_OSX
+            EnableWindowCursorRects();
+        #endif
+            ResetCursor();
+        }
+
+        private void OnPointerMove(PointerMoveEvent evt)
+        {
+        #if UNITY_EDITOR_OSX
+            if (!_activeCursor.HasValue)
+                return;
+
+            EnsureCursorRectsDisabled();
+            ApplyNSCursor(_activeCursor.Value);
+        #endif
+        }
+
+        private void TryRegisterGameViewCallbacks()
+        {
+            var gameViewType = typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView");
+
+            if (gameViewType == null)
+                return;
+
+            var gameViews = Resources.FindObjectsOfTypeAll(gameViewType);
+
+            if (gameViews.Length == 0)
+                return;
+
+            foreach (var gv in gameViews)
+            {
+                var window = (EditorWindow)gv;
+                window.rootVisualElement.RegisterCallback<PointerMoveEvent>(OnPointerMove);
+            }
+
+            _callbackRegistered = true;
+            Debug.Log($"[Cursor] Registered PointerMoveEvent on {gameViews.Length} GameView(s)");
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Setup()
+        {
+            Debug.Log("[Cursor] EditorCursorService.Setup()");
+            var service = new EditorCursorService();
+            CursorManager.SetFallbackService(service);
+            CursorManager.SetService(service);
+            EditorApplication.update               += service.OnEditorUpdate;
+            EditorApplication.playModeStateChanged += service.OnPlayModeStateChanged;
+        }
     #if UNITY_EDITOR_OSX
         private IntPtr _disabledWindow;
 
@@ -115,109 +219,5 @@ namespace Fram3d.Editor
             _disabledWindow = IntPtr.Zero;
         }
     #endif
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void Setup()
-        {
-            Debug.Log("[Cursor] EditorCursorService.Setup()");
-            var service = new EditorCursorService();
-            CursorManager.SetFallbackService(service);
-            CursorManager.SetService(service);
-            EditorApplication.update               += service.OnEditorUpdate;
-            EditorApplication.playModeStateChanged += service.OnPlayModeStateChanged;
-        }
-
-        private void OnEditorUpdate()
-        {
-            if (!_callbackRegistered)
-                TryRegisterGameViewCallbacks();
-
-        #if UNITY_EDITOR_OSX
-
-            // Continuously re-disable cursor rects and re-apply cursor.
-            // Unity's IMGUI repaint may re-enable cursor rects or call
-            // [NSCursor set] between update callbacks.
-            if (_activeCursor.HasValue)
-            {
-                EnsureCursorRectsDisabled();
-                ApplyNSCursor(_activeCursor.Value);
-            }
-        #endif
-        }
-
-        private void TryRegisterGameViewCallbacks()
-        {
-            var gameViewType = typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView");
-
-            if (gameViewType == null)
-                return;
-
-            var gameViews = Resources.FindObjectsOfTypeAll(gameViewType);
-
-            if (gameViews.Length == 0)
-                return;
-
-            foreach (var gv in gameViews)
-            {
-                var window = (EditorWindow)gv;
-                window.rootVisualElement.RegisterCallback<PointerMoveEvent>(OnPointerMove);
-            }
-
-            _callbackRegistered = true;
-            Debug.Log($"[Cursor] Registered PointerMoveEvent on {gameViews.Length} GameView(s)");
-        }
-
-        private void OnPointerMove(PointerMoveEvent evt)
-        {
-        #if UNITY_EDITOR_OSX
-            if (!_activeCursor.HasValue)
-                return;
-
-            EnsureCursorRectsDisabled();
-            ApplyNSCursor(_activeCursor.Value);
-        #endif
-        }
-
-        private void OnPlayModeStateChanged(PlayModeStateChange state)
-        {
-            if (state != PlayModeStateChange.ExitingPlayMode)
-                return;
-
-            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-            EditorApplication.update               -= OnEditorUpdate;
-        #if UNITY_EDITOR_OSX
-            EnableWindowCursorRects();
-        #endif
-            ResetCursor();
-        }
-
-        public bool SetCursor(CursorType ntCursorName)
-        {
-            if (ntCursorName == CursorType.Default)
-            {
-                _activeCursor = null;
-            #if UNITY_EDITOR_OSX
-                EnableWindowCursorRects();
-                SetNSCursor(ArrowCursorSel);
-            #endif
-                return true;
-            }
-
-            _activeCursor = ntCursorName;
-        #if UNITY_EDITOR_OSX
-            EnsureCursorRectsDisabled();
-            ApplyNSCursor(ntCursorName);
-        #endif
-            return true;
-        }
-
-        public void ResetCursor()
-        {
-            _activeCursor = null;
-        #if UNITY_EDITOR_OSX
-            EnableWindowCursorRects();
-            SetNSCursor(ArrowCursorSel);
-        #endif
-        }
     }
 }

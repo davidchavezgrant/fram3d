@@ -63,7 +63,7 @@ namespace Fram3d.UI.Panels
             var db      = this._cameraBehaviour.Database;
             var content = new VisualElement();
             content.AddToClassList("panel-content");
-            this._infoSection          = new CameraInfoSection();
+            this._infoSection = new CameraInfoSection();
             this._infoSection.UpdateValues(cam, this._cameraBehaviour.ActiveAspectRatio);
             content.Add(this._infoSection);
             content.Add(Theme.CreateSeparator());

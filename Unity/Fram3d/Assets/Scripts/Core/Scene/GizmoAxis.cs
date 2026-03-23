@@ -12,14 +12,14 @@ namespace Fram3d.Core.Scene
         public static readonly GizmoAxis Y       = new("Y", Vector3.UnitY);
         public static readonly GizmoAxis Z       = new("Z", -Vector3.UnitZ);
 
-        public string  Name      { get; }
-        public Vector3 Direction { get; }
-
         private GizmoAxis(string name, Vector3 direction)
         {
             this.Name      = name;
             this.Direction = direction;
         }
+
+        public Vector3 Direction { get; }
+        public string  Name      { get; }
 
         public static GizmoAxis Parse(string handleName)
         {

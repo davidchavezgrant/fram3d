@@ -105,7 +105,7 @@ namespace Fram3d.UI.Panels
         {
             var selector = new VisualElement();
             selector.AddToClassList("dropdown-selector");
-            var initialText = this._allItems.Count > 0 ? this._allItems[this._selectedIndex] : "\u2014";
+            var initialText = this._allItems.Count > 0? this._allItems[this._selectedIndex] : "\u2014";
             this._selectedLabel = new Label(initialText);
             this._selectedLabel.AddToClassList("dropdown-selected-label");
             var arrow = new Label("\u25be");
@@ -175,9 +175,9 @@ namespace Fram3d.UI.Panels
                                                         var highlighted = index == this._highlightedIndex;
 
                                                         row.style.backgroundColor =
-                                                            highlighted ? Theme.HIGHLIGHT_STRONG : new StyleColor(StyleKeyword.Null);
+                                                            highlighted? Theme.HIGHLIGHT_STRONG : new StyleColor(StyleKeyword.Null);
 
-                                                        label.style.color = highlighted ? Theme.TEXT_WHITE : Theme.TEXT_DEFAULT;
+                                                        label.style.color = highlighted? Theme.TEXT_WHITE : Theme.TEXT_DEFAULT;
                                                     });
 
             row.RegisterCallback<ClickEvent>(_ => this.ConfirmSelection(index));
@@ -239,11 +239,11 @@ namespace Fram3d.UI.Panels
             {
                 var words = search.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-                this._filteredItems.AddRange(this._allItems.Where(item =>
-                    words.All(word => item.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0)));
+                this._filteredItems.AddRange(this._allItems.Where(item => words.All(word => item.IndexOf(word, StringComparison.OrdinalIgnoreCase)
+                                                                                         >= 0)));
             }
 
-            this._highlightedIndex = this._filteredItems.Count > 0 ? 0 : -1;
+            this._highlightedIndex = this._filteredItems.Count > 0? 0 : -1;
             this.RebuildListItems();
         }
 

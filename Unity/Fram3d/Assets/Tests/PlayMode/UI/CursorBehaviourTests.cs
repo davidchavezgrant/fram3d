@@ -238,8 +238,8 @@ namespace Fram3d.Tests.UI
         private sealed class RecordingCursorService: ICursorService
         {
             public CursorType? LastCursor         { get; private set; }
-            public int        ResetCallCount     { get; private set; }
-            public int        SetCursorCallCount { get; private set; }
+            public int         ResetCallCount     { get; private set; }
+            public int         SetCursorCallCount { get; private set; }
 
             public void ResetCounts()
             {

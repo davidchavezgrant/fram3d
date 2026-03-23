@@ -8,9 +8,8 @@ namespace Fram3d.Core.Scene
     /// </summary>
     public sealed class GizmoState
     {
-        private ElementId _lastSelectedId;
-
-        public ActiveTool ActiveTool { get; private set; } = ActiveTool.TRANSLATE;
+        private ElementId  _lastSelectedId;
+        public  ActiveTool ActiveTool { get; private set; } = ActiveTool.TRANSLATE;
 
         /// <summary>
         /// Called each frame with the current selection. Returns true if

@@ -8,9 +8,12 @@ namespace Fram3d.Core.Input
     {
         public const float MAX_DELTA_SQR = 40000f;
 
-        public static DragAction Route(float deltaX, float deltaY,
-                                       bool altHeld, bool cmdHeld,
-                                       bool leftButton, bool middleButton)
+        public static DragAction Route(float deltaX,
+                                       float deltaY,
+                                       bool  altHeld,
+                                       bool  cmdHeld,
+                                       bool  leftButton,
+                                       bool  middleButton)
         {
             var sqr = deltaX * deltaX + deltaY * deltaY;
 
@@ -43,13 +46,13 @@ namespace Fram3d.Core.Input
         }
     }
 
+
     public readonly struct DragAction
     {
-        public static readonly DragAction NONE = new(DragActionKind.NONE, 0, 0);
-
-        public DragActionKind Kind   { get; }
-        public float          DeltaX { get; }
-        public float          DeltaY { get; }
+        public static readonly DragAction     NONE = new(DragActionKind.NONE, 0, 0);
+        public                 DragActionKind Kind   { get; }
+        public                 float          DeltaX { get; }
+        public                 float          DeltaY { get; }
 
         private DragAction(DragActionKind kind, float deltaX, float deltaY)
         {
@@ -58,20 +61,17 @@ namespace Fram3d.Core.Input
             this.DeltaY = deltaY;
         }
 
-        public static DragAction Orbit(float deltaX, float deltaY) =>
-            new(DragActionKind.ORBIT, deltaX, deltaY);
-
-        public static DragAction PanTilt(float deltaX, float deltaY) =>
-            new(DragActionKind.PAN_TILT, deltaX, deltaY);
+        public static DragAction Orbit(float   deltaX, float deltaY) => new(DragActionKind.ORBIT, deltaX, deltaY);
+        public static DragAction PanTilt(float deltaX, float deltaY) => new(DragActionKind.PAN_TILT, deltaX, deltaY);
     }
+
 
     public sealed class DragActionKind
     {
         public static readonly DragActionKind NONE     = new("None");
         public static readonly DragActionKind ORBIT    = new("Orbit");
         public static readonly DragActionKind PAN_TILT = new("Pan/Tilt");
-
-        public string Name { get; }
         private DragActionKind(string name) => this.Name = name;
+        public                 string         Name { get; }
     }
 }

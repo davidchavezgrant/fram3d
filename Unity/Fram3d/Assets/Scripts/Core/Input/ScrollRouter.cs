@@ -78,8 +78,7 @@ namespace Fram3d.Core.Input
         public static readonly ScrollActionKind FOCAL_LENGTH   = new("Focal Length");
         public static readonly ScrollActionKind FOCUS_DISTANCE = new("Focus Distance");
         public static readonly ScrollActionKind ROLL           = new("Roll");
-
-        public string Name { get; }
         private ScrollActionKind(string name) => this.Name = name;
+        public                 string           Name { get; }
     }
 }

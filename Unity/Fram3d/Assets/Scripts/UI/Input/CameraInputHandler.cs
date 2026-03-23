@@ -21,9 +21,9 @@ namespace Fram3d.UI.Input
     /// </summary>
     public sealed class CameraInputHandler: MonoBehaviour
     {
-        private const    float               SCROLL_DEADZONE         = 0.01f;
-        private readonly Queue<ScrollSample> _pendingScrollSamples   = new();
-        private readonly ScrollRouter        _scrollRouter           = new();
+        private const    float               SCROLL_DEADZONE       = 0.01f;
+        private readonly Queue<ScrollSample> _pendingScrollSamples = new();
+        private readonly ScrollRouter        _scrollRouter         = new();
         private          CameraElement       _camera;
         private          bool                _leftAltHeld;
         private          bool                _leftCommandHeld;
@@ -158,56 +158,6 @@ namespace Fram3d.UI.Input
             });
         }
 
-        // ── Drag input ─────────────────────────────────────────────────────
-
-        private void HandleDragInput(Keyboard keyboard, Mouse mouse)
-        {
-            var delta  = mouse.delta.ReadValue();
-            var action = DragRouter.Route(
-                delta.x, delta.y,
-                keyboard.altKey.isPressed,
-                keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed,
-                mouse.leftButton.isPressed,
-                mouse.middleButton.isPressed);
-
-            if (action.Kind == DragActionKind.NONE)
-            {
-                return;
-            }
-
-            var dt       = Time.deltaTime;
-            var panSpeed = MovementSpeeds.PAN_TILT * dt;
-
-            if (action.Kind == DragActionKind.ORBIT)
-            {
-                this._camera.Orbit(action.DeltaX * panSpeed, action.DeltaY * panSpeed);
-            }
-            else if (action.Kind == DragActionKind.PAN_TILT)
-            {
-                this._camera.Pan(action.DeltaX * panSpeed);
-                this._camera.Tilt(-action.DeltaY * panSpeed);
-            }
-        }
-
-        // ── Event interception ─────────────────────────────────────────────
-
-        private void HandleInputEvent(InputEventPtr eventPtr, InputDevice device)
-        {
-            if (!IsStateEvent(eventPtr))
-            {
-                return;
-            }
-
-            if (device is Keyboard keyboard)
-            {
-                this.UpdateModifierState(eventPtr, keyboard);
-                return;
-            }
-
-            if (device is Mouse mouse)
-                this.EnqueueScroll(eventPtr, mouse);
-        }
-
         // ── Keyboard input ─────────────────────────────────────────────────
 
         private bool HandleAspectRatio(Keyboard keyboard)
@@ -227,6 +177,38 @@ namespace Fram3d.UI.Input
             }
 
             return true;
+        }
+
+        // ── Drag input ─────────────────────────────────────────────────────
+
+        private void HandleDragInput(Keyboard keyboard, Mouse mouse)
+        {
+            var delta = mouse.delta.ReadValue();
+
+            var action = DragRouter.Route(delta.x,
+                                          delta.y,
+                                          keyboard.altKey.isPressed,
+                                          keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed,
+                                          mouse.leftButton.isPressed,
+                                          mouse.middleButton.isPressed);
+
+            if (action.Kind == DragActionKind.NONE)
+            {
+                return;
+            }
+
+            var dt       = Time.deltaTime;
+            var panSpeed = MovementSpeeds.PAN_TILT * dt;
+
+            if (action.Kind == DragActionKind.ORBIT)
+            {
+                this._camera.Orbit(action.DeltaX * panSpeed, action.DeltaY * panSpeed);
+            }
+            else if (action.Kind == DragActionKind.PAN_TILT)
+            {
+                this._camera.Pan(action.DeltaX   * panSpeed);
+                this._camera.Tilt(-action.DeltaY * panSpeed);
+            }
         }
 
         private void HandleFocalLengthPresets(Keyboard keyboard)
@@ -291,14 +273,39 @@ namespace Fram3d.UI.Input
             return false;
         }
 
+        // ── Event interception ─────────────────────────────────────────────
+
+        private void HandleInputEvent(InputEventPtr eventPtr, InputDevice device)
+        {
+            if (!IsStateEvent(eventPtr))
+            {
+                return;
+            }
+
+            if (device is Keyboard keyboard)
+            {
+                this.UpdateModifierState(eventPtr, keyboard);
+                return;
+            }
+
+            if (device is Mouse mouse)
+                this.EnqueueScroll(eventPtr, mouse);
+        }
+
         private void HandleKeyboardInput(Keyboard keyboard)
         {
             if (this.HandleToolSwitching(keyboard)) { return; }
-            if (this.HandlePanelToggle(keyboard))   { return; }
-            if (this.HandleAspectRatio(keyboard))   { return; }
-            if (this.HandleReset(keyboard))         { return; }
-            if (this.HandleToggles(keyboard))       { return; }
+
+            if (this.HandlePanelToggle(keyboard)) { return; }
+
+            if (this.HandleAspectRatio(keyboard)) { return; }
+
+            if (this.HandleReset(keyboard)) { return; }
+
+            if (this.HandleToggles(keyboard)) { return; }
+
             if (this.HandleGuideShortcuts(keyboard)) { return; }
+
             this.HandleFocalLengthPresets(keyboard);
         }
 
@@ -333,6 +340,19 @@ namespace Fram3d.UI.Input
 
             this._camera.Reset();
             return true;
+        }
+
+        private void HandleScrollSample(ScrollSample sample)
+        {
+            var action = this._scrollRouter.Route(sample.X,
+                                                  sample.Y,
+                                                  sample.CtrlHeld,
+                                                  sample.AltHeld,
+                                                  sample.ShiftHeld,
+                                                  sample.CommandHeld,
+                                                  Time.time);
+
+            this.ApplyScrollAction(action);
         }
 
         private bool HandleToggles(Keyboard keyboard)
@@ -396,19 +416,6 @@ namespace Fram3d.UI.Input
             }
 
             return false;
-        }
-
-        private void HandleScrollSample(ScrollSample sample)
-        {
-            var action = this._scrollRouter.Route(sample.X,
-                                                  sample.Y,
-                                                  sample.CtrlHeld,
-                                                  sample.AltHeld,
-                                                  sample.ShiftHeld,
-                                                  sample.CommandHeld,
-                                                  Time.time);
-
-            this.ApplyScrollAction(action);
         }
 
         // ── Scroll processing ──────────────────────────────────────────────

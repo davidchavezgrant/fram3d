@@ -9,20 +9,24 @@ namespace Fram3d.Core.Scene
     /// </summary>
     public sealed class DragSession
     {
-        private const float MIN_SCALE         = 0.01f;
+        private const float MIN_SCALE          = 0.01f;
         private const float ROTATE_SENSITIVITY = 0.5f;
         private const float SCALE_SENSITIVITY  = 0.005f;
 
-        public DragSession(GizmoAxis axis, Element element, float mouseX, float mouseY, Vector3 axisOffset)
+        public DragSession(GizmoAxis axis,
+                           Element   element,
+                           float     mouseX,
+                           float     mouseY,
+                           Vector3   axisOffset)
         {
-            this.Axis              = axis;
-            this.Element           = element;
-            this.StartPosition     = element.Position;
-            this.StartRotation     = element.Rotation;
-            this.StartScale        = element.Scale;
-            this.StartMouseX       = mouseX;
-            this.StartMouseY       = mouseY;
-            this.StartAxisOffset   = axisOffset;
+            this.Axis            = axis;
+            this.Element         = element;
+            this.StartPosition   = element.Position;
+            this.StartRotation   = element.Rotation;
+            this.StartScale      = element.Scale;
+            this.StartMouseX     = mouseX;
+            this.StartMouseY     = mouseY;
+            this.StartAxisOffset = axisOffset;
         }
 
         public GizmoAxis  Axis            { get; }
@@ -37,24 +41,37 @@ namespace Fram3d.Core.Scene
         public void UpdateRotation(float currentMouseX)
         {
             var deltaX = currentMouseX - this.StartMouseX;
-            this.Element.Rotation = TransformOperations.ComputeRotation(
-                this.StartRotation, this.Axis.Direction, deltaX, ROTATE_SENSITIVITY);
+
+            this.Element.Rotation = TransformOperations.ComputeRotation(this.StartRotation,
+                                                                        this.Axis.Direction,
+                                                                        deltaX,
+                                                                        ROTATE_SENSITIVITY);
         }
 
         public void UpdateScale(float currentMouseY)
         {
             var deltaY = currentMouseY - this.StartMouseY;
-            this.Element.Scale = TransformOperations.ComputeScale(
-                this.StartScale, deltaY, SCALE_SENSITIVITY, MIN_SCALE);
+
+            this.Element.Scale = TransformOperations.ComputeScale(this.StartScale,
+                                                                  deltaY,
+                                                                  SCALE_SENSITIVITY,
+                                                                  MIN_SCALE);
         }
 
         public void UpdateTranslation(Vector3 rayOrigin, Vector3 rayDirection)
         {
-            var axisDir   = this.Axis.Direction;
-            var projected = TransformOperations.ProjectOntoAxis(
-                this.StartPosition, axisDir, rayOrigin, rayDirection);
-            this.Element.Position = TransformOperations.ComputeTranslation(
-                this.StartPosition, axisDir, projected, this.StartPosition, this.StartAxisOffset);
+            var axisDir = this.Axis.Direction;
+
+            var projected = TransformOperations.ProjectOntoAxis(this.StartPosition,
+                                                                axisDir,
+                                                                rayOrigin,
+                                                                rayDirection);
+
+            this.Element.Position = TransformOperations.ComputeTranslation(this.StartPosition,
+                                                                           axisDir,
+                                                                           projected,
+                                                                           this.StartPosition,
+                                                                           this.StartAxisOffset);
         }
     }
 }

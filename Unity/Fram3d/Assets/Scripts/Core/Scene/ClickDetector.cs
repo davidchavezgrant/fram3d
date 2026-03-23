@@ -93,8 +93,7 @@ namespace Fram3d.Core.Scene
         public static readonly ClickResultKind CLICK = new("Click");
         public static readonly ClickResultKind DRAG  = new("Drag");
         public static readonly ClickResultKind NONE  = new("None");
-
-        public string Name { get; }
         private ClickResultKind(string name) => this.Name = name;
+        public                 string          Name { get; }
     }
 }

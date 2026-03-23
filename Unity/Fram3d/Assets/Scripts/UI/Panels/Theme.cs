@@ -11,10 +11,25 @@ namespace Fram3d.UI.Panels
     public static class Theme
     {
         // --- Runtime colors (used in hover/highlight callbacks, not USS) ---
-        public static readonly Color HIGHLIGHT        = new(0.2f, 0.4f, 0.7f, 0.4f);
-        public static readonly Color HIGHLIGHT_STRONG = new(0.2f, 0.4f, 0.7f, 0.6f);
-        public static readonly Color TEXT_DEFAULT     = new(0.75f, 0.75f, 0.75f, 1f);
-        public static readonly Color TEXT_WHITE       = new(1f, 1f, 1f, 1f);
+        public static readonly Color HIGHLIGHT = new(0.2f,
+                                                     0.4f,
+                                                     0.7f,
+                                                     0.4f);
+
+        public static readonly Color HIGHLIGHT_STRONG = new(0.2f,
+                                                            0.4f,
+                                                            0.7f,
+                                                            0.6f);
+
+        public static readonly Color TEXT_DEFAULT = new(0.75f,
+                                                        0.75f,
+                                                        0.75f,
+                                                        1f);
+
+        public static readonly Color TEXT_WHITE = new(1f,
+                                                      1f,
+                                                      1f,
+                                                      1f);
 
         public static Label CreateSectionLabel(string text)
         {

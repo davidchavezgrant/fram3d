@@ -18,9 +18,10 @@ namespace Fram3d.Engine.Cursor
         ClosedHand
     }
 
+
     public interface ICursorService
     {
-        bool SetCursor(CursorType cursor);
         void ResetCursor();
+        bool SetCursor(CursorType cursor);
     }
 }

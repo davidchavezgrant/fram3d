@@ -27,10 +27,10 @@ namespace Fram3d.UI.Views
             this._container             = new VisualElement();
             this._container.pickingMode = PickingMode.Ignore;
             this._container.AddToClassList("aspect-mask-container");
-            this._barTop                   = CreateBar();
-            this._barBottom                = CreateBar();
-            this._barLeft                  = CreateBar();
-            this._barRight                 = CreateBar();
+            this._barTop    = CreateBar();
+            this._barBottom = CreateBar();
+            this._barLeft   = CreateBar();
+            this._barRight  = CreateBar();
             this._container.Add(this._barTop);
             this._container.Add(this._barBottom);
             this._container.Add(this._barLeft);

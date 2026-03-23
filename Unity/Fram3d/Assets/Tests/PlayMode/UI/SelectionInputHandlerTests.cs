@@ -142,6 +142,39 @@ namespace Fram3d.Tests.UI
                              "Dragging past threshold should not deselect");
         }
 
+        // --- Full pipeline diagnostic: investigate why input→raycast→select fails ---
+
+        [UnityTest]
+        public IEnumerator Diagnostic__MouseCurrentMatchesTestDevice__When__EventQueued()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState
+            {
+                position = center,
+                buttons  = 1
+            });
+            yield return null;
+
+            var currentMouse = Mouse.current;
+            Debug.Log($"[DIAG] Mouse.current == test device: {currentMouse == this._mouse}");
+            Debug.Log($"[DIAG] Mouse.current device ID: {currentMouse?.deviceId}, test device ID: {this._mouse.deviceId}");
+            Debug.Log($"[DIAG] leftButton.isPressed: {currentMouse?.leftButton.isPressed}");
+            Debug.Log($"[DIAG] leftButton.wasPressedThisFrame: {currentMouse?.leftButton.wasPressedThisFrame}");
+            Debug.Log($"[DIAG] test device leftButton.isPressed: {this._mouse.leftButton.isPressed}");
+            Debug.Log($"[DIAG] test device leftButton.wasPressedThisFrame: {this._mouse.leftButton.wasPressedThisFrame}");
+            Debug.Log($"[DIAG] position: {currentMouse?.position.ReadValue()}");
+            Debug.Log($"[DIAG] Screen size: {Screen.width}x{Screen.height}");
+
+            // Verify the test device is current — if this fails, that's the root cause
+            Assert.AreEqual(this._mouse.deviceId, currentMouse?.deviceId,
+                            "Mouse.current should be the test device after queuing an event on it");
+
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+        }
+
         // --- Selection domain logic (tested via API, no input simulation) ---
 
         [Test]

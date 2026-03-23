@@ -62,7 +62,7 @@ namespace Fram3d.Tests.UI
             var container = this._uiDocument.rootVisualElement[0];
 
             for (var i = 0; i < container.childCount; i++)
-                Assert.AreEqual(Position.Absolute, container[i].style.position.value, $"Bar {i} should be absolutely positioned");
+                Assert.AreEqual(Position.Absolute, container[i].resolvedStyle.position, $"Bar {i} should be absolutely positioned");
         }
 
         [UnityTest]

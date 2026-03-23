@@ -4,7 +4,7 @@
   "references": [
     "Fram3d.Core",
     "Fram3d.Engine",
-    "Unity.InputSystem",
+    "Unity.InputSystem"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

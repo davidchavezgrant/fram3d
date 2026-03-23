@@ -1,6 +1,5 @@
-using System.Collections.Generic;
-using Fram3d.Core.Camera;
 using System;
+using System.Collections.Generic;
 using Fram3d.Core.Camera;
 using Fram3d.Core.Input;
 using Fram3d.Core.Scene;

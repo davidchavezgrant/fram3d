@@ -256,9 +256,8 @@ namespace Fram3d.Tests.Engine
             Assert.AreEqual(cam.SensorWidth,  sensor.x, 0.01f);
             Assert.AreEqual(cam.SensorHeight, sensor.y, 0.01f);
 
-            // Viewport rect should be constrained (2.39:1 on ~1.9:1 gate → letterbox)
-            var rect = this._camera.rect;
-            Assert.Less(rect.height, 1f);
+            // Camera.rect stays full height — mask bars handle sensor aspect masking
+            Assert.AreEqual(1f, this._camera.rect.height, 0.001f);
         }
 
         // --- Rotation coordinate conversion ---
@@ -491,12 +490,12 @@ namespace Fram3d.Tests.Engine
         // --- Sync: viewport rect ---
 
         [UnityTest]
-        public IEnumerator Sync__UpdatesViewportRect__When__AspectRatioCycled()
+        public IEnumerator Sync__ViewportRectUnchanged__When__AspectRatioCycled()
         {
             yield return null;
 
-            // Cycle until we hit a ratio that differs from screen aspect
-            // 4:3 on a wider screen should produce a pillarbox (width < 1)
+            // Camera.rect no longer constrains for sensor aspect — mask bars do that.
+            // Changing aspect ratio should NOT change Camera.rect.
             var cam = this._behaviour.CameraElement;
 
             while (cam.ActiveAspectRatio != AspectRatio.RATIO_4_3)
@@ -505,20 +504,17 @@ namespace Fram3d.Tests.Engine
             yield return null;
 
             var rect = this._camera.rect;
-
-            // 4:3 is narrower than most screens → pillarbox: x > 0, width < 1
-            Assert.Less(rect.width, 1f);
-            Assert.Greater(rect.x, 0f);
+            Assert.AreEqual(1f, rect.width,  0.001f, "Width should stay full (no panel inset)");
+            Assert.AreEqual(1f, rect.height, 0.001f, "Height should stay full");
         }
 
         [UnityTest]
-        public IEnumerator Sync__UpdatesViewportRect__When__SensorModeChanged()
+        public IEnumerator Sync__ViewportRectUnchanged__When__SensorModeChanged()
         {
             yield return null;
 
             var cam = this._behaviour.CameraElement;
 
-            // Use Full Screen so viewport rect is driven by sensor mode, not delivery ratio
             while (cam.ActiveAspectRatio != AspectRatio.FULL_SCREEN)
                 this._behaviour.CycleAspectRatioBackward();
 
@@ -544,9 +540,9 @@ namespace Fram3d.Tests.Engine
             cam.SetSensorMode(openGate);
             yield return null;
 
-            // Open gate is ~1.44:1, most screens are 16:9 → pillarbox
-            var rect = this._camera.rect;
-            Assert.Less(rect.width, 1f);
+            // Camera.rect stays full — sensor aspect masking is handled by mask bars
+            Assert.AreEqual(1f, this._camera.rect.width,  0.001f);
+            Assert.AreEqual(1f, this._camera.rect.height, 0.001f);
         }
 
         [UnityTest]

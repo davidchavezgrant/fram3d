@@ -18,8 +18,9 @@ namespace Fram3d.UI.Input
     /// </summary>
     public sealed class CameraInputHandler: MonoBehaviour
     {
-        private const    float               SCROLL_BLEED_COOLDOWN = 0.15f;
-        private const    float               SCROLL_DEADZONE       = 0.01f;
+        private const    float               MAX_DELTA_SQR_MAGNITUDE = 40000f;
+        private const    float               SCROLL_BLEED_COOLDOWN   = 0.15f;
+        private const    float               SCROLL_DEADZONE         = 0.01f;
         private readonly Queue<ScrollSample> _pendingScrollSamples = new();
         private          CameraElement       _camera;
         private          float               _lastModifierScrollTime;
@@ -74,6 +75,13 @@ namespace Fram3d.UI.Input
             var delta = mouse.delta.ReadValue();
 
             if (delta.sqrMagnitude < 0.001f)
+            {
+                return;
+            }
+
+            // Reject delta spikes from focus changes — a 200px delta in one
+            // frame is physically impossible from normal mouse movement
+            if (delta.sqrMagnitude > MAX_DELTA_SQR_MAGNITUDE)
             {
                 return;
             }
@@ -412,6 +420,22 @@ namespace Fram3d.UI.Input
         {
             if (key.ReadValueFromEvent(eventPtr, out var value))
                 held = value >= 0.5f;
+        }
+
+        /// <summary>
+        /// Resyncs modifier state when the application regains focus.
+        /// Without this, event-tracked modifier booleans can get stuck
+        /// if the user releases a modifier key while another app is focused
+        /// — Unity never sees the key-up event. This is the root cause of
+        /// the "Ctrl+scroll mode flip" bug (FRA-127).
+        /// </summary>
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus)
+            {
+                this.SyncModifierState(Keyboard.current);
+                this._pendingScrollSamples.Clear();
+            }
         }
 
         private void OnEnable()

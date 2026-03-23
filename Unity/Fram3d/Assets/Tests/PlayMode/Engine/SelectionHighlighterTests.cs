@@ -135,6 +135,77 @@ namespace Fram3d.Tests.Engine
                             "Shared material should not be modified by highlighting");
         }
 
+        [UnityTest]
+        public IEnumerator LateUpdate__TransfersHighlight__When__SelectionChangesRapidly()
+        {
+            yield return null;
+
+            var cubeB = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            cubeB.name = "TestSphere";
+            cubeB.AddComponent<ElementBehaviour>();
+            yield return null;
+
+            var elementA = this._cube.GetComponent<ElementBehaviour>().Element;
+            var elementB = cubeB.GetComponent<ElementBehaviour>().Element;
+
+            // Select A then immediately select B in the same logical sequence
+            this._highlighter.Selection.Select(elementA.Id);
+            yield return null;
+
+            this._highlighter.Selection.Select(elementB.Id);
+            yield return null;
+
+            // A should have no highlight, B should have selection color
+            var rendererA = this._cube.GetComponent<Renderer>();
+            var rendererB = cubeB.GetComponent<Renderer>();
+
+            Assert.IsFalse(rendererA.HasPropertyBlock(),
+                           "First element should have no highlight after selection transferred");
+
+            var block = new MaterialPropertyBlock();
+            rendererB.GetPropertyBlock(block);
+            var color = block.GetColor(BASE_COLOR);
+            Assert.AreEqual(0f, color.r, 0.01f, "Second element should have selection color (cyan)");
+
+            Object.DestroyImmediate(cubeB);
+        }
+
+        [UnityTest]
+        public IEnumerator LateUpdate__HandlesCompoundElement__When__MultipleRenderers()
+        {
+            yield return null;
+
+            // Create a compound element: parent with ElementBehaviour, two child renderers
+            var parent = new GameObject("Compound");
+            parent.AddComponent<ElementBehaviour>();
+
+            var childA = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            childA.transform.SetParent(parent.transform);
+
+            var childB = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            childB.transform.SetParent(parent.transform);
+            yield return null;
+
+            var element = parent.GetComponent<ElementBehaviour>().Element;
+            this._highlighter.Selection.Select(element.Id);
+            yield return null;
+
+            // Both child renderers should have the selection color
+            var rendererA = childA.GetComponent<Renderer>();
+            var rendererB = childB.GetComponent<Renderer>();
+            var blockA    = new MaterialPropertyBlock();
+            var blockB    = new MaterialPropertyBlock();
+            rendererA.GetPropertyBlock(blockA);
+            rendererB.GetPropertyBlock(blockB);
+
+            Assert.AreNotEqual(Color.clear, blockA.GetColor(BASE_COLOR),
+                               "Child A should have selection color");
+            Assert.AreNotEqual(Color.clear, blockB.GetColor(BASE_COLOR),
+                               "Child B should have selection color");
+
+            Object.DestroyImmediate(parent);
+        }
+
         [SetUp]
         public void SetUp()
         {

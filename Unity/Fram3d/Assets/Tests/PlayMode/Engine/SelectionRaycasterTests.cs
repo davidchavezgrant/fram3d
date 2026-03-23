@@ -88,6 +88,31 @@ namespace Fram3d.Tests.Engine
             Object.DestroyImmediate(parent);
         }
 
+        [UnityTest]
+        public IEnumerator Raycast__IgnoresGizmoLayer__When__ObjectOnLayer6()
+        {
+            // Layer 6 is the Gizmo layer — raycaster should exclude it
+            var gizmoObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            gizmoObj.name               = "GizmoHandle";
+            gizmoObj.layer              = 6;
+            gizmoObj.transform.position = new Vector3(0f, 0f, 3f); // closer than TestCube
+            gizmoObj.AddComponent<ElementBehaviour>();
+
+            // Remove TestCube so only gizmoObj is in front of camera
+            Object.DestroyImmediate(this._cube);
+            this._cube = null;
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            var screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            var element      = this._raycaster.Raycast(screenCenter);
+
+            Assert.IsNull(element,
+                          "Objects on the Gizmo layer (6) should be ignored by SelectionRaycaster");
+
+            Object.DestroyImmediate(gizmoObj);
+        }
+
         [SetUp]
         public void SetUp()
         {

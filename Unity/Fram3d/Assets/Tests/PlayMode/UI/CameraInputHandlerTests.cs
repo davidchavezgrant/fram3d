@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Reflection;
 using Fram3d.Core.Camera;
+using Fram3d.Core.Scene;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
 using Fram3d.UI.Panels;
@@ -23,6 +24,7 @@ namespace Fram3d.Tests.UI
     {
         private CameraBehaviour      _behaviour;
         private CameraElement        _cam;
+        private GizmoController      _gizmoController;
         private CompositionGuideView _guideView;
         private GameObject           _go;
         private GameObject           _guideGo;
@@ -57,6 +59,19 @@ namespace Fram3d.Tests.UI
                 BindingFlags.NonPublic | BindingFlags.Instance);
             guidesField.SetValue(this._handler, this._guideView);
 
+            // Wire GizmoController for Q/W/E/R tests
+            var highlighter = this._go.AddComponent<SelectionHighlighter>();
+            this._gizmoController = this._go.AddComponent<GizmoController>();
+            var highlighterField = typeof(GizmoController).GetField("selectionHighlighter",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            highlighterField.SetValue(this._gizmoController, highlighter);
+            var cameraField = typeof(GizmoController).GetField("targetCamera",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            cameraField.SetValue(this._gizmoController, this._go.GetComponent<Camera>());
+            var gizmoField = typeof(CameraInputHandler).GetField("gizmoController",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            gizmoField.SetValue(this._handler, this._gizmoController);
+
             this._keyboard = InputSystem.AddDevice<Keyboard>();
             this._mouse    = InputSystem.AddDevice<Mouse>();
         }
@@ -68,8 +83,81 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._mouse, new MouseState());
             InputSystem.RemoveDevice(this._keyboard);
             InputSystem.RemoveDevice(this._mouse);
+            var gizmoRoot = GameObject.Find("GizmoRoot");
+
+            if (gizmoRoot != null)
+            {
+                Object.DestroyImmediate(gizmoRoot);
+            }
+
             Object.DestroyImmediate(this._guideGo);
             Object.DestroyImmediate(this._go);
+        }
+
+        // --- Q/W/E/R: tool switching ---
+
+        [UnityTest]
+        public IEnumerator QKey__SwitchesToSelect__When__Pressed()
+        {
+            yield return null;
+
+            this._gizmoController.SetActiveTool(ActiveTool.TRANSLATE);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.Q));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            Assert.AreSame(ActiveTool.SELECT, this._gizmoController.ActiveTool);
+        }
+
+        [UnityTest]
+        public IEnumerator WKey__SwitchesToTranslate__When__Pressed()
+        {
+            yield return null;
+
+            this._gizmoController.SetActiveTool(ActiveTool.SELECT);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.W));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            Assert.AreSame(ActiveTool.TRANSLATE, this._gizmoController.ActiveTool);
+        }
+
+        [UnityTest]
+        public IEnumerator EKey__SwitchesToRotate__When__Pressed()
+        {
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.E));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            Assert.AreSame(ActiveTool.ROTATE, this._gizmoController.ActiveTool);
+        }
+
+        [UnityTest]
+        public IEnumerator RKey__SwitchesToScale__When__Pressed()
+        {
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.R));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            Assert.AreSame(ActiveTool.SCALE, this._gizmoController.ActiveTool);
+        }
+
+        [UnityTest]
+        public IEnumerator CtrlR__DoesNotSwitchToScale__When__CtrlHeld()
+        {
+            yield return null;
+
+            this._gizmoController.SetActiveTool(ActiveTool.TRANSLATE);
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl, Key.R));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            Assert.AreSame(ActiveTool.TRANSLATE, this._gizmoController.ActiveTool,
+                           "Ctrl+R should not switch tool (reserved for reset)");
         }
 
         // --- A key: cycle aspect ratio ---

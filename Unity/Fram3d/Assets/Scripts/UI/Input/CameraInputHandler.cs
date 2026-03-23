@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Fram3d.Core.Camera;
+using Fram3d.Core.Scene;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
 using Fram3d.UI.Views;
@@ -36,6 +37,9 @@ namespace Fram3d.UI.Input
 
         [SerializeField]
         private CompositionGuideView compositionGuides;
+
+        [SerializeField]
+        private GizmoController gizmoController;
 
         [SerializeField]
         private PropertiesPanelView propertiesPanel;
@@ -123,6 +127,37 @@ namespace Fram3d.UI.Input
 
         private void HandleKeyboardInput(Keyboard keyboard)
         {
+            // Q/W/E/R — active tool switching
+            if (this.gizmoController != null
+             && !keyboard.ctrlKey.isPressed
+             && !keyboard.altKey.isPressed
+             && !keyboard.shiftKey.isPressed)
+            {
+                if (keyboard.qKey.wasPressedThisFrame)
+                {
+                    this.gizmoController.SetActiveTool(ActiveTool.SELECT);
+                    return;
+                }
+
+                if (keyboard.wKey.wasPressedThisFrame)
+                {
+                    this.gizmoController.SetActiveTool(ActiveTool.TRANSLATE);
+                    return;
+                }
+
+                if (keyboard.eKey.wasPressedThisFrame)
+                {
+                    this.gizmoController.SetActiveTool(ActiveTool.ROTATE);
+                    return;
+                }
+
+                if (keyboard.rKey.wasPressedThisFrame && !keyboard.ctrlKey.isPressed)
+                {
+                    this.gizmoController.SetActiveTool(ActiveTool.SCALE);
+                    return;
+                }
+            }
+
             if (keyboard.iKey.wasPressedThisFrame
              && !keyboard.ctrlKey.isPressed
              && !keyboard.altKey.isPressed

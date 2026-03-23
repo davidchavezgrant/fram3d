@@ -214,6 +214,19 @@ namespace Fram3d.Editor
                 highlighter = cameraGo.AddComponent<SelectionHighlighter>();
             }
 
+            // GizmoController on the camera
+            var gizmoController = cameraGo.GetComponent<GizmoController>();
+
+            if (gizmoController == null)
+            {
+                gizmoController = cameraGo.AddComponent<GizmoController>();
+            }
+
+            var gizmoSo = new SerializedObject(gizmoController);
+            gizmoSo.FindProperty("selectionHighlighter").objectReferenceValue = highlighter;
+            gizmoSo.FindProperty("targetCamera").objectReferenceValue         = cameraGo.GetComponent<Camera>();
+            gizmoSo.ApplyModifiedProperties();
+
             // SelectionInputHandler on the camera
             var selectionInput = cameraGo.GetComponent<SelectionInputHandler>();
 
@@ -225,7 +238,14 @@ namespace Fram3d.Editor
             var selectionInputSo = new SerializedObject(selectionInput);
             selectionInputSo.FindProperty("selectionHighlighter").objectReferenceValue = highlighter;
             selectionInputSo.FindProperty("raycaster").objectReferenceValue            = raycaster;
+            selectionInputSo.FindProperty("gizmoController").objectReferenceValue      = gizmoController;
             selectionInputSo.ApplyModifiedProperties();
+
+            // Wire gizmo controller on camera input handler
+            var cameraInput   = cameraGo.GetComponent<CameraInputHandler>();
+            var cameraInputSo = new SerializedObject(cameraInput);
+            cameraInputSo.FindProperty("gizmoController").objectReferenceValue = gizmoController;
+            cameraInputSo.ApplyModifiedProperties();
             EditorUtility.SetDirty(cameraGo);
         }
 

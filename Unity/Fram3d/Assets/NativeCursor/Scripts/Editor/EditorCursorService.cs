@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-
 namespace Riten.Native.Cursors.Editor
 {
     /// <summary>
@@ -26,12 +25,11 @@ namespace Riten.Native.Cursors.Editor
     /// entirely, which is why drag never flickered.
     /// Same approach as Mozilla/Firefox (Bug 445567).
     /// </summary>
-    public class EditorCursorService : ICursorService
+    public class EditorCursorService: ICursorService
     {
         NTCursors? _activeCursor;
         bool       _callbackRegistered;
-
-#if UNITY_EDITOR_OSX
+    #if UNITY_EDITOR_OSX
         IntPtr _disabledWindow;
 
         [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_getClass")]
@@ -44,12 +42,12 @@ namespace Riten.Native.Cursors.Editor
         static extern IntPtr objc_msgSend(IntPtr receiver, IntPtr selector);
 
         static readonly IntPtr NSCursorClass                = objc_getClass("NSCursor");
-        static readonly IntPtr NSApplicationClass            = objc_getClass("NSApplication");
+        static readonly IntPtr NSApplicationClass           = objc_getClass("NSApplication");
         static readonly IntPtr SetSel                       = sel_registerName("set");
-        static readonly IntPtr SharedApplicationSel          = sel_registerName("sharedApplication");
-        static readonly IntPtr KeyWindowSel                  = sel_registerName("keyWindow");
-        static readonly IntPtr DisableCursorRectsSel         = sel_registerName("disableCursorRects");
-        static readonly IntPtr EnableCursorRectsSel          = sel_registerName("enableCursorRects");
+        static readonly IntPtr SharedApplicationSel         = sel_registerName("sharedApplication");
+        static readonly IntPtr KeyWindowSel                 = sel_registerName("keyWindow");
+        static readonly IntPtr DisableCursorRectsSel        = sel_registerName("disableCursorRects");
+        static readonly IntPtr EnableCursorRectsSel         = sel_registerName("enableCursorRects");
         static readonly IntPtr ArrowCursorSel               = sel_registerName("arrowCursor");
         static readonly IntPtr PointingHandCursorSel        = sel_registerName("pointingHandCursor");
         static readonly IntPtr IBeamCursorSel               = sel_registerName("IBeamCursor");
@@ -71,16 +69,17 @@ namespace Riten.Native.Cursors.Editor
             switch (ntCursor)
             {
                 case NTCursors.Default:
-                case NTCursors.Arrow:             SetNSCursor(ArrowCursorSel); break;
-                case NTCursors.IBeam:             SetNSCursor(IBeamCursorSel); break;
-                case NTCursors.Crosshair:         SetNSCursor(CrosshairCursorSel); break;
-                case NTCursors.Link:              SetNSCursor(PointingHandCursorSel); break;
-                case NTCursors.OpenHand:          SetNSCursor(OpenHandCursorSel); break;
-                case NTCursors.ClosedHand:        SetNSCursor(ClosedHandCursorSel); break;
-                case NTCursors.ResizeVertical:    SetNSCursor(ResizeUpDownCursorSel); break;
-                case NTCursors.ResizeHorizontal:  SetNSCursor(ResizeLeftRightCursorSel); break;
-                case NTCursors.Invalid:           SetNSCursor(OperationNotAllowedCursorSel); break;
-                case NTCursors.ResizeAll:         SetNSCursor(ArrowCursorSel); break;
+                case NTCursors.Arrow: SetNSCursor(ArrowCursorSel); break;
+
+                case NTCursors.IBeam:            SetNSCursor(IBeamCursorSel); break;
+                case NTCursors.Crosshair:        SetNSCursor(CrosshairCursorSel); break;
+                case NTCursors.Link:             SetNSCursor(PointingHandCursorSel); break;
+                case NTCursors.OpenHand:         SetNSCursor(OpenHandCursorSel); break;
+                case NTCursors.ClosedHand:       SetNSCursor(ClosedHandCursorSel); break;
+                case NTCursors.ResizeVertical:   SetNSCursor(ResizeUpDownCursorSel); break;
+                case NTCursors.ResizeHorizontal: SetNSCursor(ResizeLeftRightCursorSel); break;
+                case NTCursors.Invalid:          SetNSCursor(OperationNotAllowedCursorSel); break;
+                case NTCursors.ResizeAll:        SetNSCursor(ArrowCursorSel); break;
             }
         }
 
@@ -93,7 +92,7 @@ namespace Riten.Native.Cursors.Editor
         void EnsureCursorRectsDisabled()
         {
             var app    = objc_msgSend(NSApplicationClass, SharedApplicationSel);
-            var window = objc_msgSend(app, KeyWindowSel);
+            var window = objc_msgSend(app,                KeyWindowSel);
 
             if (window == IntPtr.Zero)
                 return;
@@ -114,19 +113,16 @@ namespace Riten.Native.Cursors.Editor
             objc_msgSend(_disabledWindow, EnableCursorRectsSel);
             _disabledWindow = IntPtr.Zero;
         }
-#endif
+    #endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Setup()
         {
             Debug.Log("[NativeCursor] EditorCursorService.Setup()");
-
             var service = new EditorCursorService();
-
             NativeCursor.SetFallbackService(service);
             NativeCursor.SetService(service);
-
-            EditorApplication.update += service.OnEditorUpdate;
+            EditorApplication.update               += service.OnEditorUpdate;
             EditorApplication.playModeStateChanged += service.OnPlayModeStateChanged;
         }
 
@@ -135,7 +131,8 @@ namespace Riten.Native.Cursors.Editor
             if (!_callbackRegistered)
                 TryRegisterGameViewCallbacks();
 
-#if UNITY_EDITOR_OSX
+        #if UNITY_EDITOR_OSX
+
             // Continuously re-disable cursor rects and re-apply cursor.
             // Unity's IMGUI repaint may re-enable cursor rects or call
             // [NSCursor set] between update callbacks.
@@ -144,7 +141,7 @@ namespace Riten.Native.Cursors.Editor
                 EnsureCursorRectsDisabled();
                 ApplyNSCursor(_activeCursor.Value);
             }
-#endif
+        #endif
         }
 
         void TryRegisterGameViewCallbacks()
@@ -171,13 +168,13 @@ namespace Riten.Native.Cursors.Editor
 
         void OnPointerMove(PointerMoveEvent evt)
         {
-#if UNITY_EDITOR_OSX
+        #if UNITY_EDITOR_OSX
             if (!_activeCursor.HasValue)
                 return;
 
             EnsureCursorRectsDisabled();
             ApplyNSCursor(_activeCursor.Value);
-#endif
+        #endif
         }
 
         void OnPlayModeStateChanged(PlayModeStateChange state)
@@ -186,11 +183,10 @@ namespace Riten.Native.Cursors.Editor
                 return;
 
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-            EditorApplication.update -= OnEditorUpdate;
-
-#if UNITY_EDITOR_OSX
+            EditorApplication.update               -= OnEditorUpdate;
+        #if UNITY_EDITOR_OSX
             EnableWindowCursorRects();
-#endif
+        #endif
             ResetCursor();
         }
 
@@ -199,29 +195,28 @@ namespace Riten.Native.Cursors.Editor
             if (ntCursorName == NTCursors.Default)
             {
                 _activeCursor = null;
-#if UNITY_EDITOR_OSX
+            #if UNITY_EDITOR_OSX
                 EnableWindowCursorRects();
                 SetNSCursor(ArrowCursorSel);
-#endif
+            #endif
                 return true;
             }
 
             _activeCursor = ntCursorName;
-
-#if UNITY_EDITOR_OSX
+        #if UNITY_EDITOR_OSX
             EnsureCursorRectsDisabled();
             ApplyNSCursor(ntCursorName);
-#endif
+        #endif
             return true;
         }
 
         public void ResetCursor()
         {
             _activeCursor = null;
-#if UNITY_EDITOR_OSX
+        #if UNITY_EDITOR_OSX
             EnableWindowCursorRects();
             SetNSCursor(ArrowCursorSel);
-#endif
+        #endif
         }
     }
 }

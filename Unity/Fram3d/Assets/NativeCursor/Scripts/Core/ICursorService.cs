@@ -17,11 +17,11 @@ namespace Riten.Native.Cursors
         OpenHand,
         ClosedHand
     }
-    
+
+
     public interface ICursorService
     {
         bool SetCursor(NTCursors ntCursor);
-        
         void ResetCursor();
     }
 }

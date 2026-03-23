@@ -1,5 +1,4 @@
 #if !UNITY_EDITOR && UNITY_STANDALONE_LINUX
-
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -131,5 +130,4 @@ namespace Riten.Native.Cursors
         }
     }
 }
-
 #endif

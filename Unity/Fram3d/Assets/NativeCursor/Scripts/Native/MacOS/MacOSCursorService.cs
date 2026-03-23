@@ -141,5 +141,4 @@ namespace Riten.Native.Cursors
         }
     }
 }
-
 #endif

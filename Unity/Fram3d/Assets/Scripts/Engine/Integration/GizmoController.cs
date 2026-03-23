@@ -21,9 +21,11 @@ namespace Fram3d.Engine.Integration
         private const float ROTATE_SENSITIVITY   = 0.5f;
         private const float SCALE_SENSITIVITY    = 0.005f;
 
-        private static readonly Color AXIS_X = new(0.9f, 0.2f, 0.2f, 1f);
-        private static readonly Color AXIS_Y = new(0.4f, 0.85f, 0.2f, 1f);
-        private static readonly Color AXIS_Z = new(0.2f, 0.5f, 0.95f, 1f);
+        private static readonly Color AXIS_X      = new(0.9f, 0.2f, 0.2f, 1f);
+        private static readonly Color AXIS_Y      = new(0.4f, 0.85f, 0.2f, 1f);
+        private static readonly Color AXIS_Z      = new(0.2f, 0.5f, 0.95f, 1f);
+        private static readonly Color DRAG_COLOR  = new(0f, 1f, 1f, 1f);
+        private static readonly Color HOVER_COLOR = new(1f, 0.92f, 0.016f, 1f);
         private static readonly Color SCALE_COLOR = new(0.85f, 0.85f, 0.85f, 1f);
         private static readonly int   SHADER_COLOR = Shader.PropertyToID("_Color");
 
@@ -33,15 +35,19 @@ namespace Fram3d.Engine.Integration
         [SerializeField]
         private Camera targetCamera;
 
+        private          GizmoAxis        _dragAxis;
         private          Element          _dragElement;
+        private          Renderer         _draggedRenderer;
+        private          Color            _draggedOriginalColor;
+        private          float            _dragStartMouseY;
         private          SysVector3       _dragStartPosition;
         private          SysQuaternion    _dragStartRotation;
         private          float            _dragStartScale;
-        private          float            _dragStartMouseY;
-        private          GizmoAxis        _dragAxis;
-        private          bool             _isDragging;
-        private          Material         _handleMaterial;
         private          GameObject       _gizmoRoot;
+        private          Material         _handleMaterial;
+        private          Renderer         _hoveredRenderer;
+        private          Color            _hoveredOriginalColor;
+        private          bool             _isDragging;
         private          GameObject       _rotateGroup;
         private          GameObject       _scaleGroup;
         private          Selection        _selection;
@@ -90,6 +96,10 @@ namespace Fram3d.Engine.Integration
             this._dragStartMouseY   = screenPosition.y;
             this._dragAxis          = ParseAxis(handleName);
             this._isDragging        = true;
+
+            // Highlight the dragged handle cyan
+            var renderer = hit.collider.GetComponent<Renderer>();
+            this.SetDragHighlight(renderer);
             return true;
         }
 
@@ -117,11 +127,44 @@ namespace Fram3d.Engine.Integration
         public void EndDrag()
         {
             // Future: create ICommand with before/after state here (milestone 4.1)
+            this.ClearDragHighlight();
             this._isDragging  = false;
             this._dragElement = null;
         }
 
         public bool IsDragging => this._isDragging;
+
+        /// <summary>
+        /// Updates hover highlighting on gizmo handles. Called each frame
+        /// from SelectionInputHandler when not dragging.
+        /// </summary>
+        public void UpdateHover(Vector2 screenPosition)
+        {
+            if (this.ActiveTool == ActiveTool.SELECT || !this._gizmoRoot.activeSelf)
+            {
+                this.ClearHoverHighlight();
+                return;
+            }
+
+            var ray = this.targetCamera.ScreenPointToRay(screenPosition);
+
+            if (Physics.Raycast(ray, out var hit, 1000f, 1 << GIZMO_LAYER_INDEX))
+            {
+                var renderer = hit.collider.GetComponent<Renderer>();
+
+                if (renderer != this._hoveredRenderer)
+                {
+                    this.ClearHoverHighlight();
+                    this._hoveredRenderer      = renderer;
+                    this._hoveredOriginalColor = renderer.material.GetColor(SHADER_COLOR);
+                    renderer.material.SetColor(SHADER_COLOR, HOVER_COLOR);
+                }
+            }
+            else
+            {
+                this.ClearHoverHighlight();
+            }
+        }
 
         public void SetActiveTool(ActiveTool tool)
         {
@@ -202,8 +245,8 @@ namespace Fram3d.Engine.Integration
         {
             this._scaleGroup = new GameObject("ScaleGroup");
             this._scaleGroup.transform.SetParent(this._gizmoRoot.transform, false);
-            var cubeMesh = GizmoMeshBuilder.CreateCube();
-            CreateHandle("ScaleUniform", cubeMesh, Quaternion.identity, SCALE_COLOR, this._scaleGroup);
+            var diamondMesh = GizmoMeshBuilder.CreateDiamond();
+            CreateHandle("ScaleUniform", diamondMesh, Quaternion.identity, SCALE_COLOR, this._scaleGroup);
         }
 
         private void CreateHandle(string    handleName,
@@ -372,6 +415,44 @@ namespace Fram3d.Engine.Integration
             }
 
             return GizmoAxis.Uniform;
+        }
+
+        // ── Handle highlighting ─────────────────────────────────────────
+
+        private void ClearDragHighlight()
+        {
+            if (this._draggedRenderer != null)
+            {
+                this._draggedRenderer.material.SetColor(SHADER_COLOR, this._draggedOriginalColor);
+                this._draggedRenderer = null;
+            }
+        }
+
+        private void ClearHoverHighlight()
+        {
+            if (this._hoveredRenderer != null)
+            {
+                this._hoveredRenderer.material.SetColor(SHADER_COLOR, this._hoveredOriginalColor);
+                this._hoveredRenderer = null;
+            }
+        }
+
+        private void SetDragHighlight(Renderer renderer)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            // Clear any existing hover on this handle first
+            if (renderer == this._hoveredRenderer)
+            {
+                this._hoveredRenderer = null;
+            }
+
+            this._draggedRenderer      = renderer;
+            this._draggedOriginalColor = renderer.material.GetColor(SHADER_COLOR);
+            renderer.material.SetColor(SHADER_COLOR, DRAG_COLOR);
         }
 
         private static void SetLayerRecursive(GameObject go, int layer)

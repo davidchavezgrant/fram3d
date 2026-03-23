@@ -62,7 +62,16 @@ namespace Fram3d.UI.Input
             }
 
             this.UpdateHover(mousePosition);
+            this.UpdateGizmoHover(mousePosition);
             this.UpdateSelection(mouse, keyboard, mousePosition);
+        }
+
+        private void UpdateGizmoHover(Vector2 mousePosition)
+        {
+            if (this.gizmoController != null)
+            {
+                this.gizmoController.UpdateHover(mousePosition);
+            }
         }
 
         private void UpdateGizmoDrag(Mouse mouse, Vector2 mousePosition)

@@ -74,10 +74,11 @@ namespace Fram3d.Engine.Integration
                 triangles[ti++] = coneBase + 1 + i;
             }
 
+            var actualTriangles = new int[ti];
+            Array.Copy(triangles, actualTriangles, ti);
             var mesh = new Mesh();
             mesh.vertices  = vertices;
-            mesh.triangles = new int[ti];
-            Array.Copy(triangles, mesh.triangles, ti);
+            mesh.triangles = actualTriangles;
             mesh.RecalculateNormals();
             mesh.name = "GizmoArrow";
             return mesh;
@@ -141,43 +142,41 @@ namespace Fram3d.Engine.Integration
         }
 
         /// <summary>
-        /// Creates a small cube mesh for the uniform scale handle.
+        /// Creates a diamond (octahedron) mesh for the uniform scale handle.
+        /// Six vertices at axis tips, eight triangular faces. Visually distinct
+        /// from translate arrows and rotate rings.
         /// </summary>
-        public static Mesh CreateCube(float size = 0.06f)
+        public static Mesh CreateDiamond(float radius = 0.06f)
         {
-            var h = size / 2f;
-
             var vertices = new[]
             {
-                // Front
-                new Vector3(-h, -h, h), new Vector3(h, -h, h), new Vector3(h, h, h), new Vector3(-h, h, h),
-                // Back
-                new Vector3(h, -h, -h), new Vector3(-h, -h, -h), new Vector3(-h, h, -h), new Vector3(h, h, -h),
-                // Top
-                new Vector3(-h, h, h), new Vector3(h, h, h), new Vector3(h, h, -h), new Vector3(-h, h, -h),
-                // Bottom
-                new Vector3(-h, -h, -h), new Vector3(h, -h, -h), new Vector3(h, -h, h), new Vector3(-h, -h, h),
-                // Right
-                new Vector3(h, -h, h), new Vector3(h, -h, -h), new Vector3(h, h, -h), new Vector3(h, h, h),
-                // Left
-                new Vector3(-h, -h, -h), new Vector3(-h, -h, h), new Vector3(-h, h, h), new Vector3(-h, h, -h)
+                new Vector3(0f, radius, 0f),     // top
+                new Vector3(0f, -radius, 0f),    // bottom
+                new Vector3(radius, 0f, 0f),     // +X
+                new Vector3(-radius, 0f, 0f),    // -X
+                new Vector3(0f, 0f, radius),     // +Z
+                new Vector3(0f, 0f, -radius)     // -Z
             };
 
             var triangles = new[]
             {
-                0, 2, 1, 0, 3, 2,
-                4, 6, 5, 4, 7, 6,
-                8, 10, 9, 8, 11, 10,
-                12, 14, 13, 12, 15, 14,
-                16, 18, 17, 16, 19, 18,
-                20, 22, 21, 20, 23, 22
+                // Top four faces
+                0, 2, 4,
+                0, 4, 3,
+                0, 3, 5,
+                0, 5, 2,
+                // Bottom four faces
+                1, 4, 2,
+                1, 3, 4,
+                1, 5, 3,
+                1, 2, 5
             };
 
             var mesh = new Mesh();
             mesh.vertices  = vertices;
             mesh.triangles = triangles;
             mesh.RecalculateNormals();
-            mesh.name = "GizmoCube";
+            mesh.name = "GizmoDiamond";
             return mesh;
         }
     }

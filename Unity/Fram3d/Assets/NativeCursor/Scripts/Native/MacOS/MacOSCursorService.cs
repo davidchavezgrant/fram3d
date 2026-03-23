@@ -7,8 +7,8 @@ namespace Riten.Native.Cursors
     /// <summary>
     /// Runtime macOS cursor service for standalone builds.
     /// Keeps the native cursor under AppKit control through the native
-    /// CursorWrapper plugin, which installs a tracking area and refreshes
-    /// the active cursor during hover updates in the standalone player.
+    /// CursorWrapper plugin, which installs the standalone tracking-area
+    /// and cursor-rect integration for the player window.
     /// </summary>
     public class MacOSCursorService : MonoBehaviour, ICursorService
     {
@@ -125,14 +125,6 @@ namespace Riten.Native.Cursors
         {
             this._activeCursor = null;
             SetCursorToArrow();
-        }
-
-        private void Update()
-        {
-            if (this._activeCursor.HasValue)
-            {
-                RefreshActiveCursor();
-            }
         }
 
         private void OnApplicationFocus(bool hasFocus)

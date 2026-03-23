@@ -14,6 +14,7 @@ namespace Fram3d.UI.Input
     public sealed class SelectionInputHandler: MonoBehaviour
     {
         private const float CLICK_THRESHOLD = 5f;
+        private const float CURSOR_RESET_GRACE_SECONDS = 0.1f;
 
         [SerializeField]
         private GizmoController gizmoController;
@@ -27,6 +28,7 @@ namespace Fram3d.UI.Input
         private bool      _cursorIsPointer;
         private bool      _isDragging;
         private bool      _isGizmoDragging;
+        private float     _lastInteractiveHoverTime;
         private bool      _mouseDownValid;
         private Vector2   _mouseDownPosition;
         private Selection _selection;
@@ -88,7 +90,16 @@ namespace Fram3d.UI.Input
             var overGizmo   = this.gizmoController != null
                            && this.gizmoController.ActiveTool != ActiveTool.SELECT
                            && this.gizmoController.IsHoveringHandle;
-            var wantPointer = overElement || overGizmo;
+            var hasInteractiveHover = overElement || overGizmo;
+
+            if (hasInteractiveHover)
+            {
+                this._lastInteractiveHoverTime = Time.unscaledTime;
+            }
+
+            var withinResetGrace = this._cursorIsPointer
+                                && Time.unscaledTime - this._lastInteractiveHoverTime <= CURSOR_RESET_GRACE_SECONDS;
+            var wantPointer = hasInteractiveHover || withinResetGrace;
 
             if (wantPointer == this._cursorIsPointer)
             {

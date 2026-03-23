@@ -128,9 +128,23 @@ static void Fram3dApplyActiveCursor(void)
     [super updateTrackingAreas];
 }
 
+- (void)resetCursorRects
+{
+    [super resetCursorRects];
+
+    if (sActiveCursor == Fram3dCursorKindDefault)
+        return;
+
+    NSRect cursorRect = NSIntersectionRect(self.bounds, self.visibleRect);
+    if (NSIsEmptyRect(cursorRect))
+        return;
+
+    [self addCursorRect:cursorRect cursor:Fram3dCursorForKind(sActiveCursor)];
+}
+
 @end
 
-static void Fram3dEnableCursorRects(void)
+static void Fram3dDetachWindow(void)
 {
     if (sInstalledWindow == nil)
         return;
@@ -141,11 +155,10 @@ static void Fram3dEnableCursorRects(void)
         sHasPreviousAcceptsMouseMovedEvents = NO;
     }
 
-    [sInstalledWindow enableCursorRects];
     sInstalledWindow = nil;
 }
 
-static void Fram3dDisableCursorRects(NSWindow* window)
+static void Fram3dAttachWindow(NSWindow* window)
 {
     if (window == nil)
         return;
@@ -160,15 +173,24 @@ static void Fram3dDisableCursorRects(NSWindow* window)
             sInstalledWindow.acceptsMouseMovedEvents = sPreviousAcceptsMouseMovedEvents;
             sHasPreviousAcceptsMouseMovedEvents = NO;
         }
-
-        [sInstalledWindow enableCursorRects];
     }
 
     sPreviousAcceptsMouseMovedEvents = window.acceptsMouseMovedEvents;
     sHasPreviousAcceptsMouseMovedEvents = YES;
     window.acceptsMouseMovedEvents = YES;
-    [window disableCursorRects];
     sInstalledWindow = window;
+}
+
+static void Fram3dInvalidateCursorRects(void)
+{
+    if (sOverlayView == nil)
+        return;
+
+    NSWindow* window = sOverlayView.window ?: sInstalledWindow;
+    if (window == nil)
+        return;
+
+    [window invalidateCursorRectsForView:sOverlayView];
 }
 
 static void Fram3dRemoveOverlayView(void)
@@ -187,7 +209,7 @@ static void Fram3dEnsureOverlayView(void)
     if (window == nil)
         return;
 
-    Fram3dDisableCursorRects(window);
+    Fram3dAttachWindow(window);
 
     NSView* contentView = window.contentView;
 
@@ -195,7 +217,10 @@ static void Fram3dEnsureOverlayView(void)
         return;
 
     if (sOverlayView != nil && sOverlayView.superview == contentView)
+    {
+        Fram3dInvalidateCursorRects();
         return;
+    }
 
     Fram3dRemoveOverlayView();
 
@@ -205,12 +230,14 @@ static void Fram3dEnsureOverlayView(void)
     [contentView addSubview:sOverlayView
                  positioned:NSWindowAbove
                  relativeTo:nil];
+    Fram3dInvalidateCursorRects();
 }
 
 static void Fram3dActivateCursor(Fram3dCursorKind kind)
 {
     sActiveCursor = kind;
     Fram3dEnsureOverlayView();
+    Fram3dInvalidateCursorRects();
     Fram3dApplyActiveCursor();
 }
 
@@ -218,7 +245,7 @@ static void Fram3dDeactivateCursor(void)
 {
     sActiveCursor = Fram3dCursorKindDefault;
     Fram3dRemoveOverlayView();
-    Fram3dEnableCursorRects();
+    Fram3dDetachWindow();
     [NSCursor.arrowCursor set];
 }
 

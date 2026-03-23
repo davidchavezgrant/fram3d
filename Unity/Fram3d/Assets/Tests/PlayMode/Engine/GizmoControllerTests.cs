@@ -22,7 +22,6 @@ namespace Fram3d.Tests.Engine
         private GameObject           _cameraGo;
         private GizmoController      _controller;
         private GameObject           _cube;
-        private GameObject           _gizmoRoot;
         private SelectionHighlighter _highlighter;
 
         // --- Tool switching ---
@@ -56,9 +55,8 @@ namespace Fram3d.Tests.Engine
             this._highlighter.Selection.Select(element.Id);
             yield return null;
 
-            Assert.IsNotNull(this._gizmoRoot, "GizmoRoot should exist");
-            Assert.IsTrue(this._gizmoRoot.activeSelf,
-                          "GizmoRoot should be visible when element is selected");
+            Assert.IsTrue(this._controller.IsVisible,
+                          "Gizmo should be visible when element is selected");
         }
 
         [UnityTest]
@@ -74,10 +72,8 @@ namespace Fram3d.Tests.Engine
             this._highlighter.Selection.Deselect();
             yield return null;
 
-            // _gizmoRoot reference was captured while active — survives SetActive(false)
-            Assert.IsNotNull(this._gizmoRoot, "GizmoRoot should exist");
-            Assert.IsFalse(this._gizmoRoot.activeSelf,
-                           "GizmoRoot should be hidden when nothing is selected");
+            Assert.IsFalse(this._controller.IsVisible,
+                           "Gizmo should be hidden when nothing is selected");
         }
 
         // --- Tool resets on new selection ---
@@ -236,20 +232,21 @@ namespace Fram3d.Tests.Engine
             this._cube.name               = "TestCube";
             this._cube.transform.position = new Vector3(0f, 0f, 5f);
             this._cube.AddComponent<ElementBehaviour>();
-
-            // GizmoController.Awake creates GizmoRoot and immediately sets it inactive.
-            // GameObject.Find can't find inactive objects, so use reflection.
-            var rootField = typeof(GizmoController).GetField("_gizmoRoot",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            this._gizmoRoot = (GameObject)rootField.GetValue(this._controller);
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (this._gizmoRoot != null)
+            // GizmoRoot is a scene root object — clean it up by name.
+            // Use FindObjectsByType which finds inactive objects, unlike GameObject.Find.
+            var roots = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            foreach (var root in roots)
             {
-                Object.DestroyImmediate(this._gizmoRoot);
+                if (root.gameObject.name == "GizmoRoot")
+                {
+                    Object.DestroyImmediate(root.gameObject);
+                }
             }
 
             Object.DestroyImmediate(this._cube);

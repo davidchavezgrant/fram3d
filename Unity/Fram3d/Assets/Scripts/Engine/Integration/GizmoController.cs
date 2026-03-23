@@ -57,6 +57,7 @@ namespace Fram3d.Engine.Integration
         private          GameObject       _translateGroup;
 
         public ActiveTool ActiveTool { get; private set; } = ActiveTool.TRANSLATE;
+        public bool       IsVisible  => this._gizmoRoot != null && this._gizmoRoot.activeSelf;
 
         // ── Public API ──────────────────────────────────────────────────
 

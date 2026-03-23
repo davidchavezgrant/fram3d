@@ -271,6 +271,7 @@ namespace Fram3d.Engine.Integration
 
             this._gizmoRoot.SetActive(this.ActiveTool != ActiveTool.SELECT);
             this._gizmoRoot.transform.position = element.Position.ToUnity();
+            this._gizmoRoot.transform.rotation = Quaternion.identity;
             this.ScaleForConstantScreenSize();
             this.UpdateToolVisibility();
         }

@@ -54,7 +54,9 @@ namespace Fram3d.UI.Views
         private void UpdateBars()
         {
             if (this._container == null || this._cameraBehaviour == null)
+            {
                 return;
+            }
 
             this._container.style.right = this._cameraBehaviour.RightInsetPixels;
 
@@ -62,7 +64,9 @@ namespace Fram3d.UI.Views
             var viewHeight = this._container.resolvedStyle.height;
 
             if (float.IsNaN(viewWidth) || float.IsNaN(viewHeight))
+            {
                 return;
+            }
 
             var rect = this._cameraBehaviour.ActiveAspectRatio.ComputeUnmaskedRect(viewWidth, viewHeight, this._cameraBehaviour.ActiveSensorMode);
 

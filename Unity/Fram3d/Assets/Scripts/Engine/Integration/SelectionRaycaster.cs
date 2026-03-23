@@ -29,17 +29,23 @@ namespace Fram3d.Engine.Integration
         public Element Raycast(Vector2 screenPosition)
         {
             if (this.targetCamera == null)
+            {
                 return null;
+            }
 
             var ray = this.targetCamera.ScreenPointToRay(screenPosition);
 
             if (!Physics.Raycast(ray, out var hit, MAX_RAYCAST_DISTANCE, this._layerMask))
+            {
                 return null;
+            }
 
             var elementBehaviour = hit.collider.GetComponentInParent<ElementBehaviour>();
 
             if (elementBehaviour == null)
+            {
                 return null;
+            }
 
             return elementBehaviour.Element;
         }
@@ -47,7 +53,9 @@ namespace Fram3d.Engine.Integration
         private void Awake()
         {
             if (this.targetCamera == null)
+            {
                 this.targetCamera = this.GetComponent<Camera>();
+            }
 
             // Start with the Default layer. Exclude UI and IgnoreRaycast.
             this._layerMask = ~(LayerMask.GetMask("UI", "Ignore Raycast"));
@@ -56,7 +64,9 @@ namespace Fram3d.Engine.Integration
             var gizmoLayer = LayerMask.NameToLayer("Gizmo");
 
             if (gizmoLayer >= 0)
+            {
                 this._layerMask &= ~(1 << gizmoLayer);
+            }
         }
     }
 }

@@ -33,7 +33,9 @@ namespace Fram3d.Editor
                                                   Color         color)
         {
             if (GameObject.Find(name) != null)
+            {
                 return;
+            }
 
             var gameObject = GameObject.CreatePrimitive(type);
             gameObject.name               = name;
@@ -41,12 +43,16 @@ namespace Fram3d.Editor
             var renderer = gameObject.GetComponent<Renderer>();
 
             if (renderer != null)
+            {
                 renderer.material.color = color;
+            }
 
             // Make the object a selectable scene element.
             // ElementBehaviour self-initializes its Element in Awake().
             if (gameObject.GetComponent<ElementBehaviour>() == null)
+            {
                 gameObject.AddComponent<ElementBehaviour>();
+            }
 
             EditorUtility.SetDirty(gameObject);
         }
@@ -56,7 +62,9 @@ namespace Fram3d.Editor
             var guids = AssetDatabase.FindAssets("t:PanelSettings");
 
             if (guids.Length > 0)
+            {
                 return AssetDatabase.LoadAssetAtPath<PanelSettings>(AssetDatabase.GUIDToAssetPath(guids[0]));
+            }
 
             var settings = ScriptableObject.CreateInstance<PanelSettings>();
             settings.scaleMode = PanelScaleMode.ConstantPixelSize;
@@ -69,7 +77,9 @@ namespace Fram3d.Editor
             var maskGo = GameObject.Find("Aspect Ratio Mask");
 
             if (maskGo == null)
+            {
                 maskGo = new GameObject("Aspect Ratio Mask");
+            }
 
             var uiDoc = maskGo.GetComponent<UIDocument>();
 
@@ -82,7 +92,9 @@ namespace Fram3d.Editor
             uiDoc.sortingOrder = 0;
 
             if (maskGo.GetComponent<AspectRatioMaskView>() == null)
+            {
                 maskGo.AddComponent<AspectRatioMaskView>();
+            }
 
             EditorUtility.SetDirty(maskGo);
         }
@@ -92,7 +104,9 @@ namespace Fram3d.Editor
             var guidesGo = GameObject.Find("Composition Guides");
 
             if (guidesGo == null)
+            {
                 guidesGo = new GameObject("Composition Guides");
+            }
 
             var uiDoc = guidesGo.GetComponent<UIDocument>();
 
@@ -105,7 +119,9 @@ namespace Fram3d.Editor
             uiDoc.sortingOrder = 1;
 
             if (guidesGo.GetComponent<CompositionGuideView>() == null)
+            {
                 guidesGo.AddComponent<CompositionGuideView>();
+            }
 
             // Wire composition guides reference on the input handler
             var cameraGo     = GameObject.Find("Main Camera");
@@ -134,12 +150,16 @@ namespace Fram3d.Editor
             }
 
             if (cameraGameObject.GetComponent<CameraBehaviour>() == null)
+            {
                 cameraGameObject.AddComponent<CameraBehaviour>();
+            }
 
             var inputHandler = cameraGameObject.GetComponent<CameraInputHandler>();
 
             if (inputHandler == null)
+            {
                 inputHandler = cameraGameObject.AddComponent<CameraInputHandler>();
+            }
 
             // Wire the serialized reference
             var serializedObject = new SerializedObject(inputHandler);
@@ -152,7 +172,9 @@ namespace Fram3d.Editor
         private static void SetupGroundPlane()
         {
             if (GameObject.Find("Ground Plane") != null)
+            {
                 return;
+            }
 
             var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
             plane.name                 = "Ground Plane";
@@ -176,7 +198,9 @@ namespace Fram3d.Editor
             var raycaster = cameraGo.GetComponent<SelectionRaycaster>();
 
             if (raycaster == null)
+            {
                 raycaster = cameraGo.AddComponent<SelectionRaycaster>();
+            }
 
             var raycasterSo = new SerializedObject(raycaster);
             raycasterSo.FindProperty("targetCamera").objectReferenceValue = cameraGo.GetComponent<Camera>();
@@ -186,13 +210,17 @@ namespace Fram3d.Editor
             var highlighter = cameraGo.GetComponent<SelectionHighlighter>();
 
             if (highlighter == null)
+            {
                 highlighter = cameraGo.AddComponent<SelectionHighlighter>();
+            }
 
             // SelectionInputHandler on the camera
             var selectionInput = cameraGo.GetComponent<SelectionInputHandler>();
 
             if (selectionInput == null)
+            {
                 selectionInput = cameraGo.AddComponent<SelectionInputHandler>();
+            }
 
             var selectionInputSo = new SerializedObject(selectionInput);
             selectionInputSo.FindProperty("selectionHighlighter").objectReferenceValue = highlighter;
@@ -221,7 +249,9 @@ namespace Fram3d.Editor
             panelUiDoc.sortingOrder = 2;
 
             if (panelGo.GetComponent<PropertiesPanelView>() == null)
+            {
                 panelGo.AddComponent<PropertiesPanelView>();
+            }
 
             var cameraGo    = GameObject.Find("Main Camera");
             var panelView   = panelGo.GetComponent<PropertiesPanelView>();

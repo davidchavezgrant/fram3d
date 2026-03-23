@@ -36,13 +36,19 @@ namespace Fram3d.UI.Panels
         public void UpdateValues(CameraElement camera)
         {
             if (this._toggle.value != camera.ShakeEnabled)
+            {
                 this._toggle.SetValueWithoutNotify(camera.ShakeEnabled);
+            }
 
             if (!this._amplitudeSlider.focusController?.focusedElement?.Equals(this._amplitudeSlider) ?? true)
+            {
                 this._amplitudeSlider.SetValueWithoutNotify(camera.ShakeAmplitude);
+            }
 
             if (!this._frequencySlider.focusController?.focusedElement?.Equals(this._frequencySlider) ?? true)
+            {
                 this._frequencySlider.SetValueWithoutNotify(camera.ShakeFrequency);
+            }
         }
 
         private static Slider CreateSlider(string label, float min, float max, float value)

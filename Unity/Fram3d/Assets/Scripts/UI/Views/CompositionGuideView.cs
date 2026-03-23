@@ -105,7 +105,9 @@ namespace Fram3d.UI.Views
         private void UpdateGuides()
         {
             if (this._container == null || this._cameraBehaviour == null)
+            {
                 return;
+            }
 
             this._container.style.right = this._cameraBehaviour.RightInsetPixels;
 
@@ -113,7 +115,9 @@ namespace Fram3d.UI.Views
             var viewHeight = this._container.resolvedStyle.height;
 
             if (float.IsNaN(viewWidth) || float.IsNaN(viewHeight))
+            {
                 return;
+            }
 
             var rect = this._cameraBehaviour.ActiveAspectRatio.ComputeUnmaskedRect(
                 viewWidth, viewHeight, this._cameraBehaviour.ActiveSensorMode);
@@ -133,7 +137,9 @@ namespace Fram3d.UI.Views
             this._thirdsV2.style.display = display;
 
             if (!visible)
+            {
                 return;
+            }
 
             var thirdW = rect.Width  / 3f;
             var thirdH = rect.Height / 3f;
@@ -169,7 +175,9 @@ namespace Fram3d.UI.Views
             this._crossV.style.display = display;
 
             if (!visible)
+            {
                 return;
+            }
 
             var cx = rect.X + rect.Width  / 2f;
             var cy = rect.Y + rect.Height / 2f;
@@ -195,7 +203,9 @@ namespace Fram3d.UI.Views
             this._actionSafe.style.display = display;
 
             if (!visible)
+            {
                 return;
+            }
 
             PositionSafeZone(this._titleSafe,  rect, this.Settings.TitleSafePercent);
             PositionSafeZone(this._actionSafe, rect, this.Settings.ActionSafePercent);

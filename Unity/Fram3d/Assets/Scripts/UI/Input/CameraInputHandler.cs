@@ -43,10 +43,14 @@ namespace Fram3d.UI.Input
         private void EnqueueScroll(InputEventPtr eventPtr, Mouse mouse)
         {
             if (!mouse.scroll.ReadValueFromEvent(eventPtr, out var scroll))
+            {
                 return;
+            }
 
             if (Mathf.Abs(scroll.x) <= SCROLL_DEADZONE && Mathf.Abs(scroll.y) <= SCROLL_DEADZONE)
+            {
                 return;
+            }
 
             this._pendingScrollSamples.Enqueue(new ScrollSample
             {
@@ -66,7 +70,9 @@ namespace Fram3d.UI.Input
             var delta = mouse.delta.ReadValue();
 
             if (delta.sqrMagnitude < 0.001f)
+            {
                 return;
+            }
 
             var dt       = Time.deltaTime;
             var panSpeed = MovementSpeeds.PAN_TILT * dt;
@@ -99,7 +105,9 @@ namespace Fram3d.UI.Input
         private void HandleInputEvent(InputEventPtr eventPtr, InputDevice device)
         {
             if (!IsStateEvent(eventPtr))
+            {
                 return;
+            }
 
             if (device is Keyboard keyboard)
             {
@@ -284,7 +292,9 @@ namespace Fram3d.UI.Input
             }
 
             if (Mathf.Abs(sample.Y) <= SCROLL_DEADZONE)
+            {
                 return;
+            }
 
             var activeLensSet = this._camera.ActiveLensSet;
 

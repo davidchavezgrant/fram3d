@@ -18,7 +18,7 @@ ij_wrap_on_typing = false
 # Microsoft .NET properties
 csharp_new_line_before_members_in_object_initializers = false
 csharp_preferred_modifier_order = public, private, internal, protected, file, new, static, abstract, virtual, sealed, readonly, override, extern, unsafe, volatile, async, required:warning
-csharp_prefer_braces = when_multiline:warning
+csharp_prefer_braces = true:warning
 csharp_space_before_colon_in_inheritance_clause = false
 csharp_style_expression_bodied_accessors = true:warning
 csharp_style_expression_bodied_constructors = false:warning
@@ -178,6 +178,7 @@ resharper_blank_lines_around_multiline_case_section = 1
 resharper_blank_lines_before_block_statements = 1
 resharper_blank_lines_before_multiline_statements = 1
 resharper_blank_lines_before_single_line_comment = 1
+resharper_braces_for_ifelse = required
 resharper_braces_redundant = false
 resharper_builtin_type_apply_to_native_integer = true
 resharper_cpp_insert_final_newline = true

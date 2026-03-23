@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fram3d.Core.Common;
 using Fram3d.Core.Scene;
 using Fram3d.Engine.Conversion;
@@ -35,10 +36,12 @@ namespace Fram3d.Engine.Integration
         [SerializeField]
         private Camera targetCamera;
 
+        private readonly Dictionary<Renderer, Color> _axisColors = new();
         private          GizmoAxis        _dragAxis;
         private          Element          _dragElement;
         private          Renderer         _draggedRenderer;
-        private          Color            _draggedOriginalColor;
+        private          SysVector3       _dragStartAxisOffset;
+        private          float            _dragStartMouseX;
         private          float            _dragStartMouseY;
         private          SysVector3       _dragStartPosition;
         private          SysQuaternion    _dragStartRotation;
@@ -46,14 +49,13 @@ namespace Fram3d.Engine.Integration
         private          GameObject       _gizmoRoot;
         private          Material         _handleMaterial;
         private          Renderer         _hoveredRenderer;
-        private          Color            _hoveredOriginalColor;
         private          bool             _isDragging;
         private          GameObject       _rotateGroup;
         private          GameObject       _scaleGroup;
         private          Selection        _selection;
         private          GameObject       _translateGroup;
 
-        public ActiveTool ActiveTool { get; private set; } = ActiveTool.SELECT;
+        public ActiveTool ActiveTool { get; private set; } = ActiveTool.TRANSLATE;
 
         // ── Public API ──────────────────────────────────────────────────
 
@@ -93,9 +95,21 @@ namespace Fram3d.Engine.Integration
             this._dragStartPosition = element.Position;
             this._dragStartRotation = element.Rotation;
             this._dragStartScale    = element.Scale;
+            this._dragStartMouseX   = screenPosition.x;
             this._dragStartMouseY   = screenPosition.y;
             this._dragAxis          = ParseAxis(handleName);
             this._isDragging        = true;
+
+            // Capture the initial offset so the element doesn't snap
+            // to the mouse position on first drag frame
+            if (this.ActiveTool == ActiveTool.TRANSLATE)
+            {
+                var axisWorld    = GetWorldAxis(this._dragAxis);
+                var origin       = this._dragStartPosition.ToUnity();
+                var projected    = this.ProjectMouseOntoAxis(screenPosition, axisWorld, origin);
+                var initialDelta = projected - origin;
+                this._dragStartAxisOffset = (Vector3.Dot(initialDelta, axisWorld) * axisWorld).ToSystem();
+            }
 
             // Highlight the dragged handle cyan
             var renderer = hit.collider.GetComponent<Renderer>();
@@ -155,8 +169,7 @@ namespace Fram3d.Engine.Integration
                 if (renderer != this._hoveredRenderer)
                 {
                     this.ClearHoverHighlight();
-                    this._hoveredRenderer      = renderer;
-                    this._hoveredOriginalColor = renderer.material.GetColor(SHADER_COLOR);
+                    this._hoveredRenderer = renderer;
                     renderer.material.SetColor(SHADER_COLOR, HOVER_COLOR);
                 }
             }
@@ -271,6 +284,10 @@ namespace Fram3d.Engine.Integration
             var mc = go.AddComponent<MeshCollider>();
             mc.sharedMesh = mesh;
             mc.convex     = true;
+
+            // Store the true axis color for this handle so highlighting
+            // can always restore to the correct color
+            this._axisColors[mr] = color;
         }
 
         // ── Display ─────────────────────────────────────────────────────
@@ -296,18 +313,18 @@ namespace Fram3d.Engine.Integration
         {
             var axisWorld = GetWorldAxis(this._dragAxis);
             var origin    = this._dragStartPosition.ToUnity();
-            var projected = ProjectMouseOntoAxis(screenPosition, axisWorld, origin);
+            var projected = this.ProjectMouseOntoAxis(screenPosition, axisWorld, origin);
             var delta     = projected - origin;
-            var axisDelta = Vector3.Dot(delta, axisWorld) * axisWorld;
-            this._dragElement.Position = this._dragStartPosition + axisDelta.ToSystem();
+            var axisDelta = (Vector3.Dot(delta, axisWorld) * axisWorld).ToSystem();
+            this._dragElement.Position = this._dragStartPosition + axisDelta - this._dragStartAxisOffset;
         }
 
         private void UpdateRotateDrag(Vector2 screenPosition)
         {
-            var deltaX    = screenPosition.x - this._dragStartMouseY;
-            var angle     = deltaX * ROTATE_SENSITIVITY * Mathf.Deg2Rad;
-            var axis      = GetSystemAxis(this._dragAxis);
-            var rotation  = SysQuaternion.CreateFromAxisAngle(axis, angle);
+            var deltaX   = screenPosition.x - this._dragStartMouseX;
+            var angle    = deltaX * ROTATE_SENSITIVITY * Mathf.Deg2Rad;
+            var axis     = GetSystemAxis(this._dragAxis);
+            var rotation = SysQuaternion.CreateFromAxisAngle(axis, angle);
             this._dragElement.Rotation = SysQuaternion.Normalize(rotation * this._dragStartRotation);
         }
 
@@ -423,7 +440,7 @@ namespace Fram3d.Engine.Integration
         {
             if (this._draggedRenderer != null)
             {
-                this._draggedRenderer.material.SetColor(SHADER_COLOR, this._draggedOriginalColor);
+                this.RestoreAxisColor(this._draggedRenderer);
                 this._draggedRenderer = null;
             }
         }
@@ -432,8 +449,16 @@ namespace Fram3d.Engine.Integration
         {
             if (this._hoveredRenderer != null)
             {
-                this._hoveredRenderer.material.SetColor(SHADER_COLOR, this._hoveredOriginalColor);
+                this.RestoreAxisColor(this._hoveredRenderer);
                 this._hoveredRenderer = null;
+            }
+        }
+
+        private void RestoreAxisColor(Renderer renderer)
+        {
+            if (this._axisColors.TryGetValue(renderer, out var axisColor))
+            {
+                renderer.material.SetColor(SHADER_COLOR, axisColor);
             }
         }
 
@@ -444,14 +469,13 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
-            // Clear any existing hover on this handle first
+            // Clear hover state — drag takes over
             if (renderer == this._hoveredRenderer)
             {
                 this._hoveredRenderer = null;
             }
 
-            this._draggedRenderer      = renderer;
-            this._draggedOriginalColor = renderer.material.GetColor(SHADER_COLOR);
+            this._draggedRenderer = renderer;
             renderer.material.SetColor(SHADER_COLOR, DRAG_COLOR);
         }
 

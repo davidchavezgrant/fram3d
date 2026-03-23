@@ -1,22 +1,19 @@
-using System.Collections;
 using Fram3d.Engine.Integration;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools;
 namespace Fram3d.Tests.Engine
 {
     /// <summary>
-    /// Play Mode tests for GizmoMeshBuilder. Validates that procedurally
-    /// generated meshes have valid geometry — catches bugs like the
-    /// triangle array copy issue (mesh.triangles returns a copy).
+    /// Tests for GizmoMeshBuilder. Validates that procedurally generated
+    /// meshes have valid geometry — catches bugs like the triangle array
+    /// copy issue (mesh.triangles returns a copy). These are [Test] not
+    /// [UnityTest] because mesh creation is synchronous — no frames needed.
     /// </summary>
     public sealed class GizmoMeshBuilderTests
     {
-        [UnityTest]
-        public IEnumerator CreateArrow__HasVertices__When__Created()
+        [Test]
+        public void CreateArrow__HasVertices__When__Created()
         {
-            yield return null;
-
             var mesh = GizmoMeshBuilder.CreateArrow();
 
             Assert.IsNotNull(mesh);
@@ -24,11 +21,9 @@ namespace Fram3d.Tests.Engine
             Object.DestroyImmediate(mesh);
         }
 
-        [UnityTest]
-        public IEnumerator CreateArrow__HasTriangles__When__Created()
+        [Test]
+        public void CreateArrow__HasTriangles__When__Created()
         {
-            yield return null;
-
             var mesh = GizmoMeshBuilder.CreateArrow();
 
             Assert.Greater(mesh.triangles.Length, 0, "Arrow mesh should have triangles");
@@ -36,11 +31,9 @@ namespace Fram3d.Tests.Engine
             Object.DestroyImmediate(mesh);
         }
 
-        [UnityTest]
-        public IEnumerator CreateArrow__TriangleIndicesInRange__When__Created()
+        [Test]
+        public void CreateArrow__TriangleIndicesInRange__When__Created()
         {
-            yield return null;
-
             var mesh = GizmoMeshBuilder.CreateArrow();
 
             foreach (var index in mesh.triangles)
@@ -52,11 +45,9 @@ namespace Fram3d.Tests.Engine
             Object.DestroyImmediate(mesh);
         }
 
-        [UnityTest]
-        public IEnumerator CreateRing__HasVertices__When__Created()
+        [Test]
+        public void CreateRing__HasVertices__When__Created()
         {
-            yield return null;
-
             var mesh = GizmoMeshBuilder.CreateRing();
 
             Assert.IsNotNull(mesh);
@@ -64,11 +55,9 @@ namespace Fram3d.Tests.Engine
             Object.DestroyImmediate(mesh);
         }
 
-        [UnityTest]
-        public IEnumerator CreateRing__HasTriangles__When__Created()
+        [Test]
+        public void CreateRing__HasTriangles__When__Created()
         {
-            yield return null;
-
             var mesh = GizmoMeshBuilder.CreateRing();
 
             Assert.Greater(mesh.triangles.Length, 0, "Ring mesh should have triangles");
@@ -76,11 +65,9 @@ namespace Fram3d.Tests.Engine
             Object.DestroyImmediate(mesh);
         }
 
-        [UnityTest]
-        public IEnumerator CreateRing__TriangleIndicesInRange__When__Created()
+        [Test]
+        public void CreateRing__TriangleIndicesInRange__When__Created()
         {
-            yield return null;
-
             var mesh = GizmoMeshBuilder.CreateRing();
 
             foreach (var index in mesh.triangles)
@@ -92,11 +79,9 @@ namespace Fram3d.Tests.Engine
             Object.DestroyImmediate(mesh);
         }
 
-        [UnityTest]
-        public IEnumerator CreateDiamond__HasVertices__When__Created()
+        [Test]
+        public void CreateDiamond__HasVertices__When__Created()
         {
-            yield return null;
-
             var mesh = GizmoMeshBuilder.CreateDiamond();
 
             Assert.IsNotNull(mesh);
@@ -104,22 +89,18 @@ namespace Fram3d.Tests.Engine
             Object.DestroyImmediate(mesh);
         }
 
-        [UnityTest]
-        public IEnumerator CreateDiamond__HasTriangles__When__Created()
+        [Test]
+        public void CreateDiamond__HasTriangles__When__Created()
         {
-            yield return null;
-
             var mesh = GizmoMeshBuilder.CreateDiamond();
 
-            Assert.AreEqual(24, mesh.triangles.Length, "Diamond should have 8 faces × 3 indices = 24");
+            Assert.AreEqual(24, mesh.triangles.Length, "Diamond should have 8 faces x 3 indices = 24");
             Object.DestroyImmediate(mesh);
         }
 
-        [UnityTest]
-        public IEnumerator CreateDiamond__TriangleIndicesInRange__When__Created()
+        [Test]
+        public void CreateDiamond__TriangleIndicesInRange__When__Created()
         {
-            yield return null;
-
             var mesh = GizmoMeshBuilder.CreateDiamond();
 
             foreach (var index in mesh.triangles)

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using Fram3d.Core.Scene;
 using Fram3d.Engine.Integration;
@@ -22,6 +23,7 @@ namespace Fram3d.Tests.Engine
         private GameObject           _cameraGo;
         private GizmoController      _controller;
         private GameObject           _cube;
+        private List<GameObject>     _extras;
         private SelectionHighlighter _highlighter;
 
         // --- Tool switching ---
@@ -64,7 +66,6 @@ namespace Fram3d.Tests.Engine
         {
             yield return null;
 
-            // Select then deselect
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
             this._highlighter.Selection.Select(element.Id);
             yield return null;
@@ -87,13 +88,10 @@ namespace Fram3d.Tests.Engine
             this._highlighter.Selection.Select(element.Id);
             yield return null;
 
-            // Switch to Scale after selection settled
             this._controller.SetActiveTool(ActiveTool.SCALE);
             Assert.AreSame(ActiveTool.SCALE, this._controller.ActiveTool);
 
-            // Select a different element
-            var cube2 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            cube2.AddComponent<ElementBehaviour>();
+            var cube2 = CreateExtra(PrimitiveType.Sphere);
             yield return null;
 
             var element2 = cube2.GetComponent<ElementBehaviour>().Element;
@@ -102,8 +100,6 @@ namespace Fram3d.Tests.Engine
 
             Assert.AreSame(ActiveTool.TRANSLATE, this._controller.ActiveTool,
                            "Tool should reset to Translate on new selection");
-
-            Object.DestroyImmediate(cube2);
         }
 
         // --- TryResetActiveTool ---
@@ -116,9 +112,8 @@ namespace Fram3d.Tests.Engine
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
             element.Position = new System.Numerics.Vector3(5f, 3f, -2f);
             this._highlighter.Selection.Select(element.Id);
-            yield return null; // LateUpdate processes selection, resets to TRANSLATE
+            yield return null;
 
-            // Tool is already TRANSLATE after selection — no need to set it
             var result = this._controller.TryResetActiveTool();
 
             Assert.IsTrue(result);
@@ -136,9 +131,8 @@ namespace Fram3d.Tests.Engine
             element.Rotation = System.Numerics.Quaternion.CreateFromAxisAngle(
                 System.Numerics.Vector3.UnitY, 1.0f);
             this._highlighter.Selection.Select(element.Id);
-            yield return null; // LateUpdate processes selection
+            yield return null;
 
-            // Set tool AFTER selection settled, call reset WITHOUT yielding
             this._controller.SetActiveTool(ActiveTool.ROTATE);
             var result = this._controller.TryResetActiveTool();
 
@@ -154,7 +148,7 @@ namespace Fram3d.Tests.Engine
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
             element.Scale = 3f;
             this._highlighter.Selection.Select(element.Id);
-            yield return null; // LateUpdate processes selection
+            yield return null;
 
             this._controller.SetActiveTool(ActiveTool.SCALE);
             var result = this._controller.TryResetActiveTool();
@@ -182,9 +176,8 @@ namespace Fram3d.Tests.Engine
 
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
             this._highlighter.Selection.Select(element.Id);
-            yield return null; // LateUpdate processes selection
+            yield return null;
 
-            // Set to SELECT after selection settled, call without yielding
             this._controller.SetActiveTool(ActiveTool.SELECT);
             var result = this._controller.TryResetActiveTool();
 
@@ -217,9 +210,20 @@ namespace Fram3d.Tests.Engine
             Assert.IsFalse(result);
         }
 
+        // --- Helpers ---
+
+        private GameObject CreateExtra(PrimitiveType type)
+        {
+            var go = GameObject.CreatePrimitive(type);
+            go.AddComponent<ElementBehaviour>();
+            this._extras.Add(go);
+            return go;
+        }
+
         [SetUp]
         public void SetUp()
         {
+            this._extras   = new List<GameObject>();
             this._cameraGo = new GameObject("TestCamera");
             this._cameraGo.AddComponent<Camera>();
             this._highlighter = this._cameraGo.AddComponent<SelectionHighlighter>();
@@ -237,23 +241,12 @@ namespace Fram3d.Tests.Engine
         [TearDown]
         public void TearDown()
         {
-            // GizmoRoot is a scene root object created in GizmoController.Awake.
-            // Destroying the controller doesn't destroy it, so clean up manually.
-            // Collect first to avoid modifying the iterator when children are destroyed.
-            var toDestroy = new System.Collections.Generic.List<GameObject>();
-            var all       = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-
-            foreach (var t in all)
+            foreach (var go in this._extras)
             {
-                if (t != null && t.gameObject.name == "GizmoRoot" && t.parent == null)
+                if (go != null)
                 {
-                    toDestroy.Add(t.gameObject);
+                    Object.DestroyImmediate(go);
                 }
-            }
-
-            foreach (var go in toDestroy)
-            {
-                Object.DestroyImmediate(go);
             }
 
             Object.DestroyImmediate(this._cube);

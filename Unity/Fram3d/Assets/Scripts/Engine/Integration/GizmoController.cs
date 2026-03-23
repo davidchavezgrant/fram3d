@@ -17,7 +17,7 @@ namespace Fram3d.Engine.Integration
     public sealed class GizmoController: MonoBehaviour
     {
         private const float CONSTANT_SCREEN_SIZE = 0.15f;
-        private const int   GIZMO_LAYER_INDEX    = 6;
+        public  const int   GIZMO_LAYER_INDEX    = 6;
         private const float MIN_SCALE            = 0.01f;
         private const float ROTATE_SENSITIVITY   = 0.5f;
         private const float SCALE_SENSITIVITY    = 0.005f;
@@ -280,6 +280,7 @@ namespace Fram3d.Engine.Integration
         private void BuildGizmoRoot()
         {
             this._gizmoRoot = new GameObject("GizmoRoot");
+            this._gizmoRoot.transform.SetParent(this.transform, false);
             SetLayerRecursive(this._gizmoRoot, GIZMO_LAYER_INDEX);
         }
 

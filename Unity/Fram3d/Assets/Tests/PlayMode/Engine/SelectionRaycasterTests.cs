@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Fram3d.Engine.Integration;
 using NUnit.Framework;
 using UnityEngine;
@@ -15,6 +16,7 @@ namespace Fram3d.Tests.Engine
         private Camera             _camera;
         private GameObject         _cameraGo;
         private GameObject         _cube;
+        private List<GameObject>   _extras;
         private SelectionRaycaster _raycaster;
 
         [UnityTest]
@@ -23,7 +25,6 @@ namespace Fram3d.Tests.Engine
             yield return null;
             yield return new WaitForFixedUpdate();
 
-            // Raycast to center of screen where the cube is positioned
             var screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
             var element      = this._raycaster.Raycast(screenCenter);
 
@@ -37,7 +38,6 @@ namespace Fram3d.Tests.Engine
             yield return null;
             yield return new WaitForFixedUpdate();
 
-            // Raycast to top-left corner where nothing is
             var corner  = new Vector2(10f, Screen.height - 10f);
             var element = this._raycaster.Raycast(corner);
 
@@ -47,7 +47,6 @@ namespace Fram3d.Tests.Engine
         [UnityTest]
         public IEnumerator Raycast__ReturnsNull__When__ObjectHasNoElementBehaviour()
         {
-            // Remove ElementBehaviour from the cube
             var behaviour = this._cube.GetComponent<ElementBehaviour>();
             Object.DestroyImmediate(behaviour);
             yield return null;
@@ -62,17 +61,16 @@ namespace Fram3d.Tests.Engine
         [UnityTest]
         public IEnumerator Raycast__ResolvesParent__When__HittingChildCollider()
         {
-            // Create a compound element: parent with ElementBehaviour, child with collider
             var parent = new GameObject("CompoundParent");
             parent.transform.position = new Vector3(0f, 0f, 5f);
             parent.AddComponent<ElementBehaviour>();
+            this._extras.Add(parent);
 
             var child = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             child.name                    = "ChildMesh";
             child.transform.parent        = parent.transform;
             child.transform.localPosition = Vector3.zero;
 
-            // Remove the direct cube so only the compound element is hit
             Object.DestroyImmediate(this._cube);
             this._cube = null;
             yield return null;
@@ -84,21 +82,18 @@ namespace Fram3d.Tests.Engine
             Assert.IsNotNull(element, "Should hit the child collider");
             Assert.AreEqual("CompoundParent", element.Name,
                             "Should resolve to parent ElementBehaviour, not child");
-
-            Object.DestroyImmediate(parent);
         }
 
         [UnityTest]
-        public IEnumerator Raycast__IgnoresGizmoLayer__When__ObjectOnLayer6()
+        public IEnumerator Raycast__IgnoresGizmoLayer__When__ObjectOnGizmoLayer()
         {
-            // Layer 6 is the Gizmo layer — raycaster should exclude it
             var gizmoObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
             gizmoObj.name               = "GizmoHandle";
-            gizmoObj.layer              = 6;
-            gizmoObj.transform.position = new Vector3(0f, 0f, 3f); // closer than TestCube
+            gizmoObj.layer              = GizmoController.GIZMO_LAYER_INDEX;
+            gizmoObj.transform.position = new Vector3(0f, 0f, 3f);
             gizmoObj.AddComponent<ElementBehaviour>();
+            this._extras.Add(gizmoObj);
 
-            // Remove TestCube so only gizmoObj is in front of camera
             Object.DestroyImmediate(this._cube);
             this._cube = null;
             yield return null;
@@ -108,21 +103,19 @@ namespace Fram3d.Tests.Engine
             var element      = this._raycaster.Raycast(screenCenter);
 
             Assert.IsNull(element,
-                          "Objects on the Gizmo layer (6) should be ignored by SelectionRaycaster");
-
-            Object.DestroyImmediate(gizmoObj);
+                          "Objects on the Gizmo layer should be ignored by SelectionRaycaster");
         }
 
         [SetUp]
         public void SetUp()
         {
+            this._extras   = new System.Collections.Generic.List<GameObject>();
             this._cameraGo = new GameObject("TestCamera");
             this._camera   = this._cameraGo.AddComponent<Camera>();
             this._cameraGo.transform.position = new Vector3(0f, 0f, 0f);
             this._cameraGo.transform.rotation = Quaternion.identity;
             this._raycaster = this._cameraGo.AddComponent<SelectionRaycaster>();
 
-            // Wire camera via reflection (SerializeField)
             var field = typeof(SelectionRaycaster)
                 .GetField("targetCamera",
                            System.Reflection.BindingFlags.NonPublic
@@ -130,7 +123,6 @@ namespace Fram3d.Tests.Engine
 
             field.SetValue(this._raycaster, this._camera);
 
-            // Place a cube in front of the camera
             this._cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             this._cube.name               = "TestCube";
             this._cube.transform.position = new Vector3(0f, 0f, 5f);
@@ -140,8 +132,18 @@ namespace Fram3d.Tests.Engine
         [TearDown]
         public void TearDown()
         {
+            foreach (var go in this._extras)
+            {
+                if (go != null)
+                {
+                    Object.DestroyImmediate(go);
+                }
+            }
+
             if (this._cube != null)
+            {
                 Object.DestroyImmediate(this._cube);
+            }
 
             Object.DestroyImmediate(this._cameraGo);
         }

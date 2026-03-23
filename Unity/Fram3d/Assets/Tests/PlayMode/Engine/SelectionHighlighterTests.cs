@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Fram3d.Engine.Integration;
 using NUnit.Framework;
 using UnityEngine;
@@ -15,9 +16,10 @@ namespace Fram3d.Tests.Engine
     {
         private static readonly int BASE_COLOR = Shader.PropertyToID("_BaseColor");
 
-        private GameObject _cube;
-        private GameObject _highlighterGo;
+        private GameObject           _cube;
+        private List<GameObject>     _extras;
         private SelectionHighlighter _highlighter;
+        private GameObject           _highlighterGo;
 
         [UnityTest]
         public IEnumerator LateUpdate__AppliesHoverColor__When__ElementHovered()
@@ -32,7 +34,10 @@ namespace Fram3d.Tests.Engine
             var block    = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(block);
             var color = block.GetColor(BASE_COLOR);
-            Assert.AreNotEqual(Color.clear, color, "PropertyBlock should have a color override");
+
+            // Hover color is yellow (1, 0.92, 0.016, 1)
+            Assert.AreEqual(1f,    color.r, 0.01f, "Hover should be yellow (r)");
+            Assert.AreEqual(0.92f, color.g, 0.01f, "Hover should be yellow (g)");
         }
 
         [UnityTest]
@@ -96,11 +101,9 @@ namespace Fram3d.Tests.Engine
 
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
 
-            // Hover first
             this._highlighter.Selection.Hover(element.Id);
             yield return null;
 
-            // Then select (hover clears automatically in Selection)
             this._highlighter.Selection.Select(element.Id);
             yield return null;
 
@@ -109,7 +112,6 @@ namespace Fram3d.Tests.Engine
             renderer.GetPropertyBlock(block);
             var color = block.GetColor(BASE_COLOR);
 
-            // Should be selection cyan, not hover yellow
             Assert.AreEqual(0f, color.r, 0.01f, "Should be cyan (selection), not yellow (hover)");
             Assert.AreEqual(1f, color.g, 0.01f);
             Assert.AreEqual(1f, color.b, 0.01f);
@@ -130,7 +132,6 @@ namespace Fram3d.Tests.Engine
             this._highlighter.Selection.Deselect();
             yield return null;
 
-            // After deselect, shared material color should be unchanged
             Assert.AreEqual(originalColor, renderer.sharedMaterial.color,
                             "Shared material should not be modified by highlighting");
         }
@@ -140,22 +141,18 @@ namespace Fram3d.Tests.Engine
         {
             yield return null;
 
-            var cubeB = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            cubeB.name = "TestSphere";
-            cubeB.AddComponent<ElementBehaviour>();
+            var cubeB = CreateExtra(PrimitiveType.Sphere, "TestSphere");
             yield return null;
 
             var elementA = this._cube.GetComponent<ElementBehaviour>().Element;
             var elementB = cubeB.GetComponent<ElementBehaviour>().Element;
 
-            // Select A then immediately select B in the same logical sequence
             this._highlighter.Selection.Select(elementA.Id);
             yield return null;
 
             this._highlighter.Selection.Select(elementB.Id);
             yield return null;
 
-            // A should have no highlight, B should have selection color
             var rendererA = this._cube.GetComponent<Renderer>();
             var rendererB = cubeB.GetComponent<Renderer>();
 
@@ -166,8 +163,6 @@ namespace Fram3d.Tests.Engine
             rendererB.GetPropertyBlock(block);
             var color = block.GetColor(BASE_COLOR);
             Assert.AreEqual(0f, color.r, 0.01f, "Second element should have selection color (cyan)");
-
-            Object.DestroyImmediate(cubeB);
         }
 
         [UnityTest]
@@ -175,9 +170,9 @@ namespace Fram3d.Tests.Engine
         {
             yield return null;
 
-            // Create a compound element: parent with ElementBehaviour, two child renderers
             var parent = new GameObject("Compound");
             parent.AddComponent<ElementBehaviour>();
+            this._extras.Add(parent);
 
             var childA = GameObject.CreatePrimitive(PrimitiveType.Cube);
             childA.transform.SetParent(parent.transform);
@@ -190,7 +185,6 @@ namespace Fram3d.Tests.Engine
             this._highlighter.Selection.Select(element.Id);
             yield return null;
 
-            // Both child renderers should have the selection color
             var rendererA = childA.GetComponent<Renderer>();
             var rendererB = childB.GetComponent<Renderer>();
             var blockA    = new MaterialPropertyBlock();
@@ -198,18 +192,34 @@ namespace Fram3d.Tests.Engine
             rendererA.GetPropertyBlock(blockA);
             rendererB.GetPropertyBlock(blockB);
 
-            Assert.AreNotEqual(Color.clear, blockA.GetColor(BASE_COLOR),
-                               "Child A should have selection color");
-            Assert.AreNotEqual(Color.clear, blockB.GetColor(BASE_COLOR),
-                               "Child B should have selection color");
+            // Both children should have cyan selection color
+            Assert.AreEqual(0f, blockA.GetColor(BASE_COLOR).r, 0.01f,
+                            "Child A should have selection color");
+            Assert.AreEqual(0f, blockB.GetColor(BASE_COLOR).r, 0.01f,
+                            "Child B should have selection color");
+        }
 
-            Object.DestroyImmediate(parent);
+        // --- Helpers ---
+
+        private GameObject CreateExtra(PrimitiveType type, string name = null)
+        {
+            var go = GameObject.CreatePrimitive(type);
+
+            if (name != null)
+            {
+                go.name = name;
+            }
+
+            go.AddComponent<ElementBehaviour>();
+            this._extras.Add(go);
+            return go;
         }
 
         [SetUp]
         public void SetUp()
         {
-            this._cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            this._extras = new List<GameObject>();
+            this._cube   = GameObject.CreatePrimitive(PrimitiveType.Cube);
             this._cube.name = "TestCube";
             this._cube.AddComponent<ElementBehaviour>();
 
@@ -220,6 +230,14 @@ namespace Fram3d.Tests.Engine
         [TearDown]
         public void TearDown()
         {
+            foreach (var go in this._extras)
+            {
+                if (go != null)
+                {
+                    Object.DestroyImmediate(go);
+                }
+            }
+
             Object.DestroyImmediate(this._cube);
             Object.DestroyImmediate(this._highlighterGo);
         }

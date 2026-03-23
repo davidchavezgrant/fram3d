@@ -161,7 +161,7 @@ namespace Fram3d.Tests.Engine
             var result = this._controller.TryResetActiveTool();
             Assert.IsTrue(result);
             Assert.AreEqual(0f, element.Position.X, 0.001f);
-            Assert.AreEqual(0f, element.Position.Y, 0.001f);
+            Assert.AreEqual(element.GroundOffset, element.Position.Y, 0.001f);
             Assert.AreEqual(0f, element.Position.Z, 0.001f);
         }
 

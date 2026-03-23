@@ -6,14 +6,17 @@ namespace Fram3d.Core.Camera
 {
     public class CameraElement: Element
     {
+        private const float MINIMUM_HEIGHT = 0.1f;
+
         private static readonly Vector3        DEFAULT_POSITION = new(0f, 1.6f, 5f);
         private readonly        BodyController _body            = new();
         private readonly        LensController _lens            = new();
 
         public CameraElement(ElementId id, string name): base(id, name)
         {
-            this.Position = DEFAULT_POSITION;
-            this.Rotation = Quaternion.Identity;
+            this.GroundOffset = MINIMUM_HEIGHT;
+            this.Position     = DEFAULT_POSITION;
+            this.Rotation     = Quaternion.Identity;
         }
 
         public AspectRatio ActiveAspectRatio => this._body.ActiveAspectRatio;

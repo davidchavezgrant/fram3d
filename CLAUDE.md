@@ -113,6 +113,7 @@ Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 - **`GameObject.Find` cannot find inactive objects.** After `SetActive(false)`, `GameObject.Find("name")` returns null. Use `FindObjectsByType<T>(FindObjectsInactive.Include, ...)` for inactive objects, or keep a direct reference. Prefer testing observable behavior via public properties (e.g., `controller.IsVisible`) over finding internal GameObjects.
 - **Don't test implementation details.** Avoid reflection to read private fields for assertions. If a test needs to verify something, the component should expose it as a public computed property (e.g., `IsVisible`, `IsHoveringHandle`). This makes tests compile-safe and documents the component's observable API.
 - **Child GameObjects vs scene roots.** Runtime-created child objects (like gizmo handles) should be parented to the owning MonoBehaviour's transform, not left as scene roots. Child objects auto-destroy with their parent — no manual cleanup needed. Scene root orphans require complex TearDown and leak if cleanup is missed.
+- **Input state machines must handle simultaneous transitions.** `wasPressedThisFrame` and `wasReleasedThisFrame` can both be true when a frame hitch (GC, domain reload) exceeds the duration of the physical click. Any state machine with `if (pressed) { return; }` before `if (released)` will silently discard the click. Always check for `pressed && released` first and handle it as an instant action.
 
 ## Unity Rendering
 

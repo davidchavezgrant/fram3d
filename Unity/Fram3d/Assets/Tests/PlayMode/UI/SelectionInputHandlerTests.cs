@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Reflection;
-using Fram3d.Core.Common;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
 using NUnit.Framework;
@@ -11,16 +10,15 @@ using UnityEngine.TestTools;
 namespace Fram3d.Tests.UI
 {
     /// <summary>
-    /// Play Mode tests for SelectionInputHandler. Tests the input LOGIC
-    /// (modifier guards, click-vs-drag threshold) using the Selection API
-    /// for setup and verification. Does NOT test full input→raycast→select
-    /// pipeline — that depends on Mouse.current matching the test device,
-    /// which is unreliable in Play Mode tests.
+    /// Play Mode tests for SelectionInputHandler. Tests the full input
+    /// pipeline (input → raycast → select) and input logic (modifier
+    /// guards, click-vs-drag threshold).
     ///
-    /// Full click-to-select pipeline is covered by:
-    /// - SelectionRaycasterTests (raycasting works)
-    /// - SelectionTests (select/deselect domain logic)
-    /// - Manual testing (end-to-end)
+    /// Important: the click lifecycle spans 3 frames, not 2:
+    ///   Frame 1: wasPressedThisFrame → records mouse-down position
+    ///   Frame 2: isPressed → checks drag threshold (button still held)
+    ///   Frame 3: wasReleasedThisFrame → evaluates raycast → select/deselect
+    /// Tests must yield between press and release to allow the held frame.
     /// </summary>
     public sealed class SelectionInputHandlerTests
     {
@@ -31,17 +29,81 @@ namespace Fram3d.Tests.UI
         private Keyboard              _keyboard;
         private Mouse                 _mouse;
 
-        // --- Modifier guards: Alt/Cmd block selection ---
-        // These pre-select via API, then verify modifiers prevent RE-selection
-        // on a different element (proving the guard actually fires, not just
-        // that selection starts null).
+        // --- Full pipeline: click to select ---
+
+        [UnityTest]
+        public IEnumerator Click__Selects__When__ClickingElement()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+
+            // Frame 1: mouse down
+            InputSystem.QueueStateEvent(this._mouse, new MouseState
+            {
+                position = center,
+                buttons  = 1
+            });
+            yield return null;
+
+            // Frame 2: held (drag threshold check)
+            yield return null;
+
+            // Frame 3: mouse up → raycast → select
+            InputSystem.QueueStateEvent(this._mouse, new MouseState
+            {
+                position = center,
+                buttons  = 0
+            });
+            yield return null;
+
+            Assert.IsNotNull(this._highlighter.Selection.SelectedId,
+                             "Clicking an element should select it");
+        }
+
+        [UnityTest]
+        public IEnumerator Click__Deselects__When__ClickingEmptySpace()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            // Pre-select via API
+            var element = this._cube.GetComponent<ElementBehaviour>().Element;
+            this._highlighter.Selection.Select(element.Id);
+            yield return null;
+
+            Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Precondition");
+
+            // Click empty space (top-left corner, far from cube)
+            var corner = new Vector2(10f, Screen.height - 10f);
+
+            InputSystem.QueueStateEvent(this._mouse, new MouseState
+            {
+                position = corner,
+                buttons  = 1
+            });
+            yield return null;
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._mouse, new MouseState
+            {
+                position = corner,
+                buttons  = 0
+            });
+            yield return null;
+
+            Assert.IsNull(this._highlighter.Selection.SelectedId,
+                          "Clicking empty space should deselect");
+        }
+
+        // --- Modifier guards ---
 
         [UnityTest]
         public IEnumerator AltClick__DoesNotChangeSelection__When__AltHeld()
         {
             yield return null;
 
-            // Pre-select the cube via API
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
             this._highlighter.Selection.Select(element.Id);
             yield return null;
@@ -49,7 +111,6 @@ namespace Fram3d.Tests.UI
             var selectedBefore = this._highlighter.Selection.SelectedId;
             Assert.IsNotNull(selectedBefore, "Precondition: element should be selected");
 
-            // Alt+click should NOT change the selection (reserved for orbit)
             var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftAlt));
             InputSystem.QueueStateEvent(this._mouse, new MouseState
@@ -58,12 +119,12 @@ namespace Fram3d.Tests.UI
                 buttons  = 1
             });
             yield return null;
+            yield return null;
 
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
             yield return null;
 
-            // Selection should be unchanged — the modifier guard prevented any click processing
             Assert.AreEqual(selectedBefore, this._highlighter.Selection.SelectedId,
                             "Alt+click should not change selection (reserved for orbit)");
         }
@@ -88,6 +149,7 @@ namespace Fram3d.Tests.UI
                 buttons  = 1
             });
             yield return null;
+            yield return null;
 
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
@@ -98,21 +160,54 @@ namespace Fram3d.Tests.UI
         }
 
         // --- Click-vs-drag threshold ---
-        // Uses API selection to verify drag behavior without depending on raycasts.
+
+        [UnityTest]
+        public IEnumerator Click__Selects__When__MouseMovesLessThanThreshold()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+
+            InputSystem.QueueStateEvent(this._mouse, new MouseState
+            {
+                position = center,
+                buttons  = 1
+            });
+            yield return null;
+
+            // Small movement (under 5px threshold)
+            InputSystem.QueueStateEvent(this._mouse, new MouseState
+            {
+                position = center + new Vector2(2f, 2f),
+                buttons  = 1
+            });
+            yield return null;
+
+            // Release
+            InputSystem.QueueStateEvent(this._mouse, new MouseState
+            {
+                position = center + new Vector2(2f, 2f),
+                buttons  = 0
+            });
+            yield return null;
+
+            Assert.IsNotNull(this._highlighter.Selection.SelectedId,
+                             "Small mouse movement should still count as a click and select");
+        }
 
         [UnityTest]
         public IEnumerator Drag__DoesNotDeselect__When__MouseMovesMoreThanThreshold()
         {
             yield return null;
 
-            // Pre-select via API
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
             this._highlighter.Selection.Select(element.Id);
             yield return null;
 
-            Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Precondition: should be selected");
+            Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Precondition");
 
-            // Mouse down far from cube (would deselect if it were a click)
+            // Mouse down far from cube
             var corner = new Vector2(10f, 10f);
             InputSystem.QueueStateEvent(this._mouse, new MouseState
             {
@@ -121,7 +216,7 @@ namespace Fram3d.Tests.UI
             });
             yield return null;
 
-            // Drag far (exceeds 5px threshold) — this is a drag, not a click
+            // Drag far (exceeds 5px threshold)
             InputSystem.QueueStateEvent(this._mouse, new MouseState
             {
                 position = corner + new Vector2(50f, 50f),
@@ -137,67 +232,8 @@ namespace Fram3d.Tests.UI
             });
             yield return null;
 
-            // Selection should survive — drag exceeded threshold, so no click evaluated
             Assert.IsNotNull(this._highlighter.Selection.SelectedId,
                              "Dragging past threshold should not deselect");
-        }
-
-        // --- Full pipeline diagnostics ---
-
-        [UnityTest]
-        public IEnumerator Diagnostic__FullClickPipeline__When__ClickingCube()
-        {
-            yield return null;
-            yield return new WaitForFixedUpdate();
-
-            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
-            Debug.Log($"[DIAG] Screen: {Screen.width}x{Screen.height}, center: {center}");
-            Debug.Log($"[DIAG] Cube at: {this._cube.transform.position}");
-            Debug.Log($"[DIAG] Selection before: {this._highlighter.Selection.SelectedId}");
-
-            // Frame 1: mouse down
-            InputSystem.QueueStateEvent(this._mouse, new MouseState
-            {
-                position = center,
-                buttons  = 1
-            });
-            yield return null;
-
-            Debug.Log($"[DIAG] After press frame: selection={this._highlighter.Selection.SelectedId}");
-
-            // Frame 2: mouse up (same position = click, not drag)
-            InputSystem.QueueStateEvent(this._mouse, new MouseState
-            {
-                position = center,
-                buttons  = 0
-            });
-            yield return null;
-
-            Debug.Log($"[DIAG] After release frame: selection={this._highlighter.Selection.SelectedId}");
-
-            // Don't assert — just log for investigation
-            InputSystem.QueueStateEvent(this._mouse, new MouseState());
-        }
-
-        // --- Selection domain logic (tested via API, no input simulation) ---
-
-        [Test]
-        public void Select__SetsSelectedId__When__CalledDirectly()
-        {
-            var element = this._cube.GetComponent<ElementBehaviour>().Element;
-            this._highlighter.Selection.Select(element.Id);
-
-            Assert.AreEqual(element.Id, this._highlighter.Selection.SelectedId);
-        }
-
-        [Test]
-        public void Deselect__ClearsSelectedId__When__CalledDirectly()
-        {
-            var element = this._cube.GetComponent<ElementBehaviour>().Element;
-            this._highlighter.Selection.Select(element.Id);
-            this._highlighter.Selection.Deselect();
-
-            Assert.IsNull(this._highlighter.Selection.SelectedId);
         }
 
         [SetUp]

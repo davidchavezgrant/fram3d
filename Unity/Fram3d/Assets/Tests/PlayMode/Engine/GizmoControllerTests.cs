@@ -28,21 +28,17 @@ namespace Fram3d.Tests.Engine
 
         // --- Tool switching ---
 
-        [UnityTest]
-        public IEnumerator SetActiveTool__ChangesTool__When__Called()
+        [Test]
+        public void SetActiveTool__ChangesTool__When__Called()
         {
-            yield return null;
-
             this._controller.SetActiveTool(ActiveTool.ROTATE);
 
             Assert.AreSame(ActiveTool.ROTATE, this._controller.ActiveTool);
         }
 
-        [UnityTest]
-        public IEnumerator SetActiveTool__DefaultsToTranslate__When__Created()
+        [Test]
+        public void SetActiveTool__DefaultsToTranslate__When__Created()
         {
-            yield return null;
-
             Assert.AreSame(ActiveTool.TRANSLATE, this._controller.ActiveTool);
         }
 

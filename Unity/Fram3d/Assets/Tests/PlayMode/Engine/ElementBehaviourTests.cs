@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Fram3d.Engine.Conversion;
 using Fram3d.Engine.Integration;
 using NUnit.Framework;
@@ -8,49 +9,42 @@ namespace Fram3d.Tests.Engine
 {
     public sealed class ElementBehaviourTests
     {
-        private GameObject _go;
+        private List<GameObject> _extras;
+        private GameObject       _go;
 
-        [UnityTest]
-        public IEnumerator Awake__CreatesElement__When__Added()
+        // --- Awake tests: synchronous, no frame needed ---
+
+        [Test]
+        public void Awake__CreatesElement__When__Added()
         {
-            yield return null;
-
             var behaviour = this._go.GetComponent<ElementBehaviour>();
             Assert.IsNotNull(behaviour.Element);
         }
 
-        [UnityTest]
-        public IEnumerator Awake__ElementNameMatchesGameObject__When__Created()
+        [Test]
+        public void Awake__ElementNameMatchesGameObject__When__Created()
         {
-            yield return null;
-
             var behaviour = this._go.GetComponent<ElementBehaviour>();
             Assert.AreEqual("TestElement", behaviour.Element.Name);
         }
 
-        [UnityTest]
-        public IEnumerator Awake__ElementIdIsUnique__When__MultipleCreated()
+        [Test]
+        public void Awake__ElementIdIsUnique__When__MultipleCreated()
         {
-            var go2 = new GameObject("TestElement2");
-            go2.AddComponent<ElementBehaviour>();
-            yield return null;
+            var go2 = CreateExtra("TestElement2");
 
             var id1 = this._go.GetComponent<ElementBehaviour>().Element.Id;
             var id2 = go2.GetComponent<ElementBehaviour>().Element.Id;
             Assert.AreNotEqual(id1, id2);
-
-            Object.DestroyImmediate(go2);
         }
 
-        // --- Awake captures initial transform ---
-
-        [UnityTest]
-        public IEnumerator Awake__CapturesPosition__When__GameObjectAtNonOrigin()
+        [Test]
+        public void Awake__CapturesPosition__When__GameObjectAtNonOrigin()
         {
             var go = new GameObject("OffOrigin");
             go.transform.position = new Vector3(3f, 1f, -5f);
             go.AddComponent<ElementBehaviour>();
-            yield return null;
+            this._extras.Add(go);
 
             var element = go.GetComponent<ElementBehaviour>().Element;
 
@@ -59,17 +53,15 @@ namespace Fram3d.Tests.Engine
             Assert.AreEqual(3f, element.Position.X, 0.001f);
             Assert.AreEqual(1f, element.Position.Y, 0.001f);
             Assert.AreEqual(5f, element.Position.Z, 0.001f);
-
-            Object.DestroyImmediate(go);
         }
 
-        [UnityTest]
-        public IEnumerator Awake__CapturesRotation__When__GameObjectRotated()
+        [Test]
+        public void Awake__CapturesRotation__When__GameObjectRotated()
         {
             var go = new GameObject("Rotated");
             go.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
             go.AddComponent<ElementBehaviour>();
-            yield return null;
+            this._extras.Add(go);
 
             var element  = go.GetComponent<ElementBehaviour>().Element;
             var coreRot  = element.Rotation;
@@ -81,11 +73,9 @@ namespace Fram3d.Tests.Engine
             Assert.AreEqual(expected.y, roundTrip.y, 0.001f);
             Assert.AreEqual(expected.z, roundTrip.z, 0.001f);
             Assert.AreEqual(expected.w, roundTrip.w, 0.001f);
-
-            Object.DestroyImmediate(go);
         }
 
-        // --- LateUpdate sync: Core → Unity Transform ---
+        // --- LateUpdate sync: needs frames ---
 
         [UnityTest]
         public IEnumerator LateUpdate__SyncsPosition__When__ElementPositionChanged()
@@ -113,7 +103,6 @@ namespace Fram3d.Tests.Engine
             behaviour.Element.Rotation = System.Numerics.Quaternion.CreateFromAxisAngle(axis, 1.0f);
             yield return null;
 
-            // Rotation should be non-identity after sync
             var rot = this._go.transform.rotation;
             Assert.AreNotEqual(Quaternion.identity, rot);
         }
@@ -136,32 +125,48 @@ namespace Fram3d.Tests.Engine
         [UnityTest]
         public IEnumerator LateUpdate__RoundTripsPosition__When__PositionSetFromTransform()
         {
-            // Verify the Awake capture → LateUpdate sync round-trip is stable:
-            // the object shouldn't drift from its initial position
             var go = new GameObject("RoundTrip");
             go.transform.position = new Vector3(7f, -2f, 13f);
             go.AddComponent<ElementBehaviour>();
+            this._extras.Add(go);
             yield return null;
-            yield return null; // Two frames to let both Awake and LateUpdate run
+            yield return null;
 
             var pos = go.transform.position;
             Assert.AreEqual(7f,  pos.x, 0.001f, "X should not drift");
             Assert.AreEqual(-2f, pos.y, 0.001f, "Y should not drift");
             Assert.AreEqual(13f, pos.z, 0.001f, "Z should not drift");
+        }
 
-            Object.DestroyImmediate(go);
+        // --- Helpers ---
+
+        private GameObject CreateExtra(string name)
+        {
+            var go = new GameObject(name);
+            go.AddComponent<ElementBehaviour>();
+            this._extras.Add(go);
+            return go;
         }
 
         [SetUp]
         public void SetUp()
         {
-            this._go = new GameObject("TestElement");
+            this._extras = new List<GameObject>();
+            this._go     = new GameObject("TestElement");
             this._go.AddComponent<ElementBehaviour>();
         }
 
         [TearDown]
         public void TearDown()
         {
+            foreach (var go in this._extras)
+            {
+                if (go != null)
+                {
+                    Object.DestroyImmediate(go);
+                }
+            }
+
             Object.DestroyImmediate(this._go);
         }
     }

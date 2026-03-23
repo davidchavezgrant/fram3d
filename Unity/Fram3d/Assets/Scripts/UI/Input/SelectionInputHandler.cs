@@ -1,5 +1,6 @@
 using Fram3d.Core.Scene;
 using Fram3d.Engine.Integration;
+using Riten.Native.Cursors;
 using UnityEngine;
 using UnityEngine.InputSystem;
 namespace Fram3d.UI.Input
@@ -23,10 +24,11 @@ namespace Fram3d.UI.Input
         [SerializeField]
         private SelectionRaycaster raycaster;
 
-        private bool    _isDragging;
-        private bool    _isGizmoDragging;
-        private bool    _mouseDownValid;
-        private Vector2 _mouseDownPosition;
+        private bool      _cursorIsPointer;
+        private bool      _isDragging;
+        private bool      _isGizmoDragging;
+        private bool      _mouseDownValid;
+        private Vector2   _mouseDownPosition;
         private Selection _selection;
 
         private void Start()
@@ -63,6 +65,7 @@ namespace Fram3d.UI.Input
 
             this.UpdateHover(mousePosition);
             this.UpdateGizmoHover(mousePosition);
+            this.UpdateCursor();
             this.UpdateSelection(mouse, keyboard, mousePosition);
         }
 
@@ -72,6 +75,26 @@ namespace Fram3d.UI.Input
             {
                 this.gizmoController.UpdateHover(mousePosition);
             }
+        }
+
+        private void UpdateCursor()
+        {
+            var overElement = this._selection?.HoveredId != null;
+            var overGizmo   = this.gizmoController != null
+                           && this.gizmoController.ActiveTool != ActiveTool.SELECT
+                           && this.gizmoController.IsHoveringHandle;
+            var wantPointer = overElement || overGizmo;
+
+            if (wantPointer)
+            {
+                NativeCursor.SetCursor(NTCursors.Link);
+            }
+            else if (this._cursorIsPointer)
+            {
+                NativeCursor.ResetCursor();
+            }
+
+            this._cursorIsPointer = wantPointer;
         }
 
         private void UpdateGizmoDrag(Mouse mouse, Vector2 mousePosition)

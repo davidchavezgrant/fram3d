@@ -126,6 +126,12 @@ namespace Fram3d.UI.Input
 
         private void UpdateSelection(Mouse mouse, Keyboard keyboard, Vector2 mousePosition)
         {
+            // TODO: Remove diagnostic logging after test investigation
+            if (mouse.leftButton.wasPressedThisFrame || mouse.leftButton.wasReleasedThisFrame || this._mouseDownValid)
+            {
+                Debug.Log($"[SEL] pressed={mouse.leftButton.wasPressedThisFrame} released={mouse.leftButton.wasReleasedThisFrame} held={mouse.leftButton.isPressed} valid={this._mouseDownValid} dragging={this._isDragging} gizmoDrag={this._isGizmoDragging} pos={mousePosition}");
+            }
+
             if (mouse.leftButton.wasPressedThisFrame)
             {
                 // Skip if modifier held — those are camera operations
@@ -174,6 +180,7 @@ namespace Fram3d.UI.Input
                 }
 
                 var element = this.raycaster.Raycast(mousePosition);
+                Debug.Log($"[SEL] Release raycast at {mousePosition}: {(element != null ? element.Name : "null")}");
 
                 if (element != null)
                 {

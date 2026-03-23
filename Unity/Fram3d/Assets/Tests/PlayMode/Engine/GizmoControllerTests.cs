@@ -237,9 +237,11 @@ namespace Fram3d.Tests.Engine
             this._cube.transform.position = new Vector3(0f, 0f, 5f);
             this._cube.AddComponent<ElementBehaviour>();
 
-            // Capture GizmoRoot reference while it exists (before any SetActive(false))
-            // GizmoController.Awake creates it as a scene root GameObject
-            this._gizmoRoot = GameObject.Find("GizmoRoot");
+            // GizmoController.Awake creates GizmoRoot and immediately sets it inactive.
+            // GameObject.Find can't find inactive objects, so use reflection.
+            var rootField = typeof(GizmoController).GetField("_gizmoRoot",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            this._gizmoRoot = (GameObject)rootField.GetValue(this._controller);
         }
 
         [TearDown]

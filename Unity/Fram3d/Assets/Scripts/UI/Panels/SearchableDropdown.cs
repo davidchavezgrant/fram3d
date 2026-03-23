@@ -44,7 +44,9 @@ namespace Fram3d.UI.Panels
         public void Close()
         {
             if (!this._isOpen)
+            {
                 return;
+            }
 
             this._isOpen                        = false;
             this._dropdownOverlay.style.display = DisplayStyle.None;
@@ -66,7 +68,9 @@ namespace Fram3d.UI.Panels
             this._browseItems = filteredItems;
 
             if (!string.IsNullOrEmpty(this._searchField.value))
+            {
                 return;
+            }
 
             this._filteredItems.Clear();
             this._filteredItems.AddRange(this._browseItems);
@@ -139,7 +143,9 @@ namespace Fram3d.UI.Panels
         private void ConfirmSelection(int filteredIndex)
         {
             if (filteredIndex < 0 || filteredIndex >= this._filteredItems.Count)
+            {
                 return;
+            }
 
             var selectedName = this._filteredItems[filteredIndex];
             this._selectedIndex      = this._allItems.IndexOf(selectedName);

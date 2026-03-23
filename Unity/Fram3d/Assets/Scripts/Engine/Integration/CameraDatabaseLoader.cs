@@ -34,7 +34,9 @@ namespace Fram3d.Engine.Integration
         private static void LoadBodies(CameraDatabase db, RawDatabase rawDb)
         {
             if (rawDb.cameras == null)
+            {
                 return;
+            }
 
             foreach (var raw in rawDb.cameras)
             {
@@ -56,7 +58,9 @@ namespace Fram3d.Engine.Integration
         private static void LoadLensSets(CameraDatabase db, RawDatabase rawDb)
         {
             if (rawDb.lenses == null)
+            {
                 return;
+            }
 
             var groupedBySet = rawDb.lenses.GroupBy(l => l.set).OrderBy(g => g.Key);
 
@@ -85,7 +89,9 @@ namespace Fram3d.Engine.Integration
                              .ToArray();
 
             if (specs.Length == 0)
+            {
                 return;
+            }
 
             db.AddLensSet(new LensSet(setName,
                                       specs,
@@ -100,7 +106,9 @@ namespace Fram3d.Engine.Integration
                 var range = lens.focal_range_mm;
 
                 if (range == null || range.Length != 2)
+                {
                     continue;
+                }
 
                 db.AddLensSet(new LensSet(lens.name,
                                           range[0],
@@ -115,7 +123,9 @@ namespace Fram3d.Engine.Integration
         private static SensorMode[] ParseSensorModes(RawSensorMode[] rawModes)
         {
             if (rawModes == null || rawModes.Length == 0)
+            {
                 return null;
+            }
 
             var modes = new SensorMode[rawModes.Length];
 

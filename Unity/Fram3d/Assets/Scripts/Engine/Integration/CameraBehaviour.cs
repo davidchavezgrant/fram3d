@@ -29,7 +29,9 @@ namespace Fram3d.Engine.Integration
         private void ApplyShake(CameraElement cam)
         {
             if (!cam.ShakeEnabled)
+            {
                 return;
+            }
 
             var t         = Time.time                                             * cam.ShakeFrequency;
             var amplitude = cam.ShakeAmplitude                                    * SHAKE_ROTATION_SCALE;
@@ -92,7 +94,9 @@ namespace Fram3d.Engine.Integration
             this._displayedFocalLength = Mathf.Lerp(this._displayedFocalLength, targetFocalLength, Time.deltaTime * FOCAL_LENGTH_LERP_SPEED);
 
             if (Mathf.Abs(this._displayedFocalLength - targetFocalLength) < 0.01f)
+            {
                 this._displayedFocalLength = targetFocalLength;
+            }
         }
 
         /// <summary>
@@ -137,10 +141,14 @@ namespace Fram3d.Engine.Integration
             var defaultLensSet = this._database.DefaultLensSet;
 
             if (defaultBody != null)
+            {
                 cam.SetBody(defaultBody);
+            }
 
             if (defaultLensSet != null)
+            {
                 cam.SetLensSet(defaultLensSet);
+            }
 
             this._displayedFocalLength   = cam.FocalLength;
             this._unityCamera.sensorSize = new Vector2(cam.SensorWidth, cam.SensorHeight);

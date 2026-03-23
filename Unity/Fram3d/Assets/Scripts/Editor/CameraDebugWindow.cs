@@ -35,7 +35,9 @@ namespace Fram3d.Editor
             var newIndex = EditorGUILayout.Popup(this._selectedBodyIndex, this._bodyNames);
 
             if (newIndex == this._selectedBodyIndex)
+            {
                 return;
+            }
 
             this._selectedBodyIndex = newIndex;
             cam.SetBody(db.Bodies[newIndex]);
@@ -62,7 +64,9 @@ namespace Fram3d.Editor
             var newIndex = EditorGUILayout.Popup(this._selectedLensSetIndex, this._lensSetNames);
 
             if (newIndex == this._selectedLensSetIndex)
+            {
                 return;
+            }
 
             this._selectedLensSetIndex = newIndex;
             cam.SetLensSet(db.LensSets[newIndex]);
@@ -71,7 +75,9 @@ namespace Fram3d.Editor
         private void OnPlayModeChanged(PlayModeStateChange state)
         {
             if (state == PlayModeStateChange.EnteredPlayMode)
+            {
                 this.RefreshReferences();
+            }
         }
 
         private void RefreshReferences()
@@ -79,7 +85,9 @@ namespace Fram3d.Editor
             this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
 
             if (this._cameraBehaviour != null)
+            {
                 this.BuildDropdowns(this._cameraBehaviour.Database);
+            }
         }
 
         private static void DrawLensSetDetails(CameraElement cam)
@@ -87,7 +95,9 @@ namespace Fram3d.Editor
             var lensSet = cam.ActiveLensSet;
 
             if (lensSet == null)
+            {
                 return;
+            }
 
             EditorGUILayout.Space();
 
@@ -103,7 +113,9 @@ namespace Fram3d.Editor
             }
 
             if (lensSet.IsAnamorphic)
+            {
                 EditorGUILayout.LabelField("Squeeze", $"{lensSet.SqueezeFactor}x");
+            }
         }
 
         private void OnEnable()
@@ -120,7 +132,9 @@ namespace Fram3d.Editor
             }
 
             if (this._cameraBehaviour == null)
+            {
                 this.RefreshReferences();
+            }
 
             if (this._cameraBehaviour == null)
             {
@@ -132,7 +146,9 @@ namespace Fram3d.Editor
             var db  = this._cameraBehaviour.Database;
 
             if (this._bodyNames == null)
+            {
                 this.BuildDropdowns(db);
+            }
 
             this.DrawCurrentState(cam);
             this.DrawBodySelector(cam, db);

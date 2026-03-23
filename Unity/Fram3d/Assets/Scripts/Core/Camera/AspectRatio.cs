@@ -46,10 +46,12 @@ namespace Fram3d.Core.Camera
         public UnmaskedRect ComputeUnmaskedRect(float viewWidth, float viewHeight, SensorMode activeSensorMode = null)
         {
             if (viewWidth <= 0f || viewHeight <= 0f)
+            {
                 return new UnmaskedRect(0f,
                                         0f,
                                         viewWidth,
                                         viewHeight);
+            }
 
             float targetRatio;
 

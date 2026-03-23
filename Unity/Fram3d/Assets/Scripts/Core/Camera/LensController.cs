@@ -93,10 +93,14 @@ namespace Fram3d.Core.Camera
             get
             {
                 if (this.ActiveLensSet == null)
+                {
                     return 0f;
+                }
 
                 if (!this.ActiveLensSet.IsZoom && this._primeLensIndex < this.ActiveLensSet.Specs.Length)
+                {
                     return this.ActiveLensSet.Specs[this._primeLensIndex].CloseFocusM;
+                }
 
                 return this.ActiveLensSet.CloseFocusM;
             }
@@ -111,10 +115,14 @@ namespace Fram3d.Core.Camera
             get
             {
                 if (this.ActiveLensSet == null)
+                {
                     return 0f;
+                }
 
                 if (!this.ActiveLensSet.IsZoom && this._primeLensIndex < this.ActiveLensSet.Specs.Length)
+                {
                     return this.ActiveLensSet.Specs[this._primeLensIndex].MaxAperture;
+                }
 
                 return this.ActiveLensSet.MaxAperture;
             }
@@ -128,7 +136,9 @@ namespace Fram3d.Core.Camera
         public void SetFocalLength(float mm)
         {
             if (this.ActiveLensSet != null && !this.ActiveLensSet.IsZoom)
+            {
                 return;
+            }
 
             this.FocalLength = mm;
         }
@@ -144,7 +154,9 @@ namespace Fram3d.Core.Camera
             this.ActiveLensSet = lensSet;
 
             if (lensSet == null)
+            {
                 return;
+            }
 
             if (lensSet.IsZoom)
             {
@@ -179,7 +191,9 @@ namespace Fram3d.Core.Camera
         public void StepApertureNarrower()
         {
             if (this._apertureIndex < APERTURE_STOPS.Length - 1)
+            {
                 this._apertureIndex++;
+            }
         }
 
         /// <summary>
@@ -189,13 +203,17 @@ namespace Fram3d.Core.Camera
         public void StepApertureWider()
         {
             if (this._apertureIndex <= 0)
+            {
                 return;
+            }
 
             var candidate   = this._apertureIndex - 1;
             var maxAperture = this.CurrentMaxAperture;
 
             if (maxAperture > 0 && APERTURE_STOPS[candidate] < maxAperture)
+            {
                 return;
+            }
 
             this._apertureIndex = candidate;
         }
@@ -224,7 +242,9 @@ namespace Fram3d.Core.Camera
             var maxAperture = this.CurrentMaxAperture;
 
             if (maxAperture <= 0)
+            {
                 return;
+            }
 
             while (this._apertureIndex < APERTURE_STOPS.Length - 1 && APERTURE_STOPS[this._apertureIndex] < maxAperture)
                 this._apertureIndex++;
@@ -235,18 +255,24 @@ namespace Fram3d.Core.Camera
             var closeFocus = this.CurrentCloseFocusM;
 
             if (closeFocus > 0 && this._focusDistance < closeFocus)
+            {
                 this._focusDistance = closeFocus;
+            }
         }
 
         private void StepFocalLength(int direction)
         {
             if (this.ActiveLensSet == null || this.ActiveLensSet.IsZoom)
+            {
                 return;
+            }
 
             var lengths = this.ActiveLensSet.FocalLengths;
 
             if (lengths.Length == 0)
+            {
                 return;
+            }
 
             var currentIndex = FindNearestIndex(lengths, this.FocalLength);
             var newIndex     = Math.Clamp(currentIndex + direction, 0, lengths.Length - 1);
@@ -267,7 +293,9 @@ namespace Fram3d.Core.Camera
                 var diff = MathF.Abs(values[i] - target);
 
                 if (diff >= bestDiff)
+                {
                     continue;
+                }
 
                 bestDiff  = diff;
                 bestIndex = i;

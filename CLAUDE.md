@@ -34,9 +34,10 @@ The `.editorconfig` at the project root is the source of truth for formatting. T
 - **Expression bodies** for methods, properties, accessors (single-expression only).
 - **No space before `:` in inheritance/constraints.**
 - **Column-align** fields, properties, variables, assignments.
-- **Braces required for multiline only.** `using` blocks never require braces.
+- **Braces always required on conditionals** (`if`, `else if`, `else`). No exceptions, even for single-line bodies. `using` blocks never require braces. `for`, `foreach`, `while`, `do-while`, `lock` require braces for multiline only.
 - **No extra blank lines** — formatter strips them (keep_blank_lines = 0).
 - **Early return** over else blocks — if an `if` branch returns/continues/breaks and the else would be the rest of the method, drop the else and early return.
+- **No single-line conditional bodies.** The body of an `if`/`else` must be on its own line inside braces. Never `if (x) return;` on one line.
 - **Local variables for readability** — when passing `this._thing.Property` chains into method calls, introduce a short local variable to keep lines readable.
 - **Member ordering** — enforced by Rider, alphabetized within each group: constants/static fields → instance fields → constructors → properties → methods. Alphabetical order within each group. **Common mistakes:** placing properties above constructors, and placing methods out of alphabetical order (e.g., `StepFocalLengthUp` before `StepFocalLengthDown`). Double-check ordering before committing.
 - **Column alignment** — when adding or changing members, recalculate alignment for the entire group. Don't leave stale padding from previous column widths.

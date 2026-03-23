@@ -18,6 +18,7 @@ namespace Fram3d.Editor
         public static void Bootstrap()
         {
             SetupCamera();
+            SetupSelection();
             SetupAspectRatioMask();
             SetupCompositionGuides();
             SetupPropertiesPanel();
@@ -40,9 +41,12 @@ namespace Fram3d.Editor
             var renderer = gameObject.GetComponent<Renderer>();
 
             if (renderer != null)
-            {
                 renderer.material.color = color;
-            }
+
+            // Make the object a selectable scene element.
+            // ElementBehaviour self-initializes its Element in Awake().
+            if (gameObject.GetComponent<ElementBehaviour>() == null)
+                gameObject.AddComponent<ElementBehaviour>();
 
             EditorUtility.SetDirty(gameObject);
         }
@@ -162,6 +166,39 @@ namespace Fram3d.Editor
             }
 
             EditorUtility.SetDirty(plane);
+        }
+
+        private static void SetupSelection()
+        {
+            var cameraGo = GameObject.Find("Main Camera");
+
+            // SelectionRaycaster on the camera
+            var raycaster = cameraGo.GetComponent<SelectionRaycaster>();
+
+            if (raycaster == null)
+                raycaster = cameraGo.AddComponent<SelectionRaycaster>();
+
+            var raycasterSo = new SerializedObject(raycaster);
+            raycasterSo.FindProperty("targetCamera").objectReferenceValue = cameraGo.GetComponent<Camera>();
+            raycasterSo.ApplyModifiedProperties();
+
+            // SelectionHighlighter on the camera
+            var highlighter = cameraGo.GetComponent<SelectionHighlighter>();
+
+            if (highlighter == null)
+                highlighter = cameraGo.AddComponent<SelectionHighlighter>();
+
+            // SelectionInputHandler on the camera
+            var selectionInput = cameraGo.GetComponent<SelectionInputHandler>();
+
+            if (selectionInput == null)
+                selectionInput = cameraGo.AddComponent<SelectionInputHandler>();
+
+            var selectionInputSo = new SerializedObject(selectionInput);
+            selectionInputSo.FindProperty("selectionHighlighter").objectReferenceValue = highlighter;
+            selectionInputSo.FindProperty("raycaster").objectReferenceValue            = raycaster;
+            selectionInputSo.ApplyModifiedProperties();
+            EditorUtility.SetDirty(cameraGo);
         }
 
         private static void SetupPropertiesPanel()

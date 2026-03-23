@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using UnityEngine;
 
-namespace Riten.Native.Cursors
+namespace Fram3d.Engine.Cursor
 {
     /// <summary>
     /// Runtime macOS cursor service for standalone builds.
@@ -12,7 +12,7 @@ namespace Riten.Native.Cursors
     /// </summary>
     public class MacOSCursorService : MonoBehaviour, ICursorService
     {
-        private NTCursors? _activeCursor;
+        private CursorType? _activeCursor;
 
         [DllImport("CursorWrapper")]
         private static extern void RefreshActiveCursor();
@@ -56,20 +56,20 @@ namespace Riten.Native.Cursors
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Setup()
         {
-            var go = new GameObject("NativeCursor#MacOSCursorService")
+            var go = new GameObject("CursorManager#MacOS")
             {
                 hideFlags = HideFlags.HideAndDontSave
             };
             DontDestroyOnLoad(go);
 
             var service = go.AddComponent<MacOSCursorService>();
-            NativeCursor.SetFallbackService(service);
-            NativeCursor.SetService(service);
+            CursorManager.SetFallbackService(service);
+            CursorManager.SetService(service);
         }
 
-        public bool SetCursor(NTCursors cursor)
+        public bool SetCursor(CursorType cursor)
         {
-            if (cursor == NTCursors.Default || cursor == NTCursors.Arrow)
+            if (cursor == CursorType.Default || cursor == CursorType.Arrow)
             {
                 this.ResetCursor();
                 return true;
@@ -79,40 +79,40 @@ namespace Riten.Native.Cursors
 
             switch (cursor)
             {
-                case NTCursors.IBeam:
+                case CursorType.IBeam:
                     SetCursorToIBeam();
                     return true;
-                case NTCursors.Crosshair:
+                case CursorType.Crosshair:
                     SetCursorToCrosshair();
                     return true;
-                case NTCursors.Link:
+                case CursorType.Link:
                     SetCursorToPointingHand();
                     return true;
-                case NTCursors.Busy:
+                case CursorType.Busy:
                     SetCursorToBusy();
                     return true;
-                case NTCursors.Invalid:
+                case CursorType.Invalid:
                     SetCursorToOperationNotAllowed();
                     return true;
-                case NTCursors.ResizeVertical:
+                case CursorType.ResizeVertical:
                     SetCursorToResizeUpDown();
                     return true;
-                case NTCursors.ResizeHorizontal:
+                case CursorType.ResizeHorizontal:
                     SetCursorToResizeLeftRight();
                     return true;
-                case NTCursors.ResizeDiagonalLeft:
+                case CursorType.ResizeDiagonalLeft:
                     SetCursorToResizeUp();
                     return true;
-                case NTCursors.ResizeDiagonalRight:
+                case CursorType.ResizeDiagonalRight:
                     SetCursorToResizeDown();
                     return true;
-                case NTCursors.ResizeAll:
+                case CursorType.ResizeAll:
                     this.ResetCursor();
                     return true;
-                case NTCursors.OpenHand:
+                case CursorType.OpenHand:
                     SetCursorToOpenHand();
                     return true;
-                case NTCursors.ClosedHand:
+                case CursorType.ClosedHand:
                     SetCursorToClosedHand();
                     return true;
                 default:

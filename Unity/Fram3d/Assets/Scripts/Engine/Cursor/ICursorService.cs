@@ -1,6 +1,6 @@
-namespace Riten.Native.Cursors
+namespace Fram3d.Engine.Cursor
 {
-    public enum NTCursors
+    public enum CursorType
     {
         Default,
         Arrow,
@@ -18,10 +18,9 @@ namespace Riten.Native.Cursors
         ClosedHand
     }
 
-
     public interface ICursorService
     {
-        bool SetCursor(NTCursors ntCursor);
+        bool SetCursor(CursorType cursor);
         void ResetCursor();
     }
 }

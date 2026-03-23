@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
-namespace Riten.Native.Cursors
+namespace Fram3d.Engine.Cursor
 {
     internal class WindowsCursorPatch : MonoBehaviour, ICursorService
     {
@@ -23,7 +23,7 @@ namespace Riten.Native.Cursors
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Setup()
         {
-            var go = new GameObject("NativeCursor#WindowsCursorService")
+            var go = new GameObject("CursorManager#Windows")
             {
                 hideFlags = HideFlags.HideAndDontSave
             };
@@ -31,8 +31,8 @@ namespace Riten.Native.Cursors
 
             var service = go.AddComponent<WindowsCursorPatch>();
 
-            NativeCursor.SetFallbackService(service);
-            NativeCursor.SetService(service);
+            CursorManager.SetFallbackService(service);
+            CursorManager.SetService(service);
         }
         
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
@@ -70,7 +70,7 @@ namespace Riten.Native.Cursors
 
         private static IntPtr cursorHandle;
 
-        static readonly Dictionary<NTCursors, IntPtr> _cursors = new ();
+        static readonly Dictionary<CursorType, IntPtr> _cursors = new ();
 
         void Awake()
         {
@@ -107,28 +107,28 @@ namespace Riten.Native.Cursors
             return new IntPtr(SetWindowLong32(hWnd, nIndex, dwNewLong.ToInt32()));
         }
 
-        static IntPtr GetCursor(NTCursors nativeCursorName)
+        static IntPtr GetCursor(CursorType nativeCursorName)
         {
             if (_cursors.TryGetValue(nativeCursorName, out var cursor))
                 return cursor;
             
             cursor = LoadCursor(IntPtr.Zero, nativeCursorName switch
             {
-                NTCursors.Default => IDC_ARROW,
-                NTCursors.Arrow => IDC_ARROW,
-                NTCursors.IBeam => IDC_IBEAM,
-                NTCursors.Crosshair => IDC_CROSS,
-                NTCursors.Link => IDC_HAND,
-                NTCursors.ResizeVertical => IDC_SIZENS,
-                NTCursors.ResizeHorizontal => IDC_SIZEWE,
-                NTCursors.ResizeDiagonalLeft => IDC_SIZENWSE,
-                NTCursors.ResizeDiagonalRight => IDC_SIZENESW,
-                NTCursors.ResizeAll => IDC_SIZEALL,
-                NTCursors.Busy => IDC_WAIT,
-                NTCursors.Invalid => IDC_NO,
+                CursorType.Default => IDC_ARROW,
+                CursorType.Arrow => IDC_ARROW,
+                CursorType.IBeam => IDC_IBEAM,
+                CursorType.Crosshair => IDC_CROSS,
+                CursorType.Link => IDC_HAND,
+                CursorType.ResizeVertical => IDC_SIZENS,
+                CursorType.ResizeHorizontal => IDC_SIZEWE,
+                CursorType.ResizeDiagonalLeft => IDC_SIZENWSE,
+                CursorType.ResizeDiagonalRight => IDC_SIZENESW,
+                CursorType.ResizeAll => IDC_SIZEALL,
+                CursorType.Busy => IDC_WAIT,
+                CursorType.Invalid => IDC_NO,
                 
-                NTCursors.OpenHand => 32516,
-                NTCursors.ClosedHand => IDC_HAND,
+                CursorType.OpenHand => 32516,
+                CursorType.ClosedHand => IDC_HAND,
                 
                 _ => throw new ArgumentOutOfRangeException(nameof(nativeCursorName), nativeCursorName, null)
             });
@@ -137,7 +137,7 @@ namespace Riten.Native.Cursors
             return cursor;
         }
 
-        public bool SetCursor(NTCursors nativeCursorName)
+        public bool SetCursor(CursorType nativeCursorName)
         {
             var arrowCursorHandle = GetCursor(nativeCursorName);
 
@@ -151,7 +151,7 @@ namespace Riten.Native.Cursors
 
         public void ResetCursor()
         {
-            SetCursor(NTCursors.Default);
+            SetCursor(CursorType.Default);
         }
     }
 }

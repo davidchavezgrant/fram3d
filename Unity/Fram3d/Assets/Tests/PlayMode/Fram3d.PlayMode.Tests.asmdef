@@ -5,7 +5,6 @@
     "Fram3d.Core",
     "Fram3d.Engine",
     "Fram3d.UI",
-    "NativeCursor.Runtime",
     "Unity.InputSystem",
     "Unity.InputSystem.TestFramework",
     "Unity.RenderPipelines.Core.Runtime",

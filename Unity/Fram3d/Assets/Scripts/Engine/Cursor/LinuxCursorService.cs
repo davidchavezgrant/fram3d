@@ -4,22 +4,22 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
-namespace Riten.Native.Cursors
+namespace Fram3d.Engine.Cursor
 {
     internal class LinuxCursorService : MonoBehaviour, ICursorService
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Setup()
         {
-            var go = new GameObject("NativeCursor#LinuxCursorService")
+            var go = new GameObject("CursorManager#Linux")
             {
                 hideFlags = HideFlags.HideAndDontSave
             };
             DontDestroyOnLoad(go);
 
             var service = go.AddComponent<LinuxCursorService>();
-            NativeCursor.SetFallbackService(service);
-            NativeCursor.SetService(service);
+            CursorManager.SetFallbackService(service);
+            CursorManager.SetService(service);
         }
         
         [DllImport("libX11")]
@@ -50,7 +50,7 @@ namespace Riten.Native.Cursors
         private const uint XC_fleur = 52;                   // ResizeAll
         private const uint XC_hand2 = 60;                   // DragDrop
 
-        readonly Dictionary<NTCursors, IntPtr> _cursors = new ();
+        readonly Dictionary<CursorType, IntPtr> _cursors = new ();
 
         private IntPtr _display;
         private IntPtr _window;
@@ -60,27 +60,27 @@ namespace Riten.Native.Cursors
             return XCreateFontCursor(_display, cursor);
         }
         
-        IntPtr LoadCursor(NTCursors nativeCursor)
+        IntPtr LoadCursor(CursorType nativeCursor)
         {
             if (_cursors.TryGetValue(nativeCursor, out var cursor))
                 return cursor;
             
             cursor = nativeCursor switch
             {
-                NTCursors.Default => Load(XC_arrow),
-                NTCursors.Arrow => Load(XC_arrow),
-                NTCursors.IBeam => Load(XC_xterm),
-                NTCursors.Crosshair => Load(XC_crosshair),
-                NTCursors.Link => Load(XC_hand2),
-                NTCursors.Busy => Load(XC_watch),
-                NTCursors.Invalid => Load(XC_X_cursor),
-                NTCursors.ResizeVertical => Load(XC_sb_v_double_arrow),
-                NTCursors.ResizeHorizontal => Load(XC_sb_h_double_arrow),
-                NTCursors.ResizeDiagonalLeft => Load(XC_bottom_left_corner),
-                NTCursors.ResizeDiagonalRight => Load(XC_bottom_right_corner),
-                NTCursors.ResizeAll => Load(XC_fleur),
-                NTCursors.OpenHand => Load(XC_hand1),
-                NTCursors.ClosedHand => Load(XC_hand1),
+                CursorType.Default => Load(XC_arrow),
+                CursorType.Arrow => Load(XC_arrow),
+                CursorType.IBeam => Load(XC_xterm),
+                CursorType.Crosshair => Load(XC_crosshair),
+                CursorType.Link => Load(XC_hand2),
+                CursorType.Busy => Load(XC_watch),
+                CursorType.Invalid => Load(XC_X_cursor),
+                CursorType.ResizeVertical => Load(XC_sb_v_double_arrow),
+                CursorType.ResizeHorizontal => Load(XC_sb_h_double_arrow),
+                CursorType.ResizeDiagonalLeft => Load(XC_bottom_left_corner),
+                CursorType.ResizeDiagonalRight => Load(XC_bottom_right_corner),
+                CursorType.ResizeAll => Load(XC_fleur),
+                CursorType.OpenHand => Load(XC_hand1),
+                CursorType.ClosedHand => Load(XC_hand1),
                 _ => throw new ArgumentOutOfRangeException(nameof(cursor), cursor, null)
             };
             
@@ -109,7 +109,7 @@ namespace Riten.Native.Cursors
             Debug.Log($"Display: {_display}; RootWindow: {_window}");
         }
 
-        public bool SetCursor(NTCursors nativeCursorName)
+        public bool SetCursor(CursorType nativeCursorName)
         {
             var cursor = LoadCursor(nativeCursorName);
 
@@ -126,7 +126,7 @@ namespace Riten.Native.Cursors
 
         public void ResetCursor()
         {
-            SetCursor(NTCursors.Default);
+            SetCursor(CursorType.Default);
         }
     }
 }

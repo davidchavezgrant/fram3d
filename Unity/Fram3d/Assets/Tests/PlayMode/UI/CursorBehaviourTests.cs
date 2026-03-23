@@ -3,7 +3,7 @@ using System.Reflection;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
 using NUnit.Framework;
-using Riten.Native.Cursors;
+using Fram3d.Engine.Cursor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
@@ -12,8 +12,8 @@ namespace Fram3d.Tests.UI
 {
     /// <summary>
     /// Tests that the cursor management pipeline (SelectionInputHandler →
-    /// NativeCursor → ICursorService) calls the right service methods at the
-    /// right time. Uses a RecordingCursorService injected via NativeCursor.SetService()
+    /// CursorManager → ICursorService) calls the right service methods at the
+    /// right time. Uses a RecordingCursorService injected via CursorManager.SetService()
     /// to observe calls without touching platform-specific cursor code.
     ///
     /// Does NOT test the native macOS cursor implementation (EditorCursorService,
@@ -30,10 +30,101 @@ namespace Fram3d.Tests.UI
         private Mouse                  _mouse;
         private ICursorService         _originalService;
 
-        // --- Hover → cursor set/reset ---
+        // --- OnDisable cleanup ---
 
         [UnityTest]
-        public IEnumerator UpdateCursor__SetsLink__When__HoveringElement()
+        public IEnumerator OnDisable__ResetsCursor__When__CursorIsPointer()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            // Hover cube to set pointer
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
+            yield return null;
+
+            Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor, "Precondition");
+            this._cursorService.ResetCounts();
+            this._handler.enabled = false;
+            Assert.IsTrue(this._cursorService.ResetCallCount > 0, "Disabling the handler should reset the cursor");
+        }
+
+        [Test]
+        public void ResetCursor__DelegatesToService__When__ServiceIsSet()
+        {
+            CursorManager.SetCursor(CursorType.Link);
+            this._cursorService.ResetCounts();
+            CursorManager.ResetCursor();
+            Assert.IsTrue(this._cursorService.ResetCallCount > 0);
+        }
+
+        // --- CursorManager facade routing ---
+
+        [Test]
+        public void SetCursor__DelegatesToService__When__ServiceIsSet()
+        {
+            var result = CursorManager.SetCursor(CursorType.Crosshair);
+            Assert.IsTrue(result);
+            Assert.AreEqual(CursorType.Crosshair, this._cursorService.LastCursor);
+        }
+
+        [Test]
+        public void SetCursor__ReturnsFalse__When__NoServiceSet()
+        {
+            CursorManager.SetService(null);
+            var result = CursorManager.SetCursor(CursorType.Link);
+            Assert.IsFalse(result);
+
+            // Restore for subsequent tests
+            CursorManager.SetService(this._cursorService);
+            this._cursorService.ResetCounts();
+        }
+
+        // --- Setup / TearDown ---
+
+        [SetUp]
+        public void SetUp()
+        {
+            this._cameraGo = new GameObject("TestCamera");
+            var camera = this._cameraGo.AddComponent<Camera>();
+            this._cameraGo.transform.position = Vector3.zero;
+            this._cameraGo.transform.rotation = Quaternion.identity;
+            var raycaster = this._cameraGo.AddComponent<SelectionRaycaster>();
+            SetField(raycaster, "targetCamera", camera);
+            this._highlighter = this._cameraGo.AddComponent<SelectionHighlighter>();
+            this._handler     = this._cameraGo.AddComponent<SelectionInputHandler>();
+            SetField(this._handler, "selectionHighlighter", this._highlighter);
+            SetField(this._handler, "raycaster",            raycaster);
+            this._cube                    = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            this._cube.name               = "TestCube";
+            this._cube.transform.position = new Vector3(0f, 0f, 5f);
+            this._cube.AddComponent<ElementBehaviour>();
+            this._mouse = InputSystem.AddDevice<Mouse>();
+
+            // Inject recording cursor service, save original for restore
+            this._originalService = GetStaticField<ICursorService>(typeof(CursorManager), "_instance");
+            this._cursorService   = new RecordingCursorService();
+            CursorManager.SetService(this._cursorService);
+            this._cursorService.ResetCounts();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            // Restore original cursor service before cleanup
+            if (this._originalService != null)
+            {
+                CursorManager.SetService(this._originalService);
+            }
+
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+            InputSystem.RemoveDevice(this._mouse);
+            Object.DestroyImmediate(this._cube);
+            Object.DestroyImmediate(this._cameraGo);
+        }
+
+        [UnityTest]
+        public IEnumerator UpdateCursor__NoRedundantCalls__When__ContinuouslyHovering()
         {
             yield return null;
             yield return new WaitForFixedUpdate();
@@ -42,8 +133,18 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
             yield return null;
 
-            Assert.AreEqual(NTCursors.Link, this._cursorService.LastCursor,
-                "Hovering over an element should set cursor to Link");
+            Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor, "Precondition");
+            var callsAfterFirstSet = this._cursorService.SetCursorCallCount;
+
+            // Continue hovering for 5 frames
+            for (var i = 0; i < 5; i++)
+            {
+                yield return null;
+            }
+
+            Assert.AreEqual(callsAfterFirstSet,
+                            this._cursorService.SetCursorCallCount,
+                            "SetCursor should not be called again when hover state hasn't changed");
         }
 
         [UnityTest]
@@ -57,7 +158,7 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
             yield return null;
 
-            Assert.AreEqual(NTCursors.Link, this._cursorService.LastCursor, "Precondition: cursor should be Link");
+            Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor, "Precondition: cursor should be Link");
             this._cursorService.ResetCounts();
 
             // Move away from cube
@@ -76,8 +177,22 @@ namespace Fram3d.Tests.UI
                 }
             }
 
-            Assert.IsTrue(this._cursorService.ResetCallCount > 0,
-                "Cursor should reset after leaving hover and grace period expiring");
+            Assert.IsTrue(this._cursorService.ResetCallCount > 0, "Cursor should reset after leaving hover and grace period expiring");
+        }
+
+        // --- Hover → cursor set/reset ---
+
+        [UnityTest]
+        public IEnumerator UpdateCursor__SetsLink__When__HoveringElement()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
+            yield return null;
+
+            Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor, "Hovering over an element should set cursor to Link");
         }
 
         [UnityTest]
@@ -91,7 +206,7 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
             yield return null;
 
-            Assert.AreEqual(NTCursors.Link, this._cursorService.LastCursor, "Precondition: cursor should be Link");
+            Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor, "Precondition: cursor should be Link");
             this._cursorService.ResetCounts();
 
             // Move away — but only wait 1 frame (well within 100ms grace)
@@ -99,144 +214,7 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._mouse, new MouseState { position = corner });
             yield return null;
 
-            Assert.AreEqual(0, this._cursorService.ResetCallCount,
-                "Cursor should not reset within the grace period");
-        }
-
-        [UnityTest]
-        public IEnumerator UpdateCursor__NoRedundantCalls__When__ContinuouslyHovering()
-        {
-            yield return null;
-            yield return new WaitForFixedUpdate();
-
-            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
-            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
-            yield return null;
-
-            Assert.AreEqual(NTCursors.Link, this._cursorService.LastCursor, "Precondition");
-
-            var callsAfterFirstSet = this._cursorService.SetCursorCallCount;
-
-            // Continue hovering for 5 frames
-            for (var i = 0; i < 5; i++)
-            {
-                yield return null;
-            }
-
-            Assert.AreEqual(callsAfterFirstSet, this._cursorService.SetCursorCallCount,
-                "SetCursor should not be called again when hover state hasn't changed");
-        }
-
-        // --- OnDisable cleanup ---
-
-        [UnityTest]
-        public IEnumerator OnDisable__ResetsCursor__When__CursorIsPointer()
-        {
-            yield return null;
-            yield return new WaitForFixedUpdate();
-
-            // Hover cube to set pointer
-            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
-            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
-            yield return null;
-
-            Assert.AreEqual(NTCursors.Link, this._cursorService.LastCursor, "Precondition");
-            this._cursorService.ResetCounts();
-
-            this._handler.enabled = false;
-
-            Assert.IsTrue(this._cursorService.ResetCallCount > 0,
-                "Disabling the handler should reset the cursor");
-        }
-
-        // --- NativeCursor facade routing ---
-
-        [Test]
-        public void SetCursor__DelegatesToService__When__ServiceIsSet()
-        {
-            var result = NativeCursor.SetCursor(NTCursors.Crosshair);
-
-            Assert.IsTrue(result);
-            Assert.AreEqual(NTCursors.Crosshair, this._cursorService.LastCursor);
-        }
-
-        [Test]
-        public void ResetCursor__DelegatesToService__When__ServiceIsSet()
-        {
-            NativeCursor.SetCursor(NTCursors.Link);
-            this._cursorService.ResetCounts();
-
-            NativeCursor.ResetCursor();
-
-            Assert.IsTrue(this._cursorService.ResetCallCount > 0);
-        }
-
-        [Test]
-        public void SetCursor__ReturnsFalse__When__NoServiceSet()
-        {
-            NativeCursor.SetService(null);
-
-            var result = NativeCursor.SetCursor(NTCursors.Link);
-
-            Assert.IsFalse(result);
-
-            // Restore for subsequent tests
-            NativeCursor.SetService(this._cursorService);
-            this._cursorService.ResetCounts();
-        }
-
-        // --- Setup / TearDown ---
-
-        [SetUp]
-        public void SetUp()
-        {
-            this._cameraGo = new GameObject("TestCamera");
-            var camera = this._cameraGo.AddComponent<Camera>();
-            this._cameraGo.transform.position = Vector3.zero;
-            this._cameraGo.transform.rotation = Quaternion.identity;
-
-            var raycaster = this._cameraGo.AddComponent<SelectionRaycaster>();
-            SetField(raycaster, "targetCamera", camera);
-
-            this._highlighter = this._cameraGo.AddComponent<SelectionHighlighter>();
-            this._handler     = this._cameraGo.AddComponent<SelectionInputHandler>();
-            SetField(this._handler, "selectionHighlighter", this._highlighter);
-            SetField(this._handler, "raycaster", raycaster);
-
-            this._cube                    = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            this._cube.name               = "TestCube";
-            this._cube.transform.position = new Vector3(0f, 0f, 5f);
-            this._cube.AddComponent<ElementBehaviour>();
-
-            this._mouse = InputSystem.AddDevice<Mouse>();
-
-            // Inject recording cursor service, save original for restore
-            this._originalService = GetStaticField<ICursorService>(typeof(NativeCursor), "_instance");
-            this._cursorService   = new RecordingCursorService();
-            NativeCursor.SetService(this._cursorService);
-            this._cursorService.ResetCounts();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            // Restore original cursor service before cleanup
-            if (this._originalService != null)
-            {
-                NativeCursor.SetService(this._originalService);
-            }
-
-            InputSystem.QueueStateEvent(this._mouse, new MouseState());
-            InputSystem.RemoveDevice(this._mouse);
-            Object.DestroyImmediate(this._cube);
-            Object.DestroyImmediate(this._cameraGo);
-        }
-
-        private static void SetField(object target, string fieldName, object value)
-        {
-            var field = target.GetType().GetField(fieldName,
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            field.SetValue(target, value);
+            Assert.AreEqual(0, this._cursorService.ResetCallCount, "Cursor should not reset within the grace period");
         }
 
         private static T GetStaticField<T>(System.Type type, string fieldName)
@@ -245,21 +223,28 @@ namespace Fram3d.Tests.UI
             return (T)field.GetValue(null);
         }
 
+        private static void SetField(object target, string fieldName, object value)
+        {
+            var field = target.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            field.SetValue(target, value);
+        }
+
+
         /// <summary>
         /// Test double that records all calls to ICursorService methods.
-        /// Injected via NativeCursor.SetService() to observe cursor changes
+        /// Injected via CursorManager.SetService() to observe cursor changes
         /// without touching platform-specific native code.
         /// </summary>
-        private sealed class RecordingCursorService : ICursorService
+        private sealed class RecordingCursorService: ICursorService
         {
-            public NTCursors? LastCursor       { get; private set; }
-            public int        ResetCallCount   { get; private set; }
+            public CursorType? LastCursor         { get; private set; }
+            public int        ResetCallCount     { get; private set; }
             public int        SetCursorCallCount { get; private set; }
 
             public void ResetCounts()
             {
-                this.LastCursor        = null;
-                this.ResetCallCount    = 0;
+                this.LastCursor         = null;
+                this.ResetCallCount     = 0;
                 this.SetCursorCallCount = 0;
             }
 
@@ -269,7 +254,7 @@ namespace Fram3d.Tests.UI
                 this.ResetCallCount++;
             }
 
-            public bool SetCursor(NTCursors cursor)
+            public bool SetCursor(CursorType cursor)
             {
                 this.LastCursor = cursor;
                 this.SetCursorCallCount++;

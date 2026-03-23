@@ -5,7 +5,6 @@
     "Fram3d.Core",
     "Fram3d.Engine",
     "Unity.InputSystem",
-    "NativeCursor.Runtime"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

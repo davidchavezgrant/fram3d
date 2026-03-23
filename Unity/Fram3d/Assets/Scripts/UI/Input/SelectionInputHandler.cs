@@ -1,27 +1,25 @@
 using Fram3d.Core.Scene;
 using Fram3d.Engine.Integration;
-using Riten.Native.Cursors;
+using Fram3d.Engine.Cursor;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using SysVector2 = System.Numerics.Vector2;
 namespace Fram3d.UI.Input
 {
     /// <summary>
     /// Handles mouse input for element selection, hover, and gizmo drag.
     /// Gizmo handles take priority over selection — if a handle is under
     /// the cursor on mouse-down, a gizmo drag starts instead of a selection.
-    /// Click-vs-drag discrimination prevents selection during camera drags.
+    /// Click-vs-drag discrimination is delegated to Core ClickDetector.
     /// </summary>
     public sealed class SelectionInputHandler: MonoBehaviour
     {
-        private const float     CLICK_THRESHOLD            = 5f;
-        private const float     CURSOR_RESET_GRACE_SECONDS = 0.1f;
-        private       bool      _cursorIsPointer;
-        private       bool      _isDragging;
-        private       bool      _isGizmoDragging;
-        private       float     _lastInteractiveHoverTime;
-        private       Vector2   _mouseDownPosition;
-        private       bool      _mouseDownValid;
-        private       Selection _selection;
+        private const    float         CURSOR_RESET_GRACE_SECONDS = 0.1f;
+        private readonly ClickDetector _clickDetector             = new();
+        private          bool          _cursorIsPointer;
+        private          bool          _isGizmoDragging;
+        private          float         _lastInteractiveHoverTime;
+        private          Selection     _selection;
 
         [SerializeField]
         private GizmoController gizmoController;
@@ -32,6 +30,33 @@ namespace Fram3d.UI.Input
         [SerializeField]
         private SelectionHighlighter selectionHighlighter;
 
+        public void Tick(Mouse mouse, Keyboard keyboard)
+        {
+            if (this._selection == null || this.raycaster == null)
+            {
+                return;
+            }
+
+            if (mouse == null)
+            {
+                return;
+            }
+
+            var mousePosition = mouse.position.ReadValue();
+
+            // During gizmo drag, only process drag updates — no hover or selection
+            if (this._isGizmoDragging)
+            {
+                this.UpdateGizmoDrag(mouse, mousePosition);
+                return;
+            }
+
+            this.UpdateHover(mousePosition);
+            this.UpdateGizmoHover(mousePosition);
+            this.UpdateCursor();
+            this.UpdateSelection(mouse, keyboard, mousePosition);
+        }
+
         private void ResetPointerCursor()
         {
             if (!this._cursorIsPointer)
@@ -39,7 +64,7 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            NativeCursor.ResetCursor();
+            CursorManager.ResetCursor();
             this._cursorIsPointer = false;
         }
 
@@ -68,7 +93,7 @@ namespace Fram3d.UI.Input
 
             if (wantPointer)
             {
-                NativeCursor.SetCursor(NTCursors.Link);
+                CursorManager.SetCursor(CursorType.Link);
                 this._cursorIsPointer = true;
                 return;
             }
@@ -113,50 +138,28 @@ namespace Fram3d.UI.Input
 
         private void UpdateSelection(Mouse mouse, Keyboard keyboard, Vector2 mousePosition)
         {
-            if (mouse.leftButton.wasPressedThisFrame)
-            {
-                // Skip if modifier held — those are camera operations
-                if (keyboard != null && (keyboard.altKey.isPressed || keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed))
-                {
-                    this._mouseDownValid = false;
-                    return;
-                }
+            var cameraModifier = keyboard != null
+                              && (keyboard.altKey.isPressed || keyboard.leftCommandKey.isPressed || keyboard.rightCommandKey.isPressed);
 
-                // Gizmo handles take priority over selection
+            var result = this._clickDetector.Update(mouse.leftButton.wasPressedThisFrame,
+                                                    mouse.leftButton.isPressed,
+                                                    mouse.leftButton.wasReleasedThisFrame,
+                                                    new SysVector2(mousePosition.x, mousePosition.y),
+                                                    cameraModifier);
+
+            // Gizmo handles take priority — check on press frame
+            if (mouse.leftButton.wasPressedThisFrame && !cameraModifier)
+            {
                 if (this.gizmoController != null && this.gizmoController.TryBeginDrag(mousePosition))
                 {
                     this._isGizmoDragging = true;
-                    this._mouseDownValid  = false;
+                    this._clickDetector.Suppress();
                     return;
                 }
-
-                this._mouseDownPosition = mousePosition;
-                this._mouseDownValid    = true;
-                this._isDragging        = false;
-                return;
             }
 
-            if (this._mouseDownValid && mouse.leftButton.isPressed)
+            if (result.Kind == ClickResultKind.CLICK)
             {
-                var delta = mousePosition - this._mouseDownPosition;
-
-                if (delta.sqrMagnitude > CLICK_THRESHOLD * CLICK_THRESHOLD)
-                {
-                    this._isDragging = true;
-                }
-
-                return;
-            }
-
-            if (this._mouseDownValid && mouse.leftButton.wasReleasedThisFrame)
-            {
-                this._mouseDownValid = false;
-
-                if (this._isDragging)
-                {
-                    return;
-                }
-
                 var element = this.raycaster.Raycast(mousePosition);
 
                 if (element != null)
@@ -178,35 +181,7 @@ namespace Fram3d.UI.Input
             }
         }
 
-        private void Update()
-        {
-            if (this._selection == null || this.raycaster == null)
-            {
-                return;
-            }
-
-            var mouse    = Mouse.current;
-            var keyboard = Keyboard.current;
-
-            if (mouse == null)
-            {
-                return;
-            }
-
-            var mousePosition = mouse.position.ReadValue();
-
-            // During gizmo drag, only process drag updates — no hover or selection
-            if (this._isGizmoDragging)
-            {
-                this.UpdateGizmoDrag(mouse, mousePosition);
-                return;
-            }
-
-            this.UpdateHover(mousePosition);
-            this.UpdateGizmoHover(mousePosition);
-            this.UpdateCursor();
-            this.UpdateSelection(mouse, keyboard, mousePosition);
-        }
+        private void Update() => this.Tick(Mouse.current, Keyboard.current);
 
         private void OnDisable()
         {

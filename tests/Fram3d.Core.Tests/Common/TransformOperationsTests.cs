@@ -102,6 +102,83 @@ namespace Fram3d.Core.Tests.Common
             result.Z.Should().BeApproximately(0f, 0.01f);
         }
 
+        // --- ConstructDragPlaneNormal ---
+
+        [Fact]
+        public void ConstructDragPlaneNormal__IsPerpendicularToAxis__When__Called()
+        {
+            var normal = TransformOperations.ConstructDragPlaneNormal(Vector3.UnitX, -Vector3.UnitZ);
+
+            // Normal must be perpendicular to the axis (plane contains the axis)
+            MathF.Abs(Vector3.Dot(normal, Vector3.UnitX)).Should().BeLessThan(0.001f);
+        }
+
+        [Fact]
+        public void ConstructDragPlaneNormal__FacesCameraDirection__When__CameraLookingSideOn()
+        {
+            // Camera looking down -Z, axis along X → plane normal should be
+            // along Z (facing the camera), perpendicular to the axis
+            var normal = TransformOperations.ConstructDragPlaneNormal(Vector3.UnitX, -Vector3.UnitZ);
+
+            MathF.Abs(normal.Z).Should().BeGreaterThan(0.9f);
+        }
+
+        [Fact]
+        public void ConstructDragPlaneNormal__HandlesFallback__When__CameraParallelToAxis()
+        {
+            // Camera looking straight down the X axis
+            var normal = TransformOperations.ConstructDragPlaneNormal(Vector3.UnitX, Vector3.UnitX);
+
+            // Should still produce a valid, unit-length normal perpendicular to axis
+            normal.Length().Should().BeApproximately(1f, 0.01f);
+            MathF.Abs(Vector3.Dot(normal, Vector3.UnitX)).Should().BeLessThan(0.001f);
+        }
+
+        // --- ProjectOntoAxis (drag plane overload) ---
+
+        [Fact]
+        public void ProjectOntoAxis__FindsPoint__When__UsingDragPlane()
+        {
+            // Axis along X at origin. Camera looking from (0,0,-10) down +Z.
+            // Ray from (3, 0, -10) pointing +Z should hit the axis at X=3.
+            var result = TransformOperations.ProjectOntoAxis(
+                Vector3.Zero, Vector3.UnitX,
+                new Vector3(3, 0, -10), Vector3.UnitZ,
+                Vector3.UnitZ);
+
+            result.X.Should().BeApproximately(3f, 0.01f);
+            result.Y.Should().BeApproximately(0f, 0.01f);
+            result.Z.Should().BeApproximately(0f, 0.01f);
+        }
+
+        [Fact]
+        public void ProjectOntoAxis__ReturnsOrigin__When__RayParallelToDragPlane()
+        {
+            // Axis along X, camera looking down -Z. Ray parallel to drag plane.
+            var result = TransformOperations.ProjectOntoAxis(
+                Vector3.Zero, Vector3.UnitX,
+                new Vector3(0, 5, 0), Vector3.UnitX,
+                -Vector3.UnitZ);
+
+            // Ray is in the drag plane and parallel to axis → degenerate
+            result.Should().Be(Vector3.Zero);
+        }
+
+        [Fact]
+        public void ProjectOntoAxis__ConstrainsToAxis__When__RayHitsOffAxis()
+        {
+            // Axis along X. Camera above looking down.
+            // Ray hits the plane at (3, 0, 2) but result should project onto axis at (3, 0, 0)
+            var result = TransformOperations.ProjectOntoAxis(
+                Vector3.Zero, Vector3.UnitX,
+                new Vector3(3, 10, 2), -Vector3.UnitY,
+                -Vector3.UnitY);
+
+            result.X.Should().BeApproximately(3f, 0.01f);
+            result.Y.Should().BeApproximately(0f, 0.01f);
+            result.Z.Should().BeApproximately(0f, 0.01f);
+        }
+
         // --- ComputeTranslation ---
 
         [Fact]

@@ -42,9 +42,67 @@ namespace Fram3d.Core.Common
         }
 
         /// <summary>
-        /// Finds the closest point on an axis line to a ray. Used for
-        /// translate-drag projection: given a camera ray from the mouse,
-        /// find where it intersects the constrained axis.
+        /// Constructs the normal of a drag plane that contains the given axis
+        /// and faces the camera as much as possible. Used to create a stable
+        /// intersection surface for translate drags. The double cross product
+        /// <c>cross(cross(cameraForward, axis), axis)</c> yields the vector
+        /// in the axis-containing plane that is most perpendicular to the
+        /// camera view direction.
+        /// </summary>
+        public static Vector3 ConstructDragPlaneNormal(Vector3 axis, Vector3 cameraForward)
+        {
+            var cross1 = Vector3.Cross(cameraForward, axis);
+
+            if (cross1.LengthSquared() < 0.0001f)
+            {
+                // Camera looking straight down the axis — pick any perpendicular
+                var fallback = Vector3.Cross(axis, Vector3.UnitY);
+
+                if (fallback.LengthSquared() < 0.001f)
+                {
+                    fallback = Vector3.Cross(axis, Vector3.UnitX);
+                }
+
+                return Vector3.Normalize(fallback);
+            }
+
+            return Vector3.Normalize(Vector3.Cross(cross1, axis));
+        }
+
+        /// <summary>
+        /// Projects a camera ray onto a constrained axis via a camera-optimal
+        /// drag plane. More stable than line-line closest-point when viewing
+        /// the axis at a steep angle. Falls back to the axis origin when the
+        /// ray is parallel to the drag plane.
+        /// </summary>
+        public static Vector3 ProjectOntoAxis(Vector3 axisOrigin,
+                                              Vector3 axisDir,
+                                              Vector3 rayOrigin,
+                                              Vector3 rayDir,
+                                              Vector3 cameraForward)
+        {
+            var planeNormal = ConstructDragPlaneNormal(axisDir, cameraForward);
+
+            // Ray-plane intersection: t = dot(planePoint - rayOrigin, normal) / dot(rayDir, normal)
+            var denom = Vector3.Dot(rayDir, planeNormal);
+
+            if (MathF.Abs(denom) < 0.0001f)
+            {
+                return axisOrigin;
+            }
+
+            var t        = Vector3.Dot(axisOrigin - rayOrigin, planeNormal) / denom;
+            var hitPoint = rayOrigin + rayDir * t;
+
+            // Project the plane hit onto the axis line
+            var axisDist = Vector3.Dot(hitPoint - axisOrigin, axisDir);
+            return axisOrigin + axisDir * axisDist;
+        }
+
+        /// <summary>
+        /// Finds the closest point on an axis line to a ray using line-line
+        /// closest-point math. Legacy overload kept for callers that don't
+        /// have camera forward available.
         /// </summary>
         public static Vector3 ProjectOntoAxis(Vector3 axisOrigin,
                                               Vector3 axisDir,

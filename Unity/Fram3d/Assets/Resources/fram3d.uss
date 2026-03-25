@@ -276,13 +276,13 @@
     right: 0;
     bottom: 0;
     flex-direction: row;
-    background-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .view-panel {
     flex-direction: column;
     overflow: hidden;
-    background-color: rgb(20, 20, 20);
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .view-panel__header {
@@ -323,8 +323,7 @@
 
 .view-panel__content {
     flex-grow: 1;
-    background-color: rgb(0, 0, 0);
-    -unity-background-scale-mode: stretch-to-fill;
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .view-panel__placeholder {

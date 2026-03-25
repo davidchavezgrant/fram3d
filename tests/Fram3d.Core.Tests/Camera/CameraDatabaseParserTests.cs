@@ -170,5 +170,85 @@ namespace Fram3d.Core.Tests.Camera
             modes[0].ResolutionWidth.Should().Be(0);
             modes[0].ResolutionHeight.Should().Be(0);
         }
+
+        [Fact]
+        public void ParseSensorModes__DefaultsSensorAreaToZero__When__SensorAreaMissing()
+        {
+            var raw = new[]
+            {
+                new RawSensorMode
+                {
+                    Name       = "NoSensor",
+                    Resolution = new[] { 1920, 1080 },
+                    MaxFps     = 30
+                }
+            };
+
+            var modes = CameraDatabaseParser.ParseSensorModes(raw);
+
+            modes[0].SensorAreaWidthMm.Should().Be(0f);
+            modes[0].SensorAreaHeightMm.Should().Be(0f);
+        }
+
+        [Fact]
+        public void ParseSensorModes__ParsesSensorArea__When__ValidSensorArea()
+        {
+            var raw = new[]
+            {
+                new RawSensorMode
+                {
+                    Name        = "WithSensor",
+                    Resolution  = new[] { 4096, 2160 },
+                    SensorAreaMm = new[] { 23.76f, 13.365f },
+                    MaxFps      = 60
+                }
+            };
+
+            var modes = CameraDatabaseParser.ParseSensorModes(raw);
+
+            modes[0].SensorAreaWidthMm.Should().Be(23.76f);
+            modes[0].SensorAreaHeightMm.Should().Be(13.365f);
+        }
+
+        [Fact]
+        public void LoadLensSets__SkipsPrime__When__AllFocalLengthsInvalid()
+        {
+            var db       = new CameraDatabase();
+            var setCount = db.LensSets.Count;
+            var lenses   = new[]
+            {
+                new RawLens { Set = "BadPrime", FocalLengthMm = 0f },
+                new RawLens { Set = "BadPrime", FocalLengthMm = -5f }
+            };
+
+            CameraDatabaseParser.LoadLensSets(db, lenses);
+
+            db.LensSets.Count.Should().Be(setCount);
+        }
+
+        [Fact]
+        public void LoadLensSets__SetsZoomAperture__When__ApertureProvided()
+        {
+            var db     = new CameraDatabase();
+            var lenses = new[]
+            {
+                new RawLens
+                {
+                    Set             = "TestZoom",
+                    Name            = "TestZoom 24-70 T2.8",
+                    Type            = "Zoom",
+                    FocalRangeMm    = new[] { 24f, 70f },
+                    MaxApertureTstop = 2.8f,
+                    CloseFocusM     = 0.38f
+                }
+            };
+
+            CameraDatabaseParser.LoadLensSets(db, lenses);
+
+            var set = db.FindLensSet("TestZoom 24-70 T2.8");
+            set.Should().NotBeNull();
+            set.MaxAperture.Should().Be(2.8f);
+            set.CloseFocusM.Should().Be(0.38f);
+        }
     }
 }

@@ -695,6 +695,16 @@ namespace Fram3d.Core.Tests.Camera
 		}
 
 		[Fact]
+		public void HorizontalFov__ReturnsCorrectFov__When__50mmOnSuper35()
+		{
+			var cam = CreateCamera();
+			// SensorWidth = 24.89mm, FocalLength = 50mm
+			// FOV = 2 * atan(24.89 / (2 * 50)) ≈ 0.4923 radians
+			var expected = 2f * MathF.Atan(24.89f / (2f * 50f));
+			cam.HorizontalFov.Should().BeApproximately(expected, 0.001f);
+		}
+
+		[Fact]
 		public void VerticalFov__ReturnsCorrectFov__When__50mmOnSuper35()
 		{
 			var cam = CreateCamera();
@@ -956,6 +966,17 @@ namespace Fram3d.Core.Tests.Camera
 			cam.SetLensSet(new LensSet("Leica Summilux-C", new float[] { 16, 18, 21, 25, 29, 35, 40, 50, 65, 75, 100, 135 }, false, 1.0f));
 
 			cam.FocalLength.Should().Be(135f);
+		}
+
+		[Fact]
+		public void SetLensSet__ClearsLensSet__When__SetToNull()
+		{
+			var cam = CreateCamera();
+			cam.SetLensSet(new LensSet("Cooke S4/i", new float[] { 18, 25, 35, 50, 75, 100 }, false, 1.0f));
+
+			cam.SetLensSet(null);
+
+			cam.ActiveLensSet.Should().BeNull();
 		}
 
 		[Fact]

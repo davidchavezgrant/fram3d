@@ -196,6 +196,66 @@ namespace Fram3d.Tests.UI
             Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Small mouse movement should still count as a click and select");
         }
 
+        /// <summary>
+        /// Ctrl+D duplicates the selected element. Don't call Tick() manually —
+        /// Update() already calls it. Calling both would fire the shortcut twice
+        /// in one frame (wasPressedThisFrame stays true for the whole frame).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator CtrlD__DuplicatesElement__When__ElementSelected()
+        {
+            yield return null;
+
+            var element = this._cube.GetComponent<ElementBehaviour>().Element;
+            this._highlighter.Selection.Select(element.Id);
+            yield return null;
+
+            Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Precondition: element selected");
+
+            // Press Ctrl+D — Update() processes it on the next frame
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl, Key.D));
+            yield return null;
+
+            // Release
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            yield return null;
+
+            // Verify duplication occurred — selection should have changed to the duplicate
+            Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Something should be selected");
+            Assert.AreNotEqual(element.Id, this._highlighter.Selection.SelectedId, "Duplicate should be selected, not original");
+
+            // Count elements — should be 2 (original + duplicate)
+            var behaviours = Object.FindObjectsByType<ElementBehaviour>(FindObjectsSortMode.None);
+            Assert.AreEqual(2, behaviours.Length, "Should have original + duplicate");
+
+            // Clean up the duplicate
+            foreach (var b in behaviours)
+            {
+                if (b.gameObject != this._cube)
+                {
+                    Object.DestroyImmediate(b.gameObject);
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator CtrlD__DoesNothing__When__NothingSelected()
+        {
+            yield return null;
+
+            Assert.IsNull(this._highlighter.Selection.SelectedId, "Precondition: nothing selected");
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl, Key.D));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            yield return null;
+
+            // No elements should have been created
+            var behaviours = Object.FindObjectsByType<ElementBehaviour>(FindObjectsSortMode.None);
+            Assert.AreEqual(1, behaviours.Length, "No duplicate should be created when nothing selected");
+        }
+
         [UnityTest]
         public IEnumerator CmdClick__DoesNotChangeSelection__When__CommandHeld()
         {

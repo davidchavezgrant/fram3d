@@ -1,6 +1,6 @@
 using Fram3d.Core.Scene;
-using Fram3d.Engine.Integration;
 using Fram3d.Engine.Cursor;
+using Fram3d.Engine.Integration;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using SysVector2 = System.Numerics.Vector2;
@@ -51,10 +51,26 @@ namespace Fram3d.UI.Input
                 return;
             }
 
+            this.HandleDuplicate(keyboard);
             this.UpdateHover(mousePosition);
             this.UpdateGizmoHover(mousePosition);
             this.UpdateCursor();
             this.UpdateSelection(mouse, keyboard, mousePosition);
+        }
+
+        private void HandleDuplicate(Keyboard keyboard)
+        {
+            if (keyboard == null)
+            {
+                return;
+            }
+
+            if (!keyboard.dKey.wasPressedThisFrame || !keyboard.ctrlKey.isPressed)
+            {
+                return;
+            }
+
+            ElementDuplicator.TryDuplicate(this._selection);
         }
 
         private void ResetPointerCursor()

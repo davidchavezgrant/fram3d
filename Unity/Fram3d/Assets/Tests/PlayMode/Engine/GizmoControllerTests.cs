@@ -134,6 +134,32 @@ namespace Fram3d.Tests.Engine
             Assert.IsFalse(result);
         }
 
+        // --- UpdateHover ---
+
+        [UnityTest]
+        public IEnumerator UpdateHover__IsNotHovering__When__NoGizmoVisible()
+        {
+            yield return null;
+
+            // No selection → gizmo hidden
+            this._controller.UpdateHover(new Vector2(Screen.width / 2f, Screen.height / 2f));
+            Assert.IsFalse(this._controller.IsHoveringHandle, "Should not hover when gizmo is not visible");
+        }
+
+        [UnityTest]
+        public IEnumerator UpdateHover__IsNotHovering__When__SelectToolActive()
+        {
+            yield return null;
+
+            var element = this._cube.GetComponent<ElementBehaviour>().Element;
+            this._highlighter.Selection.Select(element.Id);
+            yield return null;
+
+            this._controller.SetActiveTool(ActiveTool.SELECT);
+            this._controller.UpdateHover(new Vector2(Screen.width / 2f, Screen.height / 2f));
+            Assert.IsFalse(this._controller.IsHoveringHandle, "Should not hover when Select tool is active");
+        }
+
         // --- TryBeginDrag guard conditions ---
 
         [UnityTest]

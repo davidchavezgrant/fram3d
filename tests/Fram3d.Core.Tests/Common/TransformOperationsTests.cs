@@ -54,6 +54,31 @@ namespace Fram3d.Core.Tests.Common
         }
 
         [Fact]
+        public void ComputeRotation__ProducesCorrectAngle__When__180DegreesAroundY()
+        {
+            // 180 pixels * 1.0 sensitivity * π/180 = π radians around Y
+            var result = TransformOperations.ComputeRotation(
+                Quaternion.Identity, Vector3.UnitY, 180f, 1f);
+
+            // After 180° around Y, forward (-Z) should flip to +Z
+            var forward = Vector3.Transform(-Vector3.UnitZ, result);
+            forward.Z.Should().BeApproximately(1f, 0.05f);
+        }
+
+        [Fact]
+        public void ComputeRotation__ScalesBySensitivity__When__HalfSensitivity()
+        {
+            var full = TransformOperations.ComputeRotation(
+                Quaternion.Identity, Vector3.UnitY, 90f, 1f);
+            var half = TransformOperations.ComputeRotation(
+                Quaternion.Identity, Vector3.UnitY, 90f, 0.5f);
+
+            // Half sensitivity should produce half the rotation angle.
+            // For axis-angle, the Y component of the quaternion is sin(angle/2).
+            MathF.Abs(half.Y).Should().BeLessThan(MathF.Abs(full.Y));
+        }
+
+        [Fact]
         public void ComputeRotation__ReturnsIdentity__When__ZeroDelta()
         {
             var result = TransformOperations.ComputeRotation(
@@ -102,6 +127,32 @@ namespace Fram3d.Core.Tests.Common
             result.Z.Should().BeApproximately(0f, 0.01f);
         }
 
+        [Fact]
+        public void ProjectOntoAxis__HandlesOffsetOrigin__When__AxisNotAtWorldOrigin()
+        {
+            // Axis along X at (0,5,0). Ray from (3,5,-5) looking +Z
+            var result = TransformOperations.ProjectOntoAxis(
+                new Vector3(0, 5, 0), Vector3.UnitX,
+                new Vector3(3, 5, -5), Vector3.UnitZ);
+
+            result.X.Should().BeApproximately(3f, 0.01f);
+            result.Y.Should().BeApproximately(5f, 0.01f);
+            result.Z.Should().BeApproximately(0f, 0.01f);
+        }
+
+        [Fact]
+        public void ProjectOntoAxis__WorksOnYAxis__When__RayFromSide()
+        {
+            // Axis along Y at origin. Ray from (5,3,0) looking -X → closest to axis at (0,3,0)
+            var result = TransformOperations.ProjectOntoAxis(
+                Vector3.Zero, Vector3.UnitY,
+                new Vector3(5, 3, 0), -Vector3.UnitX);
+
+            result.X.Should().BeApproximately(0f, 0.01f);
+            result.Y.Should().BeApproximately(3f, 0.01f);
+            result.Z.Should().BeApproximately(0f, 0.01f);
+        }
+
         // --- ConstructDragPlaneNormal ---
 
         [Fact]
@@ -132,6 +183,17 @@ namespace Fram3d.Core.Tests.Common
             // Should still produce a valid, unit-length normal perpendicular to axis
             normal.Length().Should().BeApproximately(1f, 0.01f);
             MathF.Abs(Vector3.Dot(normal, Vector3.UnitX)).Should().BeLessThan(0.001f);
+        }
+
+        [Fact]
+        public void ConstructDragPlaneNormal__UsesSecondaryFallback__When__AxisIsUnitY()
+        {
+            // Camera looking straight down Y, axis is Y.
+            // First fallback Cross(Y, UnitY) is zero → falls through to Cross(Y, UnitX)
+            var normal = TransformOperations.ConstructDragPlaneNormal(Vector3.UnitY, Vector3.UnitY);
+
+            normal.Length().Should().BeApproximately(1f, 0.01f);
+            MathF.Abs(Vector3.Dot(normal, Vector3.UnitY)).Should().BeLessThan(0.001f);
         }
 
         // --- ProjectOntoAxis (drag plane overload) ---
@@ -179,6 +241,21 @@ namespace Fram3d.Core.Tests.Common
             result.Z.Should().BeApproximately(0f, 0.01f);
         }
 
+        [Fact]
+        public void ProjectOntoAxis__HandlesOffsetOrigin__When__DragPlaneWithOffset()
+        {
+            // Axis along X at (0,3,0). Camera looking down -Z.
+            // Ray from (4,3,-10) toward +Z should hit axis at (4,3,0).
+            var result = TransformOperations.ProjectOntoAxis(
+                new Vector3(0, 3, 0), Vector3.UnitX,
+                new Vector3(4, 3, -10), Vector3.UnitZ,
+                Vector3.UnitZ);
+
+            result.X.Should().BeApproximately(4f, 0.01f);
+            result.Y.Should().BeApproximately(3f, 0.01f);
+            result.Z.Should().BeApproximately(0f, 0.01f);
+        }
+
         // --- ComputeTranslation ---
 
         [Fact]
@@ -209,6 +286,20 @@ namespace Fram3d.Core.Tests.Common
             var result = TransformOperations.ComputeTranslation(start, axis, projected, origin, offset);
 
             result.X.Should().BeApproximately(3f, 0.001f);
+        }
+
+        [Fact]
+        public void ComputeTranslation__UsesOriginAsDeltaBase__When__OriginDiffersFromStart()
+        {
+            // start=(1,0,0), projected=(7,0,0), origin=(2,0,0)
+            // delta = projected - origin = (5,0,0)
+            // axisDelta = dot((5,0,0), UnitX) * UnitX = 5 * UnitX = (5,0,0)
+            // result = start + axisDelta - offset = (1,0,0) + (5,0,0) - 0 = (6,0,0)
+            var result = TransformOperations.ComputeTranslation(
+                new Vector3(1, 0, 0), Vector3.UnitX,
+                new Vector3(7, 0, 0), new Vector3(2, 0, 0), Vector3.Zero);
+
+            result.X.Should().BeApproximately(6f, 0.001f);
         }
     }
 }

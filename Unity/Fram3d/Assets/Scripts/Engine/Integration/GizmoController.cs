@@ -29,6 +29,14 @@ namespace Fram3d.Engine.Integration
         [SerializeField]
         private Camera targetCamera;
 
+        public void SetCamera(Camera camera)
+        {
+            if (camera != null)
+            {
+                this.targetCamera = camera;
+            }
+        }
+
         public ActiveTool ActiveTool       => this._gizmoState.ActiveTool;
         public bool       IsDragging       => this._activeDrag != null;
         public bool       IsHoveringHandle => this._highlighter != null && this._highlighter.IsHoveringHandle;

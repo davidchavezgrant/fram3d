@@ -41,6 +41,9 @@ namespace Fram3d.UI.Input
         private CompositionGuideView compositionGuides;
 
         [SerializeField]
+        private ViewCameraManager viewCameraManager;
+
+        [SerializeField]
         private GizmoController gizmoController;
 
         [SerializeField]
@@ -505,8 +508,24 @@ namespace Fram3d.UI.Input
             this._pendingScrollSamples.Clear();
         }
 
-        private void Start()  => this._camera = this.cameraBehaviour.CameraElement;
-        private void Update() => this.Tick(Keyboard.current, Mouse.current);
+        private void Start() => this._camera = this.cameraBehaviour.CameraElement;
+
+        private void Update()
+        {
+            // In multi-view, route camera input to whichever viewport the mouse is in
+            if (this.viewCameraManager != null && this.viewCameraManager.IsMultiView && Mouse.current != null)
+            {
+                var mousePos  = Mouse.current.position.ReadValue();
+                var slotCamera = this.viewCameraManager.GetCameraForMousePosition(mousePos);
+
+                if (slotCamera != null)
+                {
+                    this._camera = slotCamera;
+                }
+            }
+
+            this.Tick(Keyboard.current, Mouse.current);
+        }
 
         /// <summary>
         /// Resyncs modifier state when the application regains focus.

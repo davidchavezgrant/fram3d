@@ -32,6 +32,7 @@ namespace Fram3d.UI.Views
 
         // Safe zones (each is a single element with border)
         private VisualElement            _titleSafe;
+        private ViewCameraManager        _viewCameraManager;
         public  CompositionGuideSettings Settings { get; } = new();
 
         private void BuildOverlay()
@@ -94,6 +95,31 @@ namespace Fram3d.UI.Views
             this._crossV.style.height = CENTER_CROSS_ARM * 2f;
         }
 
+        private void ScopeToViewport()
+        {
+            if (this._viewCameraManager == null || !this._viewCameraManager.IsMultiView)
+            {
+                this._container.style.left   = 0;
+                this._container.style.top    = 0;
+                this._container.style.right  = this._cameraBehaviour.RightInsetPixels;
+                this._container.style.bottom = 0;
+                this._container.style.width  = StyleKeyword.Auto;
+                this._container.style.height = StyleKeyword.Auto;
+                return;
+            }
+
+            var vpRect       = this._viewCameraManager.CameraViewRect;
+            var screenWidth  = (float)Screen.width;
+            var screenHeight = (float)Screen.height;
+
+            this._container.style.left   = vpRect.x      * screenWidth;
+            this._container.style.top    = (1f - vpRect.y - vpRect.height) * screenHeight;
+            this._container.style.width  = vpRect.width   * screenWidth;
+            this._container.style.height = vpRect.height  * screenHeight;
+            this._container.style.right  = StyleKeyword.Auto;
+            this._container.style.bottom = StyleKeyword.Auto;
+        }
+
         private void UpdateGuides()
         {
             if (this._container == null || this._cameraBehaviour == null)
@@ -101,7 +127,7 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            this._container.style.right = this._cameraBehaviour.RightInsetPixels;
+            this.ScopeToViewport();
             var viewWidth  = this._container.resolvedStyle.width;
             var viewHeight = this._container.resolvedStyle.height;
 
@@ -200,7 +226,8 @@ namespace Fram3d.UI.Views
 
         private void Start()
         {
-            this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
+            this._cameraBehaviour   = FindAnyObjectByType<CameraBehaviour>();
+            this._viewCameraManager = FindAnyObjectByType<ViewCameraManager>();
 
             if (this._cameraBehaviour == null)
             {

@@ -22,6 +22,14 @@ namespace Fram3d.Engine.Integration
         [SerializeField]
         private Camera targetCamera;
 
+        public void SetCamera(Camera camera)
+        {
+            if (camera != null)
+            {
+                this.targetCamera = camera;
+            }
+        }
+
         /// <summary>
         /// Casts a ray from the camera through the given screen position.
         /// Returns the Element under the cursor, or null if no element was hit.

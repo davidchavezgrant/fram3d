@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Fram3d.Core.Camera;
 using Fram3d.Core.Common;
 using Fram3d.Core.Scene;
 using Fram3d.Engine.Conversion;
@@ -23,8 +24,168 @@ namespace Fram3d.Engine.Integration
         [SerializeField]
         private CameraBehaviour cameraBehaviour;
 
-        public CameraBehaviour CameraBehaviour => this.cameraBehaviour;
-        public ViewSlotModel   ViewSlotModel   { get; private set; }
+        public  CameraBehaviour CameraBehaviour => this.cameraBehaviour;
+        public  ViewSlotModel  ViewSlotModel   { get; private set; }
+        private Rect[]         _viewportRects  = { new(0, 0, 1, 1) };
+
+        /// <summary>
+        /// Returns the CameraElement that should receive input based on the
+        /// current mouse position. In single-view, always returns
+        /// CameraBehaviour.ActiveCamera. In multi-view, checks which viewport
+        /// the mouse is in and returns the corresponding element.
+        /// </summary>
+        public CameraElement GetCameraForMousePosition(Vector2 mouseScreenPos)
+        {
+            if (this.ViewSlotModel.Layout == ViewLayout.SINGLE)
+            {
+                return this.cameraBehaviour.ActiveCamera;
+            }
+
+            var normalizedPos = new Vector2(mouseScreenPos.x / Screen.width,
+                                            mouseScreenPos.y / Screen.height);
+
+            var count = this.ViewSlotModel.ActiveSlotCount;
+
+            for (var i = 0; i < count; i++)
+            {
+                if (i >= this._viewportRects.Length)
+                {
+                    break;
+                }
+
+                if (this._viewportRects[i].Contains(normalizedPos))
+                {
+                    var mode = this.ViewSlotModel.GetSlotType(i);
+
+                    if (mode == ViewMode.CAMERA)
+                    {
+                        return this.cameraBehaviour.ShotCamera;
+                    }
+
+                    if (mode == ViewMode.DIRECTOR)
+                    {
+                        return this.cameraBehaviour.DirectorCamera;
+                    }
+                }
+            }
+
+            return this.cameraBehaviour.ActiveCamera;
+        }
+
+        /// <summary>
+        /// Returns the Unity Camera for raycasting based on mouse position.
+        /// </summary>
+        public Camera GetUnityCameraForMousePosition(Vector2 mouseScreenPos)
+        {
+            if (this.ViewSlotModel.Layout == ViewLayout.SINGLE)
+            {
+                return this.cameraBehaviour.GetComponent<Camera>();
+            }
+
+            var normalizedPos = new Vector2(mouseScreenPos.x / Screen.width,
+                                            mouseScreenPos.y / Screen.height);
+
+            var count = this.ViewSlotModel.ActiveSlotCount;
+
+            for (var i = 0; i < count; i++)
+            {
+                if (i >= this._viewportRects.Length)
+                {
+                    break;
+                }
+
+                if (!this._viewportRects[i].Contains(normalizedPos))
+                {
+                    continue;
+                }
+
+                var mode = this.ViewSlotModel.GetSlotType(i);
+
+                if (mode == ViewMode.CAMERA)
+                {
+                    return this.cameraBehaviour.GetComponent<Camera>();
+                }
+
+                if (mode == ViewMode.DIRECTOR)
+                {
+                    var vc = this._directorCameras.TryGetValue(i, out var cam) ? cam : null;
+
+                    if (vc != null)
+                    {
+                        return vc.UnityCamera;
+                    }
+                }
+            }
+
+            return this.cameraBehaviour.GetComponent<Camera>();
+        }
+
+        /// <summary>
+        /// Returns the viewport rect (in normalized screen coords) for the
+        /// Camera View slot. Used by overlays to scope themselves.
+        /// </summary>
+        public Rect CameraViewRect
+        {
+            get
+            {
+                if (this.ViewSlotModel.Layout == ViewLayout.SINGLE)
+                {
+                    return new Rect(0, 0, 1, 1);
+                }
+
+                var count = this.ViewSlotModel.ActiveSlotCount;
+
+                for (var i = 0; i < count && i < this._viewportRects.Length; i++)
+                {
+                    if (this.ViewSlotModel.GetSlotType(i) == ViewMode.CAMERA)
+                    {
+                        return this._viewportRects[i];
+                    }
+                }
+
+                return new Rect(0, 0, 1, 1);
+            }
+        }
+
+        public bool IsMultiView => this.ViewSlotModel.Layout != ViewLayout.SINGLE;
+
+        /// <summary>
+        /// Returns the Unity Camera for a specific slot index.
+        /// </summary>
+        public Camera GetUnityCamera(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= this.ViewSlotModel.ActiveSlotCount)
+            {
+                return null;
+            }
+
+            var mode = this.ViewSlotModel.GetSlotType(slotIndex);
+
+            if (mode == ViewMode.CAMERA)
+            {
+                return this.cameraBehaviour.GetComponent<Camera>();
+            }
+
+            if (mode == ViewMode.DIRECTOR)
+            {
+                return this._directorCameras.TryGetValue(slotIndex, out var vc) ? vc.UnityCamera : null;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns the viewport rect for a specific slot index.
+        /// </summary>
+        public Rect GetViewportRect(int slotIndex)
+        {
+            if (slotIndex >= 0 && slotIndex < this._viewportRects.Length)
+            {
+                return this._viewportRects[slotIndex];
+            }
+
+            return new Rect(0, 0, 1, 1);
+        }
 
         private void Awake()
         {
@@ -126,16 +287,16 @@ namespace Fram3d.Engine.Integration
         private void ApplyViewportRects()
         {
             var mainCam = this.cameraBehaviour.GetComponent<Camera>();
-            var rects   = this.ComputeViewportRects();
-            var count   = this.ViewSlotModel.ActiveSlotCount;
+            this._viewportRects = this.ComputeViewportRects();
+            var count           = this.ViewSlotModel.ActiveSlotCount;
 
-            for (var i = 0; i < count; i++)
+            for (var i = 0; i < count && i < this._viewportRects.Length; i++)
             {
                 var mode = this.ViewSlotModel.GetSlotType(i);
 
                 if (mode == ViewMode.CAMERA)
                 {
-                    mainCam.rect = rects[i];
+                    mainCam.rect = this._viewportRects[i];
                 }
                 else if (mode == ViewMode.DIRECTOR)
                 {
@@ -143,7 +304,7 @@ namespace Fram3d.Engine.Integration
 
                     if (vc != null)
                     {
-                        vc.UnityCamera.rect = rects[i];
+                        vc.UnityCamera.rect = this._viewportRects[i];
                     }
                 }
             }
@@ -151,30 +312,21 @@ namespace Fram3d.Engine.Integration
 
         private Rect[] ComputeViewportRects()
         {
-            var gap     = 0.003f;
-            var halfGap = gap / 2f;
-            var layout  = this.ViewSlotModel.Layout;
-
-            if (layout == ViewLayout.SIDE_BY_SIDE)
+            if (this.ViewSlotModel.Layout == ViewLayout.SIDE_BY_SIDE)
             {
-                var halfW = 0.5f - halfGap;
                 return new[]
                 {
-                    new Rect(0,              0, halfW, 1),
-                    new Rect(0.5f + halfGap, 0, halfW, 1)
+                    new Rect(0,    0, 0.5f, 1),
+                    new Rect(0.5f, 0, 0.5f, 1)
                 };
             }
 
             // ONE_PLUS_TWO: top full width, bottom split
-            var topH    = 0.6f  - halfGap;
-            var bottomH = 0.4f  - halfGap;
-            var bottomW = 0.5f  - halfGap;
-
             return new[]
             {
-                new Rect(0,              bottomH + gap, 1,       topH),
-                new Rect(0,              0,             bottomW, bottomH),
-                new Rect(0.5f + halfGap, 0,             bottomW, bottomH)
+                new Rect(0,    0.4f, 1,    0.6f),
+                new Rect(0,    0,    0.5f, 0.4f),
+                new Rect(0.5f, 0,    0.5f, 0.4f)
             };
         }
 

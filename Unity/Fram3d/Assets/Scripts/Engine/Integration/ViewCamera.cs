@@ -21,7 +21,7 @@ namespace Fram3d.Engine.Integration
         {
             this._gameObject                = new GameObject($"ViewCamera_Slot{slotIndex}");
             this._camera                    = this._gameObject.AddComponent<Camera>();
-            this._camera.clearFlags         = CameraClearFlags.SolidColor;
+            this._camera.clearFlags         = CameraClearFlags.Skybox;
             this._camera.backgroundColor    = Color.black;
             this._camera.depth              = -10 + slotIndex;
             this._camera.enabled            = viewMode != ViewMode.DESIGNER;

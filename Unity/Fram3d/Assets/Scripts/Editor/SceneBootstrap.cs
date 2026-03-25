@@ -266,7 +266,26 @@ namespace Fram3d.Editor
             vcmSo.FindProperty("cameraBehaviour").objectReferenceValue = cameraGo.GetComponent<CameraBehaviour>();
             vcmSo.ApplyModifiedProperties();
 
-            // View Layout UI (layout chooser buttons)
+            // Wire viewCameraManager on input handlers
+            var cameraInput = cameraGo.GetComponent<CameraInputHandler>();
+
+            if (cameraInput != null)
+            {
+                var so = new SerializedObject(cameraInput);
+                so.FindProperty("viewCameraManager").objectReferenceValue = viewCameraManager;
+                so.ApplyModifiedProperties();
+            }
+
+            var selectionInput = cameraGo.GetComponent<SelectionInputHandler>();
+
+            if (selectionInput != null)
+            {
+                var so = new SerializedObject(selectionInput);
+                so.FindProperty("viewCameraManager").objectReferenceValue = viewCameraManager;
+                so.ApplyModifiedProperties();
+            }
+
+            // View Layout UI (layout chooser and viewport headers)
             var layoutGo = GameObject.Find("View Layout");
 
             if (layoutGo == null)

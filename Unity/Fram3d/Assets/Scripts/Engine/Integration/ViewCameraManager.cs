@@ -210,15 +210,6 @@ namespace Fram3d.Engine.Integration
 
             if (this.ViewSlotModel.Layout == ViewLayout.SINGLE)
             {
-                // Single-view: if the slot is Director View, toggle CameraBehaviour
-                // to match (so the main camera syncs to the director element)
-                var wantDirector = this.ViewSlotModel.GetSlotType(0) == ViewMode.DIRECTOR;
-
-                if (wantDirector != this.cameraBehaviour.IsDirectorView)
-                {
-                    this.cameraBehaviour.ToggleDirectorView();
-                }
-
                 return;
             }
 
@@ -249,16 +240,19 @@ namespace Fram3d.Engine.Integration
                     this.cameraBehaviour.GetComponent<Camera>().rect = new Rect(0, 0, 1, 1);
                 }
 
-                // Show frustum wireframe based on CameraBehaviour's own state
-                if (this.cameraBehaviour?.FrustumWireframe != null)
-                {
-                    this.cameraBehaviour.FrustumWireframe.gameObject.SetActive(this.cameraBehaviour.IsDirectorView);
-                }
-
+                // Sync CameraBehaviour's director toggle to match the slot state
+                this.SyncSingleViewDirectorToggle();
                 return;
             }
 
-            // Multi-view: create Director cameras and show frustum
+            // Entering multi-view: CameraBehaviour must be in Camera View mode
+            // (the Director View is handled by the separate ViewCamera)
+            if (this.cameraBehaviour != null && this.cameraBehaviour.IsDirectorView)
+            {
+                this.cameraBehaviour.ToggleDirectorView();
+            }
+
+            // Create Director cameras for Director slots
             var count = this.ViewSlotModel.ActiveSlotCount;
 
             for (var i = 0; i < count; i++)
@@ -272,10 +266,30 @@ namespace Fram3d.Engine.Integration
                 this.cameraBehaviour.EnsureDirectorInitialized();
             }
 
-            // Frustum is always visible in multi-view (Director View is on screen)
+            // Frustum visible in multi-view when Director View is on screen
             if (this.cameraBehaviour?.FrustumWireframe != null)
             {
                 this.cameraBehaviour.FrustumWireframe.gameObject.SetActive(this._directorCameras.Count > 0);
+            }
+        }
+
+        /// <summary>
+        /// In single-view, syncs CameraBehaviour's director toggle to match
+        /// the ViewSlotModel slot state. Called once on state change, not
+        /// every frame.
+        /// </summary>
+        private void SyncSingleViewDirectorToggle()
+        {
+            if (this.cameraBehaviour == null)
+            {
+                return;
+            }
+
+            var wantDirector = this.ViewSlotModel.GetSlotType(0) == ViewMode.DIRECTOR;
+
+            if (wantDirector != this.cameraBehaviour.IsDirectorView)
+            {
+                this.cameraBehaviour.ToggleDirectorView();
             }
         }
 

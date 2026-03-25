@@ -512,15 +512,23 @@ namespace Fram3d.UI.Input
 
         private void Update()
         {
-            // In multi-view, route camera input to whichever viewport the mouse is in
-            if (this.viewCameraManager != null && this.viewCameraManager.IsMultiView && Mouse.current != null)
+            if (this.viewCameraManager != null && Mouse.current != null)
             {
-                var mousePos  = Mouse.current.position.ReadValue();
-                var slotCamera = this.viewCameraManager.GetCameraForMousePosition(mousePos);
-
-                if (slotCamera != null)
+                if (this.viewCameraManager.IsMultiView)
                 {
-                    this._camera = slotCamera;
+                    // Multi-view: route to whichever viewport the mouse is in
+                    var mousePos   = Mouse.current.position.ReadValue();
+                    var slotCamera = this.viewCameraManager.GetCameraForMousePosition(mousePos);
+
+                    if (slotCamera != null)
+                    {
+                        this._camera = slotCamera;
+                    }
+                }
+                else
+                {
+                    // Single-view: track CameraBehaviour.ActiveCamera
+                    this._camera = this.cameraBehaviour.ActiveCamera;
                 }
             }
 

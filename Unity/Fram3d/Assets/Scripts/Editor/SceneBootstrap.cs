@@ -19,6 +19,7 @@ namespace Fram3d.Editor
         {
             SetupCamera();
             SetupSelection();
+            SetupViewLayout();
             SetupAspectRatioMask();
             SetupCompositionGuides();
             SetupPropertiesPanel();
@@ -247,6 +248,66 @@ namespace Fram3d.Editor
                                   PrimitiveType.Sphere,
                                   new Vector3(-2f, 1f, 5f),
                                   Color.green);
+        }
+
+        private static void SetupViewLayout()
+        {
+            var cameraGo = GameObject.Find("Main Camera");
+
+            // ViewCameraManager on the camera object
+            var viewCameraManager = cameraGo.GetComponent<ViewCameraManager>();
+
+            if (viewCameraManager == null)
+            {
+                viewCameraManager = cameraGo.AddComponent<ViewCameraManager>();
+            }
+
+            var vcmSo = new SerializedObject(viewCameraManager);
+            vcmSo.FindProperty("cameraBehaviour").objectReferenceValue = cameraGo.GetComponent<CameraBehaviour>();
+            vcmSo.ApplyModifiedProperties();
+
+            // Wire viewCameraManager on CameraInputHandler
+            var cameraInput   = cameraGo.GetComponent<CameraInputHandler>();
+            var cameraInputSo = new SerializedObject(cameraInput);
+            cameraInputSo.FindProperty("viewCameraManager").objectReferenceValue = viewCameraManager;
+            cameraInputSo.ApplyModifiedProperties();
+
+            // Wire viewCameraManager on SelectionInputHandler
+            var selectionInput = cameraGo.GetComponent<SelectionInputHandler>();
+
+            if (selectionInput != null)
+            {
+                var selInputSo = new SerializedObject(selectionInput);
+                selInputSo.FindProperty("viewCameraManager").objectReferenceValue = viewCameraManager;
+                selInputSo.ApplyModifiedProperties();
+            }
+
+            // View Layout UI
+            var layoutGo = GameObject.Find("View Layout");
+
+            if (layoutGo == null)
+            {
+                layoutGo = new GameObject("View Layout");
+            }
+
+            var uiDoc = layoutGo.GetComponent<UIDocument>();
+
+            if (uiDoc == null)
+            {
+                uiDoc               = layoutGo.AddComponent<UIDocument>();
+                uiDoc.panelSettings = GetOrCreatePanelSettings();
+            }
+
+            // Render behind overlays and properties panel
+            uiDoc.sortingOrder = -1;
+
+            if (layoutGo.GetComponent<ViewLayoutView>() == null)
+            {
+                layoutGo.AddComponent<ViewLayoutView>();
+            }
+
+            EditorUtility.SetDirty(cameraGo);
+            EditorUtility.SetDirty(layoutGo);
         }
 
         private static void SetupSelection()

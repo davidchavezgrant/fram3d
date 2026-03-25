@@ -6,12 +6,12 @@ namespace Fram3d.Core.Tests.Common
     public sealed class GizmoScalingTests
     {
         [Fact]
-        public void CalculateZoomScale__MatchesLegacy__When__ReferenceConditions()
+        public void CalculateZoomScale__MatchesBaseline__When__ReferenceConditions()
         {
-            // At 1080p / 65° FOV, should match the old distance * 0.15 formula
+            // At 1080p / 65° FOV, should produce distance * 0.30
             var result = GizmoScaling.CalculateZoomScale(10f, 65f, 1080f);
 
-            result.Should().BeApproximately(10f * 0.15f, 0.02f);
+            result.Should().BeApproximately(10f * 0.30f, 0.02f);
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Fram3d.Core.Tests.Common
         {
             var result = GizmoScaling.CalculateZoomScale(10f, 65f, 0f);
 
-            result.Should().BeApproximately(10f * 0.15f, 0.001f);
+            result.Should().BeApproximately(10f * 0.30f, 0.001f);
         }
 
         [Fact]
@@ -66,7 +66,7 @@ namespace Fram3d.Core.Tests.Common
         {
             var result = GizmoScaling.CalculateZoomScale(10f, 0f, 1080f);
 
-            result.Should().BeApproximately(10f * 0.15f, 0.001f);
+            result.Should().BeApproximately(10f * 0.30f, 0.001f);
         }
 
         [Fact]
@@ -74,7 +74,7 @@ namespace Fram3d.Core.Tests.Common
         {
             var result = GizmoScaling.CalculateZoomScale(10f, -30f, 1080f);
 
-            result.Should().BeApproximately(10f * 0.15f, 0.001f);
+            result.Should().BeApproximately(10f * 0.30f, 0.001f);
         }
     }
 }

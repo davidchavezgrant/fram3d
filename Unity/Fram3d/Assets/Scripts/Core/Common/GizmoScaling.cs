@@ -9,17 +9,16 @@ namespace Fram3d.Core.Common
     public static class GizmoScaling
     {
         /// <summary>
-        /// Fallback multiplier matching the original distance-only formula.
+        /// Fallback multiplier for distance-only formula.
         /// Used when pixelHeight or FOV inputs are invalid.
         /// </summary>
-        private const float FALLBACK_SCALE = 0.15f;
+        private const float FALLBACK_SCALE = 0.30f;
 
         /// <summary>
-        /// Tuned so that at 1080p / 65° FOV the result matches the original
-        /// CONSTANT_SCREEN_SIZE = 0.15 behavior. Derived from:
-        /// 0.15 = 65 / (K * 1080) → K = 65 / (0.15 * 1080) ≈ 0.401
+        /// Tuned so that at 1080p / 65° FOV the gizmo is comfortably visible.
+        /// Derived from: 0.30 = 65 / (K * 1080) → K = 65 / (0.30 * 1080) ≈ 0.2005
         /// </summary>
-        private const float SCREEN_SIZE_FACTOR = 0.401f;
+        private const float SCREEN_SIZE_FACTOR = 0.2005f;
 
         /// <summary>
         /// Computes the world-space scale factor for a gizmo at the given

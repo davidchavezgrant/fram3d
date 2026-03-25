@@ -100,7 +100,7 @@ namespace Fram3d.UI.Views
 
             this._layoutChooser.Add(this.CreateLayoutButton("\u25fb", ViewLayout.SINGLE,     model.Layout));
             this._layoutChooser.Add(this.CreateLayoutButton("\u25eb", ViewLayout.HORIZONTAL, model.Layout));
-            this._layoutChooser.Add(this.CreateLayoutButton("\u2b12", ViewLayout.VERTICAL,   model.Layout));
+            this._layoutChooser.Add(this.CreateLayoutButton("\u229f", ViewLayout.VERTICAL,   model.Layout));
             this._root.Add(this._layoutChooser);
         }
 

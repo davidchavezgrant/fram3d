@@ -57,19 +57,29 @@ namespace Fram3d.Core.Common
 
             if (type == ViewMode.CAMERA)
             {
-                // Smart swap: the old Camera slot gets this slot's type
+                // Smart swap: move Camera View here, old Camera slot gets this type
                 var oldCameraSlot          = this.CameraViewSlotIndex;
                 var oldType                = this._slots[index];
                 this._slots[index]         = ViewMode.CAMERA;
                 this._slots[oldCameraSlot] = oldType;
             }
-            else if (this._slots[index] == ViewMode.CAMERA)
+            else if (this._slots[index] == ViewMode.CAMERA && this.ActiveSlotCount > 1)
             {
-                // Cannot remove Camera View — it must always exist.
-                return;
+                // Multi-view: swap Camera View to the other slot
+                for (var i = 0; i < this.ActiveSlotCount; i++)
+                {
+                    if (i != index)
+                    {
+                        this._slots[i] = ViewMode.CAMERA;
+                        break;
+                    }
+                }
+
+                this._slots[index] = type;
             }
             else
             {
+                // Single-view or non-Camera slot: just change it
                 this._slots[index] = type;
             }
 

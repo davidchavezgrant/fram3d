@@ -132,17 +132,25 @@ namespace Fram3d.Core.Tests.Common
 		}
 
 		[Fact]
-		public void SetSlotType__BlocksRemovingCameraView__When__SettingNonCameraOnCameraSlot()
+		public void SetSlotType__SwapsCameraViewToOtherSlot__When__MultiView()
 		{
 			var model = new ViewSlotModel();
 			model.SetLayout(ViewLayout.HORIZONTAL);
-			var fired = false;
-			model.Changed += () => fired = true;
 
 			model.SetSlotType(0, ViewMode.DIRECTOR);
 
-			fired.Should().BeFalse();
-			model.GetSlotType(0).Should().Be(ViewMode.CAMERA);
+			model.GetSlotType(0).Should().Be(ViewMode.DIRECTOR);
+			model.GetSlotType(1).Should().Be(ViewMode.CAMERA);
+		}
+
+		[Fact]
+		public void SetSlotType__AllowsDirectChange__When__SingleView()
+		{
+			var model = new ViewSlotModel();
+
+			model.SetSlotType(0, ViewMode.DIRECTOR);
+
+			model.GetSlotType(0).Should().Be(ViewMode.DIRECTOR);
 		}
 
 		[Fact]

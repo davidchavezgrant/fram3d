@@ -210,6 +210,15 @@ namespace Fram3d.Engine.Integration
 
             if (this.ViewSlotModel.Layout == ViewLayout.SINGLE)
             {
+                // Single-view: if the slot is Director View, toggle CameraBehaviour
+                // to match (so the main camera syncs to the director element)
+                var wantDirector = this.ViewSlotModel.GetSlotType(0) == ViewMode.DIRECTOR;
+
+                if (wantDirector != this.cameraBehaviour.IsDirectorView)
+                {
+                    this.cameraBehaviour.ToggleDirectorView();
+                }
+
                 return;
             }
 

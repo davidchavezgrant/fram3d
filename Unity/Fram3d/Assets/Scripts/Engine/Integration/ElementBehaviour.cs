@@ -12,13 +12,23 @@ namespace Fram3d.Engine.Integration
     ///
     /// Self-initializes in Awake — creates the domain Element from the
     /// GameObject's name and syncs Core transform state to Unity each frame.
+    ///
+    /// For elements that wrap an existing Core object (e.g., the frustum
+    /// wireframe wrapping the shot CameraElement), set Element before Awake
+    /// via the internal setter. Awake skips auto-creation when Element is
+    /// already set.
     /// </summary>
     public sealed class ElementBehaviour: MonoBehaviour
     {
-        public Element Element { get; private set; }
+        public Element Element { get; internal set; }
 
         private void Awake()
         {
+            if (this.Element != null)
+            {
+                return;
+            }
+
             this.Element = new Element(new ElementId(Guid.NewGuid()), this.gameObject.name);
             this.Element.GroundOffset = this.ComputeGroundOffset();
 

@@ -39,7 +39,8 @@ UI/UX interaction rules, input mappings, and behavioral specifications.
 - Alt+G = toggle safe zones
 - H = camera info
 - P = camera path
-- D = Director View
+- D = toggle Director View
+- Shift+D = toggle DOF
 
 **Keyboard (panels):**
 - O = Elements panel

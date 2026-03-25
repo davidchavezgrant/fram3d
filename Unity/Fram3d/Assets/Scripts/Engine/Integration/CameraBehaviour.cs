@@ -1,5 +1,6 @@
 using Fram3d.Core.Camera;
 using Fram3d.Core.Common;
+using Fram3d.Core.Scene;
 using Fram3d.Core.Viewport;
 using Fram3d.Engine.Conversion;
 using UnityEngine;
@@ -13,16 +14,37 @@ namespace Fram3d.Engine.Integration
         private const float          FOCAL_LENGTH_LERP_SPEED = 10f;
         private const float          SHAKE_ROTATION_SCALE    = 0.5f;
         private const float          SHAKE_TIME_OFFSET       = 100f;
-        private       CameraElement  _cameraElement;
-        private       CameraDatabase _database;
-        private       float          _displayedFocalLength;
-        private       DepthOfField   _dof;
-        private       float          _rightInsetPixels;
-        private       Camera         _unityCamera;
+        private       CameraElement    _cameraElement;
+        private       CameraDatabase   _database;
+        private       CameraElement    _directorCamera;
+        private       bool             _directorInitialized;
+        private       float            _displayedFocalLength;
+        private       DepthOfField     _dof;
+        private       FrustumWireframe _frustumWireframe;
+        private       float            _rightInsetPixels;
+        private       Camera           _unityCamera;
+        private       ViewMode         _viewMode = ViewMode.CAMERA;
+
+        /// <summary>
+        /// The camera that input should currently target. In Camera View,
+        /// this is the shot camera. In Director View, the free utility camera.
+        /// </summary>
+        public CameraElement ActiveCamera => this._viewMode == ViewMode.DIRECTOR
+                                           ? this._directorCamera
+                                           : this._cameraElement;
+
         public        AspectRatio    ActiveAspectRatio => this._cameraElement.ActiveAspectRatio;
         public        SensorMode     ActiveSensorMode  => this._cameraElement.ActiveSensorMode;
         public        CameraElement  CameraElement     => this._cameraElement;
         public        CameraDatabase Database          => this._database;
+        public        bool           IsDirectorView    => this._viewMode == ViewMode.DIRECTOR;
+
+        /// <summary>
+        /// The shot camera element. Exposed so the frustum wireframe and
+        /// gizmo system can read/write the shot camera's transform even
+        /// when Director View is active.
+        /// </summary>
+        public CameraElement ShotCamera => this._cameraElement;
 
         /// <summary>
         /// The right-side inset in pixels reserved for the properties panel.
@@ -40,6 +62,36 @@ namespace Fram3d.Engine.Integration
         public void SetRightInset(float pixels) => this._rightInsetPixels = pixels;
 
         public void SetSensorMode(SensorMode mode) => this._cameraElement.SetSensorMode(mode);
+
+        /// <summary>
+        /// Toggles between Camera View and Director View. On first entry
+        /// to Director View, the director camera copies the shot camera's
+        /// position and rotation. On subsequent entries, the director camera
+        /// preserves its own position.
+        /// </summary>
+        public void ToggleDirectorView()
+        {
+            if (this._viewMode == ViewMode.CAMERA)
+            {
+                if (!this._directorInitialized)
+                {
+                    this._directorCamera.Position = this._cameraElement.Position;
+                    this._directorCamera.Rotation = this._cameraElement.Rotation;
+                    this._directorInitialized     = true;
+                }
+
+                this._viewMode = ViewMode.DIRECTOR;
+            }
+            else
+            {
+                this._viewMode = ViewMode.CAMERA;
+            }
+
+            if (this._frustumWireframe != null)
+            {
+                this._frustumWireframe.gameObject.SetActive(this.IsDirectorView);
+            }
+        }
 
         private void ApplyShake(CameraElement cam)
         {
@@ -77,16 +129,25 @@ namespace Fram3d.Engine.Integration
 
         private void Sync()
         {
-            var cam               = this._cameraElement;
+            var cam               = this.ActiveCamera;
             var targetFocalLength = cam.FocalLength;
             this.transform.position = cam.Position.ToUnity();
             this.transform.rotation = cam.Rotation.ToUnity();
             this.SyncFocalLength(cam, targetFocalLength);
-            this.SyncDof(cam);
             this._unityCamera.focalLength = this._displayedFocalLength;
             this._unityCamera.sensorSize  = new Vector2(cam.SensorWidth, cam.SensorHeight);
             this.SyncViewportRect();
-            this.ApplyShake(cam);
+
+            if (this.IsDirectorView)
+            {
+                // Director View: no DOF, no shake — utility view
+                this._dof.mode.value = DepthOfFieldMode.Off;
+            }
+            else
+            {
+                this.SyncDof(this._cameraElement);
+                this.ApplyShake(this._cameraElement);
+            }
         }
 
         private void SyncDof(CameraElement cam)
@@ -142,6 +203,7 @@ namespace Fram3d.Engine.Integration
         {
             this._unityCamera                       = this.GetComponent<Camera>();
             this._cameraElement                     = new CameraElement(new ElementId(System.Guid.NewGuid()), "Main Camera");
+            this._directorCamera                    = new CameraElement(new ElementId(System.Guid.NewGuid()), "Director Camera");
             this._database                          = CameraDatabaseLoader.Load();
             this._unityCamera.usePhysicalProperties = true;
             this._unityCamera.gateFit               = Camera.GateFitMode.Overscan;
@@ -154,6 +216,7 @@ namespace Fram3d.Engine.Integration
             if (defaultBody != null)
             {
                 cam.SetBody(defaultBody);
+                this._directorCamera.SetBody(defaultBody);
             }
 
             if (defaultLensSet != null)
@@ -164,7 +227,18 @@ namespace Fram3d.Engine.Integration
             this._displayedFocalLength   = cam.FocalLength;
             this._unityCamera.sensorSize = new Vector2(cam.SensorWidth, cam.SensorHeight);
             this.SetupDofVolume();
+            this.CreateFrustumWireframe();
             this.Sync();
+        }
+
+        private void CreateFrustumWireframe()
+        {
+            var go = new GameObject("Shot Camera Frustum");
+            var behaviour = go.AddComponent<ElementBehaviour>();
+            behaviour.Element = this._cameraElement;
+            this._frustumWireframe = go.AddComponent<FrustumWireframe>();
+            this._frustumWireframe.Initialize(this._cameraElement);
+            go.SetActive(false);
         }
 
         private void LateUpdate()

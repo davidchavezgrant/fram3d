@@ -30,9 +30,6 @@ namespace Fram3d.UI.Input
         [SerializeField]
         private SelectionHighlighter selectionHighlighter;
 
-        [SerializeField]
-        private ViewCameraManager viewCameraManager;
-
         public void Tick(Mouse mouse, Keyboard keyboard)
         {
             if (this._selection == null || this.raycaster == null)
@@ -200,22 +197,7 @@ namespace Fram3d.UI.Input
             }
         }
 
-        private void Update()
-        {
-            // Update raycaster and gizmo controller cameras when active view changes
-            if (this.viewCameraManager != null)
-            {
-                var cam = this.viewCameraManager.ActiveUnityCamera;
-
-                if (cam != null)
-                {
-                    this.raycaster?.SetCamera(cam);
-                    this.gizmoController?.SetCamera(cam);
-                }
-            }
-
-            this.Tick(Mouse.current, Keyboard.current);
-        }
+        private void Update() => this.Tick(Mouse.current, Keyboard.current);
 
         private void OnDisable()
         {

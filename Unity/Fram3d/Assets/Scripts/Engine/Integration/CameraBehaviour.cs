@@ -33,19 +33,14 @@ namespace Fram3d.Engine.Integration
                                            ? this._directorCamera
                                            : this._cameraElement;
 
-        public        AspectRatio    ActiveAspectRatio => this._cameraElement.ActiveAspectRatio;
-        public        SensorMode     ActiveSensorMode  => this._cameraElement.ActiveSensorMode;
-        public        CameraElement  CameraElement     => this._cameraElement;
-        public        CameraDatabase Database          => this._database;
-        public        bool           IsDirectorView    => this._viewMode == ViewMode.DIRECTOR;
-
-        /// <summary>
-        /// The director utility camera element. Used by ViewCameraManager
-        /// to sync Director View cameras.
-        /// </summary>
-        public CameraElement  DirectorCamera      => this._directorCamera;
-        public bool           DirectorInitialized => this._directorInitialized;
-        public FrustumWireframe FrustumWireframe   => this._frustumWireframe;
+        public        AspectRatio      ActiveAspectRatio   => this._cameraElement.ActiveAspectRatio;
+        public        SensorMode       ActiveSensorMode    => this._cameraElement.ActiveSensorMode;
+        public        CameraElement    CameraElement       => this._cameraElement;
+        public        CameraDatabase   Database            => this._database;
+        public        CameraElement    DirectorCamera      => this._directorCamera;
+        public        float            DisplayedFocalLength => this._displayedFocalLength;
+        public        FrustumWireframe FrustumWireframe    => this._frustumWireframe;
+        public        bool             IsDirectorView      => this._viewMode == ViewMode.DIRECTOR;
 
         /// <summary>
         /// The shot camera element. Exposed so the frustum wireframe and
@@ -59,12 +54,6 @@ namespace Fram3d.Engine.Integration
         /// Overlay views read this to constrain their containers.
         /// </summary>
         public float RightInsetPixels => this._rightInsetPixels;
-
-        /// <summary>
-        /// The currently displayed (lerped) focal length. Used by
-        /// ViewCameraManager to sync Camera View cameras.
-        /// </summary>
-        public float DisplayedFocalLength => this._displayedFocalLength;
 
         public void CycleAspectRatioBackward() => this._cameraElement.CycleAspectRatioBackward();
         public void CycleAspectRatioForward()  => this._cameraElement.CycleAspectRatioForward();
@@ -93,13 +82,6 @@ namespace Fram3d.Engine.Integration
         }
 
         public void SetSensorMode(SensorMode mode) => this._cameraElement.SetSensorMode(mode);
-
-        /// <summary>
-        /// When true, LateUpdate Sync is handled externally by ViewCameraManager.
-        /// CameraBehaviour still runs its own focal length lerp but delegates
-        /// the camera sync to the per-slot cameras.
-        /// </summary>
-        public bool ExternalSyncEnabled { get; set; }
 
         /// <summary>
         /// Toggles between Camera View and Director View. On first entry
@@ -281,13 +263,6 @@ namespace Fram3d.Engine.Integration
 
         private void LateUpdate()
         {
-            if (this.ExternalSyncEnabled)
-            {
-                // Only update focal length lerp — ViewCameraManager handles the rest
-                this.SyncFocalLength(this._cameraElement, this._cameraElement.FocalLength);
-                return;
-            }
-
             this.Sync();
         }
     }

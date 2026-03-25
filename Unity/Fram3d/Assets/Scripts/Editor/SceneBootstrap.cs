@@ -266,23 +266,7 @@ namespace Fram3d.Editor
             vcmSo.FindProperty("cameraBehaviour").objectReferenceValue = cameraGo.GetComponent<CameraBehaviour>();
             vcmSo.ApplyModifiedProperties();
 
-            // Wire viewCameraManager on CameraInputHandler
-            var cameraInput   = cameraGo.GetComponent<CameraInputHandler>();
-            var cameraInputSo = new SerializedObject(cameraInput);
-            cameraInputSo.FindProperty("viewCameraManager").objectReferenceValue = viewCameraManager;
-            cameraInputSo.ApplyModifiedProperties();
-
-            // Wire viewCameraManager on SelectionInputHandler
-            var selectionInput = cameraGo.GetComponent<SelectionInputHandler>();
-
-            if (selectionInput != null)
-            {
-                var selInputSo = new SerializedObject(selectionInput);
-                selInputSo.FindProperty("viewCameraManager").objectReferenceValue = viewCameraManager;
-                selInputSo.ApplyModifiedProperties();
-            }
-
-            // View Layout UI
+            // View Layout UI (layout chooser buttons)
             var layoutGo = GameObject.Find("View Layout");
 
             if (layoutGo == null)
@@ -298,8 +282,7 @@ namespace Fram3d.Editor
                 uiDoc.panelSettings = GetOrCreatePanelSettings();
             }
 
-            // Render behind overlays and properties panel
-            uiDoc.sortingOrder = -1;
+            uiDoc.sortingOrder = 3;
 
             if (layoutGo.GetComponent<ViewLayoutView>() == null)
             {

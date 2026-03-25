@@ -29,18 +29,6 @@ namespace Fram3d.Engine.Integration
         [SerializeField]
         private Camera targetCamera;
 
-        /// <summary>
-        /// Overrides the camera used for gizmo raycasting and dragging.
-        /// Called by the view system when the active (hovered) view changes.
-        /// </summary>
-        public void SetCamera(Camera camera)
-        {
-            if (camera != null)
-            {
-                this.targetCamera = camera;
-            }
-        }
-
         public ActiveTool ActiveTool       => this._gizmoState.ActiveTool;
         public bool       IsDragging       => this._activeDrag != null;
         public bool       IsHoveringHandle => this._highlighter != null && this._highlighter.IsHoveringHandle;

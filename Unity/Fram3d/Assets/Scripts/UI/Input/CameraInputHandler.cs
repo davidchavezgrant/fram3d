@@ -38,9 +38,6 @@ namespace Fram3d.UI.Input
         private CameraBehaviour cameraBehaviour;
 
         [SerializeField]
-        private ViewCameraManager viewCameraManager;
-
-        [SerializeField]
         private CompositionGuideView compositionGuides;
 
         [SerializeField]
@@ -401,31 +398,6 @@ namespace Fram3d.UI.Input
                 return false;
             }
 
-            if (this.viewCameraManager != null)
-            {
-                // In multi-view, D key toggles the active slot between Camera/Director
-                var model = this.viewCameraManager.ViewSlotModel;
-                var slot  = this.viewCameraManager.ActiveSlot;
-                var mode  = model.GetSlotType(slot);
-
-                if (mode == ViewMode.CAMERA)
-                {
-                    model.SetSlotType(slot, ViewMode.DIRECTOR);
-                }
-                else if (mode == ViewMode.DIRECTOR)
-                {
-                    model.SetSlotType(slot, ViewMode.CAMERA);
-                }
-                else
-                {
-                    // Designer View — D key does nothing
-                    return false;
-                }
-
-                this._camera = this.viewCameraManager.ActiveCameraElement;
-                return true;
-            }
-
             this.cameraBehaviour.ToggleDirectorView();
             this._camera = this.cameraBehaviour.ActiveCamera;
             return true;
@@ -533,30 +505,8 @@ namespace Fram3d.UI.Input
             this._pendingScrollSamples.Clear();
         }
 
-        private void Start()
-        {
-            this._camera = this.cameraBehaviour.CameraElement;
-
-            if (this.viewCameraManager != null)
-            {
-                this._camera = this.viewCameraManager.ActiveCameraElement;
-            }
-        }
-        private void Update()
-        {
-            // Update active camera when the hovered view slot changes
-            if (this.viewCameraManager != null)
-            {
-                var slotCamera = this.viewCameraManager.ActiveCameraElement;
-
-                if (slotCamera != null && slotCamera != this._camera)
-                {
-                    this._camera = slotCamera;
-                }
-            }
-
-            this.Tick(Keyboard.current, Mouse.current);
-        }
+        private void Start()  => this._camera = this.cameraBehaviour.CameraElement;
+        private void Update() => this.Tick(Keyboard.current, Mouse.current);
 
         /// <summary>
         /// Resyncs modifier state when the application regains focus.

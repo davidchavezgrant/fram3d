@@ -315,6 +315,14 @@
     background-color: rgba(0, 0, 0, 0);
 }
 
+/* ── Active panel outline ─────────────────────────────────────────── */
+
+.view-active-outline {
+    border-width: 1px;
+    border-color: rgba(74, 158, 255, 0.6);
+    border-radius: 0;
+}
+
 /* ── Layout chooser ──────────────────────────────────────────────── */
 
 .layout-chooser {

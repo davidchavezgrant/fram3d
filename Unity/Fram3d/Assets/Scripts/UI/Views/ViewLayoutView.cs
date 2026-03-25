@@ -18,6 +18,7 @@ namespace Fram3d.UI.Views
     {
         private const int HEADER_HEIGHT = 26;
 
+        private VisualElement     _activeOutline;
         private VisualElement     _headerContainer;
         private VisualElement     _layoutChooser;
         private VisualElement     _root;
@@ -56,6 +57,14 @@ namespace Fram3d.UI.Views
             this._headerContainer.style.bottom   = 0;
             this._root.Add(this._headerContainer);
 
+            this._activeOutline                = new VisualElement();
+            this._activeOutline.name           = "active-panel-outline";
+            this._activeOutline.pickingMode    = PickingMode.Ignore;
+            this._activeOutline.style.position = Position.Absolute;
+            this._activeOutline.style.display  = DisplayStyle.None;
+            this._activeOutline.AddToClassList("view-active-outline");
+            this._root.Add(this._activeOutline);
+
             this.Rebuild();
             this._viewCameraManager.ViewSlotModel.Changed += this.Rebuild;
         }
@@ -68,6 +77,7 @@ namespace Fram3d.UI.Views
             }
 
             this.PositionHeaders();
+            this.PositionActiveOutline();
         }
 
         private void OnDestroy()
@@ -134,6 +144,33 @@ namespace Fram3d.UI.Views
                 this._headerContainer.Add(header.Root);
                 this._viewHeaders[i] = header;
             }
+        }
+
+        private void PositionActiveOutline()
+        {
+            if (!this._viewCameraManager.IsMultiView)
+            {
+                this._activeOutline.style.display = DisplayStyle.None;
+                return;
+            }
+
+            this._activeOutline.style.display = DisplayStyle.Flex;
+
+            var rootW = this._root.resolvedStyle.width;
+            var rootH = this._root.resolvedStyle.height;
+
+            if (float.IsNaN(rootW) || float.IsNaN(rootH))
+            {
+                return;
+            }
+
+            var activeSlot = this._viewCameraManager.ActiveSlot;
+            var vpRect     = this._viewCameraManager.GetViewportRect(activeSlot);
+
+            this._activeOutline.style.left   = vpRect.x * rootW;
+            this._activeOutline.style.top    = (1f - vpRect.y - vpRect.height) * rootH;
+            this._activeOutline.style.width  = vpRect.width  * rootW;
+            this._activeOutline.style.height = vpRect.height * rootH;
         }
 
         private void PositionHeaders()

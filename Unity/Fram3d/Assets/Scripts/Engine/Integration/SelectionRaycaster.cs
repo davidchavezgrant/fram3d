@@ -41,6 +41,17 @@ namespace Fram3d.Engine.Integration
                 return null;
             }
 
+            // Skip if the screen position is outside this camera's viewport
+            var vpRect = this.targetCamera.rect;
+            var normX  = screenPosition.x / Screen.width;
+            var normY  = screenPosition.y / Screen.height;
+
+            if (normX < vpRect.x || normX > vpRect.x + vpRect.width
+             || normY < vpRect.y || normY > vpRect.y + vpRect.height)
+            {
+                return null;
+            }
+
             var ray = this.targetCamera.ScreenPointToRay(screenPosition);
 
             if (!Physics.Raycast(ray,

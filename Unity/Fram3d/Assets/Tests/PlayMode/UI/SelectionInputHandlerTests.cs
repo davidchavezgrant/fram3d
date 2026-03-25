@@ -196,11 +196,15 @@ namespace Fram3d.Tests.UI
             Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Small mouse movement should still count as a click and select");
         }
 
+        /// <summary>
+        /// Ctrl+D duplicates the selected element. Don't call Tick() manually —
+        /// Update() already calls it. Calling both would fire the shortcut twice
+        /// in one frame (wasPressedThisFrame stays true for the whole frame).
+        /// </summary>
         [UnityTest]
         public IEnumerator CtrlD__DuplicatesElement__When__ElementSelected()
         {
             yield return null;
-            yield return new WaitForFixedUpdate();
 
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
             this._highlighter.Selection.Select(element.Id);
@@ -208,11 +212,9 @@ namespace Fram3d.Tests.UI
 
             Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Precondition: element selected");
 
-            // Press Ctrl+D
+            // Press Ctrl+D — Update() processes it on the next frame
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl, Key.D));
             yield return null;
-
-            this._handler.Tick(this._mouse, this._keyboard);
 
             // Release
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
@@ -246,7 +248,6 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftCtrl, Key.D));
             yield return null;
 
-            this._handler.Tick(this._mouse, this._keyboard);
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             yield return null;
 

@@ -98,19 +98,22 @@ namespace Fram3d.Tests.Engine
         {
             yield return null;
 
-            var source  = this._cube.GetComponent<ElementBehaviour>().Element;
-            var rot     = System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitY, 1.0f);
+            var source = this._cube.GetComponent<ElementBehaviour>().Element;
+            var rot    = System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitY, 1.0f);
             source.Rotation = rot;
-            this._selection.Select(source.Id);
 
+            // Yield so LateUpdate syncs Core rotation → Unity transform.
+            // Instantiate clones the transform, and the clone's Awake reads
+            // rotation from its transform — if we don't yield, the clone
+            // gets the stale identity rotation from the un-synced transform.
+            yield return null;
+
+            this._selection.Select(source.Id);
             ElementDuplicator.TryDuplicate(this._selection);
             this.TrackDuplicates();
             yield return null;
 
             var duplicate = this.FindDuplicateBehaviour();
-
-            // Rotation comes from Instantiate (clone transform) → Awake → ToSystem.
-            // The clone's transform matches the source because Instantiate copies it.
             Assert.AreNotEqual(System.Numerics.Quaternion.Identity, duplicate.Element.Rotation, "Duplicate should not have identity rotation");
         }
 

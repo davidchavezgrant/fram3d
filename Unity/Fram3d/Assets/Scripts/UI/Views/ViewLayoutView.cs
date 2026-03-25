@@ -20,6 +20,7 @@ namespace Fram3d.UI.Views
 
         private VisualElement     _headerContainer;
         private VisualElement     _layoutChooser;
+        private VisualElement[]   _placeholders = Array.Empty<VisualElement>();
         private VisualElement     _root;
         private ViewCameraManager _viewCameraManager;
         private ViewHeader[]      _viewHeaders = Array.Empty<ViewHeader>();
@@ -68,6 +69,7 @@ namespace Fram3d.UI.Views
             }
 
             this.PositionHeaders();
+            this.PositionPlaceholders();
         }
 
         private void OnDestroy()
@@ -127,18 +129,65 @@ namespace Fram3d.UI.Views
 
             if (model.Layout == ViewLayout.SINGLE)
             {
-                this._viewHeaders = Array.Empty<ViewHeader>();
+                this._viewHeaders   = Array.Empty<ViewHeader>();
+                this._placeholders = Array.Empty<VisualElement>();
                 return;
             }
 
             var count = model.ActiveSlotCount;
-            this._viewHeaders = new ViewHeader[count];
+            this._viewHeaders  = new ViewHeader[count];
+            this._placeholders = new VisualElement[count];
 
             for (var i = 0; i < count; i++)
             {
                 var header = new ViewHeader(i, model.GetSlotType(i), this._viewCameraManager);
                 this._headerContainer.Add(header.Root);
                 this._viewHeaders[i] = header;
+
+                var placeholder = this.CreatePlaceholder();
+                this._headerContainer.Add(placeholder);
+                this._placeholders[i] = placeholder;
+            }
+        }
+
+        private VisualElement CreatePlaceholder()
+        {
+            var el = new VisualElement();
+            el.pickingMode      = PickingMode.Ignore;
+            el.style.position   = Position.Absolute;
+            el.style.display    = DisplayStyle.None;
+            el.AddToClassList("view-panel__placeholder");
+
+            var label = new Label("Designer View");
+            label.pickingMode = PickingMode.Ignore;
+            label.AddToClassList("view-panel__placeholder-title");
+            el.Add(label);
+
+            return el;
+        }
+
+        private void PositionPlaceholders()
+        {
+            var screenWidth  = (float)Screen.width;
+            var screenHeight = (float)Screen.height;
+            var model        = this._viewCameraManager.ViewSlotModel;
+            var count        = model.ActiveSlotCount;
+
+            for (var i = 0; i < this._placeholders.Length && i < count; i++)
+            {
+                var isDesigner = model.GetSlotType(i) == ViewMode.DESIGNER;
+                this._placeholders[i].style.display = isDesigner ? DisplayStyle.Flex : DisplayStyle.None;
+
+                if (!isDesigner)
+                {
+                    continue;
+                }
+
+                var vpRect = this._viewCameraManager.GetViewportRect(i);
+                this._placeholders[i].style.left   = vpRect.x * screenWidth;
+                this._placeholders[i].style.top    = (1f - vpRect.y - vpRect.height) * screenHeight;
+                this._placeholders[i].style.width  = vpRect.width  * screenWidth;
+                this._placeholders[i].style.height = vpRect.height * screenHeight;
             }
         }
 

@@ -100,16 +100,18 @@ namespace Fram3d.Core.Common
 
             this._layout = layout;
 
-            // If Camera View is in slot 1 and we're going to single, move it
-            if (layout == ViewLayout.SINGLE && this._slots[0] != ViewMode.CAMERA)
+            if (layout == ViewLayout.SINGLE)
             {
-                this._slots[1] = this._slots[0];
-                this._slots[0] = ViewMode.CAMERA;
+                // Shrinking: ensure Camera View is in slot 0
+                if (this._slots[0] != ViewMode.CAMERA)
+                {
+                    this._slots[0] = ViewMode.CAMERA;
+                }
             }
-
-            // If expanding to split, ensure slot 1 has Director
-            if (layout != ViewLayout.SINGLE && this._slots[1] == ViewMode.CAMERA)
+            else
             {
+                // Expanding: ensure exactly one Camera and one Director
+                this._slots[0] = ViewMode.CAMERA;
                 this._slots[1] = ViewMode.DIRECTOR;
             }
 

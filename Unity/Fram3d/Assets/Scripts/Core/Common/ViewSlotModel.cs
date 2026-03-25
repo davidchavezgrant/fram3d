@@ -4,19 +4,18 @@ using Fram3d.Core.Scene;
 namespace Fram3d.Core.Common
 {
     /// <summary>
-    /// Manages which ViewMode is assigned to each view slot. Enforces the
-    /// invariant that exactly one slot holds Camera View at all times.
-    /// Changing a slot to Camera View triggers a smart swap — the slot that
-    /// previously held Camera View receives the requesting slot's old type.
+    /// Manages which ViewMode is assigned to each view slot. Two slots:
+    /// slot 0 defaults to Camera View, slot 1 defaults to Director View.
+    /// Enforces the invariant that exactly one slot holds Camera View.
+    /// Changing a slot to Camera View triggers a smart swap.
     /// </summary>
     public sealed class ViewSlotModel
     {
-        private readonly ViewMode[] _slots = { ViewMode.CAMERA, ViewMode.DIRECTOR, ViewMode.DESIGNER };
+        private readonly ViewMode[] _slots = { ViewMode.CAMERA, ViewMode.DIRECTOR };
         private          ViewLayout _layout = ViewLayout.SINGLE;
 
         /// <summary>
-        /// Fires when layout or any slot type changes. The subscriber should
-        /// rebuild the view structure from scratch.
+        /// Fires when layout or any slot type changes.
         /// </summary>
         public event Action Changed;
 
@@ -26,21 +25,7 @@ namespace Fram3d.Core.Common
         /// <summary>
         /// Which slot index currently holds Camera View.
         /// </summary>
-        public int CameraViewSlotIndex
-        {
-            get
-            {
-                for (var i = 0; i < this._slots.Length; i++)
-                {
-                    if (this._slots[i] == ViewMode.CAMERA)
-                    {
-                        return i;
-                    }
-                }
-
-                return 0;
-            }
-        }
+        public int CameraViewSlotIndex => this._slots[0] == ViewMode.CAMERA ? 0 : 1;
 
         public ViewMode GetSlotType(int index)
         {
@@ -53,10 +38,10 @@ namespace Fram3d.Core.Common
         }
 
         /// <summary>
-        /// Sets the view type for a slot. If the requested type is Camera View,
-        /// performs a smart swap: the slot that currently holds Camera View
-        /// receives this slot's old type. Camera View always exists in exactly
-        /// one slot.
+        /// Sets the view type for a slot. Only Camera View and Director View
+        /// are valid types. Setting a slot to Camera View triggers a smart
+        /// swap. The Camera View slot cannot be changed to a different type
+        /// directly — it can only move via smart swap.
         /// </summary>
         public void SetSlotType(int index, ViewMode type)
         {
@@ -72,15 +57,15 @@ namespace Fram3d.Core.Common
 
             if (type == ViewMode.CAMERA)
             {
-                var oldCameraSlot = this.CameraViewSlotIndex;
-                var oldType       = this._slots[index];
+                // Smart swap: the old Camera slot gets this slot's type
+                var oldCameraSlot          = this.CameraViewSlotIndex;
+                var oldType                = this._slots[index];
                 this._slots[index]         = ViewMode.CAMERA;
                 this._slots[oldCameraSlot] = oldType;
             }
             else if (this._slots[index] == ViewMode.CAMERA)
             {
-                // Cannot remove Camera View — it must always exist in one slot.
-                // Ignore the request silently.
+                // Cannot remove Camera View — it must always exist.
                 return;
             }
             else
@@ -92,10 +77,9 @@ namespace Fram3d.Core.Common
         }
 
         /// <summary>
-        /// Changes the layout. Preserves existing slot types where possible.
-        /// New slots receive defaults: slot 1 → Director View, slot 2 → Designer View.
-        /// If Camera View was in a slot beyond the new layout's count, it moves
-        /// to slot 0.
+        /// Changes the layout. Preserves existing slot types. If switching
+        /// from split to single and Camera View was in slot 1, it moves to
+        /// slot 0.
         /// </summary>
         public void SetLayout(ViewLayout layout)
         {
@@ -104,88 +88,22 @@ namespace Fram3d.Core.Common
                 return;
             }
 
-            var oldCount = this._layout.ViewCount;
             this._layout = layout;
-            var newCount = layout.ViewCount;
 
-            // If we're expanding, fill new slots with defaults
-            if (newCount > oldCount)
+            // If Camera View is in slot 1 and we're going to single, move it
+            if (layout == ViewLayout.SINGLE && this._slots[0] != ViewMode.CAMERA)
             {
-                for (var i = oldCount; i < newCount; i++)
-                {
-                    this._slots[i] = DefaultForSlot(i);
-                }
-
-                // Resolve duplicates: if a new slot's default matches an
-                // existing slot's type (and it's not Camera View), reassign
-                for (var i = oldCount; i < newCount; i++)
-                {
-                    if (this._slots[i] == ViewMode.CAMERA)
-                    {
-                        continue;
-                    }
-
-                    for (var j = 0; j < i; j++)
-                    {
-                        if (this._slots[j] == this._slots[i])
-                        {
-                            this._slots[i] = FindUnusedType(newCount);
-                            break;
-                        }
-                    }
-                }
+                this._slots[1] = this._slots[0];
+                this._slots[0] = ViewMode.CAMERA;
             }
 
-            // If Camera View is now beyond visible slots, move it to slot 0
-            if (this.CameraViewSlotIndex >= newCount)
+            // If expanding to split, ensure slot 1 has Director
+            if (layout != ViewLayout.SINGLE && this._slots[1] == ViewMode.CAMERA)
             {
-                this._slots[this.CameraViewSlotIndex] = DefaultForSlot(this.CameraViewSlotIndex);
-                this._slots[0]                         = ViewMode.CAMERA;
+                this._slots[1] = ViewMode.DIRECTOR;
             }
 
             this.Changed?.Invoke();
-        }
-
-        private static ViewMode DefaultForSlot(int index)
-        {
-            if (index == 0)
-            {
-                return ViewMode.CAMERA;
-            }
-
-            if (index == 1)
-            {
-                return ViewMode.DIRECTOR;
-            }
-
-            return ViewMode.DESIGNER;
-        }
-
-        private ViewMode FindUnusedType(int slotCount)
-        {
-            var types = new[] { ViewMode.DIRECTOR, ViewMode.DESIGNER };
-
-            foreach (var type in types)
-            {
-                var used = false;
-
-                for (var i = 0; i < slotCount; i++)
-                {
-                    if (this._slots[i] == type)
-                    {
-                        used = true;
-                        break;
-                    }
-                }
-
-                if (!used)
-                {
-                    return type;
-                }
-            }
-
-            // All types in use — fallback to Director
-            return ViewMode.DIRECTOR;
         }
     }
 }

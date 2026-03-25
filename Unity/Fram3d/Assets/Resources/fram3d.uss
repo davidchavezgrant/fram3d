@@ -301,48 +301,18 @@
     font-size: 10px;
     color: rgb(153, 153, 153);
     letter-spacing: 1px;
-    flex-grow: 1;
+    flex-grow: 0;
+    padding-right: 12px;
+    cursor: link;
 }
 
-.view-panel__dropdown-btn {
-    width: 20px;
-    height: 18px;
-    font-size: 10px;
-    color: rgb(153, 153, 153);
-    background-color: rgba(0, 0, 0, 0);
-    border-width: 0;
-    padding: 0;
-    margin: 0;
-    -unity-text-align: middle-center;
-}
-
-.view-panel__dropdown-btn:hover {
+.view-panel__header-label:hover {
     color: rgb(220, 220, 220);
-    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .view-panel__content {
     flex-grow: 1;
     background-color: rgba(0, 0, 0, 0);
-}
-
-.view-panel__placeholder {
-    flex-grow: 1;
-    align-items: center;
-    justify-content: center;
-    background-color: rgb(0, 0, 0);
-}
-
-.view-panel__placeholder-title {
-    font-size: 16px;
-    color: rgb(255, 255, 255);
-    margin-bottom: 6px;
-    -unity-font-style: bold;
-}
-
-.view-panel__placeholder-hint {
-    font-size: 11px;
-    color: rgb(70, 70, 80);
 }
 
 /* ── Layout chooser ──────────────────────────────────────────────── */

@@ -69,6 +69,7 @@ namespace Fram3d.Editor
 
             var settings = ScriptableObject.CreateInstance<PanelSettings>();
             settings.scaleMode = PanelScaleMode.ConstantPixelSize;
+            settings.scale     = 1.25f;
             AssetDatabase.CreateAsset(settings, "Assets/Settings/PanelSettings.asset");
             return settings;
         }

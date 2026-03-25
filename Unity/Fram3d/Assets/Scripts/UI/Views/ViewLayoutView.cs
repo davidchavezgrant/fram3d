@@ -9,10 +9,10 @@ using UnityEngine.UIElements;
 namespace Fram3d.UI.Views
 {
     /// <summary>
-    /// Renders the layout chooser and per-viewport header bars. In multi-view,
-    /// each viewport gets a small header showing the view type with a dropdown
-    /// to change it. Headers are positioned to match Camera.rect viewports.
-    /// All elements use pickingMode = Ignore except interactive controls.
+    /// Renders the layout chooser and per-viewport header bars. Each viewport
+    /// gets a header showing the view type name — clicking the name opens a
+    /// dropdown to switch between Camera View and Director View. Headers
+    /// appear in all modes including single-view.
     /// </summary>
     public sealed class ViewLayoutView : MonoBehaviour
     {
@@ -20,7 +20,6 @@ namespace Fram3d.UI.Views
 
         private VisualElement     _headerContainer;
         private VisualElement     _layoutChooser;
-        private VisualElement[]   _placeholders = Array.Empty<VisualElement>();
         private VisualElement     _root;
         private ViewCameraManager _viewCameraManager;
         private ViewHeader[]      _viewHeaders = Array.Empty<ViewHeader>();
@@ -47,9 +46,9 @@ namespace Fram3d.UI.Views
             StyleSheetLoader.Apply(this._root);
             this._root.pickingMode = PickingMode.Ignore;
 
-            this._headerContainer             = new VisualElement();
-            this._headerContainer.name        = "view-headers";
-            this._headerContainer.pickingMode = PickingMode.Ignore;
+            this._headerContainer                = new VisualElement();
+            this._headerContainer.name           = "view-headers";
+            this._headerContainer.pickingMode    = PickingMode.Ignore;
             this._headerContainer.style.position = Position.Absolute;
             this._headerContainer.style.left     = 0;
             this._headerContainer.style.top      = 0;
@@ -57,19 +56,18 @@ namespace Fram3d.UI.Views
             this._headerContainer.style.bottom   = 0;
             this._root.Add(this._headerContainer);
 
-            this.BuildLayoutChooser();
+            this.Rebuild();
             this._viewCameraManager.ViewSlotModel.Changed += this.Rebuild;
         }
 
         private void Update()
         {
-            if (this._viewCameraManager == null || !this._viewCameraManager.IsMultiView)
+            if (this._viewCameraManager == null)
             {
                 return;
             }
 
             this.PositionHeaders();
-            this.PositionPlaceholders();
         }
 
         private void OnDestroy()
@@ -100,9 +98,9 @@ namespace Fram3d.UI.Views
             this._layoutChooser.AddToClassList("layout-chooser");
             var model = this._viewCameraManager.ViewSlotModel;
 
-            this._layoutChooser.Add(this.CreateLayoutButton("\u25fb", ViewLayout.SINGLE,       model.Layout));
-            this._layoutChooser.Add(this.CreateLayoutButton("\u25eb", ViewLayout.SIDE_BY_SIDE, model.Layout));
-            this._layoutChooser.Add(this.CreateLayoutButton("\u229e", ViewLayout.ONE_PLUS_TWO, model.Layout));
+            this._layoutChooser.Add(this.CreateLayoutButton("\u25fb", ViewLayout.SINGLE,     model.Layout));
+            this._layoutChooser.Add(this.CreateLayoutButton("\u25eb", ViewLayout.HORIZONTAL, model.Layout));
+            this._layoutChooser.Add(this.CreateLayoutButton("\u2b12", ViewLayout.VERTICAL,   model.Layout));
             this._root.Add(this._layoutChooser);
         }
 
@@ -126,87 +124,49 @@ namespace Fram3d.UI.Views
         {
             this._headerContainer.Clear();
             var model = this._viewCameraManager.ViewSlotModel;
-
-            if (model.Layout == ViewLayout.SINGLE)
-            {
-                this._viewHeaders   = Array.Empty<ViewHeader>();
-                this._placeholders = Array.Empty<VisualElement>();
-                return;
-            }
-
             var count = model.ActiveSlotCount;
-            this._viewHeaders  = new ViewHeader[count];
-            this._placeholders = new VisualElement[count];
+
+            this._viewHeaders = new ViewHeader[count];
 
             for (var i = 0; i < count; i++)
             {
                 var header = new ViewHeader(i, model.GetSlotType(i), this._viewCameraManager);
                 this._headerContainer.Add(header.Root);
                 this._viewHeaders[i] = header;
-
-                var placeholder = this.CreatePlaceholder();
-                this._headerContainer.Add(placeholder);
-                this._placeholders[i] = placeholder;
-            }
-        }
-
-        private VisualElement CreatePlaceholder()
-        {
-            var el = new VisualElement();
-            el.pickingMode      = PickingMode.Ignore;
-            el.style.position   = Position.Absolute;
-            el.style.display    = DisplayStyle.None;
-            el.AddToClassList("view-panel__placeholder");
-
-            var label = new Label("Designer View");
-            label.pickingMode = PickingMode.Ignore;
-            label.AddToClassList("view-panel__placeholder-title");
-            el.Add(label);
-
-            return el;
-        }
-
-        private void PositionPlaceholders()
-        {
-            var screenWidth  = (float)Screen.width;
-            var screenHeight = (float)Screen.height;
-            var model        = this._viewCameraManager.ViewSlotModel;
-            var count        = model.ActiveSlotCount;
-
-            for (var i = 0; i < this._placeholders.Length && i < count; i++)
-            {
-                var isDesigner = model.GetSlotType(i) == ViewMode.DESIGNER;
-                this._placeholders[i].style.display = isDesigner ? DisplayStyle.Flex : DisplayStyle.None;
-
-                if (!isDesigner)
-                {
-                    continue;
-                }
-
-                var vpRect = this._viewCameraManager.GetViewportRect(i);
-                this._placeholders[i].style.left   = vpRect.x * screenWidth;
-                this._placeholders[i].style.top    = (1f - vpRect.y - vpRect.height) * screenHeight;
-                this._placeholders[i].style.width  = vpRect.width  * screenWidth;
-                this._placeholders[i].style.height = vpRect.height * screenHeight;
             }
         }
 
         private void PositionHeaders()
         {
-            var screenWidth  = (float)Screen.width;
-            var screenHeight = (float)Screen.height;
-            var count        = this._viewCameraManager.ViewSlotModel.ActiveSlotCount;
+            var model = this._viewCameraManager.ViewSlotModel;
+            var count = model.ActiveSlotCount;
+
+            if (model.Layout == ViewLayout.SINGLE)
+            {
+                // Single-view: header at top-left, full width
+                if (this._viewHeaders.Length > 0)
+                {
+                    var screenWidth = (float)Screen.width;
+                    var inset       = this._viewCameraManager.CameraBehaviour.RightInsetPixels;
+
+                    this._viewHeaders[0].Root.style.left  = 0;
+                    this._viewHeaders[0].Root.style.top   = 0;
+                    this._viewHeaders[0].Root.style.width = screenWidth - inset;
+                }
+
+                return;
+            }
+
+            var sw = (float)Screen.width;
+            var sh = (float)Screen.height;
 
             for (var i = 0; i < this._viewHeaders.Length && i < count; i++)
             {
                 var vpRect = this._viewCameraManager.GetViewportRect(i);
-                var left   = vpRect.x * screenWidth;
-                var top    = (1f - vpRect.y - vpRect.height) * screenHeight;
-                var w      = vpRect.width * screenWidth;
 
-                this._viewHeaders[i].Root.style.left  = left;
-                this._viewHeaders[i].Root.style.top   = top;
-                this._viewHeaders[i].Root.style.width = w;
+                this._viewHeaders[i].Root.style.left  = vpRect.x * sw;
+                this._viewHeaders[i].Root.style.top   = (1f - vpRect.y - vpRect.height) * sh;
+                this._viewHeaders[i].Root.style.width = vpRect.width * sw;
             }
         }
 
@@ -214,11 +174,11 @@ namespace Fram3d.UI.Views
 
         private sealed class ViewHeader
         {
-            private readonly Label              _label;
-            private readonly VisualElement       _root;
-            private readonly int                _slotIndex;
-            private readonly ViewCameraManager  _viewCameraManager;
-            private          ViewMode           _viewMode;
+            private readonly Label             _label;
+            private readonly VisualElement      _root;
+            private readonly int               _slotIndex;
+            private readonly ViewCameraManager _viewCameraManager;
+            private          ViewMode          _viewMode;
 
             public ViewHeader(int slotIndex, ViewMode viewMode, ViewCameraManager viewCameraManager)
             {
@@ -226,31 +186,32 @@ namespace Fram3d.UI.Views
                 this._viewMode          = viewMode;
                 this._viewCameraManager = viewCameraManager;
 
-                this._root                  = new VisualElement();
-                this._root.name             = $"view-header-{slotIndex}";
-                this._root.style.position   = Position.Absolute;
-                this._root.style.height     = HEADER_HEIGHT;
-                this._root.pickingMode      = PickingMode.Ignore;
+                this._root                = new VisualElement();
+                this._root.name           = $"view-header-{slotIndex}";
+                this._root.style.position = Position.Absolute;
+                this._root.style.height   = HEADER_HEIGHT;
+                this._root.pickingMode    = PickingMode.Ignore;
                 this._root.AddToClassList("view-panel__header");
 
-                this._label = new Label(viewMode.Name);
+                this._label             = new Label(viewMode.Name);
+                this._label.pickingMode = PickingMode.Position;
                 this._label.AddToClassList("view-panel__header-label");
-                this._label.pickingMode = PickingMode.Ignore;
+                this._label.RegisterCallback<ClickEvent>(_ => this.ShowViewTypeMenu());
                 this._root.Add(this._label);
-
-                var dropdownBtn = new Button();
-                dropdownBtn.text = "\u25be";
-                dropdownBtn.AddToClassList("view-panel__dropdown-btn");
-                dropdownBtn.clicked += () => this.ShowViewTypeMenu(dropdownBtn);
-                this._root.Add(dropdownBtn);
             }
 
             public VisualElement Root => this._root;
 
-            private void ShowViewTypeMenu(VisualElement anchor)
+            public void UpdateLabel(ViewMode mode)
+            {
+                this._viewMode  = mode;
+                this._label.text = mode.Name;
+            }
+
+            private void ShowViewTypeMenu()
             {
                 var menu  = new GenericDropdownMenu();
-                var types = new[] { ViewMode.CAMERA, ViewMode.DIRECTOR, ViewMode.DESIGNER };
+                var types = new[] { ViewMode.CAMERA, ViewMode.DIRECTOR };
 
                 foreach (var type in types)
                 {
@@ -263,12 +224,12 @@ namespace Fram3d.UI.Views
                         }
 
                         this._viewCameraManager.ViewSlotModel.SetSlotType(this._slotIndex, captured);
-                        this._viewMode  = captured;
+                        this._viewMode   = captured;
                         this._label.text = captured.Name;
                     });
                 }
 
-                menu.DropDown(anchor.worldBound, anchor, false);
+                menu.DropDown(this._label.worldBound, this._label, false);
             }
         }
     }

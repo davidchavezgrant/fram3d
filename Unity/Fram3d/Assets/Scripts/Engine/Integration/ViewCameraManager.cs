@@ -312,12 +312,11 @@ namespace Fram3d.Engine.Integration
 
         private Rect[] ComputeViewportRects()
         {
-            // Account for the properties panel inset
             var screenWidth   = (float)Screen.width;
             var insetPixels   = this.cameraBehaviour.RightInsetPixels;
             var availableNorm = screenWidth > 0 ? (screenWidth - insetPixels) / screenWidth : 1f;
 
-            if (this.ViewSlotModel.Layout == ViewLayout.SIDE_BY_SIDE)
+            if (this.ViewSlotModel.Layout == ViewLayout.HORIZONTAL)
             {
                 var halfW = availableNorm * 0.5f;
                 return new[]
@@ -327,13 +326,11 @@ namespace Fram3d.Engine.Integration
                 };
             }
 
-            // ONE_PLUS_TWO: top full width, bottom split
-            var bottomHalfW = availableNorm * 0.5f;
+            // VERTICAL: top and bottom
             return new[]
             {
-                new Rect(0,           0.4f, availableNorm, 0.6f),
-                new Rect(0,           0,    bottomHalfW,   0.4f),
-                new Rect(bottomHalfW, 0,    bottomHalfW,   0.4f)
+                new Rect(0, 0.5f, availableNorm, 0.5f),
+                new Rect(0, 0,    availableNorm, 0.5f)
             };
         }
 

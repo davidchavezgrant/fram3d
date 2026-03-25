@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Fram3d.Engine.Integration;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 namespace Fram3d.Engine.Rendering
 {
@@ -10,6 +11,8 @@ namespace Fram3d.Engine.Rendering
     /// Uses <c>ZTest Always</c> and <c>ZWrite Off</c> via the objects' own
     /// materials (GizmoHandle shader). This pass provides explicit timing
     /// control instead of relying on render queue ordering.
+    /// Implements both the legacy Execute path and the RenderGraph path
+    /// for Unity 6 compatibility.
     /// </summary>
     internal sealed class GizmoRenderPass: ScriptableRenderPass
     {
@@ -28,6 +31,7 @@ namespace Fram3d.Engine.Rendering
                                                               1 << GizmoController.GIZMO_LAYER_INDEX);
         }
 
+        [System.Obsolete]
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
             var drawingSettings = CreateDrawingSettings(SHADER_TAGS,
@@ -37,6 +41,42 @@ namespace Fram3d.Engine.Rendering
             context.DrawRenderers(renderingData.cullResults,
                                   ref drawingSettings,
                                   ref this._filteringSettings);
+        }
+
+        private class PassData
+        {
+            public RendererListHandle RendererListHandle;
+        }
+
+        public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
+        {
+            var universalResourceData = frameData.Get<UniversalResourceData>();
+            var renderingData         = frameData.Get<UniversalRenderingData>();
+            var cameraData            = frameData.Get<UniversalCameraData>();
+
+            var drawingSettings = RenderingUtils.CreateDrawingSettings(SHADER_TAGS,
+                                                                       renderingData,
+                                                                       cameraData,
+                                                                       SortingCriteria.CommonTransparent);
+
+            var listParams = new RendererListParams(renderingData.cullResults,
+                                                     drawingSettings,
+                                                     this._filteringSettings);
+
+            var rendererListHandle = renderGraph.CreateRendererList(listParams);
+
+            using (var builder = renderGraph.AddRasterRenderPass<PassData>("Gizmo Render Pass", out var passData))
+            {
+                passData.RendererListHandle = rendererListHandle;
+                builder.UseRendererList(rendererListHandle);
+                builder.SetRenderAttachment(universalResourceData.activeColorTexture, 0);
+                builder.SetRenderAttachmentDepth(universalResourceData.activeDepthTexture);
+
+                builder.SetRenderFunc<PassData>((data, context) =>
+                {
+                    context.cmd.DrawRendererList(data.RendererListHandle);
+                });
+            }
         }
     }
 }

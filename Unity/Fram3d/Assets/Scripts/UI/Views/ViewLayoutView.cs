@@ -270,7 +270,7 @@ namespace Fram3d.UI.Views
                     });
                 }
 
-                menu.DropDown(this._label.worldBound, this._label, false);
+                menu.DropDown(this._label.worldBound, this._label);
             }
         }
     }

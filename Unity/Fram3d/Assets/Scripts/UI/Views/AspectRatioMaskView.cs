@@ -41,34 +41,38 @@ namespace Fram3d.UI.Views
             this._container.RegisterCallback<GeometryChangedEvent>(_ => this.UpdateBars());
         }
 
+        private float CssInset()
+        {
+            var w     = this._root.resolvedStyle.width;
+            var scale = Screen.width > 0 && !float.IsNaN(w) && w > 0
+                      ? (float)Screen.width / w
+                      : 1f;
+
+            return this._cameraBehaviour.RightInsetPixels / scale;
+        }
+
         private void ScopeToViewport()
         {
+            var rootW = this._root.resolvedStyle.width;
+            var rootH = this._root.resolvedStyle.height;
+
             if (this._viewCameraManager == null || !this._viewCameraManager.IsMultiView)
             {
-                // RightInsetPixels is in screen pixels; convert to CSS pixels
-                var rootW     = this._root.resolvedStyle.width;
-                var scale     = Screen.width > 0 && !float.IsNaN(rootW) && rootW > 0
-                              ? (float)Screen.width / rootW
-                              : 1f;
-                var cssInset  = this._cameraBehaviour.RightInsetPixels / scale;
-
                 this._container.style.left   = 0;
                 this._container.style.top    = 0;
-                this._container.style.right  = cssInset;
+                this._container.style.right  = this.CssInset();
                 this._container.style.bottom = 0;
                 this._container.style.width  = StyleKeyword.Auto;
                 this._container.style.height = StyleKeyword.Auto;
                 return;
             }
 
-            var vpRect   = this._viewCameraManager.CameraViewRect;
-            var rootW    = this._root.resolvedStyle.width;
-            var rootH    = this._root.resolvedStyle.height;
-
             if (float.IsNaN(rootW) || float.IsNaN(rootH))
             {
                 return;
             }
+
+            var vpRect = this._viewCameraManager.CameraViewRect;
 
             this._container.style.left   = vpRect.x * rootW;
             this._container.style.top    = (1f - vpRect.y - vpRect.height) * rootH;

@@ -1,3 +1,4 @@
+using Fram3d.Core.Scene;
 using Fram3d.Engine.Integration;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -10,8 +11,9 @@ namespace Fram3d.UI.Views
     /// </summary>
     public sealed class DirectorViewBadge: MonoBehaviour
     {
-        private CameraBehaviour _cameraBehaviour;
-        private VisualElement   _badge;
+        private CameraBehaviour   _cameraBehaviour;
+        private VisualElement     _badge;
+        private ViewCameraManager _viewCameraManager;
 
         private void BuildBadge()
         {
@@ -29,9 +31,29 @@ namespace Fram3d.UI.Views
             this._badge.style.display = DisplayStyle.None;
         }
 
+        private bool IsDirectorViewVisible()
+        {
+            if (this._viewCameraManager == null)
+            {
+                return this._cameraBehaviour.IsDirectorView;
+            }
+
+            // In multi-view, show the badge when the active (hovered) slot is Director View
+            var model = this._viewCameraManager.ViewSlotModel;
+            var slot  = this._viewCameraManager.ActiveSlot;
+
+            if (slot < 0 || slot >= model.ActiveSlotCount)
+            {
+                return false;
+            }
+
+            return model.GetSlotType(slot) == ViewMode.DIRECTOR;
+        }
+
         private void Start()
         {
-            this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
+            this._cameraBehaviour   = FindAnyObjectByType<CameraBehaviour>();
+            this._viewCameraManager = FindAnyObjectByType<ViewCameraManager>();
             this.BuildBadge();
         }
 
@@ -42,7 +64,7 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            this._badge.style.display = this._cameraBehaviour.IsDirectorView
+            this._badge.style.display = this.IsDirectorViewVisible()
                                       ? DisplayStyle.Flex
                                       : DisplayStyle.None;
         }

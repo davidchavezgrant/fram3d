@@ -23,6 +23,18 @@ namespace Fram3d.Engine.Integration
         private Camera targetCamera;
 
         /// <summary>
+        /// Overrides the camera used for raycasting. Called by the view
+        /// system when the active (hovered) view changes.
+        /// </summary>
+        public void SetCamera(Camera camera)
+        {
+            if (camera != null)
+            {
+                this.targetCamera = camera;
+            }
+        }
+
+        /// <summary>
         /// Casts a ray from the camera through the given screen position.
         /// Returns the Element under the cursor, or null if no element was hit.
         /// </summary>

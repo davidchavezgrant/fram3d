@@ -31,7 +31,8 @@ namespace Fram3d.UI.Views
         private VisualElement _thirdsV2;
 
         // Safe zones (each is a single element with border)
-        private VisualElement            _titleSafe;
+        private VisualElement          _titleSafe;
+        private ViewCameraManager      _viewCameraManager;
         public  CompositionGuideSettings Settings { get; } = new();
 
         private void BuildOverlay()
@@ -200,7 +201,8 @@ namespace Fram3d.UI.Views
 
         private void Start()
         {
-            this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
+            this._cameraBehaviour   = FindAnyObjectByType<CameraBehaviour>();
+            this._viewCameraManager = FindAnyObjectByType<ViewCameraManager>();
 
             if (this._cameraBehaviour == null)
             {
@@ -220,9 +222,19 @@ namespace Fram3d.UI.Views
             this.BuildOverlay();
         }
 
+        private bool IsCameraViewActive()
+        {
+            if (this._viewCameraManager != null)
+            {
+                return this._viewCameraManager.HasCameraViewSlot;
+            }
+
+            return !this._cameraBehaviour.IsDirectorView;
+        }
+
         private void Update()
         {
-            if (this._cameraBehaviour != null && this._cameraBehaviour.IsDirectorView)
+            if (this._cameraBehaviour != null && !this.IsCameraViewActive())
             {
                 this._container.style.display = DisplayStyle.None;
                 return;

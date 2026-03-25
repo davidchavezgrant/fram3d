@@ -40,6 +40,14 @@ namespace Fram3d.Engine.Integration
         public        bool           IsDirectorView    => this._viewMode == ViewMode.DIRECTOR;
 
         /// <summary>
+        /// The director utility camera element. Used by ViewCameraManager
+        /// to sync Director View cameras.
+        /// </summary>
+        public CameraElement  DirectorCamera      => this._directorCamera;
+        public bool           DirectorInitialized => this._directorInitialized;
+        public FrustumWireframe FrustumWireframe   => this._frustumWireframe;
+
+        /// <summary>
         /// The shot camera element. Exposed so the frustum wireframe and
         /// gizmo system can read/write the shot camera's transform even
         /// when Director View is active.
@@ -52,6 +60,12 @@ namespace Fram3d.Engine.Integration
         /// </summary>
         public float RightInsetPixels => this._rightInsetPixels;
 
+        /// <summary>
+        /// The currently displayed (lerped) focal length. Used by
+        /// ViewCameraManager to sync Camera View cameras.
+        /// </summary>
+        public float DisplayedFocalLength => this._displayedFocalLength;
+
         public void CycleAspectRatioBackward() => this._cameraElement.CycleAspectRatioBackward();
         public void CycleAspectRatioForward()  => this._cameraElement.CycleAspectRatioForward();
 
@@ -61,7 +75,38 @@ namespace Fram3d.Engine.Integration
         /// </summary>
         public void SetRightInset(float pixels) => this._rightInsetPixels = pixels;
 
+        /// <summary>
+        /// Initializes the director camera at the shot camera's current position
+        /// if not already initialized. Called by ViewCameraManager when a
+        /// Director View slot first appears.
+        /// </summary>
+        public void EnsureDirectorInitialized()
+        {
+            if (this._directorInitialized)
+            {
+                return;
+            }
+
+            this._directorCamera.Position = this._cameraElement.Position;
+            this._directorCamera.Rotation = this._cameraElement.Rotation;
+            this._directorInitialized     = true;
+        }
+
         public void SetSensorMode(SensorMode mode) => this._cameraElement.SetSensorMode(mode);
+
+        /// <summary>
+        /// Redirects the main camera's output to a RenderTexture. Called by
+        /// ViewCameraManager so the Camera View renders to a texture that
+        /// UI Toolkit can display. Pass null to render to screen.
+        /// </summary>
+        public void SetTargetTexture(RenderTexture rt) => this._unityCamera.targetTexture = rt;
+
+        /// <summary>
+        /// When true, LateUpdate Sync is handled externally by ViewCameraManager.
+        /// CameraBehaviour still runs its own focal length lerp but delegates
+        /// the camera sync to the per-slot cameras.
+        /// </summary>
+        public bool ExternalSyncEnabled { get; set; }
 
         /// <summary>
         /// Toggles between Camera View and Director View. On first entry
@@ -243,6 +288,13 @@ namespace Fram3d.Engine.Integration
 
         private void LateUpdate()
         {
+            if (this.ExternalSyncEnabled)
+            {
+                // Only update focal length lerp — ViewCameraManager handles the rest
+                this.SyncFocalLength(this._cameraElement, this._cameraElement.FocalLength);
+                return;
+            }
+
             this.Sync();
         }
     }

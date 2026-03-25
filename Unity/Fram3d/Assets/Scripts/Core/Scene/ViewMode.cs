@@ -8,6 +8,7 @@ namespace Fram3d.Core.Scene
     public sealed class ViewMode
     {
         public static readonly ViewMode CAMERA   = new("Camera View");
+        public static readonly ViewMode DESIGNER = new("Designer View");
         public static readonly ViewMode DIRECTOR = new("Director View");
 
         private ViewMode(string name) => this.Name = name;

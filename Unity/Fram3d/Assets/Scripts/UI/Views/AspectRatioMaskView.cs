@@ -14,13 +14,14 @@ namespace Fram3d.UI.Views
     /// </summary>
     public sealed class AspectRatioMaskView: MonoBehaviour
     {
-        private VisualElement   _barBottom;
-        private VisualElement   _barLeft;
-        private VisualElement   _barRight;
-        private VisualElement   _barTop;
-        private CameraBehaviour _cameraBehaviour;
-        private VisualElement   _container;
-        private VisualElement   _root;
+        private VisualElement       _barBottom;
+        private VisualElement       _barLeft;
+        private VisualElement       _barRight;
+        private VisualElement       _barTop;
+        private CameraBehaviour     _cameraBehaviour;
+        private VisualElement       _container;
+        private VisualElement       _root;
+        private ViewCameraManager   _viewCameraManager;
 
         private void BuildOverlay()
         {
@@ -96,7 +97,8 @@ namespace Fram3d.UI.Views
 
         private void Start()
         {
-            this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
+            this._cameraBehaviour   = FindAnyObjectByType<CameraBehaviour>();
+            this._viewCameraManager = FindAnyObjectByType<ViewCameraManager>();
 
             if (this._cameraBehaviour == null)
             {
@@ -117,9 +119,19 @@ namespace Fram3d.UI.Views
             this.BuildOverlay();
         }
 
+        private bool IsCameraViewActive()
+        {
+            if (this._viewCameraManager != null)
+            {
+                return this._viewCameraManager.HasCameraViewSlot;
+            }
+
+            return !this._cameraBehaviour.IsDirectorView;
+        }
+
         private void Update()
         {
-            if (this._cameraBehaviour != null && this._cameraBehaviour.IsDirectorView)
+            if (this._cameraBehaviour != null && !this.IsCameraViewActive())
             {
                 this._container.style.display = DisplayStyle.None;
                 return;

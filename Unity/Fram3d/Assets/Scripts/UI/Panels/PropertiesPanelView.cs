@@ -140,12 +140,42 @@ namespace Fram3d.UI.Panels
 
         private void Update()
         {
-            if (!this._visible || this._cameraBehaviour == null)
+            if (this._cameraBehaviour == null)
+            {
                 return;
+            }
+
+            // Keep the viewport inset in screen pixels (CSS pixels × scale).
+            // PanelSettings scale means PANEL_WIDTH CSS px ≠ PANEL_WIDTH screen px.
+            this.UpdateRightInset();
+
+            if (!this._visible)
+            {
+                return;
+            }
 
             var cam = this._cameraBehaviour.CameraElement;
             this._infoSection?.UpdateValues(cam, this._cameraBehaviour.ActiveAspectRatio);
             this._shakeSection?.UpdateValues(cam);
+        }
+
+        private void UpdateRightInset()
+        {
+            if (!this._visible)
+            {
+                this._cameraBehaviour.SetRightInset(0f);
+                return;
+            }
+
+            var rootW = this._root?.resolvedStyle.width ?? 0f;
+
+            if (float.IsNaN(rootW) || rootW <= 0)
+            {
+                return;
+            }
+
+            var scale = Screen.width / rootW;
+            this._cameraBehaviour.SetRightInset(PANEL_WIDTH * scale);
         }
     }
 }

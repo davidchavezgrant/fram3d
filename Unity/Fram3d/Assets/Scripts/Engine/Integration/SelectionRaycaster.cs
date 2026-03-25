@@ -41,15 +41,22 @@ namespace Fram3d.Engine.Integration
                 return null;
             }
 
-            // Skip if the screen position is outside this camera's viewport
+            // In multi-view, skip if the mouse is outside this camera's viewport.
+            // This prevents false raycasts through the wrong camera when viewports
+            // are side-by-side. In single-view, Camera.rect covers the full area
+            // minus the properties panel, so no check is needed.
             var vpRect = this.targetCamera.rect;
-            var normX  = screenPosition.x / Screen.width;
-            var normY  = screenPosition.y / Screen.height;
 
-            if (normX < vpRect.x || normX > vpRect.x + vpRect.width
-             || normY < vpRect.y || normY > vpRect.y + vpRect.height)
+            if (vpRect.width < 0.99f || vpRect.height < 0.99f)
             {
-                return null;
+                var normX = screenPosition.x / Screen.width;
+                var normY = screenPosition.y / Screen.height;
+
+                if (normX < vpRect.x || normX > vpRect.x + vpRect.width
+                 || normY < vpRect.y || normY > vpRect.y + vpRect.height)
+                {
+                    return null;
+                }
             }
 
             var ray = this.targetCamera.ScreenPointToRay(screenPosition);

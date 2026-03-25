@@ -7,135 +7,60 @@ using UnityEngine.UIElements;
 namespace Fram3d.Editor
 {
     /// <summary>
-    /// Editor cursor service that prevents macOS cursor flickering by:
-    /// 1. [NSWindow disableCursorRects] — suppresses automatic cursor rect evaluation
-    /// 2. Continuous re-apply in EditorApplication.update — overpowers any resets
-    ///    Unity makes internally (e.g., during IMGUI repaint or [NSCursor set] calls)
-    /// 3. PointerMoveEvent callback — re-applies after each macOS mouse-moved event
-    ///
-    /// Why all three layers are needed:
-    /// - disableCursorRects alone fails if Unity re-enables cursor rects or calls
-    ///   [NSCursor set] directly during its repaint phase
-    /// - PointerMoveEvent alone failed (the previous approach) because the cursor
-    ///   still flickers between tracking area evaluation and our callback
-    /// - EditorApplication.update alone fires before repaint, so Unity can reset
-    ///   the cursor after our set
-    /// - Combined, they ensure at least one re-apply fires after every possible reset
-    ///
-    /// During mouse drag (NSMouseDragged), macOS skips cursor rect evaluation
-    /// entirely, which is why drag never flickered.
-    /// Same approach as Mozilla/Firefox (Bug 445567).
+    /// Editor cursor service for macOS Play Mode.
+    /// Uses the same native CursorWrapper overlay as standalone builds so the
+    /// cursor participates in AppKit cursor rect evaluation instead of fighting
+    /// Unity's editor repaint loop from managed code.
     /// </summary>
     public class EditorCursorService: ICursorService
     {
         private CursorType? _activeCursor;
         private bool        _callbackRegistered;
 
-        public void ResetCursor()
-        {
-            _activeCursor = null;
-        #if UNITY_EDITOR_OSX
-            EnableWindowCursorRects();
-            SetNSCursor(ArrowCursorSel);
-        #endif
-        }
-
-        public bool SetCursor(CursorType ntCursorName)
-        {
-            if (ntCursorName == CursorType.Default)
-            {
-                _activeCursor = null;
-            #if UNITY_EDITOR_OSX
-                EnableWindowCursorRects();
-                SetNSCursor(ArrowCursorSel);
-            #endif
-                return true;
-            }
-
-            _activeCursor = ntCursorName;
-        #if UNITY_EDITOR_OSX
-            EnsureCursorRectsDisabled();
-            ApplyNSCursor(ntCursorName);
-        #endif
-            return true;
-        }
-
-        private void OnEditorUpdate()
-        {
-            if (!_callbackRegistered)
-                TryRegisterGameViewCallbacks();
-
-        #if UNITY_EDITOR_OSX
-
-            // Continuously re-disable cursor rects and re-apply cursor.
-            // Unity's IMGUI repaint may re-enable cursor rects or call
-            // [NSCursor set] between update callbacks.
-            if (_activeCursor.HasValue)
-            {
-                EnsureCursorRectsDisabled();
-                ApplyNSCursor(_activeCursor.Value);
-            }
-        #endif
-        }
-
-        private void OnPlayModeStateChanged(PlayModeStateChange state)
-        {
-            if (state != PlayModeStateChange.ExitingPlayMode)
-                return;
-
-            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-            EditorApplication.update               -= OnEditorUpdate;
-        #if UNITY_EDITOR_OSX
-            EnableWindowCursorRects();
-        #endif
-            ResetCursor();
-        }
-
-        private void OnPointerMove(PointerMoveEvent evt)
-        {
-        #if UNITY_EDITOR_OSX
-            if (!_activeCursor.HasValue)
-                return;
-
-            EnsureCursorRectsDisabled();
-            ApplyNSCursor(_activeCursor.Value);
-        #endif
-        }
-
-        private void TryRegisterGameViewCallbacks()
-        {
-            var gameViewType = typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView");
-
-            if (gameViewType == null)
-                return;
-
-            var gameViews = Resources.FindObjectsOfTypeAll(gameViewType);
-
-            if (gameViews.Length == 0)
-                return;
-
-            foreach (var gv in gameViews)
-            {
-                var window = (EditorWindow)gv;
-                window.rootVisualElement.RegisterCallback<PointerMoveEvent>(OnPointerMove);
-            }
-
-            _callbackRegistered = true;
-            Debug.Log($"[Cursor] Registered PointerMoveEvent on {gameViews.Length} GameView(s)");
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void Setup()
-        {
-            Debug.Log("[Cursor] EditorCursorService.Setup()");
-            var service = new EditorCursorService();
-            CursorManager.SetFallbackService(service);
-            CursorManager.SetService(service);
-            EditorApplication.update               += service.OnEditorUpdate;
-            EditorApplication.playModeStateChanged += service.OnPlayModeStateChanged;
-        }
     #if UNITY_EDITOR_OSX
+        private bool   _useManagedFallback;
         private IntPtr _disabledWindow;
+
+        private static bool sLoggedNativePluginFailure;
+
+        [DllImport("CursorWrapper")]
+        private static extern void RefreshActiveCursor();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToArrow();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToIBeam();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToCrosshair();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToOpenHand();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToClosedHand();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToResizeLeftRight();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToResizeUp();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToResizeDown();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToResizeUpDown();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToOperationNotAllowed();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToPointingHand();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToBusy();
 
         [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_getClass")]
         private static extern IntPtr objc_getClass(string className);
@@ -162,38 +87,260 @@ namespace Fram3d.Editor
         private static readonly IntPtr ResizeLeftRightCursorSel     = sel_registerName("resizeLeftRightCursor");
         private static readonly IntPtr ResizeUpDownCursorSel        = sel_registerName("resizeUpDownCursor");
         private static readonly IntPtr OperationNotAllowedCursorSel = sel_registerName("operationNotAllowedCursor");
+    #endif
 
-        private static void SetNSCursor(IntPtr cursorSelector)
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Setup()
+        {
+            Debug.Log("[Cursor] EditorCursorService.Setup()");
+            var service = new EditorCursorService();
+            CursorManager.SetFallbackService(service);
+            CursorManager.SetService(service);
+            EditorApplication.update               += service.OnEditorUpdate;
+            EditorApplication.playModeStateChanged += service.OnPlayModeStateChanged;
+        }
+
+        public void ResetCursor()
+        {
+            _activeCursor = null;
+        #if UNITY_EDITOR_OSX
+            if (!TryResetNativeCursor())
+            {
+                EnableWindowCursorRects();
+                SetManagedCursor(ArrowCursorSel);
+            }
+        #endif
+        }
+
+        public bool SetCursor(CursorType cursor)
+        {
+            if (cursor == CursorType.Default || cursor == CursorType.Arrow)
+            {
+                ResetCursor();
+                return true;
+            }
+
+            _activeCursor = cursor;
+        #if UNITY_EDITOR_OSX
+            if (TryApplyNativeCursor(cursor))
+                return true;
+
+            EnsureCursorRectsDisabled();
+            ApplyManagedCursor(cursor);
+            return true;
+        #else
+            return true;
+        #endif
+        }
+
+        private void OnEditorUpdate()
+        {
+        #if UNITY_EDITOR_OSX
+            if (_useManagedFallback && !_callbackRegistered)
+                TryRegisterGameViewCallbacks();
+
+            if (_activeCursor.HasValue)
+            {
+                if (TryRefreshNativeCursor())
+                    return;
+
+                EnsureCursorRectsDisabled();
+                ApplyManagedCursor(_activeCursor.Value);
+            }
+        #endif
+        }
+
+        private void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state != PlayModeStateChange.ExitingPlayMode)
+                return;
+
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.update               -= OnEditorUpdate;
+            ResetCursor();
+        }
+
+    #if UNITY_EDITOR_OSX
+        private void OnPointerMove(PointerMoveEvent evt)
+        {
+            if (!_useManagedFallback || !_activeCursor.HasValue)
+                return;
+
+            EnsureCursorRectsDisabled();
+            ApplyManagedCursor(_activeCursor.Value);
+        }
+
+        private void TryRegisterGameViewCallbacks()
+        {
+            var gameViewType = typeof(EditorWindow).Assembly.GetType("UnityEditor.GameView");
+
+            if (gameViewType == null)
+                return;
+
+            var gameViews = Resources.FindObjectsOfTypeAll(gameViewType);
+
+            if (gameViews.Length == 0)
+                return;
+
+            foreach (var gv in gameViews)
+            {
+                var window = (EditorWindow)gv;
+                window.rootVisualElement.RegisterCallback<PointerMoveEvent>(OnPointerMove);
+            }
+
+            _callbackRegistered = true;
+        }
+
+        private bool TryRefreshNativeCursor()
+        {
+            if (_useManagedFallback)
+                return false;
+
+            try
+            {
+                RefreshActiveCursor();
+                return true;
+            }
+            catch (Exception ex) when (ex is DllNotFoundException || ex is EntryPointNotFoundException)
+            {
+                ActivateManagedFallback(ex);
+                return false;
+            }
+        }
+
+        private bool TryResetNativeCursor()
+        {
+            if (_useManagedFallback)
+                return false;
+
+            try
+            {
+                SetCursorToArrow();
+                return true;
+            }
+            catch (Exception ex) when (ex is DllNotFoundException || ex is EntryPointNotFoundException)
+            {
+                ActivateManagedFallback(ex);
+                return false;
+            }
+        }
+
+        private bool TryApplyNativeCursor(CursorType cursor)
+        {
+            if (_useManagedFallback)
+                return false;
+
+            try
+            {
+                return ApplyNativeCursor(cursor);
+            }
+            catch (Exception ex) when (ex is DllNotFoundException || ex is EntryPointNotFoundException)
+            {
+                ActivateManagedFallback(ex);
+                return false;
+            }
+        }
+
+        private bool ApplyNativeCursor(CursorType cursor)
+        {
+            switch (cursor)
+            {
+                case CursorType.IBeam:
+                    SetCursorToIBeam();
+                    return true;
+                case CursorType.Crosshair:
+                    SetCursorToCrosshair();
+                    return true;
+                case CursorType.Link:
+                    SetCursorToPointingHand();
+                    return true;
+                case CursorType.Busy:
+                    SetCursorToBusy();
+                    return true;
+                case CursorType.Invalid:
+                    SetCursorToOperationNotAllowed();
+                    return true;
+                case CursorType.ResizeVertical:
+                    SetCursorToResizeUpDown();
+                    return true;
+                case CursorType.ResizeHorizontal:
+                    SetCursorToResizeLeftRight();
+                    return true;
+                case CursorType.ResizeDiagonalLeft:
+                    SetCursorToResizeUp();
+                    return true;
+                case CursorType.ResizeDiagonalRight:
+                    SetCursorToResizeDown();
+                    return true;
+                case CursorType.ResizeAll:
+                    ResetCursor();
+                    return true;
+                case CursorType.OpenHand:
+                    SetCursorToOpenHand();
+                    return true;
+                case CursorType.ClosedHand:
+                    SetCursorToClosedHand();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private void ActivateManagedFallback(Exception ex)
+        {
+            _useManagedFallback = true;
+
+            if (sLoggedNativePluginFailure)
+                return;
+
+            sLoggedNativePluginFailure = true;
+            Debug.LogWarning($"[Cursor] CursorWrapper native plugin is unavailable in this Editor session ({ex.GetType().Name}). Falling back to the managed macOS cursor path. Restart Unity after reimporting native plugin changes to enable the AppKit overlay fix.");
+        }
+
+        private static void SetManagedCursor(IntPtr cursorSelector)
         {
             var cursor = objc_msgSend(NSCursorClass, cursorSelector);
             objc_msgSend(cursor, SetSel);
         }
 
-        private static void ApplyNSCursor(CursorType ntCursor)
+        private static void ApplyManagedCursor(CursorType cursor)
         {
-            switch (ntCursor)
+            switch (cursor)
             {
                 case CursorType.Default:
-                case CursorType.Arrow: SetNSCursor(ArrowCursorSel); break;
-
-                case CursorType.IBeam:            SetNSCursor(IBeamCursorSel); break;
-                case CursorType.Crosshair:        SetNSCursor(CrosshairCursorSel); break;
-                case CursorType.Link:             SetNSCursor(PointingHandCursorSel); break;
-                case CursorType.OpenHand:         SetNSCursor(OpenHandCursorSel); break;
-                case CursorType.ClosedHand:       SetNSCursor(ClosedHandCursorSel); break;
-                case CursorType.ResizeVertical:   SetNSCursor(ResizeUpDownCursorSel); break;
-                case CursorType.ResizeHorizontal: SetNSCursor(ResizeLeftRightCursorSel); break;
-                case CursorType.Invalid:          SetNSCursor(OperationNotAllowedCursorSel); break;
-                case CursorType.ResizeAll:        SetNSCursor(ArrowCursorSel); break;
+                case CursorType.Arrow:
+                    SetManagedCursor(ArrowCursorSel);
+                    break;
+                case CursorType.IBeam:
+                    SetManagedCursor(IBeamCursorSel);
+                    break;
+                case CursorType.Crosshair:
+                    SetManagedCursor(CrosshairCursorSel);
+                    break;
+                case CursorType.Link:
+                    SetManagedCursor(PointingHandCursorSel);
+                    break;
+                case CursorType.OpenHand:
+                    SetManagedCursor(OpenHandCursorSel);
+                    break;
+                case CursorType.ClosedHand:
+                    SetManagedCursor(ClosedHandCursorSel);
+                    break;
+                case CursorType.ResizeVertical:
+                    SetManagedCursor(ResizeUpDownCursorSel);
+                    break;
+                case CursorType.ResizeHorizontal:
+                    SetManagedCursor(ResizeLeftRightCursorSel);
+                    break;
+                case CursorType.Invalid:
+                    SetManagedCursor(OperationNotAllowedCursorSel);
+                    break;
+                case CursorType.ResizeAll:
+                    SetManagedCursor(ArrowCursorSel);
+                    break;
             }
         }
 
-        /// <summary>
-        /// Unconditionally disables cursor rects on the key window.
-        /// Called every frame while a custom cursor is active, because Unity
-        /// may re-enable cursor rects during its IMGUI repaint. Idempotent
-        /// at the AppKit level (just sets a flag on NSWindow).
-        /// </summary>
         private void EnsureCursorRectsDisabled()
         {
             var app    = objc_msgSend(NSApplicationClass, SharedApplicationSel);
@@ -202,7 +349,6 @@ namespace Fram3d.Editor
             if (window == IntPtr.Zero)
                 return;
 
-            // If the key window changed, re-enable the old one
             if (_disabledWindow != IntPtr.Zero && _disabledWindow != window)
                 objc_msgSend(_disabledWindow, EnableCursorRectsSel);
 

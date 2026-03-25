@@ -26,7 +26,26 @@ static Fram3dCursorOverlayView* sOverlayView;
 static NSWindow* Fram3dTargetWindow(void)
 {
     NSApplication* app = NSApplication.sharedApplication;
-    return app.keyWindow ?: app.mainWindow ?: app.windows.firstObject;
+
+    if (app.keyWindow != nil && app.keyWindow.contentView != nil)
+        return app.keyWindow;
+
+    if (app.mainWindow != nil && app.mainWindow.contentView != nil)
+        return app.mainWindow;
+
+    for (NSWindow* window in app.orderedWindows)
+    {
+        if (window.isVisible && window.contentView != nil)
+            return window;
+    }
+
+    for (NSWindow* window in app.windows)
+    {
+        if (window.contentView != nil)
+            return window;
+    }
+
+    return nil;
 }
 
 static NSCursor* Fram3dCursorForKind(Fram3dCursorKind kind)
@@ -202,6 +221,24 @@ static void Fram3dRemoveOverlayView(void)
     sOverlayView = nil;
 }
 
+static void Fram3dRaiseOverlayView(NSView* contentView)
+{
+    if (sOverlayView == nil || contentView == nil)
+        return;
+
+    sOverlayView.frame = contentView.bounds;
+
+    if (sOverlayView.superview == contentView && contentView.subviews.lastObject == sOverlayView)
+        return;
+
+    if (sOverlayView.superview == contentView)
+        [sOverlayView removeFromSuperviewWithoutNeedingDisplay];
+
+    [contentView addSubview:sOverlayView
+                 positioned:NSWindowAbove
+                 relativeTo:nil];
+}
+
 static void Fram3dEnsureOverlayView(void)
 {
     NSWindow* window = Fram3dTargetWindow();
@@ -218,6 +255,7 @@ static void Fram3dEnsureOverlayView(void)
 
     if (sOverlayView != nil && sOverlayView.superview == contentView)
     {
+        Fram3dRaiseOverlayView(contentView);
         Fram3dInvalidateCursorRects();
         return;
     }
@@ -226,10 +264,7 @@ static void Fram3dEnsureOverlayView(void)
 
     sOverlayView = [[Fram3dCursorOverlayView alloc] initWithFrame:contentView.bounds];
     sOverlayView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-
-    [contentView addSubview:sOverlayView
-                 positioned:NSWindowAbove
-                 relativeTo:nil];
+    Fram3dRaiseOverlayView(contentView);
     Fram3dInvalidateCursorRects();
 }
 

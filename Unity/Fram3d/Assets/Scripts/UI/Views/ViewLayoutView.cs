@@ -138,35 +138,39 @@ namespace Fram3d.UI.Views
 
         private void PositionHeaders()
         {
+            var rootW = this._root.resolvedStyle.width;
+            var rootH = this._root.resolvedStyle.height;
+
+            if (float.IsNaN(rootW) || float.IsNaN(rootH))
+            {
+                return;
+            }
+
             var model = this._viewCameraManager.ViewSlotModel;
             var count = model.ActiveSlotCount;
 
             if (model.Layout == ViewLayout.SINGLE)
             {
-                // Single-view: header at top-left, full width
                 if (this._viewHeaders.Length > 0)
                 {
-                    var screenWidth = (float)Screen.width;
-                    var inset       = this._viewCameraManager.CameraBehaviour.RightInsetPixels;
+                    var insetPixels = this._viewCameraManager.CameraBehaviour.RightInsetPixels;
+                    var scale       = Screen.width > 0 ? rootW / Screen.width : 1f;
 
                     this._viewHeaders[0].Root.style.left  = 0;
                     this._viewHeaders[0].Root.style.top   = 0;
-                    this._viewHeaders[0].Root.style.width = screenWidth - inset;
+                    this._viewHeaders[0].Root.style.width = rootW - insetPixels * scale;
                 }
 
                 return;
             }
 
-            var sw = (float)Screen.width;
-            var sh = (float)Screen.height;
-
             for (var i = 0; i < this._viewHeaders.Length && i < count; i++)
             {
                 var vpRect = this._viewCameraManager.GetViewportRect(i);
 
-                this._viewHeaders[i].Root.style.left  = vpRect.x * sw;
-                this._viewHeaders[i].Root.style.top   = (1f - vpRect.y - vpRect.height) * sh;
-                this._viewHeaders[i].Root.style.width = vpRect.width * sw;
+                this._viewHeaders[i].Root.style.left  = vpRect.x * rootW;
+                this._viewHeaders[i].Root.style.top   = (1f - vpRect.y - vpRect.height) * rootH;
+                this._viewHeaders[i].Root.style.width = vpRect.width * rootW;
             }
         }
 

@@ -30,6 +30,8 @@ namespace Fram3d.UI.Views
         private VisualElement _thirdsV1;
         private VisualElement _thirdsV2;
 
+        private VisualElement            _root;
+
         // Safe zones (each is a single element with border)
         private VisualElement            _titleSafe;
         private ViewCameraManager        _viewCameraManager;
@@ -108,14 +110,19 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            var vpRect       = this._viewCameraManager.CameraViewRect;
-            var screenWidth  = (float)Screen.width;
-            var screenHeight = (float)Screen.height;
+            var vpRect = this._viewCameraManager.CameraViewRect;
+            var rootW  = this._root.resolvedStyle.width;
+            var rootH  = this._root.resolvedStyle.height;
 
-            this._container.style.left   = vpRect.x      * screenWidth;
-            this._container.style.top    = (1f - vpRect.y - vpRect.height) * screenHeight;
-            this._container.style.width  = vpRect.width   * screenWidth;
-            this._container.style.height = vpRect.height  * screenHeight;
+            if (float.IsNaN(rootW) || float.IsNaN(rootH))
+            {
+                return;
+            }
+
+            this._container.style.left   = vpRect.x * rootW;
+            this._container.style.top    = (1f - vpRect.y - vpRect.height) * rootH;
+            this._container.style.width  = vpRect.width  * rootW;
+            this._container.style.height = vpRect.height * rootH;
             this._container.style.right  = StyleKeyword.Auto;
             this._container.style.bottom = StyleKeyword.Auto;
         }
@@ -243,7 +250,8 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            StyleSheetLoader.Apply(uiDocument.rootVisualElement);
+            this._root = uiDocument.rootVisualElement;
+            StyleSheetLoader.Apply(this._root);
             this.BuildOverlay();
         }
 

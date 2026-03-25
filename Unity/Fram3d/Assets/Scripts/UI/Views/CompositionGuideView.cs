@@ -222,6 +222,17 @@ namespace Fram3d.UI.Views
 
         private void Update()
         {
+            if (this._cameraBehaviour != null && this._cameraBehaviour.IsDirectorView)
+            {
+                this._container.style.display = DisplayStyle.None;
+                return;
+            }
+
+            if (this._container != null)
+            {
+                this._container.style.display = DisplayStyle.Flex;
+            }
+
             this.UpdateGuides();
         }
     }

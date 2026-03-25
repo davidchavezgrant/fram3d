@@ -2,6 +2,7 @@ using System;
 using Fram3d.Core.Common;
 using Fram3d.Core.Scene;
 using Fram3d.Engine.Integration;
+using Fram3d.UI.Panels;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -387,7 +388,7 @@ namespace Fram3d.UI.Views
                     });
                 }
 
-                menu.DropDown(anchor.worldBound, anchor);
+                menu.DropDown(anchor.worldBound, anchor, false);
             }
 
             private void UpdatePlaceholderVisibility()

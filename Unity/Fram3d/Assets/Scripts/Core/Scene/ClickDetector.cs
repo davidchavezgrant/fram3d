@@ -35,6 +35,15 @@ namespace Fram3d.Core.Scene
                     return ClickResult.None();
                 }
 
+                // Same-frame press+release — instant click, no drag possible.
+                // Happens when a frame hitch (GC, domain reload) exceeds the
+                // duration of the physical mouse click.
+                if (released)
+                {
+                    this._valid = false;
+                    return ClickResult.Click(position);
+                }
+
                 this._downPosition = position;
                 this._valid        = true;
                 this._isDragging   = false;

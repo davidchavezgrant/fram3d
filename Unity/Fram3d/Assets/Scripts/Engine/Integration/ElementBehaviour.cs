@@ -20,10 +20,28 @@ namespace Fram3d.Engine.Integration
         private void Awake()
         {
             this.Element = new Element(new ElementId(Guid.NewGuid()), this.gameObject.name);
+            this.Element.GroundOffset = this.ComputeGroundOffset();
 
             // Initialize Core position from the scene's editor-time placement
             this.Element.Position = this.transform.position.ToSystem();
             this.Element.Rotation = this.transform.rotation.ToSystem();
+        }
+
+        /// <summary>
+        /// Computes the distance from the element's origin to its lowest
+        /// geometry point, so the Position setter can prevent the visible
+        /// mesh from clipping through Y=0.
+        /// </summary>
+        private float ComputeGroundOffset()
+        {
+            var renderer = this.GetComponentInChildren<Renderer>();
+
+            if (renderer == null)
+            {
+                return 0f;
+            }
+
+            return this.transform.position.y - renderer.bounds.min.y;
         }
 
         /// <summary>

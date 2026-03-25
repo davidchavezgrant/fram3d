@@ -136,5 +136,27 @@ namespace Fram3d.Core.Tests.Scene
 
             result.Kind.Should().Be(ClickResultKind.DRAG);
         }
+
+        [Fact]
+        public void Update__ReturnsClick__When__PressAndReleaseInSameFrame()
+        {
+            var detector = new ClickDetector();
+
+            // Frame hitch: press+release land in one frame
+            var result = detector.Update(pressed: true, held: false, released: true, CENTER, false);
+
+            result.Kind.Should().Be(ClickResultKind.CLICK);
+            result.Position.Should().Be(CENTER);
+        }
+
+        [Fact]
+        public void Update__ReturnsNone__When__SameFrameClickWithCameraModifier()
+        {
+            var detector = new ClickDetector();
+
+            var result = detector.Update(pressed: true, held: false, released: true, CENTER, cameraModifierHeld: true);
+
+            result.Kind.Should().Be(ClickResultKind.NONE);
+        }
     }
 }

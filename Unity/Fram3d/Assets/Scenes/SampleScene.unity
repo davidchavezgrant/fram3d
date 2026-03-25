@@ -1286,8 +1286,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Fram3d.UI::Fram3d.UI.Input.SelectionInputHandler
   gizmoController: {fileID: 1800007012}
-  selectionHighlighter: {fileID: 1800007006}
   raycaster: {fileID: 1800007007}
+  selectionHighlighter: {fileID: 1800007006}
 --- !u!114 &1800007006
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -76,7 +76,7 @@ namespace Fram3d.Tests.Engine
         public IEnumerator LateUpdate__RoundTripsPosition__When__PositionSetFromTransform()
         {
             var go = new GameObject("RoundTrip");
-            go.transform.position = new Vector3(7f, -2f, 13f);
+            go.transform.position = new Vector3(7f, 4f, 13f);
             go.AddComponent<ElementBehaviour>();
             this._extras.Add(go);
             yield return null;
@@ -89,7 +89,7 @@ namespace Fram3d.Tests.Engine
                             0.001f,
                             "X should not drift");
 
-            Assert.AreEqual(-2f,
+            Assert.AreEqual(4f,
                             pos.y,
                             0.001f,
                             "Y should not drift");

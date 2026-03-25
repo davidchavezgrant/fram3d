@@ -9,18 +9,17 @@ using UnityEngine.UIElements;
 namespace Fram3d.UI.Views
 {
     /// <summary>
-    /// Manages the view layout UI. Creates 1-3 view panels based on the
-    /// ViewSlotModel, each displaying a RenderTexture from ViewCameraManager.
-    /// Includes a layout chooser (bottom-right) and per-view type dropdowns.
+    /// Manages the view layout UI. Overlays header bars and a layout chooser
+    /// on top of the camera viewports. Cameras render directly to screen via
+    /// Camera.rect — this class handles only the UI chrome, not the 3D content.
     /// Tracks which view the mouse is over for input routing.
     /// </summary>
     public sealed class ViewLayoutView : MonoBehaviour
     {
-        private const int    HEADER_HEIGHT    = 22;
         private const int    VIEW_GAP         = 2;
         private const string VIEW_PANEL_CLASS = "view-panel";
 
-        private int               _activeSlot = 0;
+        private int               _activeSlot;
         private VisualElement     _layoutChooser;
         private VisualElement     _root;
         private ViewCameraManager _viewCameraManager;
@@ -28,14 +27,13 @@ namespace Fram3d.UI.Views
         private ViewPanel[]       _viewPanels = Array.Empty<ViewPanel>();
 
         /// <summary>
-        /// Which slot the mouse is currently over. -1 if not over any view.
+        /// Which slot the mouse is currently over.
         /// Used by input handlers to route to the correct camera.
         /// </summary>
         public int ActiveSlot => this._activeSlot;
 
         /// <summary>
-        /// Fires when the active (mouse-hovered) slot changes. Input handlers
-        /// subscribe to update their camera references.
+        /// Fires when the active (mouse-hovered) slot changes.
         /// </summary>
         public event Action<int> ActiveSlotChanged;
 
@@ -64,16 +62,6 @@ namespace Fram3d.UI.Views
             this._viewCameraManager.ViewSlotModel.Changed += this.RebuildLayout;
         }
 
-        private void Update()
-        {
-            if (this._viewCameraManager == null)
-            {
-                return;
-            }
-
-            this.UpdateRenderTextures();
-        }
-
         private void OnDestroy()
         {
             if (this._viewCameraManager != null)
@@ -85,11 +73,13 @@ namespace Fram3d.UI.Views
         private void BuildLayout()
         {
             this._root.Clear();
+
             this._viewContainer             = new VisualElement();
             this._viewContainer.name        = "view-container";
             this._viewContainer.pickingMode = PickingMode.Ignore;
             this._viewContainer.AddToClassList("view-container");
             this._root.Add(this._viewContainer);
+
             this.BuildViewPanels();
             this.BuildLayoutChooser();
         }
@@ -100,9 +90,9 @@ namespace Fram3d.UI.Views
             this._layoutChooser.AddToClassList("layout-chooser");
             var model = this._viewCameraManager.ViewSlotModel;
 
-            var singleBtn    = this.CreateLayoutButton("◻",  ViewLayout.SINGLE,       model.Layout);
-            var sideBySideBtn = this.CreateLayoutButton("◫", ViewLayout.SIDE_BY_SIDE, model.Layout);
-            var onePlusTwoBtn = this.CreateLayoutButton("⊞", ViewLayout.ONE_PLUS_TWO, model.Layout);
+            var singleBtn     = this.CreateLayoutButton("\u25fb", ViewLayout.SINGLE,       model.Layout);
+            var sideBySideBtn = this.CreateLayoutButton("\u25eb", ViewLayout.SIDE_BY_SIDE, model.Layout);
+            var onePlusTwoBtn = this.CreateLayoutButton("\u229e", ViewLayout.ONE_PLUS_TWO, model.Layout);
 
             this._layoutChooser.Add(singleBtn);
             this._layoutChooser.Add(sideBySideBtn);
@@ -130,10 +120,7 @@ namespace Fram3d.UI.Views
                 this.BuildOnePlusTwoLayout(model);
             }
 
-            // Clamp active slot to new count
-            var newCount = model.ActiveSlotCount;
-
-            if (this._activeSlot >= newCount)
+            if (this._activeSlot >= count)
             {
                 this._activeSlot = 0;
                 this._viewCameraManager.SetActiveSlot(0);
@@ -174,21 +161,19 @@ namespace Fram3d.UI.Views
         {
             this._viewContainer.style.flexDirection = FlexDirection.Column;
 
-            // Top row: large view
             var topPanel = this.CreateViewPanel(0, model.GetSlotType(0));
-            topPanel.Root.style.flexGrow   = 1;
-            topPanel.Root.style.flexBasis  = new StyleLength(new Length(60, LengthUnit.Percent));
+            topPanel.Root.style.flexGrow     = 1;
+            topPanel.Root.style.flexBasis    = new StyleLength(new Length(60, LengthUnit.Percent));
             topPanel.Root.style.marginBottom = VIEW_GAP;
             this._viewContainer.Add(topPanel.Root);
             this._viewPanels[0] = topPanel;
 
-            // Bottom row: two smaller views
             var bottomRow = new VisualElement();
-            bottomRow.name                  = "bottom-row";
-            bottomRow.pickingMode           = PickingMode.Ignore;
-            bottomRow.style.flexDirection   = FlexDirection.Row;
-            bottomRow.style.flexGrow        = 1;
-            bottomRow.style.flexBasis       = new StyleLength(new Length(40, LengthUnit.Percent));
+            bottomRow.name                = "bottom-row";
+            bottomRow.pickingMode         = PickingMode.Ignore;
+            bottomRow.style.flexDirection = FlexDirection.Row;
+            bottomRow.style.flexGrow      = 1;
+            bottomRow.style.flexBasis     = new StyleLength(new Length(40, LengthUnit.Percent));
 
             for (var i = 1; i < 3; i++)
             {
@@ -252,57 +237,18 @@ namespace Fram3d.UI.Views
         {
             this.BuildViewPanels();
 
-            // Rebuild layout chooser to update active state
             if (this._layoutChooser != null)
             {
                 this._layoutChooser.RemoveFromHierarchy();
             }
 
             this.BuildLayoutChooser();
-
-            // Trigger RT resize on next frame
-            this._root.schedule.Execute(() => this.UpdateRenderTextures()).ExecuteLater(50);
-        }
-
-        private void UpdateRenderTextures()
-        {
-            for (var i = 0; i < this._viewPanels.Length; i++)
-            {
-                var panel = this._viewPanels[i];
-
-                if (panel == null)
-                {
-                    continue;
-                }
-
-                var mode = this._viewCameraManager.ViewSlotModel.GetSlotType(i);
-
-                if (mode == ViewMode.DESIGNER)
-                {
-                    continue;
-                }
-
-                var contentWidth  = (int)panel.ContentArea.resolvedStyle.width;
-                var contentHeight = (int)panel.ContentArea.resolvedStyle.height;
-
-                if (contentWidth <= 0 || contentHeight <= 0 || float.IsNaN(panel.ContentArea.resolvedStyle.width))
-                {
-                    continue;
-                }
-
-                this._viewCameraManager.ResizeSlot(i, contentWidth, contentHeight);
-                var rt = this._viewCameraManager.GetRenderTexture(i);
-
-                if (rt != null)
-                {
-                    panel.ContentArea.style.backgroundImage = Background.FromRenderTexture(rt);
-                }
-            }
         }
 
         /// <summary>
-        /// Represents a single view panel in the layout — header bar with
-        /// view type dropdown + content area showing the RenderTexture.
+        /// A single view panel — header bar with view type dropdown.
+        /// The content area is transparent so the camera viewport shows through.
+        /// Designer View shows a placeholder instead.
         /// </summary>
         private sealed class ViewPanel
         {
@@ -324,7 +270,6 @@ namespace Fram3d.UI.Views
                 this._root.pickingMode = PickingMode.Position;
                 this._root.AddToClassList(VIEW_PANEL_CLASS);
 
-                // Header bar with view type selector
                 this._header = new VisualElement();
                 this._header.AddToClassList("view-panel__header");
 
@@ -334,14 +279,12 @@ namespace Fram3d.UI.Views
                 this.BuildDropdownButton();
                 this._root.Add(this._header);
 
-                // Content area
                 this._contentArea             = new VisualElement();
                 this._contentArea.name        = $"view-content-{slotIndex}";
                 this._contentArea.pickingMode = PickingMode.Ignore;
                 this._contentArea.AddToClassList("view-panel__content");
                 this._root.Add(this._contentArea);
 
-                // Placeholder for Designer View
                 this._placeholder = new VisualElement();
                 this._placeholder.AddToClassList("view-panel__placeholder");
                 var placeholderLabel = new Label("Designer View");
@@ -362,7 +305,7 @@ namespace Fram3d.UI.Views
             private void BuildDropdownButton()
             {
                 var dropdownBtn = new Button();
-                dropdownBtn.text = "▾";
+                dropdownBtn.text = "\u25be";
                 dropdownBtn.AddToClassList("view-panel__dropdown-btn");
                 dropdownBtn.clicked += () => this.ShowViewTypeMenu(dropdownBtn);
                 this._header.Add(dropdownBtn);
@@ -370,7 +313,7 @@ namespace Fram3d.UI.Views
 
             private void ShowViewTypeMenu(VisualElement anchor)
             {
-                var menu = new GenericDropdownMenu();
+                var menu  = new GenericDropdownMenu();
                 var types = new[] { ViewMode.CAMERA, ViewMode.DIRECTOR, ViewMode.DESIGNER };
 
                 foreach (var type in types)
@@ -380,7 +323,7 @@ namespace Fram3d.UI.Views
                     {
                         if (captured != this._viewMode)
                         {
-                            this._viewMode        = captured;
+                            this._viewMode         = captured;
                             this._headerLabel.text = captured.Name;
                             this.UpdatePlaceholderVisibility();
                             this.ViewTypeChanged?.Invoke(this._slotIndex, captured);
@@ -396,10 +339,6 @@ namespace Fram3d.UI.Views
                 this._placeholder.style.display = this._viewMode == ViewMode.DESIGNER
                     ? DisplayStyle.Flex
                     : DisplayStyle.None;
-
-                this._contentArea.style.backgroundImage = this._viewMode == ViewMode.DESIGNER
-                    ? new StyleBackground(StyleKeyword.None)
-                    : this._contentArea.style.backgroundImage;
             }
         }
     }

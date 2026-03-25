@@ -8,23 +8,24 @@ using UnityEngine;
 namespace Fram3d.Engine.Integration
 {
     /// <summary>
-    /// Manages per-slot view cameras. The Camera View slot delegates to
-    /// CameraBehaviour (which owns the shot camera element, DOF, shake).
-    /// Director View slots get separate cameras with simple sync.
-    /// Designer View slots are placeholders (no camera).
+    /// Manages per-slot view cameras using Camera.rect viewports. All cameras
+    /// render directly to the screen — no RenderTextures. The Camera View slot
+    /// uses CameraBehaviour's main camera. Director View slots get separate
+    /// cameras with simple position/rotation sync.
     /// </summary>
     public sealed class ViewCameraManager : MonoBehaviour
     {
-        private int                       _activeSlot;
+        private static readonly Rect FULL_RECT = new(0, 0, 1, 1);
+
+        private int                         _activeSlot;
         private Dictionary<int, ViewCamera> _directorCameras = new();
-        private RenderTexture             _cameraViewRT;
 
         [SerializeField]
         private CameraBehaviour cameraBehaviour;
 
-        public int            ActiveSlot    => this._activeSlot;
+        public int             ActiveSlot      => this._activeSlot;
         public CameraBehaviour CameraBehaviour => this.cameraBehaviour;
-        public ViewSlotModel  ViewSlotModel { get; private set; }
+        public ViewSlotModel   ViewSlotModel   { get; private set; }
 
         /// <summary>
         /// The camera element for the given slot. Camera View → shot camera,
@@ -78,61 +79,9 @@ namespace Fram3d.Engine.Integration
         }
 
         /// <summary>
-        /// The RenderTexture for the given slot. Used by UI to display.
-        /// </summary>
-        public RenderTexture GetRenderTexture(int slotIndex)
-        {
-            if (slotIndex < 0 || slotIndex >= this.ViewSlotModel.ActiveSlotCount)
-            {
-                return null;
-            }
-
-            var mode = this.ViewSlotModel.GetSlotType(slotIndex);
-
-            if (mode == ViewMode.CAMERA)
-            {
-                return this._cameraViewRT;
-            }
-
-            if (mode == ViewMode.DIRECTOR)
-            {
-                return this.FindDirectorCamera(slotIndex)?.RenderTexture;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Resize the RenderTexture for the given slot.
-        /// </summary>
-        public void ResizeSlot(int slotIndex, int width, int height)
-        {
-            if (width <= 0 || height <= 0)
-            {
-                return;
-            }
-
-            var mode = this.ViewSlotModel.GetSlotType(slotIndex);
-
-            if (mode == ViewMode.CAMERA)
-            {
-                this.EnsureCameraViewRT(width, height);
-                return;
-            }
-
-            if (mode == ViewMode.DIRECTOR)
-            {
-                this.FindDirectorCamera(slotIndex)?.EnsureRenderTexture(width, height);
-            }
-        }
-
-        /// <summary>
         /// Sets the active (hovered) slot for input routing.
         /// </summary>
-        public void SetActiveSlot(int slotIndex)
-        {
-            this._activeSlot = slotIndex;
-        }
+        public void SetActiveSlot(int slotIndex) => this._activeSlot = slotIndex;
 
         /// <summary>
         /// The camera element for the currently active (hovered) slot.
@@ -178,11 +127,6 @@ namespace Fram3d.Engine.Integration
                 this.cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
             }
 
-            if (this.cameraBehaviour != null)
-            {
-                this.cameraBehaviour.ExternalSyncEnabled = true;
-            }
-
             this.RebuildCameras();
         }
 
@@ -193,20 +137,25 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
-            // Sync Camera View: CameraBehaviour's camera renders to the CameraView RT
-            this.SyncCameraViewSlot();
+            var isSingleView = this.ViewSlotModel.Layout == ViewLayout.SINGLE;
 
-            // Sync Director View cameras
+            // In single-view, let CameraBehaviour handle everything as before.
+            // In multi-view, we drive the main camera sync and viewport rects.
+            this.cameraBehaviour.ExternalSyncEnabled = !isSingleView;
+
+            if (!isSingleView)
+            {
+                this.SyncCameraViewSlot();
+            }
+
             this.SyncDirectorCameras();
-
-            // Update frustum visibility: visible when any slot shows Director View
+            this.UpdateViewportRects();
             this.UpdateFrustumVisibility();
         }
 
         private void OnDestroy()
         {
             this.DestroyDirectorCameras();
-            this.DestroyCameraViewRT();
 
             if (this.ViewSlotModel != null)
             {
@@ -235,25 +184,26 @@ namespace Fram3d.Engine.Integration
                 }
             }
 
+            this.UpdateViewportRects();
             this.UpdateFrustumVisibility();
         }
 
+        /// <summary>
+        /// Syncs CameraBehaviour's main camera in multi-view mode.
+        /// Position, rotation, focal length, sensor, and shake.
+        /// </summary>
         private void SyncCameraViewSlot()
         {
-            var cam               = this.cameraBehaviour.ShotCamera;
-            var displayedFocal    = this.cameraBehaviour.DisplayedFocalLength;
-            var unityCam          = this.cameraBehaviour.GetComponent<Camera>();
-            var cameraTransform   = unityCam.transform;
+            var cam            = this.cameraBehaviour.ShotCamera;
+            var displayedFocal = this.cameraBehaviour.DisplayedFocalLength;
+            var unityCam       = this.cameraBehaviour.GetComponent<Camera>();
+            var cameraTransform = unityCam.transform;
 
             cameraTransform.position = cam.Position.ToUnity();
             cameraTransform.rotation = cam.Rotation.ToUnity();
             unityCam.focalLength     = displayedFocal;
             unityCam.sensorSize      = new Vector2(cam.SensorWidth, cam.SensorHeight);
 
-            // Camera.rect = full when rendering to RT (no panel inset needed)
-            unityCam.rect = new Rect(0, 0, 1, 1);
-
-            // Apply shake
             if (cam.ShakeEnabled)
             {
                 var t         = Time.time * cam.ShakeFrequency;
@@ -272,6 +222,76 @@ namespace Fram3d.Engine.Integration
             {
                 vc.SyncDirectorView(directorElement);
             }
+        }
+
+        /// <summary>
+        /// Sets Camera.rect on each camera to divide the screen based on layout.
+        /// SINGLE: main camera fills the screen.
+        /// SIDE_BY_SIDE: two halves with a small gap.
+        /// ONE_PLUS_TWO: top half + two quarter panels.
+        /// </summary>
+        private void UpdateViewportRects()
+        {
+            var mainCam = this.cameraBehaviour.GetComponent<Camera>();
+            var layout  = this.ViewSlotModel.Layout;
+
+            if (layout == ViewLayout.SINGLE)
+            {
+                // Don't touch Camera.rect in single-view — CameraBehaviour manages it
+                // (including the properties panel inset via SyncViewportRect)
+                return;
+            }
+
+            var gap   = 0.003f; // ~2px gap between viewports
+            var slots = this.ComputeViewportRects(layout, gap);
+            var count = this.ViewSlotModel.ActiveSlotCount;
+
+            for (var i = 0; i < count; i++)
+            {
+                var mode = this.ViewSlotModel.GetSlotType(i);
+
+                if (mode == ViewMode.CAMERA)
+                {
+                    mainCam.rect = slots[i];
+                }
+                else if (mode == ViewMode.DIRECTOR)
+                {
+                    var vc = this.FindDirectorCamera(i);
+
+                    if (vc != null)
+                    {
+                        vc.UnityCamera.rect = slots[i];
+                    }
+                }
+                // Designer View has no camera — the viewport area stays black
+            }
+        }
+
+        private Rect[] ComputeViewportRects(ViewLayout layout, float gap)
+        {
+            var halfGap = gap / 2f;
+
+            if (layout == ViewLayout.SIDE_BY_SIDE)
+            {
+                var halfW = 0.5f - halfGap;
+                return new[]
+                {
+                    new Rect(0,              0, halfW, 1),
+                    new Rect(0.5f + halfGap, 0, halfW, 1)
+                };
+            }
+
+            // ONE_PLUS_TWO: top row full width, bottom row split
+            var topH    = 0.6f - halfGap;
+            var bottomH = 0.4f - halfGap;
+            var bottomW = 0.5f - halfGap;
+
+            return new[]
+            {
+                new Rect(0,              bottomH + gap, 1,       topH),
+                new Rect(0,              0,             bottomW, bottomH),
+                new Rect(0.5f + halfGap, 0,             bottomW, bottomH)
+            };
         }
 
         private void UpdateFrustumVisibility()
@@ -298,32 +318,6 @@ namespace Fram3d.Engine.Integration
 
         private ViewCamera FindDirectorCamera(int slotIndex) =>
             this._directorCameras.TryGetValue(slotIndex, out var vc) ? vc : null;
-
-        private void EnsureCameraViewRT(int width, int height)
-        {
-            if (this._cameraViewRT != null
-             && this._cameraViewRT.width == width
-             && this._cameraViewRT.height == height)
-            {
-                return;
-            }
-
-            this.DestroyCameraViewRT();
-            this._cameraViewRT      = new RenderTexture(width, height, 24, RenderTextureFormat.Default);
-            this._cameraViewRT.name = "CameraViewRT";
-            this.cameraBehaviour.SetTargetTexture(this._cameraViewRT);
-        }
-
-        private void DestroyCameraViewRT()
-        {
-            if (this._cameraViewRT != null)
-            {
-                this.cameraBehaviour?.SetTargetTexture(null);
-                this._cameraViewRT.Release();
-                Destroy(this._cameraViewRT);
-                this._cameraViewRT = null;
-            }
-        }
 
         private void DestroyDirectorCameras()
         {

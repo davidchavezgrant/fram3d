@@ -95,13 +95,6 @@ namespace Fram3d.Engine.Integration
         public void SetSensorMode(SensorMode mode) => this._cameraElement.SetSensorMode(mode);
 
         /// <summary>
-        /// Redirects the main camera's output to a RenderTexture. Called by
-        /// ViewCameraManager so the Camera View renders to a texture that
-        /// UI Toolkit can display. Pass null to render to screen.
-        /// </summary>
-        public void SetTargetTexture(RenderTexture rt) => this._unityCamera.targetTexture = rt;
-
-        /// <summary>
         /// When true, LateUpdate Sync is handled externally by ViewCameraManager.
         /// CameraBehaviour still runs its own focal length lerp but delegates
         /// the camera sync to the per-slot cameras.

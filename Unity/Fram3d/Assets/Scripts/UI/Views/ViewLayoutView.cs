@@ -16,7 +16,7 @@ namespace Fram3d.UI.Views
     /// </summary>
     public sealed class ViewLayoutView : MonoBehaviour
     {
-        private const int HEADER_HEIGHT = 22;
+        private const int HEADER_HEIGHT = 26;
 
         private VisualElement     _headerContainer;
         private VisualElement     _layoutChooser;

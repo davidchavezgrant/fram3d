@@ -514,21 +514,18 @@ namespace Fram3d.UI.Input
         {
             if (this.viewCameraManager != null && Mouse.current != null)
             {
-                if (this.viewCameraManager.IsMultiView)
+                // Activate the clicked viewport on mouse-down
+                if (this.viewCameraManager.IsMultiView && Mouse.current.leftButton.wasPressedThisFrame)
                 {
-                    // Multi-view: route to whichever viewport the mouse is in
-                    var mousePos   = Mouse.current.position.ReadValue();
-                    var slotCamera = this.viewCameraManager.GetCameraForMousePosition(mousePos);
-
-                    if (slotCamera != null)
-                    {
-                        this._camera = slotCamera;
-                    }
+                    this.viewCameraManager.ActivateSlotAtPosition(Mouse.current.position.ReadValue());
                 }
-                else
+
+                // Route camera movement to the active slot's camera element
+                var activeCam = this.viewCameraManager.ActiveCameraElement;
+
+                if (activeCam != null)
                 {
-                    // Single-view: track CameraBehaviour.ActiveCamera
-                    this._camera = this.cameraBehaviour.ActiveCamera;
+                    this._camera = activeCam;
                 }
             }
 

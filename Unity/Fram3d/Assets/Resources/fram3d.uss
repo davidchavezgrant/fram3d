@@ -20,9 +20,9 @@
     --color-text-bright:      rgb(187, 187, 187);
     --color-text-dim:         rgb(102, 102, 102);
     --color-text-mid:         rgb(153, 153, 153);
-    --font-body:              11px;
-    --font-header:            10px;
-    --font-small:             9px;
+    --font-body:              13px;
+    --font-header:            12px;
+    --font-small:             11px;
 }
 
 /* ── Properties panel ─────────────────────────────────────────────── */
@@ -39,14 +39,14 @@
 }
 
 .panel-header {
-    height: 28px;
+    height: 32px;
     background-color: var(--color-header-bg);
     border-bottom-width: 1px;
     border-bottom-color: var(--color-border);
     align-items: center;
     justify-content: flex-start;
     flex-direction: row;
-    padding-left: 10px;
+    padding-left: 12px;
     flex-shrink: 0;
 }
 
@@ -89,19 +89,19 @@
 }
 
 .section-toggle .unity-toggle__checkmark {
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
 }
 
 /* ── Info rows ────────────────────────────────────────────────────── */
 
 .info-row {
     flex-direction: row;
-    margin-bottom: 3px;
+    margin-bottom: 5px;
 }
 
 .info-row__key {
-    width: 80px;
+    width: 100px;
     font-size: var(--font-body);
     color: var(--color-text-dim);
 }
@@ -119,7 +119,7 @@
     border-width: 1px;
     border-color: var(--color-selector-border);
     border-radius: 3px;
-    padding: 4px 6px;
+    padding: 5px 8px;
 }
 
 .dropdown-selected-label {
@@ -162,7 +162,7 @@
 .dropdown-list-row {
     flex-direction: row;
     align-items: center;
-    padding: 3px 3px 3px 6px;
+    padding: 4px 4px 4px 8px;
 }
 
 .dropdown-list-label {
@@ -192,7 +192,7 @@
 }
 
 .shake-slider Label {
-    min-width: 70px;
+    min-width: 85px;
     font-size: var(--font-body);
     color: var(--color-text-dim);
 }
@@ -286,23 +286,23 @@
 }
 
 .view-panel__header {
-    height: 22px;
+    height: 26px;
     flex-shrink: 0;
     flex-direction: row;
     align-items: center;
     background-color: rgb(30, 30, 30);
     border-bottom-width: 1px;
     border-bottom-color: rgb(50, 50, 50);
-    padding-left: 8px;
-    padding-right: 4px;
+    padding-left: 10px;
+    padding-right: 6px;
 }
 
 .view-panel__header-label {
-    font-size: 10px;
+    font-size: var(--font-header);
     color: rgb(153, 153, 153);
     letter-spacing: 1px;
     flex-grow: 0;
-    padding-right: 12px;
+    padding-right: 14px;
     cursor: link;
 }
 
@@ -328,9 +328,9 @@
 }
 
 .layout-chooser__button {
-    width: 28px;
-    height: 24px;
-    font-size: 14px;
+    width: 32px;
+    height: 28px;
+    font-size: 16px;
     color: rgb(120, 120, 120);
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;

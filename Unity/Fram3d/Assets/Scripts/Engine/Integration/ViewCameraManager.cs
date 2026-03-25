@@ -19,63 +19,52 @@ namespace Fram3d.Engine.Integration
     [DefaultExecutionOrder(100)]
     public sealed class ViewCameraManager : MonoBehaviour
     {
+        private int                         _activeSlot;
         private Dictionary<int, ViewCamera> _directorCameras = new();
 
         [SerializeField]
         private CameraBehaviour cameraBehaviour;
 
+        public  int            ActiveSlot      => this._activeSlot;
         public  CameraBehaviour CameraBehaviour => this.cameraBehaviour;
         public  ViewSlotModel  ViewSlotModel   { get; private set; }
         private Rect[]         _viewportRects  = { new(0, 0, 1, 1) };
 
         /// <summary>
-        /// Returns the CameraElement that should receive input based on the
-        /// current mouse position. In single-view, always returns
-        /// CameraBehaviour.ActiveCamera. In multi-view, checks which viewport
-        /// the mouse is in and returns the corresponding element.
+        /// Returns the CameraElement for the active slot. The active slot is
+        /// set by mouse click (ActivateSlotAtPosition), not hover.
         /// </summary>
-        public CameraElement GetCameraForMousePosition(Vector2 mouseScreenPos)
+        public CameraElement ActiveCameraElement
         {
-            if (this.ViewSlotModel.Layout == ViewLayout.SINGLE)
+            get
             {
+                if (!this.IsMultiView)
+                {
+                    return this.cameraBehaviour.ActiveCamera;
+                }
+
+                var mode = this.ViewSlotModel.GetSlotType(this._activeSlot);
+
+                if (mode == ViewMode.CAMERA)
+                {
+                    return this.cameraBehaviour.ShotCamera;
+                }
+
+                if (mode == ViewMode.DIRECTOR)
+                {
+                    return this.cameraBehaviour.DirectorCamera;
+                }
+
                 return this.cameraBehaviour.ActiveCamera;
             }
-
-            var normalizedPos = new Vector2(mouseScreenPos.x / Screen.width,
-                                            mouseScreenPos.y / Screen.height);
-
-            var count = this.ViewSlotModel.ActiveSlotCount;
-
-            for (var i = 0; i < count; i++)
-            {
-                if (i >= this._viewportRects.Length)
-                {
-                    break;
-                }
-
-                if (this._viewportRects[i].Contains(normalizedPos))
-                {
-                    var mode = this.ViewSlotModel.GetSlotType(i);
-
-                    if (mode == ViewMode.CAMERA)
-                    {
-                        return this.cameraBehaviour.ShotCamera;
-                    }
-
-                    if (mode == ViewMode.DIRECTOR)
-                    {
-                        return this.cameraBehaviour.DirectorCamera;
-                    }
-                }
-            }
-
-            return this.cameraBehaviour.ActiveCamera;
         }
 
         /// <summary>
-        /// Returns the Unity Camera for raycasting based on mouse position.
+        /// Returns the Unity Camera under the mouse position, for raycasting.
+        /// Unlike ActiveCameraElement (click-based), this follows the cursor
+        /// so hover and selection work in any viewport.
         /// </summary>
-        public Camera GetUnityCameraForMousePosition(Vector2 mouseScreenPos)
+        public Camera GetUnityCameraAtPosition(Vector2 mouseScreenPos)
         {
             if (this.ViewSlotModel.Layout == ViewLayout.SINGLE)
             {
@@ -148,6 +137,31 @@ namespace Fram3d.Engine.Integration
         }
 
         public bool IsMultiView => this.ViewSlotModel.Layout != ViewLayout.SINGLE;
+
+        /// <summary>
+        /// Activates the view slot at the given screen position. Called on
+        /// mouse click — the active slot determines which camera receives
+        /// movement input until the user clicks in a different viewport.
+        /// </summary>
+        public void ActivateSlotAtPosition(Vector2 mouseScreenPos)
+        {
+            if (!this.IsMultiView)
+            {
+                return;
+            }
+
+            var normalizedPos = new Vector2(mouseScreenPos.x / Screen.width,
+                                            mouseScreenPos.y / Screen.height);
+
+            for (var i = 0; i < this.ViewSlotModel.ActiveSlotCount && i < this._viewportRects.Length; i++)
+            {
+                if (this._viewportRects[i].Contains(normalizedPos))
+                {
+                    this._activeSlot = i;
+                    return;
+                }
+            }
+        }
 
         /// <summary>
         /// Returns the Unity Camera for a specific slot index.

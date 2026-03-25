@@ -205,9 +205,15 @@ namespace Fram3d.UI.Input
             if (this.viewCameraManager != null && this.viewCameraManager.IsMultiView && Mouse.current != null)
             {
                 var mousePos = Mouse.current.position.ReadValue();
-                var cam      = this.viewCameraManager.GetUnityCameraForMousePosition(mousePos);
+                var cam      = this.viewCameraManager.GetUnityCameraAtPosition(mousePos);
                 this.raycaster?.SetCamera(cam);
                 this.gizmoController?.SetCamera(cam);
+
+                // Clicking an element activates that viewport
+                if (Mouse.current.leftButton.wasPressedThisFrame)
+                {
+                    this.viewCameraManager.ActivateSlotAtPosition(mousePos);
+                }
             }
 
             this.Tick(Mouse.current, Keyboard.current);

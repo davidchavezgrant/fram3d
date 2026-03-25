@@ -50,13 +50,15 @@ namespace Fram3d.Engine.Rendering
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
-            var universalResourceData = frameData.Get<UniversalResourceData>();
-            var renderingData         = frameData.Get<UniversalRenderingData>();
-            var cameraData            = frameData.Get<UniversalCameraData>();
+            var resourceData  = frameData.Get<UniversalResourceData>();
+            var renderingData = frameData.Get<UniversalRenderingData>();
+            var cameraData    = frameData.Get<UniversalCameraData>();
+            var lightData     = frameData.Get<UniversalLightData>();
 
             var drawingSettings = RenderingUtils.CreateDrawingSettings(SHADER_TAGS,
                                                                        renderingData,
                                                                        cameraData,
+                                                                       lightData,
                                                                        SortingCriteria.CommonTransparent);
 
             var listParams = new RendererListParams(renderingData.cullResults,
@@ -69,10 +71,10 @@ namespace Fram3d.Engine.Rendering
             {
                 passData.RendererListHandle = rendererListHandle;
                 builder.UseRendererList(rendererListHandle);
-                builder.SetRenderAttachment(universalResourceData.activeColorTexture, 0);
-                builder.SetRenderAttachmentDepth(universalResourceData.activeDepthTexture);
+                builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture);
 
-                builder.SetRenderFunc<PassData>((data, context) =>
+                builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
                 {
                     context.cmd.DrawRendererList(data.RendererListHandle);
                 });

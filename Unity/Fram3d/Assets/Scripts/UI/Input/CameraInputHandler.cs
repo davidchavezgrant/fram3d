@@ -298,6 +298,8 @@ namespace Fram3d.UI.Input
 
             if (this.HandlePanelToggle(keyboard)) { return; }
 
+            if (this.HandleViewToggle(keyboard)) { return; }
+
             if (this.HandleAspectRatio(keyboard)) { return; }
 
             if (this.HandleReset(keyboard)) { return; }
@@ -357,7 +359,7 @@ namespace Fram3d.UI.Input
 
         private bool HandleToggles(Keyboard keyboard)
         {
-            if (keyboard.dKey.wasPressedThisFrame && !keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed && !keyboard.shiftKey.isPressed)
+            if (keyboard.dKey.wasPressedThisFrame && keyboard.shiftKey.isPressed && !keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed)
             {
                 this._camera.DofEnabled = !this._camera.DofEnabled;
                 return true;
@@ -382,6 +384,23 @@ namespace Fram3d.UI.Input
             }
 
             return false;
+        }
+
+        private bool HandleViewToggle(Keyboard keyboard)
+        {
+            if (!keyboard.dKey.wasPressedThisFrame || keyboard.ctrlKey.isPressed || keyboard.altKey.isPressed || keyboard.shiftKey.isPressed)
+            {
+                return false;
+            }
+
+            if (this.cameraBehaviour == null)
+            {
+                return false;
+            }
+
+            this.cameraBehaviour.ToggleDirectorView();
+            this._camera = this.cameraBehaviour.ActiveCamera;
+            return true;
         }
 
         private bool HandleToolSwitching(Keyboard keyboard)

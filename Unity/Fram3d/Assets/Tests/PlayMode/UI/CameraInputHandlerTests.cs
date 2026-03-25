@@ -289,20 +289,61 @@ namespace Fram3d.Tests.UI
             Assert.AreNotEqual(before, this._cam.FocalLength);
         }
 
-        // --- D key: toggle DOF ---
+        // --- D key: toggle Director View ---
 
         [UnityTest]
-        public IEnumerator DKey__TogglesDof__When__Pressed()
+        public IEnumerator DKey__TogglesDirectorView__When__Pressed()
+        {
+            yield return null;
+
+            Assert.IsFalse(this._behaviour.IsDirectorView, "Precondition");
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.D));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            Assert.IsTrue(this._behaviour.IsDirectorView, "D should toggle Director View");
+        }
+
+        [UnityTest]
+        public IEnumerator DKey__RoutesInputToDirectorCamera__When__InDirectorView()
+        {
+            yield return null;
+
+            // Enter Director View
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.D));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            yield return null;
+
+            // The handler's _camera should now be the director camera
+            var shotPos = this._behaviour.CameraElement.Position;
+
+            // Scroll to change focal length on the director camera
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { scroll = new Vector2(0, 10f) });
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+            yield return null;
+
+            // Shot camera should not have changed
+            Assert.AreEqual(shotPos.X, this._behaviour.CameraElement.Position.X, 0.001f, "Shot camera position should not change from director input");
+        }
+
+        // --- Shift+D: toggle DOF ---
+
+        [UnityTest]
+        public IEnumerator ShiftD__TogglesDof__When__Pressed()
         {
             yield return null;
 
             this._cam = this._behaviour.CameraElement;
             var before = this._cam.DofEnabled;
-            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.D));
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftShift, Key.D));
             yield return null;
 
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
-            Assert.AreNotEqual(before, this._cam.DofEnabled);
+            Assert.AreNotEqual(before, this._cam.DofEnabled, "Shift+D should toggle DOF");
         }
 
         [UnityTest]
@@ -807,6 +848,13 @@ namespace Fram3d.Tests.UI
             if (gizmoRoot != null)
             {
                 Object.DestroyImmediate(gizmoRoot);
+            }
+
+            var frustum = GameObject.Find("Shot Camera Frustum");
+
+            if (frustum != null)
+            {
+                Object.DestroyImmediate(frustum);
             }
 
             Object.DestroyImmediate(this._guideGo);

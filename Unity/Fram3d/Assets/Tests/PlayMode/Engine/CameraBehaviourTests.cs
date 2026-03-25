@@ -841,7 +841,145 @@ namespace Fram3d.Tests.Engine
         [TearDown]
         public void TearDown()
         {
+            // CameraBehaviour.Awake creates a FrustumWireframe GO as a scene root
+            var frustum = GameObject.Find("Shot Camera Frustum");
+
+            if (frustum != null)
+            {
+                Object.DestroyImmediate(frustum);
+            }
+
             Object.DestroyImmediate(this._go);
+        }
+
+        // --- Director View ---
+
+        [Test]
+        public void ToggleDirectorView__SetsIsDirectorView__When__InCameraView()
+        {
+            Assert.IsFalse(this._behaviour.IsDirectorView, "Precondition: starts in Camera View");
+            this._behaviour.ToggleDirectorView();
+            Assert.IsTrue(this._behaviour.IsDirectorView);
+        }
+
+        [Test]
+        public void ToggleDirectorView__ClearsIsDirectorView__When__InDirectorView()
+        {
+            this._behaviour.ToggleDirectorView();
+            Assert.IsTrue(this._behaviour.IsDirectorView, "Precondition");
+
+            this._behaviour.ToggleDirectorView();
+            Assert.IsFalse(this._behaviour.IsDirectorView);
+        }
+
+        [Test]
+        public void ActiveCamera__ReturnsShotCamera__When__InCameraView()
+        {
+            Assert.AreSame(this._behaviour.CameraElement, this._behaviour.ActiveCamera);
+        }
+
+        [Test]
+        public void ActiveCamera__ReturnsDirectorCamera__When__InDirectorView()
+        {
+            this._behaviour.ToggleDirectorView();
+            Assert.AreNotSame(this._behaviour.CameraElement, this._behaviour.ActiveCamera);
+        }
+
+        [Test]
+        public void ToggleDirectorView__CopiesShotPosition__When__FirstToggle()
+        {
+            var shotPos = this._behaviour.CameraElement.Position;
+            this._behaviour.ToggleDirectorView();
+
+            Assert.AreEqual(shotPos.X, this._behaviour.ActiveCamera.Position.X, 0.001f);
+            Assert.AreEqual(shotPos.Y, this._behaviour.ActiveCamera.Position.Y, 0.001f);
+            Assert.AreEqual(shotPos.Z, this._behaviour.ActiveCamera.Position.Z, 0.001f);
+        }
+
+        [Test]
+        public void ToggleDirectorView__PreservesDirectorPosition__When__ReEntering()
+        {
+            this._behaviour.ToggleDirectorView();
+            this._behaviour.ActiveCamera.Dolly(5f);
+            var directorPos = this._behaviour.ActiveCamera.Position;
+
+            // Switch to Camera View, then back to Director View
+            this._behaviour.ToggleDirectorView();
+            this._behaviour.ToggleDirectorView();
+
+            Assert.AreEqual(directorPos.X, this._behaviour.ActiveCamera.Position.X, 0.001f);
+            Assert.AreEqual(directorPos.Z, this._behaviour.ActiveCamera.Position.Z, 0.001f);
+        }
+
+        [UnityTest]
+        public IEnumerator ToggleDirectorView__ShowsFrustum__When__EnteringDirector()
+        {
+            yield return null;
+
+            this._behaviour.ToggleDirectorView();
+            var frustum = GameObject.Find("Shot Camera Frustum");
+            Assert.IsNotNull(frustum, "Frustum GO should exist");
+            Assert.IsTrue(frustum.activeSelf, "Frustum should be visible in Director View");
+        }
+
+        [UnityTest]
+        public IEnumerator ToggleDirectorView__HidesFrustum__When__LeavingDirector()
+        {
+            yield return null;
+
+            this._behaviour.ToggleDirectorView();
+            this._behaviour.ToggleDirectorView();
+            var frustum = GameObject.Find("Shot Camera Frustum");
+
+            // GameObject.Find cannot find inactive objects, so null means hidden
+            Assert.IsNull(frustum, "Frustum should be hidden in Camera View");
+        }
+
+        [UnityTest]
+        public IEnumerator Sync__SuppressesDof__When__InDirectorView()
+        {
+            yield return null;
+
+            var cam = this._behaviour.CameraElement;
+            cam.DofEnabled = true;
+            yield return null;
+
+            var dof = this.GetDof();
+            Assert.AreEqual(DepthOfFieldMode.Bokeh, dof.mode.value, "Precondition: DOF on in Camera View");
+
+            this._behaviour.ToggleDirectorView();
+            yield return null;
+
+            Assert.AreEqual(DepthOfFieldMode.Off, dof.mode.value, "DOF should be off in Director View");
+        }
+
+        [UnityTest]
+        public IEnumerator Sync__UsesDirectorPosition__When__InDirectorView()
+        {
+            yield return null;
+
+            this._behaviour.ToggleDirectorView();
+            this._behaviour.ActiveCamera.Crane(10f);
+            yield return null;
+
+            var unityY = this._go.transform.position.y;
+            Assert.Greater(unityY, 5f, "Unity Camera should follow director camera position");
+        }
+
+        [UnityTest]
+        public IEnumerator Sync__ShotCameraUnchanged__When__DirectorCameraMoves()
+        {
+            yield return null;
+
+            var shotPosBefore = this._behaviour.CameraElement.Position;
+            this._behaviour.ToggleDirectorView();
+            this._behaviour.ActiveCamera.Dolly(10f);
+            this._behaviour.ActiveCamera.Crane(5f);
+            yield return null;
+
+            Assert.AreEqual(shotPosBefore.X, this._behaviour.CameraElement.Position.X, 0.001f, "Shot camera should not move");
+            Assert.AreEqual(shotPosBefore.Y, this._behaviour.CameraElement.Position.Y, 0.001f, "Shot camera should not move");
+            Assert.AreEqual(shotPosBefore.Z, this._behaviour.CameraElement.Position.Z, 0.001f, "Shot camera should not move");
         }
 
         // --- Helpers ---

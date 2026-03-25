@@ -58,14 +58,15 @@ namespace Fram3d.Core.Scene
                                                                   MIN_SCALE);
         }
 
-        public void UpdateTranslation(Vector3 rayOrigin, Vector3 rayDirection)
+        public void UpdateTranslation(Vector3 rayOrigin, Vector3 rayDirection, Vector3 cameraForward)
         {
             var axisDir = this.Axis.Direction;
 
             var projected = TransformOperations.ProjectOntoAxis(this.StartPosition,
                                                                 axisDir,
                                                                 rayOrigin,
-                                                                rayDirection);
+                                                                rayDirection,
+                                                                cameraForward);
 
             this.Element.Position = TransformOperations.ComputeTranslation(this.StartPosition,
                                                                            axisDir,

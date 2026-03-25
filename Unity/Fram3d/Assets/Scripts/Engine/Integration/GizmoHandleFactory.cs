@@ -109,6 +109,39 @@ namespace Fram3d.Engine.Integration
             return group;
         }
 
+        /// <summary>
+        /// Adds a collider with hover padding appropriate to the handle type.
+        /// Arrows get a CapsuleCollider wider than the visual shaft.
+        /// Diamond gets a SphereCollider larger than the visual radius.
+        /// Rings keep a convex MeshCollider (convex hull is already a thick disk).
+        /// </summary>
+        private static void AddCollider(GameObject go, Mesh mesh, string handleName)
+        {
+            if (handleName.StartsWith("Translate"))
+            {
+                // Arrow: shaft 0→0.5 + cone 0.5→0.65, visual radius 0.012
+                // CapsuleCollider with 4x visual radius for easier grabbing
+                var cc      = go.AddComponent<CapsuleCollider>();
+                cc.center    = new Vector3(0f, 0.325f, 0f);
+                cc.height    = 0.65f;
+                cc.radius    = 0.05f;
+                cc.direction = 1;
+            }
+            else if (handleName.StartsWith("Scale"))
+            {
+                // Diamond: visual radius 0.06, collider ~67% larger
+                var sc    = go.AddComponent<SphereCollider>();
+                sc.radius = 0.1f;
+            }
+            else
+            {
+                // Rings: convex hull of torus is already a thick disk
+                var mc        = go.AddComponent<MeshCollider>();
+                mc.sharedMesh = mesh;
+                mc.convex     = true;
+            }
+        }
+
         private static void CreateHandle(string                      handleName,
                                          Mesh                        mesh,
                                          Quaternion                  rotation,
@@ -127,9 +160,7 @@ namespace Fram3d.Engine.Integration
             var mat = new Material(material);
             mat.SetColor(GizmoHighlighter.SHADER_COLOR, color);
             mr.sharedMaterial = mat;
-            var mc = go.AddComponent<MeshCollider>();
-            mc.sharedMesh  = mesh;
-            mc.convex      = true;
+            AddCollider(go, mesh, handleName);
             axisColors[mr] = color;
         }
 

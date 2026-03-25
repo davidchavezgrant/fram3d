@@ -49,6 +49,12 @@ Values from the prior codebase that were empirically tuned. Starting points — 
 - Keyframe snap: frame boundaries (1/fps — e.g., 1/24 = 0.04167s at 24fps)
 - Keyframe time tolerance (same-time conflict): 0.01 seconds
 
+## Gizmos
+
+- Screen size factor: 0.2005 (denominator in `distance * FOV / (factor * pixelHeight)`)
+- Fallback scale: 0.30 (used when pixelHeight or FOV is invalid — simple `distance * 0.30`)
+- Reference: at 1080p / 65° FOV, gizmo world scale ≈ distance × 0.30
+
 ## Input Sensitivities
 
 - Drag sensitivity: 0.2

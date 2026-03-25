@@ -45,9 +45,16 @@ namespace Fram3d.UI.Views
         {
             if (this._viewCameraManager == null || !this._viewCameraManager.IsMultiView)
             {
+                // RightInsetPixels is in screen pixels; convert to CSS pixels
+                var rootW     = this._root.resolvedStyle.width;
+                var scale     = Screen.width > 0 && !float.IsNaN(rootW) && rootW > 0
+                              ? (float)Screen.width / rootW
+                              : 1f;
+                var cssInset  = this._cameraBehaviour.RightInsetPixels / scale;
+
                 this._container.style.left   = 0;
                 this._container.style.top    = 0;
-                this._container.style.right  = this._cameraBehaviour.RightInsetPixels;
+                this._container.style.right  = cssInset;
                 this._container.style.bottom = 0;
                 this._container.style.width  = StyleKeyword.Auto;
                 this._container.style.height = StyleKeyword.Auto;

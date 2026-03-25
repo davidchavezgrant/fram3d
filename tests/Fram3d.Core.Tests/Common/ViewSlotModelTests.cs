@@ -194,6 +194,20 @@ namespace Fram3d.Core.Tests.Common
 		}
 
 		[Fact]
+		public void SetSlotType__BlocksRemovingCameraView__When__SettingNonCameraOnCameraSlot()
+		{
+			var model = new ViewSlotModel();
+			model.SetLayout(ViewLayout.SIDE_BY_SIDE);
+			var fired = false;
+			model.Changed += () => fired = true;
+
+			model.SetSlotType(0, ViewMode.DIRECTOR);
+
+			fired.Should().BeFalse();
+			model.GetSlotType(0).Should().Be(ViewMode.CAMERA);
+		}
+
+		[Fact]
 		public void SetSlotType__DoesNothing__When__SettingCameraViewOnSlotThatAlreadyHasIt()
 		{
 			var model = new ViewSlotModel();

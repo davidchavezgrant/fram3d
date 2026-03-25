@@ -77,6 +77,12 @@ namespace Fram3d.Core.Common
                 this._slots[index]         = ViewMode.CAMERA;
                 this._slots[oldCameraSlot] = oldType;
             }
+            else if (this._slots[index] == ViewMode.CAMERA)
+            {
+                // Cannot remove Camera View — it must always exist in one slot.
+                // Ignore the request silently.
+                return;
+            }
             else
             {
                 this._slots[index] = type;

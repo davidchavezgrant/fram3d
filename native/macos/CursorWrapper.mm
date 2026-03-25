@@ -228,6 +228,9 @@ static void Fram3dRaiseOverlayView(NSView* contentView)
 
     sOverlayView.frame = contentView.bounds;
 
+    if (sOverlayView.superview == contentView && contentView.subviews.lastObject == sOverlayView)
+        return;
+
     if (sOverlayView.superview == contentView)
         [sOverlayView removeFromSuperviewWithoutNeedingDisplay];
 

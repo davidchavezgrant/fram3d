@@ -127,14 +127,6 @@ namespace Fram3d.Engine.Cursor
             SetCursorToArrow();
         }
 
-        private void Update()
-        {
-            if (this._activeCursor.HasValue)
-            {
-                RefreshActiveCursor();
-            }
-        }
-
         private void OnApplicationFocus(bool hasFocus)
         {
             if (hasFocus && this._activeCursor.HasValue)

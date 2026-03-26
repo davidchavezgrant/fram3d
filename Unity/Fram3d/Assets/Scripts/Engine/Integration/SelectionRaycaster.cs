@@ -17,7 +17,8 @@ namespace Fram3d.Engine.Integration
         /// camera's culling mask, minus any layers we want to ignore.
         /// If a dedicated "Gizmo" layer exists, it is excluded automatically.
         /// </summary>
-        private int _layerMask;
+        private int  _layerMask;
+        private bool _logNextReject = true;
 
         [SerializeField]
         private Camera targetCamera;
@@ -45,8 +46,16 @@ namespace Fram3d.Engine.Integration
             // from Camera.rect so hover stays stable across split views and DPI.
             if (!this.targetCamera.pixelRect.Contains(screenPosition))
             {
+                if (this._logNextReject)
+                {
+                    Debug.Log($"[Raycaster] Rejected: pos=({screenPosition.x},{screenPosition.y}), pixelRect={this.targetCamera.pixelRect}");
+                    this._logNextReject = false;
+                }
+
                 return null;
             }
+
+            this._logNextReject = true;
 
             var ray = this.targetCamera.ScreenPointToRay(screenPosition);
 

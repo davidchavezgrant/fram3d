@@ -144,9 +144,11 @@ namespace Fram3d.UI.Input
 
             this._framesWithoutHover++;
 
-            if (this._framesWithoutHover == 1)
+            if (this._framesWithoutHover == 1 && Mouse.current != null)
             {
-                Debug.Log($"[Cursor] Lost hover. HoveredId={this._selection?.HoveredId}, overGizmo={this.gizmoController?.IsHoveringHandle}");
+                var mp = Mouse.current.position.ReadValue();
+                var cam = this.raycaster != null ? "has raycaster" : "NO raycaster";
+                Debug.Log($"[Cursor] Lost hover at ({mp.x},{mp.y}). {cam}. Was blocking UI: {this.IsPointerOverBlockingUI()}");
             }
 
             if (this._framesWithoutHover <= CURSOR_RESET_GRACE_FRAMES)

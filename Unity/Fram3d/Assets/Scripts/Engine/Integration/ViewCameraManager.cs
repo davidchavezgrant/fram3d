@@ -330,24 +330,29 @@ namespace Fram3d.Engine.Integration
         private Rect[] ComputeViewportRects()
         {
             var screenWidth   = (float)Screen.width;
-            var insetPixels   = this.cameraBehaviour.RightInsetPixels;
-            var availableNorm = screenWidth > 0 ? (screenWidth - insetPixels) / screenWidth : 1f;
+            var screenHeight  = (float)Screen.height;
+            var rightInset    = this.cameraBehaviour.RightInsetPixels;
+            var bottomInset   = this.cameraBehaviour.BottomInsetPixels;
+            var availableW    = screenWidth  > 0 ? (screenWidth  - rightInset)  / screenWidth  : 1f;
+            var bottomNorm    = screenHeight > 0 ? bottomInset / screenHeight : 0f;
+            var availableH    = 1f - bottomNorm;
 
             if (this.ViewSlotModel.Layout == ViewLayout.HORIZONTAL)
             {
-                var halfW = availableNorm * 0.5f;
+                var halfW = availableW * 0.5f;
                 return new[]
                 {
-                    new Rect(0,     0, halfW, 1),
-                    new Rect(halfW, 0, halfW, 1)
+                    new Rect(0,     bottomNorm, halfW, availableH),
+                    new Rect(halfW, bottomNorm, halfW, availableH)
                 };
             }
 
             // VERTICAL: top and bottom
+            var halfH = availableH * 0.5f;
             return new[]
             {
-                new Rect(0, 0.5f, availableNorm, 0.5f),
-                new Rect(0, 0,    availableNorm, 0.5f)
+                new Rect(0, bottomNorm + halfH, availableW, halfH),
+                new Rect(0, bottomNorm,         availableW, halfH)
             };
         }
 

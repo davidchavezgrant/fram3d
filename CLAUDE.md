@@ -8,6 +8,7 @@ Fram3d is a 3D previsualization tool for filmmakers. Unity project (Unity 6, URP
 - **Use the domain language.** Read `docs/reference/domain-language.md` before writing specs, code, or UI text. Terms are chosen deliberately — don't invent synonyms.
 - **All work requires a Linear ticket.** Before creating a new issue, **thoroughly search** for an existing one — search by title keywords, browse the relevant project/milestone, and check backlog. Only create a new issue if no match exists. Reference the ticket (e.g., FRA-36) in commits and PRs.
 - **Never overwrite Linear issue content.** When updating an issue, append implementation notes below the existing description. Never replace the original spec text or user-written content.
+- **No emojis or unicode symbols in UI.** Never use emoji characters, unicode symbols, or special glyphs for buttons, labels, or indicators. Use plain text labels (e.g., "Play", "Stop", "+") or dedicated icon textures.
 - **Question scope decisions.** If asked to create a separate issue/PR for a bug found during feature work, push back — bugs found during implementation usually belong in the feature's PR. Only create separate issues for bugs that are genuinely independent or discovered after the feature is merged.
 
 ## Code Style (C#)

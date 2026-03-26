@@ -192,12 +192,12 @@ namespace Fram3d.UI.Timeline
             {
                 if (this._isPlaying)
                 {
-                    this._playButton.text = "\u23f8"; // Pause icon
+                    this._playButton.text = "Stop";
                     this._playButton.AddToClassList("timeline-transport__play--active");
                 }
                 else
                 {
-                    this._playButton.text = "\u25b6"; // Play icon
+                    this._playButton.text = "Play";
                     this._playButton.RemoveFromClassList("timeline-transport__play--active");
                 }
             }
@@ -219,10 +219,12 @@ namespace Fram3d.UI.Timeline
 
             this._currentGlobalTime += Time.deltaTime;
 
-            // Wrap at end
+            // Stop at end
             if (this._currentGlobalTime >= totalDuration)
             {
-                this._currentGlobalTime = 0;
+                this._currentGlobalTime = totalDuration;
+                this.TogglePlayback();
+                return;
             }
 
             // Navigate to correct shot
@@ -390,7 +392,7 @@ namespace Fram3d.UI.Timeline
             bar.style.height = TRANSPORT_HEIGHT;
 
             this._playButton = new Button(this.TogglePlayback);
-            this._playButton.text = "\u25b6";
+            this._playButton.text = "Play";
             this._playButton.AddToClassList("timeline-transport__play");
             bar.Add(this._playButton);
 
@@ -476,18 +478,25 @@ namespace Fram3d.UI.Timeline
             this._shotLabelColumn = new VisualElement();
             this._shotLabelColumn.AddToClassList("timeline-label-column");
 
+            // Title row: SHOTS + Add button side by side
+            var titleRow = new VisualElement();
+            titleRow.style.flexDirection = FlexDirection.Row;
+            titleRow.style.alignItems    = Align.Center;
+
             var shotLabel = new Label("SHOTS");
             shotLabel.AddToClassList("timeline-label-column__title");
-            this._shotLabelColumn.Add(shotLabel);
-
-            this._totalLabel = new Label("Total: 0.0s");
-            this._totalLabel.AddToClassList("timeline-label-column__subtitle");
-            this._shotLabelColumn.Add(this._totalLabel);
+            titleRow.Add(shotLabel);
 
             var addButton = new Button(this.OnAddShotClicked);
             addButton.text = "+";
             addButton.AddToClassList("timeline-shot__add-button");
-            this._shotLabelColumn.Add(addButton);
+            titleRow.Add(addButton);
+
+            this._shotLabelColumn.Add(titleRow);
+
+            this._totalLabel = new Label("Total: 0.0s");
+            this._totalLabel.AddToClassList("timeline-label-column__subtitle");
+            this._shotLabelColumn.Add(this._totalLabel);
 
             row.Add(this._shotLabelColumn);
 
@@ -749,9 +758,9 @@ namespace Fram3d.UI.Timeline
                     frameTick.AddToClassList("timeline-ruler__frame-tick");
                     frameTick.style.position = Position.Absolute;
                     frameTick.style.left     = (float)framePx;
-                    frameTick.style.top      = RULER_HEIGHT - 5f;
+                    frameTick.style.top      = 0;
                     frameTick.style.width    = 1;
-                    frameTick.style.height   = 5;
+                    frameTick.style.height   = 8;
                     this._rulerContent.Add(frameTick);
                 }
             }

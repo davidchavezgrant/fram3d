@@ -268,12 +268,16 @@ namespace Fram3d.UI.Views
                 return;
             }
 
+            var bottomInset  = this._viewCameraManager.CameraBehaviour.BottomInsetPixels;
+            var screenScale  = Screen.width > 0 ? rootW / Screen.width : 1f;
+            var bottomCss    = bottomInset * screenScale;
+
             for (var i = 0; i < this._viewHeaders.Length && i < count; i++)
             {
                 var vpRect = this._viewCameraManager.GetViewportRect(i);
 
                 this._viewHeaders[i].Root.style.left  = vpRect.x * rootW;
-                this._viewHeaders[i].Root.style.top   = (1f - vpRect.y - vpRect.height) * rootH;
+                this._viewHeaders[i].Root.style.top   = (1f - vpRect.y - vpRect.height) * (rootH - bottomCss);
                 this._viewHeaders[i].Root.style.width = vpRect.width * rootW;
             }
         }

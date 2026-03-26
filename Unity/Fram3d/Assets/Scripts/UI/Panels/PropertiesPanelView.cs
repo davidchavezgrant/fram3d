@@ -157,6 +157,7 @@ namespace Fram3d.UI.Panels
             // Keep the viewport inset in screen pixels (CSS pixels × scale).
             // PanelSettings scale means PANEL_WIDTH CSS px ≠ PANEL_WIDTH screen px.
             this.UpdateRightInset();
+            this.UpdateBottomForTimeline();
             this.UpdateCursor();
 
             if (!this._visible)
@@ -167,6 +168,26 @@ namespace Fram3d.UI.Panels
             var cam = this._cameraBehaviour.CameraElement;
             this._infoSection?.UpdateValues(cam, this._cameraBehaviour.ActiveAspectRatio);
             this._shakeSection?.UpdateValues(cam);
+        }
+
+        private void UpdateBottomForTimeline()
+        {
+            if (this._panel == null)
+            {
+                return;
+            }
+
+            var bottomInset = this._cameraBehaviour.BottomInsetPixels;
+            var rootW       = this._root?.resolvedStyle.width ?? 0f;
+            var scale       = 1f;
+
+            if (rootW > 0)
+            {
+                scale = Screen.width / rootW;
+            }
+
+            var bottomCss = bottomInset / scale;
+            this._panel.style.bottom = bottomCss;
         }
 
         private void UpdateRightInset()

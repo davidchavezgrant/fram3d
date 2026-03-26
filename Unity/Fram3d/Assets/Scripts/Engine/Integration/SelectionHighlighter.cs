@@ -13,7 +13,8 @@ namespace Fram3d.Engine.Integration
     /// </summary>
     public sealed class SelectionHighlighter: MonoBehaviour
     {
-        private static readonly int BASE_COLOR = Shader.PropertyToID("_BaseColor");
+        private static readonly int BASE_COLOR   = Shader.PropertyToID("_BaseColor");
+        private static readonly int UNLIT_COLOR = Shader.PropertyToID("_Color");
 
         private static readonly Color HOVER_COLOR = new(1f,
                                                         0.92f,
@@ -53,6 +54,7 @@ namespace Fram3d.Engine.Integration
             {
                 renderer.GetPropertyBlock(block);
                 block.SetColor(BASE_COLOR, color);
+                block.SetColor(UNLIT_COLOR, color);
                 renderer.SetPropertyBlock(block);
             }
         }

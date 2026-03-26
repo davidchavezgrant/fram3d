@@ -15,6 +15,9 @@ namespace Fram3d.Engine.Integration
         private const float          SHAKE_ROTATION_SCALE    = 0.5f;
         private const float          SHAKE_TIME_OFFSET       = 100f;
         private       CameraElement    _cameraElement;
+
+        [SerializeField]
+        private Shader wireframeShader;
         private       CameraDatabase   _database;
         private       CameraElement    _directorCamera;
         private       bool             _directorInitialized;
@@ -33,11 +36,14 @@ namespace Fram3d.Engine.Integration
                                            ? this._directorCamera
                                            : this._cameraElement;
 
-        public        AspectRatio    ActiveAspectRatio => this._cameraElement.ActiveAspectRatio;
-        public        SensorMode     ActiveSensorMode  => this._cameraElement.ActiveSensorMode;
-        public        CameraElement  CameraElement     => this._cameraElement;
-        public        CameraDatabase Database          => this._database;
-        public        bool           IsDirectorView    => this._viewMode == ViewMode.DIRECTOR;
+        public        AspectRatio      ActiveAspectRatio   => this._cameraElement.ActiveAspectRatio;
+        public        SensorMode       ActiveSensorMode    => this._cameraElement.ActiveSensorMode;
+        public        CameraElement    CameraElement       => this._cameraElement;
+        public        CameraDatabase   Database            => this._database;
+        public        CameraElement    DirectorCamera      => this._directorCamera;
+        public        float            DisplayedFocalLength => this._displayedFocalLength;
+        public        FrustumWireframe FrustumWireframe    => this._frustumWireframe;
+        public        bool             IsDirectorView      => this._viewMode == ViewMode.DIRECTOR;
 
         /// <summary>
         /// The shot camera element. Exposed so the frustum wireframe and
@@ -60,6 +66,23 @@ namespace Fram3d.Engine.Integration
         /// The 3D viewport and overlays shrink to avoid this area.
         /// </summary>
         public void SetRightInset(float pixels) => this._rightInsetPixels = pixels;
+
+        /// <summary>
+        /// Initializes the director camera at the shot camera's current position
+        /// if not already initialized. Called by ViewCameraManager when a
+        /// Director View slot first appears.
+        /// </summary>
+        public void EnsureDirectorInitialized()
+        {
+            if (this._directorInitialized)
+            {
+                return;
+            }
+
+            this._directorCamera.Position = this._cameraElement.Position;
+            this._directorCamera.Rotation = this._cameraElement.Rotation;
+            this._directorInitialized     = true;
+        }
 
         public void SetSensorMode(SensorMode mode) => this._cameraElement.SetSensorMode(mode);
 
@@ -233,11 +256,27 @@ namespace Fram3d.Engine.Integration
 
         private void CreateFrustumWireframe()
         {
+            var shader = this.wireframeShader;
+
+            if (shader == null)
+            {
+                shader = Shader.Find("Unlit/Color");
+            }
+
+            if (shader == null)
+            {
+                Debug.LogWarning("CameraBehaviour: No wireframe shader available. Frustum wireframe disabled.");
+                return;
+            }
+
+            var material = new Material(shader);
+            material.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+
             var go = new GameObject("Shot Camera Frustum");
             var behaviour = go.AddComponent<ElementBehaviour>();
             behaviour.Element = this._cameraElement;
             this._frustumWireframe = go.AddComponent<FrustumWireframe>();
-            this._frustumWireframe.Initialize(this._cameraElement);
+            this._frustumWireframe.Initialize(this._cameraElement, material);
             go.SetActive(false);
         }
 

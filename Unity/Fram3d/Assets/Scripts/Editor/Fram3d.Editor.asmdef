@@ -1,0 +1,20 @@
+{
+  "name": "Fram3d.Editor",
+  "rootNamespace": "Fram3d.Editor",
+  "references": [
+    "Fram3d.Core",
+    "Fram3d.Engine",
+    "Fram3d.UI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

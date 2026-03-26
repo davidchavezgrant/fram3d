@@ -19,6 +19,7 @@ namespace Fram3d.Editor
         {
             SetupCamera();
             SetupSelection();
+            SetupViewLayout();
             SetupAspectRatioMask();
             SetupCompositionGuides();
             SetupPropertiesPanel();
@@ -68,6 +69,7 @@ namespace Fram3d.Editor
 
             var settings = ScriptableObject.CreateInstance<PanelSettings>();
             settings.scaleMode = PanelScaleMode.ConstantPixelSize;
+            settings.scale     = 1.25f;
             AssetDatabase.CreateAsset(settings, "Assets/Settings/PanelSettings.asset");
             return settings;
         }
@@ -122,11 +124,19 @@ namespace Fram3d.Editor
                 inputHandler = cameraGameObject.AddComponent<CameraInputHandler>();
             }
 
-            // Wire the serialized reference
+            // Wire the serialized references
             var serializedObject = new SerializedObject(inputHandler);
             var prop             = serializedObject.FindProperty("cameraBehaviour");
             prop.objectReferenceValue = cameraGameObject.GetComponent<CameraBehaviour>();
             serializedObject.ApplyModifiedProperties();
+
+            // Wire the wireframe shader on CameraBehaviour
+            var camBehaviour = cameraGameObject.GetComponent<CameraBehaviour>();
+            var camSo        = new SerializedObject(camBehaviour);
+            var shaderProp   = camSo.FindProperty("wireframeShader");
+            shaderProp.objectReferenceValue = Shader.Find("Unlit/Color");
+            camSo.ApplyModifiedProperties();
+
             EditorUtility.SetDirty(cameraGameObject);
         }
 
@@ -247,6 +257,68 @@ namespace Fram3d.Editor
                                   PrimitiveType.Sphere,
                                   new Vector3(-2f, 1f, 5f),
                                   Color.green);
+        }
+
+        private static void SetupViewLayout()
+        {
+            var cameraGo = GameObject.Find("Main Camera");
+
+            // ViewCameraManager on the camera object
+            var viewCameraManager = cameraGo.GetComponent<ViewCameraManager>();
+
+            if (viewCameraManager == null)
+            {
+                viewCameraManager = cameraGo.AddComponent<ViewCameraManager>();
+            }
+
+            var vcmSo = new SerializedObject(viewCameraManager);
+            vcmSo.FindProperty("cameraBehaviour").objectReferenceValue = cameraGo.GetComponent<CameraBehaviour>();
+            vcmSo.ApplyModifiedProperties();
+
+            // Wire viewCameraManager on input handlers
+            var cameraInput = cameraGo.GetComponent<CameraInputHandler>();
+
+            if (cameraInput != null)
+            {
+                var so = new SerializedObject(cameraInput);
+                so.FindProperty("viewCameraManager").objectReferenceValue = viewCameraManager;
+                so.ApplyModifiedProperties();
+            }
+
+            var selectionInput = cameraGo.GetComponent<SelectionInputHandler>();
+
+            if (selectionInput != null)
+            {
+                var so = new SerializedObject(selectionInput);
+                so.FindProperty("viewCameraManager").objectReferenceValue = viewCameraManager;
+                so.ApplyModifiedProperties();
+            }
+
+            // View Layout UI (layout chooser and viewport headers)
+            var layoutGo = GameObject.Find("View Layout");
+
+            if (layoutGo == null)
+            {
+                layoutGo = new GameObject("View Layout");
+            }
+
+            var uiDoc = layoutGo.GetComponent<UIDocument>();
+
+            if (uiDoc == null)
+            {
+                uiDoc               = layoutGo.AddComponent<UIDocument>();
+                uiDoc.panelSettings = GetOrCreatePanelSettings();
+            }
+
+            uiDoc.sortingOrder = 3;
+
+            if (layoutGo.GetComponent<ViewLayoutView>() == null)
+            {
+                layoutGo.AddComponent<ViewLayoutView>();
+            }
+
+            EditorUtility.SetDirty(cameraGo);
+            EditorUtility.SetDirty(layoutGo);
         }
 
         private static void SetupSelection()

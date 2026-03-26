@@ -30,8 +30,11 @@ namespace Fram3d.UI.Views
         private VisualElement _thirdsV1;
         private VisualElement _thirdsV2;
 
+        private VisualElement            _root;
+
         // Safe zones (each is a single element with border)
         private VisualElement            _titleSafe;
+        private ViewCameraManager        _viewCameraManager;
         public  CompositionGuideSettings Settings { get; } = new();
 
         private void BuildOverlay()
@@ -101,7 +104,8 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            this._container.style.right = this._cameraBehaviour.RightInsetPixels;
+            ViewportScope.Apply(this._container, this._root,
+                                this._viewCameraManager, this._cameraBehaviour.RightInsetPixels);
             var viewWidth  = this._container.resolvedStyle.width;
             var viewHeight = this._container.resolvedStyle.height;
 
@@ -200,7 +204,8 @@ namespace Fram3d.UI.Views
 
         private void Start()
         {
-            this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
+            this._cameraBehaviour   = FindAnyObjectByType<CameraBehaviour>();
+            this._viewCameraManager = FindAnyObjectByType<ViewCameraManager>();
 
             if (this._cameraBehaviour == null)
             {
@@ -216,7 +221,8 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            StyleSheetLoader.Apply(uiDocument.rootVisualElement);
+            this._root = uiDocument.rootVisualElement;
+            StyleSheetLoader.Apply(this._root);
             this.BuildOverlay();
         }
 

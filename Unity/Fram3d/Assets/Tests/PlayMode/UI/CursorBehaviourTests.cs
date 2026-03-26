@@ -63,9 +63,9 @@ namespace Fram3d.Tests.UI
         [Test]
         public void SetCursor__DelegatesToService__When__ServiceIsSet()
         {
-            var result = CursorManager.SetCursor(CursorType.Crosshair);
+            var result = CursorManager.SetCursor(CursorType.Link);
             Assert.IsTrue(result);
-            Assert.AreEqual(CursorType.Crosshair, this._cursorService.LastCursor);
+            Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor);
         }
 
         [Test]
@@ -102,7 +102,7 @@ namespace Fram3d.Tests.UI
             this._mouse = InputSystem.AddDevice<Mouse>();
 
             // Inject recording cursor service, save original for restore
-            this._originalService = GetStaticField<ICursorService>(typeof(CursorManager), "_instance");
+            this._originalService = GetStaticField<ICursorService>(typeof(CursorManager), "_service");
             this._cursorService   = new RecordingCursorService();
             CursorManager.SetService(this._cursorService);
             this._cursorService.ResetCounts();
@@ -215,6 +215,164 @@ namespace Fram3d.Tests.UI
             yield return null;
 
             Assert.AreEqual(0, this._cursorService.ResetCallCount, "Cursor should not reset within the grace period");
+        }
+
+        // --- Hover keep distance (FRA-52 anti-flicker) ---
+
+        [UnityTest]
+        public IEnumerator UpdateHover__KeepsHover__When__MouseMovesSlightlyOffElement()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            // Hover cube to establish hover
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
+            yield return null;
+
+            Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor, "Precondition: cursor on element");
+            this._cursorService.ResetCounts();
+
+            // Move mouse slightly off the element — within the 20px keep distance.
+            // The element is at Z=5, filling roughly 100px at screen center.
+            // Moving 15px from center should miss the raycast but stay within
+            // HOVER_KEEP_DISTANCE_SQ (400 = 20^2).
+            var nearbyPos = center + new Vector2(0f, 80f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = nearbyPos });
+            yield return null;
+
+            // Cursor should still be Link — hover kept due to proximity
+            Assert.AreEqual(0, this._cursorService.ResetCallCount,
+                "Cursor should not reset when mouse stays near the element");
+        }
+
+        [UnityTest]
+        public IEnumerator UpdateHover__ClearsHover__When__MouseMovesFarFromElement()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            // Hover cube
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
+            yield return null;
+
+            Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor, "Precondition");
+            this._cursorService.ResetCounts();
+
+            // Move far away — well beyond the 20px keep distance
+            var farPos = new Vector2(10f, 10f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = farPos });
+
+            // Wait for grace frames to expire
+            for (var i = 0; i < 600; i++)
+            {
+                yield return null;
+
+                if (this._cursorService.ResetCallCount > 0)
+                {
+                    break;
+                }
+            }
+
+            Assert.IsTrue(this._cursorService.ResetCallCount > 0,
+                "Cursor should reset when mouse moves far from the element");
+        }
+
+        // --- ClosedHand cursor during gizmo drag ---
+
+        [UnityTest]
+        public IEnumerator UpdateCursor__SetsClosedHand__When__GizmoDragActive()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            // Set up a GizmoController so gizmo drag cursor logic activates.
+            // We simulate the drag state via reflection since setting up actual
+            // gizmo handle raycasts is prohibitively complex.
+            var gizmoController = this._cameraGo.AddComponent<GizmoController>();
+            SetField(gizmoController, "selectionHighlighter", this._highlighter);
+            SetField(gizmoController, "targetCamera", this._cameraGo.GetComponent<Camera>());
+            SetField(this._handler, "gizmoController", gizmoController);
+
+            // Select the cube
+            var element = this._cube.GetComponent<ElementBehaviour>().Element;
+            this._highlighter.Selection.Select(element.Id);
+            yield return null;
+
+            // Simulate active gizmo drag by setting _isGizmoDragging via reflection
+            SetField(this._handler, "_isGizmoDragging", true);
+            this._cursorService.ResetCounts();
+
+            // Mouse button held during drag
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center, buttons = 1 });
+            yield return null;
+
+            Assert.AreEqual(CursorType.ClosedHand, this._cursorService.LastCursor,
+                "Cursor should be ClosedHand during gizmo drag");
+
+            // Release mouse to end drag
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center, buttons = 0 });
+            yield return null;
+
+            Assert.IsTrue(this._cursorService.ResetCallCount > 0,
+                "Cursor should reset when gizmo drag ends");
+        }
+
+        // --- Cursor resets to default when moving from element to empty space ---
+
+        [UnityTest]
+        public IEnumerator UpdateCursor__TransitionsCorrectly__When__HoverThenLeave()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            // Start with no cursor
+            Assert.IsNull(this._cursorService.LastCursor, "Precondition: no cursor set");
+
+            // Hover the element
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
+            yield return null;
+
+            Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor, "Should set Link on hover");
+            var setCountAfterHover = this._cursorService.SetCursorCallCount;
+
+            // Stay on element — no additional SetCursor calls
+            for (var i = 0; i < 3; i++)
+            {
+                yield return null;
+            }
+
+            Assert.AreEqual(setCountAfterHover, this._cursorService.SetCursorCallCount,
+                "No redundant SetCursor while continuously hovering");
+
+            // Move far away
+            this._cursorService.ResetCounts();
+            var corner = new Vector2(10f, Screen.height - 10f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = corner });
+
+            // Wait for grace period to expire
+            for (var i = 0; i < 600; i++)
+            {
+                yield return null;
+
+                if (this._cursorService.ResetCallCount > 0)
+                {
+                    break;
+                }
+            }
+
+            Assert.IsTrue(this._cursorService.ResetCallCount > 0, "Should reset after leaving");
+
+            // Return to element — should set Link again
+            this._cursorService.ResetCounts();
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
+            yield return null;
+
+            Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor,
+                "Should re-set Link when re-entering hover");
         }
 
         private static T GetStaticField<T>(System.Type type, string fieldName)

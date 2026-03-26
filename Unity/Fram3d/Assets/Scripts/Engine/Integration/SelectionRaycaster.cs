@@ -12,15 +12,18 @@ namespace Fram3d.Engine.Integration
     {
         private const float MAX_RAYCAST_DISTANCE = 1000f;
 
-        /// <summary>
-        /// Layer mask excluding gizmos and UI. Set during Awake from the
-        /// camera's culling mask, minus any layers we want to ignore.
-        /// If a dedicated "Gizmo" layer exists, it is excluded automatically.
-        /// </summary>
         private int _layerMask;
 
         [SerializeField]
         private Camera targetCamera;
+
+        public void SetCamera(Camera camera)
+        {
+            if (camera != null)
+            {
+                this.targetCamera = camera;
+            }
+        }
 
         /// <summary>
         /// Casts a ray from the camera through the given screen position.
@@ -29,6 +32,11 @@ namespace Fram3d.Engine.Integration
         public Element Raycast(Vector2 screenPosition)
         {
             if (this.targetCamera == null)
+            {
+                return null;
+            }
+
+            if (!this.targetCamera.pixelRect.Contains(screenPosition))
             {
                 return null;
             }
@@ -60,10 +68,8 @@ namespace Fram3d.Engine.Integration
                 this.targetCamera = this.GetComponent<Camera>();
             }
 
-            // Start with the Default layer. Exclude UI and IgnoreRaycast.
             this._layerMask = ~(LayerMask.GetMask("UI", "Ignore Raycast"));
 
-            // Exclude a "Gizmo" layer if it exists (for future gizmo support).
             var gizmoLayer = LayerMask.NameToLayer("Gizmo");
 
             if (gizmoLayer >= 0)

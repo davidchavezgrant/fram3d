@@ -20,9 +20,9 @@
     --color-text-bright:      rgb(187, 187, 187);
     --color-text-dim:         rgb(102, 102, 102);
     --color-text-mid:         rgb(153, 153, 153);
-    --font-body:              11px;
-    --font-header:            10px;
-    --font-small:             9px;
+    --font-body:              13px;
+    --font-header:            12px;
+    --font-small:             11px;
 }
 
 /* ── Properties panel ─────────────────────────────────────────────── */
@@ -39,14 +39,14 @@
 }
 
 .panel-header {
-    height: 28px;
+    height: 32px;
     background-color: var(--color-header-bg);
     border-bottom-width: 1px;
     border-bottom-color: var(--color-border);
     align-items: center;
     justify-content: flex-start;
     flex-direction: row;
-    padding-left: 10px;
+    padding-left: 12px;
     flex-shrink: 0;
 }
 
@@ -89,19 +89,19 @@
 }
 
 .section-toggle .unity-toggle__checkmark {
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
 }
 
 /* ── Info rows ────────────────────────────────────────────────────── */
 
 .info-row {
     flex-direction: row;
-    margin-bottom: 3px;
+    margin-bottom: 5px;
 }
 
 .info-row__key {
-    width: 80px;
+    width: 100px;
     font-size: var(--font-body);
     color: var(--color-text-dim);
 }
@@ -119,7 +119,7 @@
     border-width: 1px;
     border-color: var(--color-selector-border);
     border-radius: 3px;
-    padding: 4px 6px;
+    padding: 5px 8px;
 }
 
 .dropdown-selected-label {
@@ -162,7 +162,7 @@
 .dropdown-list-row {
     flex-direction: row;
     align-items: center;
-    padding: 3px 3px 3px 6px;
+    padding: 4px 4px 4px 8px;
 }
 
 .dropdown-list-label {
@@ -192,7 +192,7 @@
 }
 
 .shake-slider Label {
-    min-width: 70px;
+    min-width: 85px;
     font-size: var(--font-body);
     color: var(--color-text-dim);
 }
@@ -265,4 +265,95 @@
     color: rgb(255, 255, 255);
     letter-spacing: 2px;
     -unity-font-style: bold;
+}
+
+/* ── View layout system ──────────────────────────────────────────── */
+
+.view-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: row;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.view-panel {
+    flex-direction: column;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.view-panel__header {
+    height: 26px;
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgb(30, 30, 30);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(50, 50, 50);
+    padding-left: 10px;
+    padding-right: 6px;
+}
+
+.view-panel__header-label {
+    font-size: var(--font-header);
+    color: rgb(153, 153, 153);
+    letter-spacing: 1px;
+    flex-grow: 0;
+    padding-right: 14px;
+    cursor: link;
+}
+
+.view-panel__header-label:hover {
+    color: rgb(220, 220, 220);
+}
+
+.view-panel__content {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+/* ── Active panel outline ─────────────────────────────────────────── */
+
+.view-active-outline {
+    border-width: 1px;
+    border-color: rgba(74, 158, 255, 0.6);
+    border-radius: 0;
+}
+
+/* ── Layout chooser ──────────────────────────────────────────────── */
+
+.layout-chooser {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    flex-direction: row;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 6px;
+    padding: 3px;
+}
+
+.layout-chooser__button {
+    width: 32px;
+    height: 28px;
+    font-size: 16px;
+    color: rgb(120, 120, 120);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 4px;
+    padding: 0;
+    margin: 0 1px;
+    -unity-text-align: middle-center;
+}
+
+.layout-chooser__button:hover {
+    color: rgb(200, 200, 200);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.layout-chooser__button--active {
+    color: rgb(240, 240, 240);
+    background-color: rgba(255, 255, 255, 0.15);
 }

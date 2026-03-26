@@ -21,16 +21,14 @@ namespace Fram3d.Engine.Integration
         private MeshFilter    _meshFilter;
         private MeshRenderer  _meshRenderer;
 
-        public void Initialize(CameraElement shotCamera) => this._shotCamera = shotCamera;
-
-        private void Start()
+        public void Initialize(CameraElement shotCamera, Material material)
         {
+            this._shotCamera = shotCamera;
+
             this._meshFilter   = this.gameObject.AddComponent<MeshFilter>();
             this._meshRenderer = this.gameObject.AddComponent<MeshRenderer>();
             this._collider     = this.gameObject.AddComponent<BoxCollider>();
 
-            var material = new Material(Shader.Find("Unlit/Color"));
-            material.color                  = WIREFRAME_COLOR;
             this._meshRenderer.sharedMaterial = material;
             this.RebuildMesh();
         }

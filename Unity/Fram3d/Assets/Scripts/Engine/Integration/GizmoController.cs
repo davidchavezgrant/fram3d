@@ -13,8 +13,8 @@ namespace Fram3d.Engine.Integration
     /// </summary>
     public sealed class GizmoController: MonoBehaviour
     {
-        public const int GIZMO_LAYER_INDEX = 6;
-        private readonly GizmoState       _gizmoState          = new();
+        public const     int              GIZMO_LAYER_INDEX = 6;
+        private readonly GizmoState       _gizmoState       = new();
         private          DragSession      _activeDrag;
         private          GameObject       _gizmoRoot;
         private          GizmoHighlighter _highlighter;
@@ -29,6 +29,14 @@ namespace Fram3d.Engine.Integration
         [SerializeField]
         private Camera targetCamera;
 
+        public void SetCamera(Camera camera)
+        {
+            if (camera != null)
+            {
+                this.targetCamera = camera;
+            }
+        }
+
         public ActiveTool ActiveTool       => this._gizmoState.ActiveTool;
         public bool       IsDragging       => this._activeDrag != null;
         public bool       IsHoveringHandle => this._highlighter != null && this._highlighter.IsHoveringHandle;
@@ -39,6 +47,11 @@ namespace Fram3d.Engine.Integration
             // Future: create ICommand with before/after state here (milestone 4.1)
             this._highlighter.ClearDrag();
             this._activeDrag = null;
+        }
+
+        public void ClearHover()
+        {
+            this._highlighter?.ClearHover();
         }
 
         public void SetActiveTool(ActiveTool tool)
@@ -61,6 +74,11 @@ namespace Fram3d.Engine.Integration
             }
 
             if (this._selection == null || this._selection.SelectedId == null)
+            {
+                return false;
+            }
+
+            if (!this.IsWithinTargetViewport(screenPosition))
             {
                 return false;
             }
@@ -90,7 +108,8 @@ namespace Fram3d.Engine.Integration
             // to the mouse position on first drag frame
             if (this.ActiveTool == ActiveTool.TRANSLATE)
             {
-                var camFwd    = this.targetCamera.transform.forward.ToSystem();
+                var camFwd = this.targetCamera.transform.forward.ToSystem();
+
                 var projected = TransformOperations.ProjectOntoAxis(element.Position,
                                                                     axis.Direction,
                                                                     ray.origin.ToSystem(),
@@ -131,8 +150,8 @@ namespace Fram3d.Engine.Integration
 
             if (this.ActiveTool == ActiveTool.TRANSLATE)
             {
-                var ray     = this.targetCamera.ScreenPointToRay(screenPosition);
-                var camFwd  = this.targetCamera.transform.forward.ToSystem();
+                var ray    = this.targetCamera.ScreenPointToRay(screenPosition);
+                var camFwd = this.targetCamera.transform.forward.ToSystem();
                 this._activeDrag.UpdateTranslation(ray.origin.ToSystem(), ray.direction.ToSystem(), camFwd);
             }
             else if (this.ActiveTool == ActiveTool.ROTATE)
@@ -152,6 +171,12 @@ namespace Fram3d.Engine.Integration
         public void UpdateHover(Vector2 screenPosition)
         {
             if (this.ActiveTool == ActiveTool.SELECT || !this._gizmoRoot.activeSelf)
+            {
+                this._highlighter.ClearHover();
+                return;
+            }
+
+            if (!this.IsWithinTargetViewport(screenPosition))
             {
                 this._highlighter.ClearHover();
                 return;
@@ -192,14 +217,17 @@ namespace Fram3d.Engine.Integration
             return null;
         }
 
+        private bool IsWithinTargetViewport(Vector2 screenPosition)
+        {
+            return this.targetCamera != null && this.targetCamera.pixelRect.Contains(screenPosition);
+        }
+
         private void ScaleForConstantScreenSize()
         {
             var gizmoPos = this._gizmoRoot.transform.position;
             var camPos   = this.targetCamera.transform.position;
             var distance = Vector3.Distance(gizmoPos, camPos);
-            var scale    = GizmoScaling.CalculateZoomScale(distance,
-                                                           this.targetCamera.fieldOfView,
-                                                           this.targetCamera.pixelHeight);
+            var scale    = GizmoScaling.CalculateZoomScale(distance, this.targetCamera.fieldOfView, this.targetCamera.pixelHeight);
             this._gizmoRoot.transform.localScale = Vector3.one * scale;
         }
 

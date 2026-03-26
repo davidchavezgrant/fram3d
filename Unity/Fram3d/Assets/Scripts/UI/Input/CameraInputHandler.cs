@@ -41,10 +41,16 @@ namespace Fram3d.UI.Input
         private CompositionGuideView compositionGuides;
 
         [SerializeField]
+        private ViewCameraManager viewCameraManager;
+
+        [SerializeField]
         private GizmoController gizmoController;
 
         [SerializeField]
         private PropertiesPanelView propertiesPanel;
+
+        [SerializeField]
+        private ViewLayoutView viewLayoutView;
 
         public void Tick(Keyboard keyboard, Mouse mouse)
         {
@@ -68,7 +74,7 @@ namespace Fram3d.UI.Input
 
             this.HandleKeyboardInput(keyboard);
 
-            if (this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI)
+            if (this.IsPointerOverBlockingUI())
             {
                 this._pendingScrollSamples.Clear();
                 return;
@@ -505,8 +511,34 @@ namespace Fram3d.UI.Input
             this._pendingScrollSamples.Clear();
         }
 
-        private void Start()  => this._camera = this.cameraBehaviour.CameraElement;
-        private void Update() => this.Tick(Keyboard.current, Mouse.current);
+        private bool IsPointerOverBlockingUI()
+        {
+            return (this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI)
+                || (this.viewLayoutView != null && this.viewLayoutView.IsPointerOverUI);
+        }
+
+        private void Start()
+        {
+            this._camera         = this.cameraBehaviour.CameraElement;
+            this.propertiesPanel ??= FindAnyObjectByType<PropertiesPanelView>();
+            this.viewLayoutView  ??= FindAnyObjectByType<ViewLayoutView>();
+        }
+
+        private void Update()
+        {
+            if (this.viewCameraManager != null)
+            {
+                // Route camera movement to the active slot's camera element
+                var activeCam = this.viewCameraManager.ActiveCameraElement;
+
+                if (activeCam != null)
+                {
+                    this._camera = activeCam;
+                }
+            }
+
+            this.Tick(Keyboard.current, Mouse.current);
+        }
 
         /// <summary>
         /// Resyncs modifier state when the application regains focus.

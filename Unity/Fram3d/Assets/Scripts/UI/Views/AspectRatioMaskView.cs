@@ -11,16 +11,18 @@ namespace Fram3d.UI.Views
     /// the active aspect ratio. Four absolutely positioned bars surround the unmasked
     /// area. All bars have pickingMode = Ignore so mouse events pass through to the
     /// 3D scene. Recalculates on geometry change and each frame (to track ratio changes).
+    /// In multi-view, constrains itself to the Camera View viewport rect.
     /// </summary>
     public sealed class AspectRatioMaskView: MonoBehaviour
     {
-        private VisualElement   _barBottom;
-        private VisualElement   _barLeft;
-        private VisualElement   _barRight;
-        private VisualElement   _barTop;
-        private CameraBehaviour _cameraBehaviour;
-        private VisualElement   _container;
-        private VisualElement   _root;
+        private VisualElement     _barBottom;
+        private VisualElement     _barLeft;
+        private VisualElement     _barRight;
+        private VisualElement     _barTop;
+        private CameraBehaviour   _cameraBehaviour;
+        private VisualElement     _container;
+        private VisualElement     _root;
+        private ViewCameraManager _viewCameraManager;
 
         private void BuildOverlay()
         {
@@ -46,11 +48,13 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            this._container.style.right = this._cameraBehaviour.RightInsetPixels;
+            ViewportScope.Apply(this._container, this._root,
+                                this._viewCameraManager, this._cameraBehaviour.RightInsetPixels);
+
             var viewWidth  = this._container.resolvedStyle.width;
             var viewHeight = this._container.resolvedStyle.height;
 
-            if (float.IsNaN(viewWidth) || float.IsNaN(viewHeight))
+            if (float.IsNaN(viewWidth) || float.IsNaN(viewHeight) || viewWidth <= 0 || viewHeight <= 0)
             {
                 return;
             }
@@ -96,7 +100,8 @@ namespace Fram3d.UI.Views
 
         private void Start()
         {
-            this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
+            this._cameraBehaviour   = FindAnyObjectByType<CameraBehaviour>();
+            this._viewCameraManager = FindAnyObjectByType<ViewCameraManager>();
 
             if (this._cameraBehaviour == null)
             {

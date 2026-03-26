@@ -247,6 +247,123 @@ extern "C" {
         }
     }
 
+    /// Extracts the native cursor image as RGBA pixel data so C# can
+    /// create a Texture2D for use with Unity's Cursor.SetCursor API.
+    /// Returns pixel dimensions, hotspot, and a malloc'd RGBA buffer
+    /// that the caller must free via Fram3dFreeCursorPixels.
+    __attribute__((visibility("default"))) int Fram3dExtractCursorImage(
+        int kind,
+        int* outWidth, int* outHeight,
+        float* outHotspotX, float* outHotspotY,
+        unsigned char** outPixels)
+    {
+        @autoreleasepool
+        {
+            NSCursor* cursor = Fram3dCursorForKind((Fram3dCursorKind)kind);
+            if (cursor == nil)
+                return 0;
+
+            NSImage* image = cursor.image;
+            if (image == nil)
+                return 0;
+
+            NSPoint hotspot = cursor.hotSpot;
+
+            // Get the best representation (highest resolution for Retina)
+            NSArray<NSImageRep*>* reps = image.representations;
+            NSBitmapImageRep* bestRep = nil;
+            NSInteger bestWidth = 0;
+
+            for (NSImageRep* rep in reps)
+            {
+                if ([rep isKindOfClass:[NSBitmapImageRep class]])
+                {
+                    NSBitmapImageRep* bmp = (NSBitmapImageRep*)rep;
+                    if (bmp.pixelsWide > bestWidth)
+                    {
+                        bestRep = bmp;
+                        bestWidth = bmp.pixelsWide;
+                    }
+                }
+            }
+
+            if (bestRep == nil)
+            {
+                // Fallback: render the image to a bitmap
+                NSSize size = image.size;
+                NSInteger w = (NSInteger)(size.width * 2); // 2x for Retina
+                NSInteger h = (NSInteger)(size.height * 2);
+
+                bestRep = [[NSBitmapImageRep alloc]
+                    initWithBitmapDataPlanes:nil
+                                 pixelsWide:w
+                                 pixelsHigh:h
+                              bitsPerSample:8
+                            samplesPerPixel:4
+                                   hasAlpha:YES
+                                   isPlanar:NO
+                             colorSpaceName:NSDeviceRGBColorSpace
+                               bitmapFormat:NSBitmapFormatAlphaNonpremultiplied
+                                bytesPerRow:w * 4
+                               bitsPerPixel:32];
+
+                [NSGraphicsContext saveGraphicsState];
+                NSGraphicsContext* ctx = [NSGraphicsContext graphicsContextWithBitmapImageRep:bestRep];
+                [NSGraphicsContext setCurrentContext:ctx];
+                [image drawInRect:NSMakeRect(0, 0, w, h)
+                         fromRect:NSZeroRect
+                        operation:NSCompositingOperationCopy
+                         fraction:1.0];
+                [NSGraphicsContext restoreGraphicsState];
+            }
+
+            NSInteger w = bestRep.pixelsWide;
+            NSInteger h = bestRep.pixelsHigh;
+
+            *outWidth    = (int)w;
+            *outHeight   = (int)h;
+
+            // Scale hotspot to pixel coordinates (hotspot is in points)
+            float scale  = (float)w / (float)image.size.width;
+            *outHotspotX = hotspot.x * scale;
+            *outHotspotY = hotspot.y * scale;
+
+            size_t dataSize = w * h * 4;
+            unsigned char* pixels = (unsigned char*)malloc(dataSize);
+
+            // Convert to RGBA32 regardless of source format
+            for (NSInteger y = 0; y < h; y++)
+            {
+                for (NSInteger x = 0; x < w; x++)
+                {
+                    NSColor* color = [bestRep colorAtX:x y:y];
+                    NSColor* rgbColor = [color colorUsingColorSpace:[NSColorSpace sRGBColorSpace]];
+
+                    CGFloat r = 0, g = 0, b = 0, a = 0;
+                    if (rgbColor != nil)
+                        [rgbColor getRed:&r green:&g blue:&b alpha:&a];
+
+                    // Unity Texture2D expects bottom-up rows, NSImage is top-down
+                    NSInteger flippedY = h - 1 - y;
+                    size_t idx = (flippedY * w + x) * 4;
+                    pixels[idx + 0] = (unsigned char)(r * 255);
+                    pixels[idx + 1] = (unsigned char)(g * 255);
+                    pixels[idx + 2] = (unsigned char)(b * 255);
+                    pixels[idx + 3] = (unsigned char)(a * 255);
+                }
+            }
+
+            *outPixels = pixels;
+            return 1;
+        }
+    }
+
+    __attribute__((visibility("default"))) void Fram3dFreeCursorPixels(unsigned char* pixels)
+    {
+        if (pixels != NULL)
+            free(pixels);
+    }
+
     // ── Legacy entry points (kept for compatibility) ────────────────
 
     __attribute__((visibility("default"))) void RefreshActiveCursor(void)

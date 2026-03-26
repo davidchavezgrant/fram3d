@@ -1,67 +1,30 @@
 #if !UNITY_EDITOR && UNITY_STANDALONE_OSX
+using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace Fram3d.Engine.Cursor
 {
     /// <summary>
-    /// Runtime macOS cursor service for standalone builds.
-    /// Uses a native NSView overlay with NSTrackingArea and cursorUpdate:
-    /// so cursor changes work WITH AppKit instead of fighting it.
-    ///
-    /// Key design: the native side only invalidates cursor rects when the
-    /// cursor kind CHANGES. No per-frame invalidation — that causes flicker.
+    /// Runtime macOS cursor service. Extracts native cursor images at startup
+    /// into Texture2D objects, then uses Unity's Cursor.SetCursor API for
+    /// flicker-free cursor changes. No per-frame native calls, no NSView
+    /// overlay, no cursor rect invalidation — Unity manages the hardware
+    /// cursor entirely.
     /// </summary>
     public class MacOSCursorService : MonoBehaviour, ICursorService
     {
-        private CursorType? _activeCursor;
-        private bool        _overlayInstalled;
+        private readonly Dictionary<CursorType, CursorData> _cursors = new();
 
         [DllImport("CursorWrapper")]
-        private static extern void Fram3dEnsureOverlay();
+        private static extern int Fram3dExtractCursorImage(
+            int kind, out int width, out int height,
+            out float hotspotX, out float hotspotY,
+            out IntPtr pixels);
 
         [DllImport("CursorWrapper")]
-        private static extern void Fram3dReapplyCursor();
-
-        [DllImport("CursorWrapper")]
-        private static extern void Fram3dSetCursor(int kind);
-
-        // Legacy entry points still exist but route through Fram3dSetCursor
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToArrow();
-
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToPointingHand();
-
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToIBeam();
-
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToCrosshair();
-
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToOpenHand();
-
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToClosedHand();
-
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToResizeLeftRight();
-
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToResizeUp();
-
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToResizeDown();
-
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToResizeUpDown();
-
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToOperationNotAllowed();
-
-        [DllImport("CursorWrapper")]
-        private static extern void SetCursorToBusy();
+        private static extern void Fram3dFreeCursorPixels(IntPtr pixels);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         static void Setup()
@@ -73,81 +36,88 @@ namespace Fram3d.Engine.Cursor
             DontDestroyOnLoad(go);
 
             var service = go.AddComponent<MacOSCursorService>();
+            service.ExtractAllCursors();
             CursorManager.SetFallbackService(service);
             CursorManager.SetService(service);
         }
 
         public bool SetCursor(CursorType cursor)
         {
-            this.EnsureOverlay();
-
             if (cursor == CursorType.Default || cursor == CursorType.Arrow)
             {
                 this.ResetCursor();
                 return true;
             }
 
-            this._activeCursor = cursor;
-
-            switch (cursor)
+            if (!this._cursors.TryGetValue(cursor, out var data))
             {
-                case CursorType.IBeam:             SetCursorToIBeam();               return true;
-                case CursorType.Crosshair:         SetCursorToCrosshair();           return true;
-                case CursorType.Link:              SetCursorToPointingHand();        return true;
-                case CursorType.Busy:              SetCursorToBusy();                return true;
-                case CursorType.Invalid:           SetCursorToOperationNotAllowed(); return true;
-                case CursorType.ResizeVertical:    SetCursorToResizeUpDown();        return true;
-                case CursorType.ResizeHorizontal:  SetCursorToResizeLeftRight();     return true;
-                case CursorType.ResizeDiagonalLeft:  SetCursorToResizeUp();          return true;
-                case CursorType.ResizeDiagonalRight: SetCursorToResizeDown();        return true;
-                case CursorType.OpenHand:          SetCursorToOpenHand();            return true;
-                case CursorType.ClosedHand:        SetCursorToClosedHand();          return true;
-                case CursorType.ResizeAll:         this.ResetCursor();               return true;
-                default:                           this._activeCursor = null;         return false;
+                return false;
             }
+
+            UnityEngine.Cursor.SetCursor(data.Texture, data.Hotspot, CursorMode.Auto);
+            return true;
         }
 
         public void ResetCursor()
         {
-            this._activeCursor = null;
-            SetCursorToArrow();
+            UnityEngine.Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
         }
 
-        /// <summary>
-        /// Re-applies [cursor set] every frame to counteract Unity's render
-        /// loop resetting the cursor. Does NOT invalidate cursor rects.
-        /// </summary>
-        private void Update()
+        private void ExtractAllCursors()
         {
-            if (this._activeCursor.HasValue)
-            {
-                Fram3dReapplyCursor();
-            }
+            this.ExtractCursor(CursorType.Link,              10); // PointingHand
+            this.ExtractCursor(CursorType.IBeam,              1); // IBeam
+            this.ExtractCursor(CursorType.Crosshair,          2); // Crosshair
+            this.ExtractCursor(CursorType.OpenHand,           3); // OpenHand
+            this.ExtractCursor(CursorType.ClosedHand,         4); // ClosedHand
+            this.ExtractCursor(CursorType.ResizeHorizontal,   5); // ResizeLeftRight
+            this.ExtractCursor(CursorType.ResizeVertical,     8); // ResizeUpDown
+            this.ExtractCursor(CursorType.Invalid,            9); // OperationNotAllowed
         }
 
-        private void EnsureOverlay()
+        private void ExtractCursor(CursorType type, int nativeKind)
         {
-            if (this._overlayInstalled)
+            var result = Fram3dExtractCursorImage(nativeKind,
+                                                   out var width, out var height,
+                                                   out var hotspotX, out var hotspotY,
+                                                   out var pixelPtr);
+
+            if (result == 0 || pixelPtr == IntPtr.Zero)
             {
+                Debug.LogWarning($"[Cursor] Failed to extract native cursor for {type}");
                 return;
             }
 
-            Fram3dEnsureOverlay();
-            this._overlayInstalled = true;
-        }
+            var dataSize = width * height * 4;
+            var rawData  = new byte[dataSize];
+            Marshal.Copy(pixelPtr, rawData, 0, dataSize);
+            Fram3dFreeCursorPixels(pixelPtr);
 
-        private void OnApplicationFocus(bool hasFocus)
-        {
-            if (hasFocus)
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
             {
-                // Overlay may need re-raising after focus change
-                this._overlayInstalled = false;
-            }
+                filterMode = FilterMode.Point,
+                wrapMode   = TextureWrapMode.Clamp
+            };
+
+            texture.LoadRawTextureData(rawData);
+            texture.Apply(false, true);
+
+            this._cursors[type] = new CursorData
+            {
+                Texture = texture,
+                Hotspot = new Vector2(hotspotX, hotspotY)
+            };
         }
 
         private void OnDisable()
         {
             this.ResetCursor();
+        }
+
+        private struct CursorData
+        {
+            public Vector2   Hotspot;
+            public Texture2D Texture;
         }
     }
 }

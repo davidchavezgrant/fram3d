@@ -142,9 +142,12 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            // Wait several frames before resetting — prevents flicker
-            // from single-frame raycast misses
             this._framesWithoutHover++;
+
+            if (this._framesWithoutHover == 1)
+            {
+                Debug.Log($"[Cursor] Lost hover. HoveredId={this._selection?.HoveredId}, overGizmo={this.gizmoController?.IsHoveringHandle}");
+            }
 
             if (this._framesWithoutHover <= CURSOR_RESET_GRACE_FRAMES)
             {

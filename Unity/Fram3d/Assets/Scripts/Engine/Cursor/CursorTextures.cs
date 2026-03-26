@@ -9,7 +9,7 @@ namespace Fram3d.Engine.Cursor
     /// </summary>
     public static class CursorTextures
     {
-        private static readonly Vector2 POINTING_HAND_HOTSPOT = new(19, 4);
+        private static readonly Vector2 POINTING_HAND_HOTSPOT = new(9, 0);
 
         private static Texture2D _pointingHand;
 

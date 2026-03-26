@@ -256,7 +256,7 @@ namespace Fram3d.Engine.Integration
                     continue;
                 }
 
-                this._directorCameras[i] = new ViewCamera(i, ViewMode.DIRECTOR);
+                this._directorCameras[i] = new ViewCamera(i);
                 this.cameraBehaviour.EnsureDirectorInitialized();
             }
 

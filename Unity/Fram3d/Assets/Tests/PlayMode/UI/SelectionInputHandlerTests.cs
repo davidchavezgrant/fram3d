@@ -333,6 +333,124 @@ namespace Fram3d.Tests.UI
             Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Dragging past threshold should not deselect");
         }
 
+        // --- Hover ---
+
+        [UnityTest]
+        public IEnumerator Hover__SetsHoveredId__When__MouseOverElement()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
+            yield return null;
+
+            var element = this._cube.GetComponent<ElementBehaviour>().Element;
+            Assert.AreEqual(element.Id, this._highlighter.Selection.HoveredId,
+                "Hovering over element should set HoveredId");
+        }
+
+        [UnityTest]
+        public IEnumerator Hover__ClearsHoveredId__When__MouseMovesToEmptySpace()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            // First hover the cube
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
+            yield return null;
+
+            Assert.IsNotNull(this._highlighter.Selection.HoveredId, "Precondition: hovering");
+
+            // Move far from the cube
+            var corner = new Vector2(10f, Screen.height - 10f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = corner });
+
+            // The hover-keep distance means it won't clear immediately if close,
+            // but this corner is far enough. Wait for it.
+            for (var i = 0; i < 10; i++)
+            {
+                yield return null;
+
+                if (this._highlighter.Selection.HoveredId == null)
+                {
+                    break;
+                }
+            }
+
+            Assert.IsNull(this._highlighter.Selection.HoveredId,
+                "Moving far from element should clear hover");
+        }
+
+        [UnityTest]
+        public IEnumerator Hover__KeepsHoveredId__When__RaycastMissesNearby()
+        {
+            // Regression test for FRA-52: hover instability at element edges.
+            // When the raycast misses but mouse is still near the last hit position,
+            // the hover should persist to prevent flicker.
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
+            yield return null;
+
+            var element = this._cube.GetComponent<ElementBehaviour>().Element;
+            Assert.AreEqual(element.Id, this._highlighter.Selection.HoveredId, "Precondition");
+
+            // Move slightly — just a few pixels from center. The element at Z=5
+            // is roughly 100px wide at screen center, so moving 10px should be
+            // right at the edge where raycasts can miss intermittently.
+            var nearEdge = center + new Vector2(10f, 0f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = nearEdge });
+            yield return null;
+
+            // Whether the raycast hits or misses at this position, the hover-keep
+            // logic should prevent clearing because we're within 20px of the last hit.
+            Assert.IsNotNull(this._highlighter.Selection.HoveredId,
+                "Hover should persist when mouse is near the last hit position");
+        }
+
+        // --- Selection + hover interaction ---
+
+        [UnityTest]
+        public IEnumerator Click__ClearsHover__When__SelectingHoveredElement()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            // Hover the cube first
+            var center = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            InputSystem.QueueStateEvent(this._mouse, new MouseState { position = center });
+            yield return null;
+
+            Assert.IsNotNull(this._highlighter.Selection.HoveredId, "Precondition: hovering");
+
+            // Click to select — 3-frame click lifecycle
+            InputSystem.QueueStateEvent(this._mouse,
+                new MouseState { position = center, buttons = 1 });
+            yield return null;
+
+            this._handler.Tick(this._mouse, this._keyboard);
+            yield return null;
+
+            this._handler.Tick(this._mouse, this._keyboard);
+
+            InputSystem.QueueStateEvent(this._mouse,
+                new MouseState { position = center, buttons = 0 });
+            yield return null;
+
+            this._handler.Tick(this._mouse, this._keyboard);
+
+            Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Should be selected");
+
+            // After selecting, hover on the selected element is suppressed
+            // (Selection.Hover returns early if id == SelectedId)
+            Assert.IsNull(this._highlighter.Selection.HoveredId,
+                "Hover should clear when element is selected");
+        }
+
         [SetUp]
         public void SetUp()
         {

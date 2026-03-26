@@ -36,41 +36,41 @@ namespace Fram3d.Engine.Cursor
                 return true;
             }
 
+            if (!TryGetTexture(cursor, out var texture, out var hotspot))
+            {
+                return false;
+            }
+
+            this._overlay.Show(texture, hotspot);
+            UnityEngine.Cursor.visible = false;
+            this._activeCursor = cursor;
+            return true;
+        }
+
+        private static bool TryGetTexture(CursorType cursor, out Texture2D texture, out Vector2 hotspot)
+        {
             if (cursor == CursorType.Link)
             {
-                var pointingHand = CursorTextures.PointingHand;
-
-                if (pointingHand == null)
-                {
-                    Debug.LogWarning("[Cursor] Pointing hand texture failed to load. Cursor remains default.");
-                    return false;
-                }
-
-                this._overlay.Show(pointingHand, CursorTextures.PointingHandHotspot);
-                UnityEngine.Cursor.visible = false;
-                this._activeCursor = cursor;
-
-                return true;
+                texture = CursorTextures.PointingHand;
+                hotspot = CursorTextures.PointingHandHotspot;
             }
-
-            if (cursor == CursorType.ClosedHand)
+            else if (cursor == CursorType.ClosedHand)
             {
-                var closedHand = CursorTextures.ClosedHand;
-
-                if (closedHand == null)
-                {
-                    Debug.LogWarning("[Cursor] Closed hand texture failed to load. Cursor remains default.");
-                    return false;
-                }
-
-                this._overlay.Show(closedHand, CursorTextures.ClosedHandHotspot);
-                UnityEngine.Cursor.visible = false;
-                this._activeCursor = cursor;
-
-                return true;
+                texture = CursorTextures.ClosedHand;
+                hotspot = CursorTextures.ClosedHandHotspot;
+            }
+            else
+            {
+                texture = null;
+                hotspot = Vector2.zero;
             }
 
-            return false;
+            if (texture == null)
+            {
+                Debug.LogWarning($"[Cursor] Texture for {cursor} failed to load. Cursor remains default.");
+            }
+
+            return texture != null;
         }
 
         public void ResetCursor()

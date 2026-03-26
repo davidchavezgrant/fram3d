@@ -526,18 +526,8 @@ namespace Fram3d.UI.Input
 
         private void Update()
         {
-            var isPointerOverBlockingUI = this.IsPointerOverBlockingUI();
-
-            if (this.viewCameraManager != null && Mouse.current != null)
+            if (this.viewCameraManager != null)
             {
-                // Activate the clicked viewport on mouse-down
-                if (this.viewCameraManager.IsMultiView
-                 && Mouse.current.leftButton.wasPressedThisFrame
-                 && !isPointerOverBlockingUI)
-                {
-                    this.viewCameraManager.ActivateSlotAtPosition(Mouse.current.position.ReadValue());
-                }
-
                 // Route camera movement to the active slot's camera element
                 var activeCam = this.viewCameraManager.ActiveCameraElement;
 

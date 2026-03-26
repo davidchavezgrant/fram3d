@@ -266,6 +266,69 @@ namespace Fram3d.Core.Tests.Common
 			ViewLayout.SINGLE.ToString().Should().Be("Single");
 		}
 
+		// ── SetSlotType — Camera-to-Director swap vs single-view direct change ──
+
+		[Fact]
+		public void SetSlotType__DoesNotSwap__When__SingleViewCameraSlotSetToDirector()
+		{
+			// In single-view (ActiveSlotCount == 1), setting the Camera slot
+			// to Director should NOT try to move Camera elsewhere — there's
+			// no other slot. It should just change directly.
+			var model = new ViewSlotModel();
+
+			model.SetSlotType(0, ViewMode.DIRECTOR);
+
+			model.GetSlotType(0).Should().Be(ViewMode.DIRECTOR);
+			// Verify CameraViewSlotIndex still reports 0 because _slots[0]
+			// is no longer CAMERA — the property checks slot 0 first.
+			model.CameraViewSlotIndex.Should().Be(1);
+		}
+
+		[Fact]
+		public void SetSlotType__MovesCamera__When__MultiViewCameraSlotSetToDirector()
+		{
+			var model = new ViewSlotModel();
+			model.SetLayout(ViewLayout.HORIZONTAL);
+			// Slot 0 = Camera, Slot 1 = Director
+
+			model.SetSlotType(0, ViewMode.DIRECTOR);
+
+			// Camera should have moved to slot 1
+			model.GetSlotType(0).Should().Be(ViewMode.DIRECTOR);
+			model.GetSlotType(1).Should().Be(ViewMode.CAMERA);
+			model.CameraViewSlotIndex.Should().Be(1);
+		}
+
+		// ── SetLayout — expanding resets slot types ───────────────────
+
+		[Fact]
+		public void SetLayout__ResetsSlot1ToDirector__When__ExpandingFromCustomSingleView()
+		{
+			var model = new ViewSlotModel();
+			// Set single-view to Director (non-default)
+			model.SetSlotType(0, ViewMode.DIRECTOR);
+			model.GetSlotType(0).Should().Be(ViewMode.DIRECTOR);
+
+			// Expand to multi-view: should force Camera + Director
+			model.SetLayout(ViewLayout.HORIZONTAL);
+
+			model.GetSlotType(0).Should().Be(ViewMode.CAMERA);
+			model.GetSlotType(1).Should().Be(ViewMode.DIRECTOR);
+		}
+
+		[Fact]
+		public void SetLayout__KeepsCameraInSlot0__When__ShrinkingAndSlot0IsAlreadyCamera()
+		{
+			var model = new ViewSlotModel();
+			model.SetLayout(ViewLayout.HORIZONTAL);
+			// Slot 0 = Camera (default) — shrinking should be a no-op on slot types
+			model.GetSlotType(0).Should().Be(ViewMode.CAMERA);
+
+			model.SetLayout(ViewLayout.SINGLE);
+
+			model.GetSlotType(0).Should().Be(ViewMode.CAMERA);
+		}
+
 		// ── Round-trip scenarios ────────────────────────────────────────
 
 		[Fact]

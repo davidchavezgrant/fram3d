@@ -218,6 +218,14 @@ namespace Fram3d.UI.Timeline
                 if (this._currentGlobalTime >= totalDuration - FRAME_DURATION)
                 {
                     this._currentGlobalTime = 0;
+
+                    // Scroll view back to the beginning
+                    if (this._viewState != null)
+                    {
+                        var duration = this._viewState.VisibleDuration;
+                        this._viewState.SetViewRange(0, duration);
+                        this.RefreshAll();
+                    }
                 }
             }
 
@@ -295,6 +303,49 @@ namespace Fram3d.UI.Timeline
             }
         }
 
+        /// <summary>
+        /// Polls Mouse.scroll directly via the Input System to catch trackpad
+        /// pinch-to-zoom gestures that macOS doesn't forward as UI Toolkit
+        /// WheelEvents. Only acts when the pointer is over the timeline.
+        /// </summary>
+        private void HandleInputSystemScroll()
+        {
+            if (this._viewState == null || !this.IsPointerOverUI)
+            {
+                return;
+            }
+
+            if (Mouse.current == null)
+            {
+                return;
+            }
+
+            var scroll = Mouse.current.scroll.ReadValue();
+
+            if (Math.Abs(scroll.y) < 0.01f)
+            {
+                return;
+            }
+
+            // Only handle if Ctrl is held (pinch-to-zoom on macOS)
+            if (Keyboard.current == null || !Keyboard.current.ctrlKey.isPressed)
+            {
+                return;
+            }
+
+            // Convert mouse position to timeline-local pixel
+            var mousePos  = Mouse.current.position.ReadValue();
+            var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
+            var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
+
+            // Estimate cursor time from panel X minus label column
+            var stripX     = panelPos.x - LABEL_COLUMN_WIDTH;
+            var cursorTime = this._viewState.PixelToTime(stripX);
+
+            this._viewState.ZoomAtPoint(cursorTime, scroll.y);
+            this.RefreshAll();
+        }
+
         // ══════════════════════════════════════════════════════════════════
         // Lifecycle
         // ══════════════════════════════════════════════════════════════════
@@ -342,6 +393,7 @@ namespace Fram3d.UI.Timeline
             }
 
             this.HandlePlayback();
+            this.HandleInputSystemScroll();
             this.UpdateBlockWidths();
             this.UpdatePlayhead();
             this.UpdateRuler();

@@ -4,6 +4,7 @@ using Fram3d.Core.Scene;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace Fram3d.UI.Views
@@ -25,6 +26,36 @@ namespace Fram3d.UI.Views
         private ViewCameraManager _viewCameraManager;
         private ViewHeader[]      _viewHeaders = Array.Empty<ViewHeader>();
 
+        public bool IsPointerOverUI
+        {
+            get
+            {
+                if (this._root == null || this._root.panel == null || Mouse.current == null)
+                {
+                    return false;
+                }
+
+                var mousePos  = Mouse.current.position.ReadValue();
+                var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
+                var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
+
+                if (this._layoutChooser != null && this._layoutChooser.worldBound.Contains(panelPos))
+                {
+                    return true;
+                }
+
+                foreach (var header in this._viewHeaders)
+                {
+                    if (header != null && header.Root.worldBound.Contains(panelPos))
+                    {
+                        return true;
+                    }
+                }
+
+                return this._root.panel.Pick(panelPos) != null;
+            }
+        }
+
         private void Start()
         {
             this._viewCameraManager = FindAnyObjectByType<ViewCameraManager>();
@@ -35,11 +66,32 @@ namespace Fram3d.UI.Views
                 return;
             }
 
+            this.InitializeUI();
+        }
+
+        private void InitializeUI()
+        {
+            if (this._root != null)
+            {
+                return;
+            }
+
             var uiDocument = this.GetComponent<UIDocument>();
 
-            if (uiDocument == null || uiDocument.rootVisualElement == null)
+            if (uiDocument == null)
             {
-                Debug.LogWarning("ViewLayoutView: UIDocument or rootVisualElement is null.");
+                Debug.LogWarning("ViewLayoutView: No UIDocument component.");
+                return;
+            }
+
+            if (uiDocument.panelSettings == null)
+            {
+                Debug.LogWarning("ViewLayoutView: UIDocument has no PanelSettings assigned.");
+                return;
+            }
+
+            if (uiDocument.rootVisualElement == null)
+            {
                 return;
             }
 
@@ -73,6 +125,13 @@ namespace Fram3d.UI.Views
         {
             if (this._viewCameraManager == null)
             {
+                return;
+            }
+
+            // Retry UI init if rootVisualElement wasn't ready in Start
+            if (this._root == null)
+            {
+                this.InitializeUI();
                 return;
             }
 

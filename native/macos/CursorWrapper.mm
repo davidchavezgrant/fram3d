@@ -303,8 +303,10 @@ static void Fram3dActivateCursor(Fram3dCursorKind kind)
 static void Fram3dDeactivateCursor(void)
 {
     sActiveCursor = Fram3dCursorKindDefault;
-    Fram3dRemoveOverlayView();
-    Fram3dDetachWindow();
+    // Don't remove the overlay — it stays installed permanently.
+    // With sActiveCursor = Default, cursorUpdate: and resetCursorRects
+    // stop overriding, so macOS naturally falls through to the arrow.
+    Fram3dInvalidateCursorRects();
     [NSCursor.arrowCursor set];
 }
 
@@ -313,11 +315,13 @@ extern "C" {
     {
         @autoreleasepool
         {
-            if (sActiveCursor == Fram3dCursorKindDefault)
-                return;
-
+            // Always keep the overlay installed so there's no gap when
+            // switching between cursors. The overlay is harmless when idle
+            // — with sActiveCursor == Default, it doesn't override anything.
             Fram3dEnsureOverlayView();
-            Fram3dApplyActiveCursor();
+
+            if (sActiveCursor != Fram3dCursorKindDefault)
+                Fram3dApplyActiveCursor();
         }
     }
 

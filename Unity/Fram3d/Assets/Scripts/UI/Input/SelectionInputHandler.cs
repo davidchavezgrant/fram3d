@@ -60,7 +60,11 @@ namespace Fram3d.UI.Input
 
             if (this.IsPointerOverBlockingUI())
             {
-                this.ClearInteractiveHover();
+                // Clear hover highlights but let UpdateCursor handle the
+                // cursor via its grace timer — no direct ResetCursor call.
+                this._selection?.ClearHover();
+                this.gizmoController?.ClearHover();
+                this.UpdateCursor();
                 return;
             }
 

@@ -3,10 +3,9 @@ using UnityEngine;
 namespace Fram3d.Engine.Cursor
 {
     /// <summary>
-    /// Generates cursor textures at runtime. Uses Unity's Cursor.SetCursor
-    /// API which manages the hardware cursor — no native plugins, no
-    /// flicker. Cursor shapes are drawn programmatically to approximate
-    /// native macOS cursors.
+    /// Generates cursor textures at runtime as Texture2D. Pixel-accurate
+    /// replica of the macOS pointing hand cursor (white fill, black outline).
+    /// Used with Unity's Cursor.SetCursor for flicker-free cursor changes.
     /// </summary>
     public static class CursorTextures
     {
@@ -39,68 +38,75 @@ namespace Fram3d.Engine.Cursor
             }
         }
 
+        /// <summary>
+        /// Builds a 19x24 pointing hand cursor matching macOS style:
+        /// white fill with 1px black outline, index finger pointing up.
+        /// </summary>
         private static void BuildPointingHand()
         {
-            // 24x24 pointing hand cursor — white with black outline
-            const int SIZE = 24;
-            _pointingHand = new Texture2D(SIZE, SIZE, TextureFormat.RGBA32, false)
+            // macOS pointing hand: index finger up, thumb left, 3 curled fingers
+            // Designed at 1x scale (19x24), hotspot at index fingertip
+            const int W = 19;
+            const int H = 24;
+
+            var b = new Color32(0,   0,   0,   255); // black outline
+            var w = new Color32(255, 255, 255, 255); // white fill
+            var t = new Color32(0,   0,   0,   0);   // transparent
+
+            // Each row from TOP (y=23) to BOTTOM (y=0), left to right
+            // Row index 0 = top of cursor visually
+            var rows = new[]
+            {
+                //         0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18
+                new[] {    t, t, t, t, t, t, t, b, b, t, t, t, t, t, t, t, t, t, t }, // row 0: fingertip
+                new[] {    t, t, t, t, t, t, b, w, w, b, t, t, t, t, t, t, t, t, t }, // row 1
+                new[] {    t, t, t, t, t, t, b, w, w, b, t, t, t, t, t, t, t, t, t }, // row 2
+                new[] {    t, t, t, t, t, t, b, w, w, b, t, t, t, t, t, t, t, t, t }, // row 3
+                new[] {    t, t, t, t, t, t, b, w, w, b, t, t, t, t, t, t, t, t, t }, // row 4
+                new[] {    t, t, t, t, t, t, b, w, w, b, b, b, t, t, t, t, t, t, t }, // row 5
+                new[] {    t, t, t, t, t, t, b, w, w, b, w, w, b, b, t, t, t, t, t }, // row 6
+                new[] {    t, t, t, t, t, t, b, w, w, b, w, w, b, w, b, b, t, t, t }, // row 7
+                new[] {    t, t, t, t, t, t, b, w, w, b, w, w, b, w, b, w, b, t, t }, // row 8
+                new[] {    t, b, b, t, t, t, b, w, w, w, w, w, b, w, b, w, w, b, t }, // row 9
+                new[] {    b, w, w, b, t, t, b, w, w, w, w, w, w, w, w, w, w, b, t }, // row 10
+                new[] {    b, w, w, w, b, t, b, w, w, w, w, w, w, w, w, w, w, b, t }, // row 11: thumb connects
+                new[] {    t, b, w, w, w, b, b, w, w, w, w, w, w, w, w, w, w, b, t }, // row 12
+                new[] {    t, t, b, w, w, w, w, w, w, w, w, w, w, w, w, w, w, b, t }, // row 13
+                new[] {    t, t, b, w, w, w, w, w, w, w, w, w, w, w, w, w, b, t, t }, // row 14
+                new[] {    t, t, t, b, w, w, w, w, w, w, w, w, w, w, w, w, b, t, t }, // row 15
+                new[] {    t, t, t, b, w, w, w, w, w, w, w, w, w, w, w, b, t, t, t }, // row 16
+                new[] {    t, t, t, t, b, w, w, w, w, w, w, w, w, w, w, b, t, t, t }, // row 17
+                new[] {    t, t, t, t, b, w, w, w, w, w, w, w, w, w, b, t, t, t, t }, // row 18
+                new[] {    t, t, t, t, t, b, w, w, w, w, w, w, w, w, b, t, t, t, t }, // row 19
+                new[] {    t, t, t, t, t, b, w, w, w, w, w, w, w, b, t, t, t, t, t }, // row 20
+                new[] {    t, t, t, t, t, t, b, w, w, w, w, w, w, b, t, t, t, t, t }, // row 21
+                new[] {    t, t, t, t, t, t, b, w, w, w, w, w, b, t, t, t, t, t, t }, // row 22
+                new[] {    t, t, t, t, t, t, t, b, b, b, b, b, t, t, t, t, t, t, t }, // row 23: bottom
+            };
+
+            _pointingHand = new Texture2D(W, H, TextureFormat.RGBA32, false)
             {
                 filterMode = FilterMode.Point,
                 wrapMode   = TextureWrapMode.Clamp
             };
 
-            var pixels = new Color32[SIZE * SIZE];
+            var pixels = new Color32[W * H];
 
-            // All transparent
-            for (var i = 0; i < pixels.Length; i++)
+            for (var row = 0; row < H; row++)
             {
-                pixels[i] = new Color32(0, 0, 0, 0);
+                for (var col = 0; col < W; col++)
+                {
+                    // rows[] is top-down, Texture2D is bottom-up
+                    var texY = H - 1 - row;
+                    pixels[texY * W + col] = rows[row][col];
+                }
             }
-
-            // Draw a simple pointing hand (index finger pointing up-left)
-            // Coordinates are bottom-up (y=0 is bottom)
-            var black = new Color32(0, 0, 0, 255);
-            var white = new Color32(255, 255, 255, 255);
-
-            // Finger (pointing up)
-            FillRect(pixels, SIZE, 7, 14, 3, 9, black);   // outline
-            FillRect(pixels, SIZE, 8, 15, 1, 7, white);   // fill
-
-            // Hand body
-            FillRect(pixels, SIZE, 4, 5, 14, 9, black);   // outline
-            FillRect(pixels, SIZE, 5, 6, 12, 7, white);   // fill
-
-            // Thumb
-            FillRect(pixels, SIZE, 3, 7, 3, 4, black);    // outline
-            FillRect(pixels, SIZE, 4, 8, 1, 2, white);    // fill
-
-            // Wrist
-            FillRect(pixels, SIZE, 6, 1, 8, 5, black);    // outline
-            FillRect(pixels, SIZE, 7, 2, 6, 3, white);    // fill
 
             _pointingHand.SetPixels32(pixels);
             _pointingHand.Apply(false, true);
 
-            // Hotspot at tip of index finger
-            _pointingHandHotspot = new Vector2(8, SIZE - 23);
-        }
-
-        private static void FillRect(Color32[] pixels, int texWidth,
-                                      int x, int y, int w, int h, Color32 color)
-        {
-            for (var dy = 0; dy < h; dy++)
-            {
-                for (var dx = 0; dx < w; dx++)
-                {
-                    var px = x + dx;
-                    var py = y + dy;
-
-                    if (px >= 0 && px < texWidth && py >= 0 && py < texWidth)
-                    {
-                        pixels[py * texWidth + px] = color;
-                    }
-                }
-            }
+            // Hotspot at tip of index finger (col 7-8, row 0)
+            _pointingHandHotspot = new Vector2(7, 0);
         }
     }
 }

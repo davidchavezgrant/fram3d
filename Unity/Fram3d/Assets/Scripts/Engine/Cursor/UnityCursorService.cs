@@ -13,13 +13,12 @@ namespace Fram3d.Engine.Cursor
         private static void Setup()
         {
             var service = new UnityCursorService();
-            CursorManager.SetFallbackService(service);
             CursorManager.SetService(service);
         }
 
         public bool SetCursor(CursorType cursor)
         {
-            if (cursor == CursorType.Default || cursor == CursorType.Arrow)
+            if (cursor == CursorType.Default)
             {
                 this.ResetCursor();
                 return true;
@@ -35,7 +34,6 @@ namespace Fram3d.Engine.Cursor
                 return true;
             }
 
-            // Other cursor types: reset to default for now
             return false;
         }
 

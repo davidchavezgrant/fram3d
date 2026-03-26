@@ -6,19 +6,28 @@ namespace Fram3d.Engine.Cursor
 {
     /// <summary>
     /// Runtime macOS cursor service for standalone builds.
-    /// Keeps the native cursor under AppKit control through the native
-    /// CursorWrapper plugin, which installs the standalone tracking-area
-    /// and cursor-rect integration for the player window.
+    /// Uses a native NSView overlay with NSTrackingArea and cursorUpdate:
+    /// so cursor changes work WITH AppKit instead of fighting it.
+    ///
+    /// Key design: the native side only invalidates cursor rects when the
+    /// cursor kind CHANGES. No per-frame invalidation — that causes flicker.
     /// </summary>
     public class MacOSCursorService : MonoBehaviour, ICursorService
     {
-        private CursorType? _activeCursor;
+        private bool _overlayInstalled;
 
         [DllImport("CursorWrapper")]
-        private static extern void RefreshActiveCursor();
+        private static extern void Fram3dEnsureOverlay();
 
+        [DllImport("CursorWrapper")]
+        private static extern void Fram3dSetCursor(int kind);
+
+        // Legacy entry points still exist but route through Fram3dSetCursor
         [DllImport("CursorWrapper")]
         private static extern void SetCursorToArrow();
+
+        [DllImport("CursorWrapper")]
+        private static extern void SetCursorToPointingHand();
 
         [DllImport("CursorWrapper")]
         private static extern void SetCursorToIBeam();
@@ -48,9 +57,6 @@ namespace Fram3d.Engine.Cursor
         private static extern void SetCursorToOperationNotAllowed();
 
         [DllImport("CursorWrapper")]
-        private static extern void SetCursorToPointingHand();
-
-        [DllImport("CursorWrapper")]
         private static extern void SetCursorToBusy();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -69,77 +75,54 @@ namespace Fram3d.Engine.Cursor
 
         public bool SetCursor(CursorType cursor)
         {
+            this.EnsureOverlay();
+
             if (cursor == CursorType.Default || cursor == CursorType.Arrow)
             {
                 this.ResetCursor();
                 return true;
             }
 
-            this._activeCursor = cursor;
-
             switch (cursor)
             {
-                case CursorType.IBeam:
-                    SetCursorToIBeam();
-                    return true;
-                case CursorType.Crosshair:
-                    SetCursorToCrosshair();
-                    return true;
-                case CursorType.Link:
-                    SetCursorToPointingHand();
-                    return true;
-                case CursorType.Busy:
-                    SetCursorToBusy();
-                    return true;
-                case CursorType.Invalid:
-                    SetCursorToOperationNotAllowed();
-                    return true;
-                case CursorType.ResizeVertical:
-                    SetCursorToResizeUpDown();
-                    return true;
-                case CursorType.ResizeHorizontal:
-                    SetCursorToResizeLeftRight();
-                    return true;
-                case CursorType.ResizeDiagonalLeft:
-                    SetCursorToResizeUp();
-                    return true;
-                case CursorType.ResizeDiagonalRight:
-                    SetCursorToResizeDown();
-                    return true;
-                case CursorType.ResizeAll:
-                    this.ResetCursor();
-                    return true;
-                case CursorType.OpenHand:
-                    SetCursorToOpenHand();
-                    return true;
-                case CursorType.ClosedHand:
-                    SetCursorToClosedHand();
-                    return true;
-                default:
-                    this._activeCursor = null;
-                    return false;
+                case CursorType.IBeam:             SetCursorToIBeam();               return true;
+                case CursorType.Crosshair:         SetCursorToCrosshair();           return true;
+                case CursorType.Link:              SetCursorToPointingHand();        return true;
+                case CursorType.Busy:              SetCursorToBusy();                return true;
+                case CursorType.Invalid:           SetCursorToOperationNotAllowed(); return true;
+                case CursorType.ResizeVertical:    SetCursorToResizeUpDown();        return true;
+                case CursorType.ResizeHorizontal:  SetCursorToResizeLeftRight();     return true;
+                case CursorType.ResizeDiagonalLeft:  SetCursorToResizeUp();          return true;
+                case CursorType.ResizeDiagonalRight: SetCursorToResizeDown();        return true;
+                case CursorType.OpenHand:          SetCursorToOpenHand();            return true;
+                case CursorType.ClosedHand:        SetCursorToClosedHand();          return true;
+                case CursorType.ResizeAll:         this.ResetCursor();               return true;
+                default:                                                              return false;
             }
         }
 
         public void ResetCursor()
         {
-            this._activeCursor = null;
             SetCursorToArrow();
         }
 
-        private void Update()
+        private void EnsureOverlay()
         {
-            if (this._activeCursor.HasValue)
+            if (this._overlayInstalled)
             {
-                RefreshActiveCursor();
+                return;
             }
+
+            Fram3dEnsureOverlay();
+            this._overlayInstalled = true;
         }
 
         private void OnApplicationFocus(bool hasFocus)
         {
-            if (hasFocus && this._activeCursor.HasValue)
+            if (hasFocus)
             {
-                RefreshActiveCursor();
+                // Overlay may need re-raising after focus change
+                this._overlayInstalled = false;
             }
         }
 

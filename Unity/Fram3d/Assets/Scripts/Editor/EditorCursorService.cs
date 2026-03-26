@@ -139,14 +139,9 @@ namespace Fram3d.Editor
             if (_useManagedFallback && !_callbackRegistered)
                 TryRegisterGameViewCallbacks();
 
-            if (_activeCursor.HasValue)
-            {
-                if (TryRefreshNativeCursor())
-                    return;
-
-                EnsureCursorRectsDisabled();
-                ApplyManagedCursor(_activeCursor.Value);
-            }
+            // Don't re-apply cursors every frame — the native overlay handles
+            // persistence via cursorUpdate: and cursor rects. Per-frame [cursor set]
+            // calls fight macOS and cause flicker.
         #endif
         }
 

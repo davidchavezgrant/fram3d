@@ -16,13 +16,14 @@ typedef NS_ENUM(NSInteger, Fram3dCursorKind) {
 };
 
 static Fram3dCursorKind sActiveCursor = Fram3dCursorKindDefault;
+static BOOL             sOverlayInstalled = NO;
 static NSWindow*        sInstalledWindow;
 static NSWindow*        sRememberedWindow;
-static BOOL             sPreviousAcceptsMouseMovedEvents = NO;
-static BOOL             sHasPreviousAcceptsMouseMovedEvents = NO;
 
 @class Fram3dCursorOverlayView;
 static Fram3dCursorOverlayView* sOverlayView;
+
+// ── Helpers ─────────────────────────────────────────────────────────
 
 static BOOL Fram3dIsUsableWindow(NSWindow* window)
 {
@@ -36,10 +37,7 @@ static NSWindow* Fram3dTargetWindow(void)
 {
     NSApplication* app = NSApplication.sharedApplication;
 
-    // Stay attached to the last known good player window when possible.
-    // Re-resolving from key/main windows after every cursor reset can latch
-    // onto transient Cocoa windows created by Unity UI.
-    NSWindow* overlayWindow = ((NSView*)sOverlayView).window;
+    NSWindow* overlayWindow = sOverlayView ? ((NSView*)sOverlayView).window : nil;
 
     if (Fram3dIsUsableWindow(overlayWindow))
         return overlayWindow;
@@ -57,12 +55,6 @@ static NSWindow* Fram3dTargetWindow(void)
         return app.mainWindow;
 
     for (NSWindow* window in app.orderedWindows)
-    {
-        if (Fram3dIsUsableWindow(window))
-            return window;
-    }
-
-    for (NSWindow* window in app.windows)
     {
         if (Fram3dIsUsableWindow(window))
             return window;
@@ -91,14 +83,7 @@ static NSCursor* Fram3dCursorForKind(Fram3dCursorKind kind)
     }
 }
 
-static void Fram3dApplyActiveCursor(void)
-{
-    NSCursor* cursor = Fram3dCursorForKind(sActiveCursor);
-    if (cursor == nil)
-        cursor = NSCursor.arrowCursor;
-
-    [cursor set];
-}
+// ── Overlay NSView ──────────────────────────────────────────────────
 
 @interface Fram3dCursorOverlayView : NSView
 @property(nonatomic, strong) NSTrackingArea* fram3dTrackingArea;
@@ -106,42 +91,16 @@ static void Fram3dApplyActiveCursor(void)
 
 @implementation Fram3dCursorOverlayView
 
-- (BOOL)isOpaque
-{
-    return NO;
-}
-
-- (BOOL)acceptsFirstResponder
-{
-    return NO;
-}
-
-- (BOOL)acceptsFirstMouse:(NSEvent*)event
-{
-    return NO;
-}
-
-- (NSView*)hitTest:(NSPoint)point
-{
-    return nil;
-}
+- (BOOL)isOpaque              { return NO; }
+- (BOOL)acceptsFirstResponder { return NO; }
+- (BOOL)acceptsFirstMouse:(NSEvent*)event { return NO; }
+- (NSView*)hitTest:(NSPoint)point { return nil; }
 
 - (void)cursorUpdate:(NSEvent*)event
 {
-    if (sActiveCursor != Fram3dCursorKindDefault)
-        Fram3dApplyActiveCursor();
-}
-
-- (void)mouseEntered:(NSEvent*)event
-{
-    if (sActiveCursor != Fram3dCursorKindDefault)
-        Fram3dApplyActiveCursor();
-}
-
-- (void)mouseMoved:(NSEvent*)event
-{
-    if (sActiveCursor != Fram3dCursorKindDefault)
-        Fram3dApplyActiveCursor();
+    // This is the ONLY place macOS officially supports cursor changes.
+    // By setting the cursor here, we work WITH AppKit instead of against it.
+    [Fram3dCursorForKind(sActiveCursor) set];
 }
 
 - (void)updateTrackingAreas
@@ -154,12 +113,9 @@ static void Fram3dApplyActiveCursor(void)
 
     NSTrackingAreaOptions options =
         NSTrackingCursorUpdate |
-        NSTrackingMouseEnteredAndExited |
-        NSTrackingMouseMoved |
         NSTrackingActiveInKeyWindow |
         NSTrackingInVisibleRect |
-        NSTrackingAssumeInside |
-        NSTrackingEnabledDuringMouseDrag;
+        NSTrackingAssumeInside;
 
     self.fram3dTrackingArea =
         [[NSTrackingArea alloc] initWithRect:NSZeroRect
@@ -174,250 +130,173 @@ static void Fram3dApplyActiveCursor(void)
 {
     [super resetCursorRects];
 
-    if (sActiveCursor == Fram3dCursorKindDefault)
-        return;
-
+    // Register a cursor rect covering the entire view. macOS uses this
+    // to know which cursor to show — no polling, no per-frame invalidation.
     NSRect cursorRect = NSIntersectionRect(self.bounds, self.visibleRect);
-    if (NSIsEmptyRect(cursorRect))
-        return;
-
-    [self addCursorRect:cursorRect cursor:Fram3dCursorForKind(sActiveCursor)];
+    if (!NSIsEmptyRect(cursorRect))
+        [self addCursorRect:cursorRect cursor:Fram3dCursorForKind(sActiveCursor)];
 }
 
 @end
 
-static void Fram3dDetachWindow(void)
+// ── Overlay lifecycle ───────────────────────────────────────────────
+
+static void Fram3dInstallOverlay(void)
 {
-    if (sInstalledWindow == nil)
+    if (sOverlayInstalled)
         return;
 
-    if (sHasPreviousAcceptsMouseMovedEvents)
-    {
-        sInstalledWindow.acceptsMouseMovedEvents = sPreviousAcceptsMouseMovedEvents;
-        sHasPreviousAcceptsMouseMovedEvents = NO;
-    }
-
-    sInstalledWindow = nil;
-}
-
-static void Fram3dAttachWindow(NSWindow* window)
-{
+    NSWindow* window = Fram3dTargetWindow();
     if (window == nil)
         return;
 
-    if (sInstalledWindow == window)
+    NSView* contentView = window.contentView;
+    if (contentView == nil)
         return;
 
-    if (sInstalledWindow != nil && sInstalledWindow != window)
+    sInstalledWindow  = window;
+    sRememberedWindow = window;
+
+    if (sOverlayView == nil)
     {
-        if (sHasPreviousAcceptsMouseMovedEvents)
+        sOverlayView = [[Fram3dCursorOverlayView alloc] initWithFrame:contentView.bounds];
+        sOverlayView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    }
+
+    if (sOverlayView.superview != contentView)
+    {
+        [sOverlayView removeFromSuperview];
+        [contentView addSubview:sOverlayView
+                     positioned:NSWindowAbove
+                     relativeTo:nil];
+    }
+    else
+    {
+        // Ensure we're still the topmost subview
+        if (contentView.subviews.lastObject != sOverlayView)
         {
-            sInstalledWindow.acceptsMouseMovedEvents = sPreviousAcceptsMouseMovedEvents;
-            sHasPreviousAcceptsMouseMovedEvents = NO;
+            [sOverlayView removeFromSuperviewWithoutNeedingDisplay];
+            [contentView addSubview:sOverlayView
+                         positioned:NSWindowAbove
+                         relativeTo:nil];
         }
     }
 
-    sPreviousAcceptsMouseMovedEvents = window.acceptsMouseMovedEvents;
-    sHasPreviousAcceptsMouseMovedEvents = YES;
-    window.acceptsMouseMovedEvents = YES;
-    sInstalledWindow = window;
-    sRememberedWindow = window;
+    sOverlayView.frame = contentView.bounds;
+    sOverlayInstalled  = YES;
 }
 
-static void Fram3dInvalidateCursorRects(void)
+/// Called ONLY when the cursor kind changes — triggers macOS to call
+/// resetCursorRects and cursorUpdate: with the new cursor.
+static void Fram3dInvalidateOnce(void)
 {
     if (sOverlayView == nil)
         return;
 
-    NSWindow* window = sOverlayView.window ?: sInstalledWindow;
+    NSWindow* window = sOverlayView.window;
     if (window == nil)
         return;
 
     [window invalidateCursorRectsForView:sOverlayView];
 }
 
-static void Fram3dRemoveOverlayView(void)
-{
-    if (sOverlayView == nil)
-        return;
-
-    [sOverlayView removeFromSuperview];
-    sOverlayView = nil;
-}
-
-static void Fram3dRaiseOverlayView(NSView* contentView)
-{
-    if (sOverlayView == nil || contentView == nil)
-        return;
-
-    sOverlayView.frame = contentView.bounds;
-
-    if (sOverlayView.superview == contentView && contentView.subviews.lastObject == sOverlayView)
-        return;
-
-    if (sOverlayView.superview == contentView)
-        [sOverlayView removeFromSuperviewWithoutNeedingDisplay];
-
-    [contentView addSubview:sOverlayView
-                 positioned:NSWindowAbove
-                 relativeTo:nil];
-}
-
-static void Fram3dEnsureOverlayView(void)
-{
-    NSWindow* window = Fram3dTargetWindow();
-
-    if (window == nil)
-        return;
-
-    Fram3dAttachWindow(window);
-
-    NSView* contentView = window.contentView;
-
-    if (contentView == nil)
-        return;
-
-    if (sOverlayView != nil && sOverlayView.superview == contentView)
-    {
-        Fram3dRaiseOverlayView(contentView);
-        Fram3dInvalidateCursorRects();
-        return;
-    }
-
-    Fram3dRemoveOverlayView();
-
-    sOverlayView = [[Fram3dCursorOverlayView alloc] initWithFrame:contentView.bounds];
-    sOverlayView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    Fram3dRaiseOverlayView(contentView);
-    Fram3dInvalidateCursorRects();
-}
-
-static void Fram3dActivateCursor(Fram3dCursorKind kind)
-{
-    sActiveCursor = kind;
-    Fram3dEnsureOverlayView();
-    Fram3dInvalidateCursorRects();
-    Fram3dApplyActiveCursor();
-}
-
-static void Fram3dDeactivateCursor(void)
-{
-    sActiveCursor = Fram3dCursorKindDefault;
-    // Don't remove the overlay — it stays installed permanently.
-    // With sActiveCursor = Default, cursorUpdate: and resetCursorRects
-    // stop overriding, so macOS naturally falls through to the arrow.
-    Fram3dInvalidateCursorRects();
-    [NSCursor.arrowCursor set];
-}
+// ── Public API ──────────────────────────────────────────────────────
 
 extern "C" {
-    __attribute__((visibility("default"))) void RefreshActiveCursor(void)
+
+    /// Called once per frame from C#. Installs the overlay if not yet
+    /// installed. Does NOT invalidate cursor rects — that only happens
+    /// when the cursor kind changes.
+    __attribute__((visibility("default"))) void Fram3dEnsureOverlay(void)
     {
         @autoreleasepool
         {
-            // Always keep the overlay installed so there's no gap when
-            // switching between cursors. The overlay is harmless when idle
-            // — with sActiveCursor == Default, it doesn't override anything.
-            Fram3dEnsureOverlayView();
-
-            if (sActiveCursor != Fram3dCursorKindDefault)
-                Fram3dApplyActiveCursor();
+            Fram3dInstallOverlay();
         }
+    }
+
+    /// Sets the active cursor kind. Invalidates cursor rects so macOS
+    /// picks up the change. Only call when the cursor actually changes.
+    __attribute__((visibility("default"))) void Fram3dSetCursor(int kind)
+    {
+        @autoreleasepool
+        {
+            Fram3dCursorKind newKind = (Fram3dCursorKind)kind;
+
+            if (newKind == sActiveCursor)
+                return;
+
+            sActiveCursor = newKind;
+            Fram3dInstallOverlay();
+            Fram3dInvalidateOnce();
+            [Fram3dCursorForKind(newKind) set];
+        }
+    }
+
+    // ── Legacy entry points (kept for compatibility) ────────────────
+
+    __attribute__((visibility("default"))) void RefreshActiveCursor(void)
+    {
+        @autoreleasepool { Fram3dInstallOverlay(); }
     }
 
     __attribute__((visibility("default"))) void SetCursorToArrow(void)
     {
-        @autoreleasepool
-        {
-            Fram3dDeactivateCursor();
-        }
-    }
-
-    __attribute__((visibility("default"))) void SetCursorToIBeam(void)
-    {
-        @autoreleasepool
-        {
-            Fram3dActivateCursor(Fram3dCursorKindIBeam);
-        }
-    }
-
-    __attribute__((visibility("default"))) void SetCursorToCrosshair(void)
-    {
-        @autoreleasepool
-        {
-            Fram3dActivateCursor(Fram3dCursorKindCrosshair);
-        }
-    }
-
-    __attribute__((visibility("default"))) void SetCursorToOpenHand(void)
-    {
-        @autoreleasepool
-        {
-            Fram3dActivateCursor(Fram3dCursorKindOpenHand);
-        }
-    }
-
-    __attribute__((visibility("default"))) void SetCursorToClosedHand(void)
-    {
-        @autoreleasepool
-        {
-            Fram3dActivateCursor(Fram3dCursorKindClosedHand);
-        }
-    }
-
-    __attribute__((visibility("default"))) void SetCursorToResizeLeftRight(void)
-    {
-        @autoreleasepool
-        {
-            Fram3dActivateCursor(Fram3dCursorKindResizeLeftRight);
-        }
-    }
-
-    __attribute__((visibility("default"))) void SetCursorToResizeUp(void)
-    {
-        @autoreleasepool
-        {
-            Fram3dActivateCursor(Fram3dCursorKindResizeUp);
-        }
-    }
-
-    __attribute__((visibility("default"))) void SetCursorToResizeDown(void)
-    {
-        @autoreleasepool
-        {
-            Fram3dActivateCursor(Fram3dCursorKindResizeDown);
-        }
-    }
-
-    __attribute__((visibility("default"))) void SetCursorToResizeUpDown(void)
-    {
-        @autoreleasepool
-        {
-            Fram3dActivateCursor(Fram3dCursorKindResizeUpDown);
-        }
-    }
-
-    __attribute__((visibility("default"))) void SetCursorToOperationNotAllowed(void)
-    {
-        @autoreleasepool
-        {
-            Fram3dActivateCursor(Fram3dCursorKindOperationNotAllowed);
-        }
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindDefault); }
     }
 
     __attribute__((visibility("default"))) void SetCursorToPointingHand(void)
     {
-        @autoreleasepool
-        {
-            Fram3dActivateCursor(Fram3dCursorKindPointingHand);
-        }
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindPointingHand); }
+    }
+
+    __attribute__((visibility("default"))) void SetCursorToIBeam(void)
+    {
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindIBeam); }
+    }
+
+    __attribute__((visibility("default"))) void SetCursorToCrosshair(void)
+    {
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindCrosshair); }
+    }
+
+    __attribute__((visibility("default"))) void SetCursorToOpenHand(void)
+    {
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindOpenHand); }
+    }
+
+    __attribute__((visibility("default"))) void SetCursorToClosedHand(void)
+    {
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindClosedHand); }
+    }
+
+    __attribute__((visibility("default"))) void SetCursorToResizeLeftRight(void)
+    {
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindResizeLeftRight); }
+    }
+
+    __attribute__((visibility("default"))) void SetCursorToResizeUp(void)
+    {
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindResizeUp); }
+    }
+
+    __attribute__((visibility("default"))) void SetCursorToResizeDown(void)
+    {
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindResizeDown); }
+    }
+
+    __attribute__((visibility("default"))) void SetCursorToResizeUpDown(void)
+    {
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindResizeUpDown); }
+    }
+
+    __attribute__((visibility("default"))) void SetCursorToOperationNotAllowed(void)
+    {
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindOperationNotAllowed); }
     }
 
     __attribute__((visibility("default"))) void SetCursorToBusy(void)
     {
-        @autoreleasepool
-        {
-            Fram3dActivateCursor(Fram3dCursorKindBusy);
-        }
+        @autoreleasepool { Fram3dSetCursor(Fram3dCursorKindBusy); }
     }
 }

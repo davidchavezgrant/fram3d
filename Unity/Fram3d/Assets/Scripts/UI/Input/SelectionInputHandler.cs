@@ -16,11 +16,11 @@ namespace Fram3d.UI.Input
     /// </summary>
     public sealed class SelectionInputHandler: MonoBehaviour
     {
-        private const    float         CURSOR_RESET_GRACE_SECONDS = 0.1f;
-        private readonly ClickDetector _clickDetector             = new();
+        private const    int           CURSOR_RESET_GRACE_FRAMES = 10;
+        private readonly ClickDetector _clickDetector            = new();
         private          bool          _cursorIsPointer;
+        private          int           _framesWithoutHover;
         private          bool          _isGizmoDragging;
-        private          float         _lastInteractiveHoverTime;
         private          PropertiesPanelView _propertiesPanel;
         private          Selection     _selection;
         private          ViewLayoutView _viewLayoutView;
@@ -126,21 +126,28 @@ namespace Fram3d.UI.Input
 
             if (hasInteractiveHover)
             {
-                this._lastInteractiveHoverTime = Time.unscaledTime;
+                this._framesWithoutHover = 0;
+
+                if (!this._cursorIsPointer)
+                {
+                    CursorManager.SetCursor(CursorType.Link);
+                    this._cursorIsPointer = true;
+                }
+
+                return;
             }
 
-            var withinResetGrace = this._cursorIsPointer && Time.unscaledTime - this._lastInteractiveHoverTime <= CURSOR_RESET_GRACE_SECONDS;
-            var wantPointer      = hasInteractiveHover || withinResetGrace;
-
-            if (wantPointer == this._cursorIsPointer)
+            if (!this._cursorIsPointer)
             {
                 return;
             }
 
-            if (wantPointer)
+            // Wait several frames before resetting — prevents flicker
+            // from single-frame raycast misses
+            this._framesWithoutHover++;
+
+            if (this._framesWithoutHover <= CURSOR_RESET_GRACE_FRAMES)
             {
-                CursorManager.SetCursor(CursorType.Link);
-                this._cursorIsPointer = true;
                 return;
             }
 

@@ -54,6 +54,7 @@ namespace Fram3d.Editor
 
             if (!this._cursors.TryGetValue(cursor, out var data))
             {
+                Debug.LogWarning($"[Cursor] No extracted texture for {cursor}. Available: {string.Join(", ", this._cursors.Keys)}");
                 return false;
             }
 
@@ -110,9 +111,11 @@ namespace Fram3d.Editor
 
             if (result == 0 || pixelPtr == IntPtr.Zero)
             {
-                Debug.LogWarning($"[Cursor] Failed to extract native cursor for {type}");
+                Debug.LogWarning($"[Cursor] Failed to extract native cursor for {type} (kind={nativeKind}, result={result})");
                 return;
             }
+
+            Debug.Log($"[Cursor] Extracted {type}: {width}x{height}, hotspot=({hotspotX},{hotspotY})");
 
             var dataSize = width * height * 4;
             var rawData  = new byte[dataSize];

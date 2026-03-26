@@ -812,6 +812,9 @@ namespace Fram3d.UI.Timeline
                     this._rulerContent.Add(label);
                 }
             }
+
+            // Playhead must be last child to render on top of ticks
+            this._rulerPlayhead.BringToFront();
         }
 
         private double ComputeTickInterval(double visibleDuration)

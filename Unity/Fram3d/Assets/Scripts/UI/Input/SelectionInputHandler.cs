@@ -130,8 +130,10 @@ namespace Fram3d.UI.Input
 
                 if (!this._cursorIsPointer)
                 {
-                    CursorManager.SetCursor(CursorType.Link);
+                    // DIAGNOSTIC: skip actual cursor change to test if it affects raycasts
+                    // CursorManager.SetCursor(CursorType.Link);
                     this._cursorIsPointer = true;
+                    Debug.Log("[Cursor] Would set pointer (disabled for testing)");
                 }
 
                 return;

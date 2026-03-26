@@ -17,10 +17,12 @@ namespace Fram3d.UI.Input
     public sealed class SelectionInputHandler: MonoBehaviour
     {
         private const    int           CURSOR_RESET_GRACE_FRAMES = 10;
+        private const    float         HOVER_KEEP_DISTANCE_SQ   = 400f; // 20px — keep hover if mouse within this
         private readonly ClickDetector _clickDetector            = new();
         private          bool          _cursorIsPointer;
         private          int           _framesWithoutHover;
         private          bool          _isGizmoDragging;
+        private          Vector2       _lastHoverHitPos;
         private          PropertiesPanelView _propertiesPanel;
         private          Selection     _selection;
         private          ViewLayoutView _viewLayoutView;
@@ -130,10 +132,8 @@ namespace Fram3d.UI.Input
 
                 if (!this._cursorIsPointer)
                 {
-                    // DIAGNOSTIC: skip actual cursor change to test if it affects raycasts
-                    // CursorManager.SetCursor(CursorType.Link);
+                    CursorManager.SetCursor(CursorType.Link);
                     this._cursorIsPointer = true;
-                    Debug.Log("[Cursor] Would set pointer (disabled for testing)");
                 }
 
                 return;
@@ -145,13 +145,6 @@ namespace Fram3d.UI.Input
             }
 
             this._framesWithoutHover++;
-
-            if (this._framesWithoutHover == 1 && Mouse.current != null)
-            {
-                var mp = Mouse.current.position.ReadValue();
-                var cam = this.raycaster != null ? "has raycaster" : "NO raycaster";
-                Debug.Log($"[Cursor] Lost hover at ({mp.x},{mp.y}). {cam}. Was blocking UI: {this.IsPointerOverBlockingUI()}");
-            }
 
             if (this._framesWithoutHover <= CURSOR_RESET_GRACE_FRAMES)
             {
@@ -189,11 +182,25 @@ namespace Fram3d.UI.Input
             if (element != null)
             {
                 this._selection.Hover(element.Id);
+                this._lastHoverHitPos = mousePosition;
+                return;
             }
-            else
+
+            // If the raycast missed but the mouse hasn't moved far from the
+            // last hit position, keep the previous hover. This prevents
+            // single-frame raycast misses (e.g., ground plane stealing the
+            // hit at element edges) from clearing hover and flickering the cursor.
+            if (this._selection.HoveredId != null)
             {
-                this._selection.ClearHover();
+                var delta = mousePosition - this._lastHoverHitPos;
+
+                if (delta.sqrMagnitude < HOVER_KEEP_DISTANCE_SQ)
+                {
+                    return;
+                }
             }
+
+            this._selection.ClearHover();
         }
 
         private void UpdateSelection(Mouse mouse, Keyboard keyboard, Vector2 mousePosition)

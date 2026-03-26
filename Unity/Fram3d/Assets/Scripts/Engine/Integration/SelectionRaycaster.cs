@@ -12,15 +12,7 @@ namespace Fram3d.Engine.Integration
     {
         private const float MAX_RAYCAST_DISTANCE = 1000f;
 
-        /// <summary>
-        /// Layer mask excluding gizmos and UI. Set during Awake from the
-        /// camera's culling mask, minus any layers we want to ignore.
-        /// If a dedicated "Gizmo" layer exists, it is excluded automatically.
-        /// </summary>
-        private int      _layerMask;
-        private bool     _logNextReject = true;
-        private bool     _hadHitLastFrame;
-        private Vector2  _lastHitScreenPos;
+        private int _layerMask;
 
         [SerializeField]
         private Camera targetCamera;
@@ -44,20 +36,10 @@ namespace Fram3d.Engine.Integration
                 return null;
             }
 
-            // Use the resolved screen-space viewport instead of inferring bounds
-            // from Camera.rect so hover stays stable across split views and DPI.
             if (!this.targetCamera.pixelRect.Contains(screenPosition))
             {
-                if (this._logNextReject)
-                {
-                    Debug.Log($"[Raycaster] Rejected: pos=({screenPosition.x},{screenPosition.y}), pixelRect={this.targetCamera.pixelRect}");
-                    this._logNextReject = false;
-                }
-
                 return null;
             }
-
-            this._logNextReject = true;
 
             var ray = this.targetCamera.ScreenPointToRay(screenPosition);
 
@@ -66,18 +48,6 @@ namespace Fram3d.Engine.Integration
                                  MAX_RAYCAST_DISTANCE,
                                  this._layerMask))
             {
-                if (this._hadHitLastFrame)
-                {
-                    // Ray missed after hitting last frame — log details
-                    var anyHit = Physics.Raycast(ray, out var debugHit, MAX_RAYCAST_DISTANCE);
-                    Debug.Log($"[Raycaster] Miss after hit! pos=({screenPosition.x},{screenPosition.y}) " +
-                              $"lastPos=({this._lastHitScreenPos.x},{this._lastHitScreenPos.y}) " +
-                              $"rayOrigin={ray.origin} rayDir={ray.direction} " +
-                              $"anyHitNoMask={anyHit}" +
-                              (anyHit ? $" hitObj={debugHit.collider.gameObject.name} hitLayer={debugHit.collider.gameObject.layer}" : ""));
-                }
-
-                this._hadHitLastFrame = false;
                 return null;
             }
 
@@ -85,19 +55,8 @@ namespace Fram3d.Engine.Integration
 
             if (elementBehaviour == null)
             {
-                if (this._hadHitLastFrame)
-                {
-                    Debug.Log($"[Raycaster] Hit non-element after element! obj={hit.collider.gameObject.name} " +
-                              $"layer={hit.collider.gameObject.layer} pos=({screenPosition.x},{screenPosition.y}) " +
-                              $"hitPoint={hit.point} dist={hit.distance:F2}");
-                }
-
-                this._hadHitLastFrame = false;
                 return null;
             }
-
-            this._hadHitLastFrame  = true;
-            this._lastHitScreenPos = screenPosition;
 
             return elementBehaviour.Element;
         }
@@ -109,10 +68,8 @@ namespace Fram3d.Engine.Integration
                 this.targetCamera = this.GetComponent<Camera>();
             }
 
-            // Start with the Default layer. Exclude UI and IgnoreRaycast.
             this._layerMask = ~(LayerMask.GetMask("UI", "Ignore Raycast"));
 
-            // Exclude a "Gizmo" layer if it exists (for future gizmo support).
             var gizmoLayer = LayerMask.NameToLayer("Gizmo");
 
             if (gizmoLayer >= 0)

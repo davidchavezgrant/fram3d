@@ -1149,6 +1149,10 @@ namespace Fram3d.UI.Timeline
                 }
             }
 
+            // Playhead and out-of-range overlay must render on top of shot blocks
+            this._shotStripPlayhead.BringToFront();
+            this._shotStripOutOfRange.BringToFront();
+
             this.UpdateActiveStates();
             this.UpdateBlockWidths();
             this.UpdateTotalLabel();
@@ -1521,6 +1525,12 @@ namespace Fram3d.UI.Timeline
             this._pointerIsDown                 = false;
             this._dropIndicator.style.display   = DisplayStyle.None;
             this._boundaryTooltip.style.display = DisplayStyle.None;
+
+            // Release any captured pointer
+            if (this._shotStrip.HasPointerCapture(0))
+            {
+                this._shotStrip.ReleasePointer(0);
+            }
         }
 
         // ══════════════════════════════════════════════════════════════════
@@ -1606,6 +1616,9 @@ namespace Fram3d.UI.Timeline
             this._isBoundaryDragging            = true;
             this._boundaryLeftIndex             = leftIndex;
             this._boundaryTooltip.style.display = DisplayStyle.Flex;
+
+            // Capture on the strip so PointerMove/Up events reach OnStripPointerMove/Up
+            this._shotStrip.CapturePointer(evt.pointerId);
             evt.StopPropagation();
         }
 

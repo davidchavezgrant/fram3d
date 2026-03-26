@@ -13,8 +13,8 @@ namespace Fram3d.Engine.Integration
     /// </summary>
     public sealed class GizmoController: MonoBehaviour
     {
-        public const int GIZMO_LAYER_INDEX = 6;
-        private readonly GizmoState       _gizmoState          = new();
+        public const     int              GIZMO_LAYER_INDEX = 6;
+        private readonly GizmoState       _gizmoState       = new();
         private          DragSession      _activeDrag;
         private          GameObject       _gizmoRoot;
         private          GizmoHighlighter _highlighter;
@@ -108,7 +108,8 @@ namespace Fram3d.Engine.Integration
             // to the mouse position on first drag frame
             if (this.ActiveTool == ActiveTool.TRANSLATE)
             {
-                var camFwd    = this.targetCamera.transform.forward.ToSystem();
+                var camFwd = this.targetCamera.transform.forward.ToSystem();
+
                 var projected = TransformOperations.ProjectOntoAxis(element.Position,
                                                                     axis.Direction,
                                                                     ray.origin.ToSystem(),
@@ -149,8 +150,8 @@ namespace Fram3d.Engine.Integration
 
             if (this.ActiveTool == ActiveTool.TRANSLATE)
             {
-                var ray     = this.targetCamera.ScreenPointToRay(screenPosition);
-                var camFwd  = this.targetCamera.transform.forward.ToSystem();
+                var ray    = this.targetCamera.ScreenPointToRay(screenPosition);
+                var camFwd = this.targetCamera.transform.forward.ToSystem();
                 this._activeDrag.UpdateTranslation(ray.origin.ToSystem(), ray.direction.ToSystem(), camFwd);
             }
             else if (this.ActiveTool == ActiveTool.ROTATE)
@@ -226,9 +227,7 @@ namespace Fram3d.Engine.Integration
             var gizmoPos = this._gizmoRoot.transform.position;
             var camPos   = this.targetCamera.transform.position;
             var distance = Vector3.Distance(gizmoPos, camPos);
-            var scale    = GizmoScaling.CalculateZoomScale(distance,
-                                                           this.targetCamera.fieldOfView,
-                                                           this.targetCamera.pixelHeight);
+            var scale    = GizmoScaling.CalculateZoomScale(distance, this.targetCamera.fieldOfView, this.targetCamera.pixelHeight);
             this._gizmoRoot.transform.localScale = Vector3.one * scale;
         }
 

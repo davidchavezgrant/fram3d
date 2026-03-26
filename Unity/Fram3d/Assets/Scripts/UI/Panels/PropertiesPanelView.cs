@@ -235,7 +235,27 @@ namespace Fram3d.UI.Panels
                     return true;
                 }
 
-                if (current.ClassListContains("dropdown-selector") || current.ClassListContains("dropdown-list-row"))
+                if (current.ClassListContains("dropdown-selector")
+                 || current.ClassListContains("dropdown-list-row")
+                 || current.ClassListContains("sensor-dropdown"))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HasTextFieldCursor(VisualElement element)
+        {
+            for (var current = element; current != null; current = current.parent)
+            {
+                if (current is TextField)
+                {
+                    return true;
+                }
+
+                if (current.ClassListContains("dropdown-search-field"))
                 {
                     return true;
                 }
@@ -303,6 +323,12 @@ namespace Fram3d.UI.Panels
                 // Outside the panel: relinquish ownership without resetting
                 // so scene-side cursor logic can take over in the same frame.
                 this._ownedCursor = CursorType.Default;
+                return;
+            }
+
+            if (picked != null && HasTextFieldCursor(picked))
+            {
+                this.ApplyOwnedCursor(CursorType.IBeam);
                 return;
             }
 

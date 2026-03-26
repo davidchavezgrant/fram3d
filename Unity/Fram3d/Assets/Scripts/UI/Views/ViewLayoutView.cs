@@ -137,6 +137,7 @@ namespace Fram3d.UI.Views
 
             this.PositionHeaders();
             this.PositionActiveOutline();
+            this.PositionLayoutChooser();
         }
 
         private void OnDestroy()
@@ -238,6 +239,35 @@ namespace Fram3d.UI.Views
             this._activeOutline.style.top    = (1f - vpRect.y - vpRect.height) * (rootH - bottomCss);
             this._activeOutline.style.width  = vpRect.width * rootW;
             this._activeOutline.style.height = vpRect.height * (rootH - bottomCss);
+        }
+
+        private void PositionLayoutChooser()
+        {
+            if (this._layoutChooser == null)
+            {
+                return;
+            }
+
+            var rootW = this._root.resolvedStyle.width;
+            var rootH = this._root.resolvedStyle.height;
+
+            if (float.IsNaN(rootW) || float.IsNaN(rootH))
+            {
+                return;
+            }
+
+            var rightInset  = this._viewCameraManager.CameraBehaviour.RightInsetPixels;
+            var bottomInset = this._viewCameraManager.CameraBehaviour.BottomInsetPixels;
+            var scale       = Screen.width > 0 ? rootW / Screen.width : 1f;
+            var rightCss    = rightInset * scale;
+            var bottomCss   = bottomInset / (Screen.width > 0 ? Screen.width / rootW : 1f);
+
+            // Position at bottom-right of the 3D view area
+            this._layoutChooser.style.position = Position.Absolute;
+            this._layoutChooser.style.bottom   = bottomCss + 12f;
+            this._layoutChooser.style.right    = rightCss + 12f;
+            this._layoutChooser.style.left     = StyleKeyword.Null;
+            this._layoutChooser.style.top      = StyleKeyword.Null;
         }
 
         private void PositionHeaders()

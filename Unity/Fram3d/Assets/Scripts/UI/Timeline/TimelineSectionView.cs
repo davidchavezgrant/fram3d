@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Fram3d.Core.Common;
 using Fram3d.Core.Shot;
+using Fram3d.Engine.Cursor;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
 using UnityEngine;
@@ -1144,6 +1145,15 @@ namespace Fram3d.UI.Timeline
                     boundary.AddToClassList("shot-track__boundary");
                     boundary.RegisterCallback<PointerDownEvent>(evt =>
                         this.OnBoundaryPointerDown(evt, boundaryIndex));
+                    boundary.RegisterCallback<PointerEnterEvent>(_ =>
+                        CursorManager.SetCursor(CursorType.ResizeHorizontal));
+                    boundary.RegisterCallback<PointerLeaveEvent>(_ =>
+                    {
+                        if (!this._isBoundaryDragging)
+                        {
+                            CursorManager.ResetCursor();
+                        }
+                    });
                     this._shotStrip.Insert(this._shotStrip.childCount - 1, boundary);
                     this._boundaries.Add(boundary);
                 }
@@ -1659,6 +1669,7 @@ namespace Fram3d.UI.Timeline
         {
             this._isBoundaryDragging            = false;
             this._boundaryTooltip.style.display = DisplayStyle.None;
+            CursorManager.ResetCursor();
         }
 
         // ══════════════════════════════════════════════════════════════════

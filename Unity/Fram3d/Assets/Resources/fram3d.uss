@@ -385,7 +385,7 @@
 }
 
 .timeline-transport__play {
-    width: 40px;
+    width: 24px;
     height: 20px;
     font-size: 10px;
     color: rgb(204, 204, 204);

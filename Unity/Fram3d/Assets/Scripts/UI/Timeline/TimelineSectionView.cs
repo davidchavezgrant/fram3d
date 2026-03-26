@@ -192,12 +192,12 @@ namespace Fram3d.UI.Timeline
             {
                 if (this._isPlaying)
                 {
-                    this._playButton.text = "Stop";
+                    this._playButton.text = "\u25a0";
                     this._playButton.AddToClassList("timeline-transport__play--active");
                 }
                 else
                 {
-                    this._playButton.text = "Play";
+                    this._playButton.text = "\u25b6";
                     this._playButton.RemoveFromClassList("timeline-transport__play--active");
                 }
             }
@@ -392,7 +392,7 @@ namespace Fram3d.UI.Timeline
             bar.style.height = TRANSPORT_HEIGHT;
 
             this._playButton = new Button(this.TogglePlayback);
-            this._playButton.text = "Play";
+            this._playButton.text = "\u25b6";
             this._playButton.AddToClassList("timeline-transport__play");
             bar.Add(this._playButton);
 

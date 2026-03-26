@@ -14,13 +14,15 @@ namespace Fram3d.UI.Timeline
         private const double MARGIN_SECONDS       = 0.5;
         private const double ZOOM_FACTOR          = 1.15;
 
-        private double _viewStart;
+        private double _totalDuration;
         private double _viewEnd;
+        private double _viewStart;
         private double _stripWidth;
 
         public TimelineViewState(double totalDuration, double stripWidth)
         {
-            this._stripWidth = Math.Max(stripWidth, 1.0);
+            this._stripWidth     = Math.Max(stripWidth, 1.0);
+            this._totalDuration  = Math.Max(totalDuration, 1.0);
             this.FitAll(totalDuration);
         }
 
@@ -70,6 +72,14 @@ namespace Fram3d.UI.Timeline
         }
 
         /// <summary>
+        /// Updates the total duration used for clamping.
+        /// </summary>
+        public void SetTotalDuration(double totalDuration)
+        {
+            this._totalDuration = Math.Max(totalDuration, 1.0);
+        }
+
+        /// <summary>
         /// Converts a time in seconds to a pixel offset from the left edge of the strip.
         /// </summary>
         public double TimeToPixel(double seconds) =>
@@ -98,6 +108,13 @@ namespace Fram3d.UI.Timeline
             if (newDuration < MIN_VISIBLE_DURATION)
             {
                 newDuration = MIN_VISIBLE_DURATION;
+            }
+
+            var maxDuration = this._totalDuration + MARGIN_SECONDS * 2;
+
+            if (newDuration > maxDuration)
+            {
+                newDuration = maxDuration;
             }
 
             // Keep the anchor at the same relative position
@@ -182,12 +199,28 @@ namespace Fram3d.UI.Timeline
 
         private void Clamp()
         {
+            var maxEnd = this._totalDuration + MARGIN_SECONDS;
+
             // Don't let view start go too far left
             if (this._viewStart < -MARGIN_SECONDS)
             {
                 var shift = -MARGIN_SECONDS - this._viewStart;
                 this._viewStart += shift;
                 this._viewEnd   += shift;
+            }
+
+            // Don't let view end go too far right
+            if (this._viewEnd > maxEnd)
+            {
+                var shift = this._viewEnd - maxEnd;
+                this._viewStart -= shift;
+                this._viewEnd   -= shift;
+
+                // Re-clamp left in case the shift pushed us past
+                if (this._viewStart < -MARGIN_SECONDS)
+                {
+                    this._viewStart = -MARGIN_SECONDS;
+                }
             }
         }
     }

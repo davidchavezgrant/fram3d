@@ -358,13 +358,12 @@ namespace Fram3d.Editor
                 uiDoc.panelSettings = GetOrCreatePanelSettings();
             }
 
-            // Shot track renders below overlays but above nothing — sorting order 0
-            // is fine since it's at the bottom of the screen, not overlapping other UI.
-            uiDoc.sortingOrder = 0;
+            // Timeline renders on top of all views and overlays
+            uiDoc.sortingOrder = 10;
 
-            if (shotTrackGo.GetComponent<ShotTrackView>() == null)
+            if (shotTrackGo.GetComponent<TimelineSectionView>() == null)
             {
-                shotTrackGo.AddComponent<ShotTrackView>();
+                shotTrackGo.AddComponent<TimelineSectionView>();
             }
 
             EditorUtility.SetDirty(shotTrackGo);

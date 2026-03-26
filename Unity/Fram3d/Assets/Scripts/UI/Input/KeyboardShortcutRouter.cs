@@ -2,6 +2,7 @@ using Fram3d.Core.Camera;
 using Fram3d.Core.Scene;
 using Fram3d.Core.Viewport;
 using Fram3d.Engine.Integration;
+using Fram3d.UI.Timeline;
 using Fram3d.UI.Views;
 using UnityEngine.InputSystem;
 namespace Fram3d.UI.Input
@@ -12,17 +13,20 @@ namespace Fram3d.UI.Input
     /// </summary>
     public sealed class KeyboardShortcutRouter
     {
-        private CameraBehaviour    _cameraBehaviour;
+        private CameraBehaviour      _cameraBehaviour;
         private CompositionGuideView _compositionGuides;
-        private GizmoController    _gizmoController;
+        private GizmoController      _gizmoController;
+        private TimelineSectionView  _timelineSection;
 
-        public void Configure(CameraBehaviour    cameraBehaviour,
+        public void Configure(CameraBehaviour      cameraBehaviour,
                               CompositionGuideView compositionGuides,
-                              GizmoController    gizmoController)
+                              GizmoController      gizmoController,
+                              TimelineSectionView  timelineSection)
         {
             this._cameraBehaviour  = cameraBehaviour;
             this._compositionGuides = compositionGuides;
             this._gizmoController  = gizmoController;
+            this._timelineSection  = timelineSection;
         }
 
         /// <summary>
@@ -182,6 +186,16 @@ namespace Fram3d.UI.Input
             if (keyboard.sKey.wasPressedThisFrame && !ctrl && !alt && !shift)
             {
                 camera.ShakeEnabled = !camera.ShakeEnabled;
+                return true;
+            }
+
+            if (keyboard.tKey.wasPressedThisFrame && !ctrl && !alt && !shift)
+            {
+                if (this._timelineSection != null)
+                {
+                    this._timelineSection.Toggle();
+                }
+
                 return true;
             }
 

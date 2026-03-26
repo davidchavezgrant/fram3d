@@ -53,7 +53,7 @@ namespace Fram3d.UI.Input
         [SerializeField]
         private ViewLayoutView viewLayoutView;
 
-        private Timeline.ShotTrackView _shotTrackView;
+        private Timeline.TimelineSectionView _timelineSection;
 
         public void Tick(Keyboard keyboard, Mouse mouse)
         {
@@ -70,7 +70,7 @@ namespace Fram3d.UI.Input
             }
 
             var panelHasFocus     = this.propertiesPanel != null && this.propertiesPanel.HasFocusedTextField;
-            var shotTrackHasFocus = this._shotTrackView  != null && this._shotTrackView.HasFocusedTextField;
+            var shotTrackHasFocus = this._timelineSection != null && this._timelineSection.HasFocusedTextField;
 
             if (panelHasFocus || shotTrackHasFocus)
             {
@@ -365,7 +365,7 @@ namespace Fram3d.UI.Input
         {
             var overPanel    = this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI;
             var overLayout   = this.viewLayoutView  != null && this.viewLayoutView.IsPointerOverUI;
-            var overShotTrack = this._shotTrackView  != null && this._shotTrackView.IsPointerOverUI;
+            var overShotTrack = this._timelineSection != null && this._timelineSection.IsPointerOverUI;
             return overPanel || overLayout || overShotTrack;
         }
 
@@ -399,11 +399,12 @@ namespace Fram3d.UI.Input
             this._camera         = this.cameraBehaviour.CameraElement;
             this.propertiesPanel ??= FindAnyObjectByType<PropertiesPanelView>();
             this.viewLayoutView  ??= FindAnyObjectByType<ViewLayoutView>();
-            this._shotTrackView  = FindAnyObjectByType<Timeline.ShotTrackView>();
+            this._timelineSection = FindAnyObjectByType<Timeline.TimelineSectionView>();
 
             this._keyboardRouter.Configure(this.cameraBehaviour,
                                             this.compositionGuides,
-                                            this.gizmoController);
+                                            this.gizmoController,
+                                            this._timelineSection);
         }
 
         private void Update()

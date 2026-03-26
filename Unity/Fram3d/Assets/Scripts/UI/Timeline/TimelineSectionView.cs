@@ -1171,8 +1171,9 @@ namespace Fram3d.UI.Timeline
 
             if (this._viewState != null)
             {
-                var endTime = this._shotController.Registry.TotalDuration;
-                this._viewState.EnsureVisible(endTime);
+                this._viewState.SetTotalDuration(this._shotController.Registry.TotalDuration);
+                this._viewState.FitAll(this._shotController.Registry.TotalDuration);
+                this.RefreshAll();
             }
         }
 

@@ -191,36 +191,29 @@ namespace Fram3d.UI.Timeline
         /// </summary>
         public void EnsureVisible(double seconds)
         {
-            // Small pixel margin so the playhead doesn't sit right on the edge
-            var edgeMargin = this.VisibleDuration * 0.05;
+            var duration = this.VisibleDuration;
 
             if (seconds < this._viewStart)
             {
-                var shift = this._viewStart - seconds + edgeMargin;
-                this._viewStart -= shift;
-                this._viewEnd   -= shift;
-                this.Clamp();
+                // Place the time at 10% from the left edge
+                this._viewStart = seconds - duration * 0.1;
+                this._viewEnd   = this._viewStart + duration;
+                this.ClampLeft();
                 this.Changed?.Invoke();
             }
             else if (seconds > this._viewEnd)
             {
-                var shift = seconds - this._viewEnd + edgeMargin;
-                this._viewStart += shift;
-                this._viewEnd   += shift;
-                this.Clamp();
+                // Place the time at 10% from the right edge
+                this._viewEnd   = seconds + duration * 0.1;
+                this._viewStart = this._viewEnd - duration;
+                this.ClampLeft();
                 this.Changed?.Invoke();
             }
         }
 
         private void Clamp()
         {
-            // Don't let view start go below 0
-            if (this._viewStart < 0)
-            {
-                var shift = -this._viewStart;
-                this._viewStart += shift;
-                this._viewEnd   += shift;
-            }
+            this.ClampLeft();
 
             // Don't let view start go past total duration (nothing to see)
             if (this._viewStart > this._totalDuration)
@@ -228,6 +221,16 @@ namespace Fram3d.UI.Timeline
                 var duration = this.VisibleDuration;
                 this._viewStart = Math.Max(0, this._totalDuration - duration);
                 this._viewEnd   = this._viewStart + duration;
+            }
+        }
+
+        private void ClampLeft()
+        {
+            if (this._viewStart < 0)
+            {
+                var shift = -this._viewStart;
+                this._viewStart += shift;
+                this._viewEnd   += shift;
             }
         }
     }

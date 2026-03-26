@@ -3,12 +3,19 @@ using UnityEngine;
 namespace Fram3d.Engine.Cursor
 {
     /// <summary>
-    /// Cross-platform cursor service using Unity's Cursor.SetCursor API.
-    /// Generates cursor textures programmatically — no native plugins.
-    /// Flicker-free because Unity manages the hardware cursor internally.
+    /// Cross-platform cursor service using a software overlay for custom
+    /// cursors so the platform cursor can be hidden independently.
     /// </summary>
     public sealed class UnityCursorService : ICursorService
     {
+        private readonly SoftwareCursorOverlay _overlay;
+        private          CursorType            _activeCursor = CursorType.Default;
+
+        public UnityCursorService()
+        {
+            this._overlay = SoftwareCursorOverlay.EnsureCreated();
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Setup()
         {
@@ -24,6 +31,11 @@ namespace Fram3d.Engine.Cursor
                 return true;
             }
 
+            if (this._activeCursor == cursor)
+            {
+                return true;
+            }
+
             if (cursor == CursorType.Link)
             {
                 var pointingHand = CursorTextures.PointingHand;
@@ -34,10 +46,9 @@ namespace Fram3d.Engine.Cursor
                     return false;
                 }
 
-                UnityEngine.Cursor.SetCursor(
-                    pointingHand,
-                    CursorTextures.PointingHandHotspot,
-                    CursorMode.ForceSoftware);
+                this._overlay.Show(pointingHand, CursorTextures.PointingHandHotspot);
+                UnityEngine.Cursor.visible = false;
+                this._activeCursor = cursor;
 
                 return true;
             }
@@ -52,10 +63,9 @@ namespace Fram3d.Engine.Cursor
                     return false;
                 }
 
-                UnityEngine.Cursor.SetCursor(
-                    closedHand,
-                    CursorTextures.ClosedHandHotspot,
-                    CursorMode.ForceSoftware);
+                this._overlay.Show(closedHand, CursorTextures.ClosedHandHotspot);
+                UnityEngine.Cursor.visible = false;
+                this._activeCursor = cursor;
 
                 return true;
             }
@@ -65,7 +75,10 @@ namespace Fram3d.Engine.Cursor
 
         public void ResetCursor()
         {
+            this._overlay.Hide();
             UnityEngine.Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+            UnityEngine.Cursor.visible = true;
+            this._activeCursor = CursorType.Default;
         }
     }
 }

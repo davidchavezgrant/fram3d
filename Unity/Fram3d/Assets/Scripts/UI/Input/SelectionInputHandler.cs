@@ -63,11 +63,16 @@ namespace Fram3d.UI.Input
 
             if (this.IsPointerOverBlockingUI())
             {
-                // Clear hover highlights but let UpdateCursor handle the
-                // cursor via its grace timer — no direct ResetCursor call.
                 this._selection?.ClearHover();
                 this.gizmoController?.ClearHover();
-                this.UpdateCursor();
+
+                if (this._propertiesPanel != null && this._propertiesPanel.OwnsCustomCursor)
+                {
+                    this.ReleaseSceneCursorOwnership();
+                    return;
+                }
+
+                this.ResetCustomCursor();
                 return;
             }
 
@@ -83,6 +88,13 @@ namespace Fram3d.UI.Input
             this._selection?.ClearHover();
             this.gizmoController?.ClearHover();
             this.ResetCustomCursor();
+        }
+
+        private void ReleaseSceneCursorOwnership()
+        {
+            this._framesWithoutHover = 0;
+            this._cursorIsClosedHand = false;
+            this._cursorIsPointer    = false;
         }
 
         private bool IsPointerOverBlockingUI()

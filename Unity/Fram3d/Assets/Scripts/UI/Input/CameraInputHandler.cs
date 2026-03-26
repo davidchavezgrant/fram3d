@@ -49,6 +49,9 @@ namespace Fram3d.UI.Input
         [SerializeField]
         private PropertiesPanelView propertiesPanel;
 
+        [SerializeField]
+        private ViewLayoutView viewLayoutView;
+
         public void Tick(Keyboard keyboard, Mouse mouse)
         {
             if (this._camera == null)
@@ -71,7 +74,7 @@ namespace Fram3d.UI.Input
 
             this.HandleKeyboardInput(keyboard);
 
-            if (this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI)
+            if (this.IsPointerOverBlockingUI())
             {
                 this._pendingScrollSamples.Clear();
                 return;
@@ -508,14 +511,29 @@ namespace Fram3d.UI.Input
             this._pendingScrollSamples.Clear();
         }
 
-        private void Start() => this._camera = this.cameraBehaviour.CameraElement;
+        private bool IsPointerOverBlockingUI()
+        {
+            return (this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI)
+                || (this.viewLayoutView != null && this.viewLayoutView.IsPointerOverUI);
+        }
+
+        private void Start()
+        {
+            this._camera         = this.cameraBehaviour.CameraElement;
+            this.propertiesPanel ??= FindAnyObjectByType<PropertiesPanelView>();
+            this.viewLayoutView  ??= FindAnyObjectByType<ViewLayoutView>();
+        }
 
         private void Update()
         {
+            var isPointerOverBlockingUI = this.IsPointerOverBlockingUI();
+
             if (this.viewCameraManager != null && Mouse.current != null)
             {
                 // Activate the clicked viewport on mouse-down
-                if (this.viewCameraManager.IsMultiView && Mouse.current.leftButton.wasPressedThisFrame)
+                if (this.viewCameraManager.IsMultiView
+                 && Mouse.current.leftButton.wasPressedThisFrame
+                 && !isPointerOverBlockingUI)
                 {
                     this.viewCameraManager.ActivateSlotAtPosition(Mouse.current.position.ReadValue());
                 }

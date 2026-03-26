@@ -1,6 +1,8 @@
 using Fram3d.Core.Scene;
 using Fram3d.Engine.Cursor;
 using Fram3d.Engine.Integration;
+using Fram3d.UI.Panels;
+using Fram3d.UI.Views;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using SysVector2 = System.Numerics.Vector2;
@@ -19,7 +21,9 @@ namespace Fram3d.UI.Input
         private          bool          _cursorIsPointer;
         private          bool          _isGizmoDragging;
         private          float         _lastInteractiveHoverTime;
+        private          PropertiesPanelView _propertiesPanel;
         private          Selection     _selection;
+        private          ViewLayoutView _viewLayoutView;
 
         [SerializeField]
         private GizmoController gizmoController;
@@ -54,11 +58,30 @@ namespace Fram3d.UI.Input
                 return;
             }
 
+            if (this.IsPointerOverBlockingUI())
+            {
+                this.ClearInteractiveHover();
+                return;
+            }
+
             this.HandleDuplicate(keyboard);
             this.UpdateHover(mousePosition);
             this.UpdateGizmoHover(mousePosition);
             this.UpdateCursor();
             this.UpdateSelection(mouse, keyboard, mousePosition);
+        }
+
+        private void ClearInteractiveHover()
+        {
+            this._selection?.ClearHover();
+            this.gizmoController?.ClearHover();
+            this.ResetPointerCursor();
+        }
+
+        private bool IsPointerOverBlockingUI()
+        {
+            return (this._propertiesPanel != null && this._propertiesPanel.IsPointerOverUI)
+                || (this._viewLayoutView != null && this._viewLayoutView.IsPointerOverUI);
         }
 
         private void HandleDuplicate(Keyboard keyboard)
@@ -198,10 +221,15 @@ namespace Fram3d.UI.Input
             {
                 this._selection = this.selectionHighlighter.Selection;
             }
+
+            this._propertiesPanel ??= FindAnyObjectByType<PropertiesPanelView>();
+            this._viewLayoutView ??= FindAnyObjectByType<ViewLayoutView>();
         }
 
         private void Update()
         {
+            var isPointerOverBlockingUI = this.IsPointerOverBlockingUI();
+
             if (this.viewCameraManager != null && this.viewCameraManager.IsMultiView && Mouse.current != null)
             {
                 var mousePos = Mouse.current.position.ReadValue();
@@ -210,7 +238,7 @@ namespace Fram3d.UI.Input
                 this.gizmoController?.SetCamera(cam);
 
                 // Clicking an element activates that viewport
-                if (Mouse.current.leftButton.wasPressedThisFrame)
+                if (Mouse.current.leftButton.wasPressedThisFrame && !isPointerOverBlockingUI)
                 {
                     this.viewCameraManager.ActivateSlotAtPosition(mousePos);
                 }

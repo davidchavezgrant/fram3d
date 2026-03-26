@@ -119,7 +119,6 @@ namespace Fram3d.UI.Views
 
             this.Rebuild();
             this._viewCameraManager.ViewSlotModel.Changed += this.Rebuild;
-            Debug.Log($"ViewLayoutView initialized. Root size: {this._root.resolvedStyle.width}x{this._root.resolvedStyle.height}, children: {this._root.childCount}");
         }
 
         private void Update()

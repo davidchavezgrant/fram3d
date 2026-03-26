@@ -71,39 +71,9 @@ namespace Fram3d.Engine.Integration
                 return this.cameraBehaviour.GetComponent<Camera>();
             }
 
-            var normalizedPos = new Vector2(mouseScreenPos.x / Screen.width,
-                                            mouseScreenPos.y / Screen.height);
-
-            var count = this.ViewSlotModel.ActiveSlotCount;
-
-            for (var i = 0; i < count; i++)
+            if (this.TryGetSlotAtPosition(mouseScreenPos, out var slotIndex))
             {
-                if (i >= this._viewportRects.Length)
-                {
-                    break;
-                }
-
-                if (!this._viewportRects[i].Contains(normalizedPos))
-                {
-                    continue;
-                }
-
-                var mode = this.ViewSlotModel.GetSlotType(i);
-
-                if (mode == ViewMode.CAMERA)
-                {
-                    return this.cameraBehaviour.GetComponent<Camera>();
-                }
-
-                if (mode == ViewMode.DIRECTOR)
-                {
-                    var vc = this._directorCameras.TryGetValue(i, out var cam) ? cam : null;
-
-                    if (vc != null)
-                    {
-                        return vc.UnityCamera;
-                    }
-                }
+                return this.GetUnityCamera(slotIndex);
             }
 
             return this.cameraBehaviour.GetComponent<Camera>();
@@ -150,16 +120,9 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
-            var normalizedPos = new Vector2(mouseScreenPos.x / Screen.width,
-                                            mouseScreenPos.y / Screen.height);
-
-            for (var i = 0; i < this.ViewSlotModel.ActiveSlotCount && i < this._viewportRects.Length; i++)
+            if (this.TryGetSlotAtPosition(mouseScreenPos, out var slotIndex))
             {
-                if (this._viewportRects[i].Contains(normalizedPos))
-                {
-                    this._activeSlot = i;
-                    return;
-                }
+                this._activeSlot = slotIndex;
             }
         }
 
@@ -186,6 +149,23 @@ namespace Fram3d.Engine.Integration
             }
 
             return null;
+        }
+
+        private bool TryGetSlotAtPosition(Vector2 mouseScreenPos, out int slotIndex)
+        {
+            for (var i = 0; i < this.ViewSlotModel.ActiveSlotCount; i++)
+            {
+                var camera = this.GetUnityCamera(i);
+
+                if (camera != null && camera.pixelRect.Contains(mouseScreenPos))
+                {
+                    slotIndex = i;
+                    return true;
+                }
+            }
+
+            slotIndex = -1;
+            return false;
         }
 
         /// <summary>

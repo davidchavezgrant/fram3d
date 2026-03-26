@@ -49,6 +49,11 @@ namespace Fram3d.Engine.Integration
             this._activeDrag = null;
         }
 
+        public void ClearHover()
+        {
+            this._highlighter?.ClearHover();
+        }
+
         public void SetActiveTool(ActiveTool tool)
         {
             this._gizmoState.SetActiveTool(tool);
@@ -69,6 +74,11 @@ namespace Fram3d.Engine.Integration
             }
 
             if (this._selection == null || this._selection.SelectedId == null)
+            {
+                return false;
+            }
+
+            if (!this.IsWithinTargetViewport(screenPosition))
             {
                 return false;
             }
@@ -165,6 +175,12 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
+            if (!this.IsWithinTargetViewport(screenPosition))
+            {
+                this._highlighter.ClearHover();
+                return;
+            }
+
             var ray = this.targetCamera.ScreenPointToRay(screenPosition);
 
             if (Physics.Raycast(ray,
@@ -198,6 +214,11 @@ namespace Fram3d.Engine.Integration
             }
 
             return null;
+        }
+
+        private bool IsWithinTargetViewport(Vector2 screenPosition)
+        {
+            return this.targetCamera != null && this.targetCamera.pixelRect.Contains(screenPosition);
         }
 
         private void ScaleForConstantScreenSize()

@@ -17,31 +17,54 @@ typedef NS_ENUM(NSInteger, Fram3dCursorKind) {
 
 static Fram3dCursorKind sActiveCursor = Fram3dCursorKindDefault;
 static NSWindow*        sInstalledWindow;
+static NSWindow*        sRememberedWindow;
 static BOOL             sPreviousAcceptsMouseMovedEvents = NO;
 static BOOL             sHasPreviousAcceptsMouseMovedEvents = NO;
 
 @class Fram3dCursorOverlayView;
 static Fram3dCursorOverlayView* sOverlayView;
 
+static BOOL Fram3dIsUsableWindow(NSWindow* window)
+{
+    return window != nil
+        && window.contentView != nil
+        && !window.isMiniaturized
+        && (window.isVisible || window == sInstalledWindow || window == sRememberedWindow);
+}
+
 static NSWindow* Fram3dTargetWindow(void)
 {
     NSApplication* app = NSApplication.sharedApplication;
 
-    if (app.keyWindow != nil && app.keyWindow.contentView != nil)
+    // Stay attached to the last known good player window when possible.
+    // Re-resolving from key/main windows after every cursor reset can latch
+    // onto transient Cocoa windows created by Unity UI.
+    NSWindow* overlayWindow = ((NSView*)sOverlayView).window;
+
+    if (Fram3dIsUsableWindow(overlayWindow))
+        return overlayWindow;
+
+    if (Fram3dIsUsableWindow(sInstalledWindow))
+        return sInstalledWindow;
+
+    if (Fram3dIsUsableWindow(sRememberedWindow))
+        return sRememberedWindow;
+
+    if (Fram3dIsUsableWindow(app.keyWindow))
         return app.keyWindow;
 
-    if (app.mainWindow != nil && app.mainWindow.contentView != nil)
+    if (Fram3dIsUsableWindow(app.mainWindow))
         return app.mainWindow;
 
     for (NSWindow* window in app.orderedWindows)
     {
-        if (window.isVisible && window.contentView != nil)
+        if (Fram3dIsUsableWindow(window))
             return window;
     }
 
     for (NSWindow* window in app.windows)
     {
-        if (window.contentView != nil)
+        if (Fram3dIsUsableWindow(window))
             return window;
     }
 
@@ -198,6 +221,7 @@ static void Fram3dAttachWindow(NSWindow* window)
     sHasPreviousAcceptsMouseMovedEvents = YES;
     window.acceptsMouseMovedEvents = YES;
     sInstalledWindow = window;
+    sRememberedWindow = window;
 }
 
 static void Fram3dInvalidateCursorRects(void)

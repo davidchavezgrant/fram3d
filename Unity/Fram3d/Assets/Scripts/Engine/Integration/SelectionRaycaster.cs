@@ -17,8 +17,10 @@ namespace Fram3d.Engine.Integration
         /// camera's culling mask, minus any layers we want to ignore.
         /// If a dedicated "Gizmo" layer exists, it is excluded automatically.
         /// </summary>
-        private int  _layerMask;
-        private bool _logNextReject = true;
+        private int      _layerMask;
+        private bool     _logNextReject = true;
+        private bool     _hadHitLastFrame;
+        private Vector2  _lastHitScreenPos;
 
         [SerializeField]
         private Camera targetCamera;
@@ -64,10 +66,25 @@ namespace Fram3d.Engine.Integration
                                  MAX_RAYCAST_DISTANCE,
                                  this._layerMask))
             {
+                if (this._hadHitLastFrame)
+                {
+                    // Ray missed after hitting last frame — log details
+                    var anyHit = Physics.Raycast(ray, out var debugHit, MAX_RAYCAST_DISTANCE);
+                    Debug.Log($"[Raycaster] Miss after hit! pos=({screenPosition.x},{screenPosition.y}) " +
+                              $"lastPos=({this._lastHitScreenPos.x},{this._lastHitScreenPos.y}) " +
+                              $"rayOrigin={ray.origin} rayDir={ray.direction} " +
+                              $"anyHitNoMask={anyHit}" +
+                              (anyHit ? $" hitObj={debugHit.collider.gameObject.name} hitLayer={debugHit.collider.gameObject.layer}" : ""));
+                }
+
+                this._hadHitLastFrame = false;
                 return null;
             }
 
             var elementBehaviour = hit.collider.GetComponentInParent<ElementBehaviour>();
+
+            this._hadHitLastFrame  = elementBehaviour != null;
+            this._lastHitScreenPos = screenPosition;
 
             if (elementBehaviour == null)
             {

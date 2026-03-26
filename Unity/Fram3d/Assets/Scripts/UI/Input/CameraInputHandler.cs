@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using Fram3d.Core.Camera;
 using Fram3d.Core.Input;
-using Fram3d.Core.Scene;
-using Fram3d.Core.Viewport;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
 using Fram3d.UI.Views;
@@ -18,21 +16,24 @@ namespace Fram3d.UI.Input
     /// tracking to pair each scroll event with the modifier state at the time it
     /// physically occurred, preventing bleed when a modifier key-up and scroll event
     /// land in the same frame.
+    ///
+    /// Keyboard shortcuts are delegated to KeyboardShortcutRouter.
     /// </summary>
     public sealed class CameraInputHandler: MonoBehaviour
     {
-        private const    float               SCROLL_DEADZONE       = 0.01f;
-        private readonly Queue<ScrollSample> _pendingScrollSamples = new();
-        private readonly ScrollRouter        _scrollRouter         = new();
-        private          CameraElement       _camera;
-        private          bool                _leftAltHeld;
-        private          bool                _leftCommandHeld;
-        private          bool                _leftCtrlHeld;
-        private          bool                _leftShiftHeld;
-        private          bool                _rightAltHeld;
-        private          bool                _rightCommandHeld;
-        private          bool                _rightCtrlHeld;
-        private          bool                _rightShiftHeld;
+        private const    float                    SCROLL_DEADZONE       = 0.01f;
+        private readonly KeyboardShortcutRouter   _keyboardRouter       = new();
+        private readonly Queue<ScrollSample>      _pendingScrollSamples = new();
+        private readonly ScrollRouter             _scrollRouter         = new();
+        private          CameraElement            _camera;
+        private          bool                     _leftAltHeld;
+        private          bool                     _leftCommandHeld;
+        private          bool                     _leftCtrlHeld;
+        private          bool                     _leftShiftHeld;
+        private          bool                     _rightAltHeld;
+        private          bool                     _rightCommandHeld;
+        private          bool                     _rightCtrlHeld;
+        private          bool                     _rightShiftHeld;
 
         [SerializeField]
         private CameraBehaviour cameraBehaviour;
@@ -84,6 +85,8 @@ namespace Fram3d.UI.Input
             this.HandleDragInput(keyboard, mouse);
         }
 
+        // ── Scroll action dispatch ───────────────────────────────────────
+
         private void ApplyScrollAction(ScrollAction action)
         {
             if (action.Kind == ScrollActionKind.DOLLY_ZOOM)
@@ -92,7 +95,8 @@ namespace Fram3d.UI.Input
             }
             else if (action.Kind == ScrollActionKind.FOCUS_DISTANCE)
             {
-                this._camera.FocusDistance = this._camera.FocusDistance + action.Y * MovementSpeeds.FOCUS_DISTANCE;
+                var newDistance = this._camera.FocusDistance + action.Y * MovementSpeeds.FOCUS_DISTANCE;
+                this._camera.FocusDistance = newDistance;
             }
             else if (action.Kind == ScrollActionKind.DOLLY_TRUCK)
             {
@@ -116,30 +120,38 @@ namespace Fram3d.UI.Input
             }
             else if (action.Kind == ScrollActionKind.FOCAL_LENGTH)
             {
-                if (Math.Abs(action.Y) <= SCROLL_DEADZONE)
-                {
-                    return;
-                }
+                this.ApplyFocalLengthScroll(action.Y);
+            }
+        }
 
-                var activeLensSet = this._camera.ActiveLensSet;
+        private void ApplyFocalLengthScroll(float scrollY)
+        {
+            if (Math.Abs(scrollY) <= SCROLL_DEADZONE)
+            {
+                return;
+            }
 
-                if (activeLensSet != null && !activeLensSet.IsZoom)
+            var activeLensSet = this._camera.ActiveLensSet;
+
+            if (activeLensSet != null && !activeLensSet.IsZoom)
+            {
+                if (scrollY > 0)
                 {
-                    if (action.Y > 0)
-                    {
-                        this._camera.StepFocalLengthUp();
-                    }
-                    else
-                    {
-                        this._camera.StepFocalLengthDown();
-                    }
+                    this._camera.StepFocalLengthUp();
                 }
                 else
                 {
-                    this._camera.FocalLength = this._camera.FocalLength + action.Y * MovementSpeeds.FOCAL_LENGTH_SCROLL;
+                    this._camera.StepFocalLengthDown();
                 }
             }
+            else
+            {
+                var newFocal = this._camera.FocalLength + scrollY * MovementSpeeds.FOCAL_LENGTH_SCROLL;
+                this._camera.FocalLength = newFocal;
+            }
         }
+
+        // ── Event interception ───────────────────────────────────────────
 
         private void EnqueueScroll(InputEventPtr eventPtr, Mouse mouse)
         {
@@ -148,7 +160,10 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            if (Mathf.Abs(scroll.x) <= SCROLL_DEADZONE && Mathf.Abs(scroll.y) <= SCROLL_DEADZONE)
+            var absX = Mathf.Abs(scroll.x);
+            var absY = Mathf.Abs(scroll.y);
+
+            if (absX <= SCROLL_DEADZONE && absY <= SCROLL_DEADZONE)
             {
                 return;
             }
@@ -164,28 +179,72 @@ namespace Fram3d.UI.Input
             });
         }
 
-        // ── Keyboard input ─────────────────────────────────────────────────
-
-        private bool HandleAspectRatio(Keyboard keyboard)
+        private void HandleInputEvent(InputEventPtr eventPtr, InputDevice device)
         {
-            if (!keyboard.aKey.wasPressedThisFrame || keyboard.ctrlKey.isPressed || keyboard.altKey.isPressed)
+            if (!IsStateEvent(eventPtr))
             {
-                return false;
+                return;
             }
 
-            if (keyboard.shiftKey.isPressed)
+            if (device is Keyboard keyboard)
             {
-                this.cameraBehaviour.CycleAspectRatioBackward();
-            }
-            else
-            {
-                this.cameraBehaviour.CycleAspectRatioForward();
+                this.UpdateModifierState(eventPtr, keyboard);
+                return;
             }
 
-            return true;
+            if (device is Mouse mouse)
+            {
+                this.EnqueueScroll(eventPtr, mouse);
+            }
         }
 
-        // ── Drag input ─────────────────────────────────────────────────────
+        // ── Keyboard routing ─────────────────────────────────────────────
+
+        private void HandleKeyboardInput(Keyboard keyboard)
+        {
+            if (this._keyboardRouter.Route(keyboard, this._camera))
+            {
+                return;
+            }
+
+            this.HandleViewToggle(keyboard);
+            this.HandlePanelToggle(keyboard);
+        }
+
+        private void HandlePanelToggle(Keyboard keyboard)
+        {
+            if (!keyboard.iKey.wasPressedThisFrame
+             || keyboard.ctrlKey.isPressed
+             || keyboard.altKey.isPressed
+             || keyboard.shiftKey.isPressed
+             || this.propertiesPanel == null)
+            {
+                return;
+            }
+
+            this.propertiesPanel.Toggle();
+        }
+
+        private void HandleViewToggle(Keyboard keyboard)
+        {
+            if (!keyboard.dKey.wasPressedThisFrame
+             || keyboard.ctrlKey.isPressed
+             || keyboard.altKey.isPressed
+             || keyboard.shiftKey.isPressed)
+            {
+                return;
+            }
+
+            if (this.cameraBehaviour == null)
+            {
+                return;
+            }
+
+            this.cameraBehaviour.ToggleDirectorView();
+            this._camera = this.cameraBehaviour.ActiveCamera;
+        }
+
+        // ── Drag input ───────────────────────────────────────────────────
 
         private void HandleDragInput(Keyboard keyboard, Mouse mouse)
         {
@@ -217,239 +276,30 @@ namespace Fram3d.UI.Input
             }
         }
 
-        private void HandleFocalLengthPresets(Keyboard keyboard)
-        {
-            // Number keys 1–9 = focal length presets
-            // TODO: For zoom lenses, FocalLengths is empty so this falls through to QUICK.
-            var activeLensSet = this._camera.ActiveLensSet;
-            var presets       = activeLensSet != null? activeLensSet.FocalLengths : FocalLengthPresets.QUICK;
-
-            var digitKeys = new[]
-            {
-                keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key,
-                keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key,
-                keyboard.digit7Key, keyboard.digit8Key, keyboard.digit9Key
-            };
-
-            var presetCount = presets.Length < digitKeys.Length? presets.Length : digitKeys.Length;
-
-            for (var i = 0; i < presetCount; i++)
-            {
-                if (!digitKeys[i].wasPressedThisFrame)
-                {
-                    continue;
-                }
-
-                this._camera.SetFocalLengthPreset(presets[i]);
-                break;
-            }
-        }
-
-        private bool HandleGuideShortcuts(Keyboard keyboard)
-        {
-            if (!keyboard.gKey.wasPressedThisFrame || this.compositionGuides == null)
-            {
-                return false;
-            }
-
-            if (!keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed && !keyboard.shiftKey.isPressed)
-            {
-                this.compositionGuides.Settings.ToggleAll();
-                return true;
-            }
-
-            if (keyboard.shiftKey.isPressed && !keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed)
-            {
-                this.compositionGuides.Settings.ToggleThirds();
-                return true;
-            }
-
-            if (keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed && !keyboard.shiftKey.isPressed)
-            {
-                this.compositionGuides.Settings.ToggleCenterCross();
-                return true;
-            }
-
-            if (keyboard.altKey.isPressed && !keyboard.ctrlKey.isPressed && !keyboard.shiftKey.isPressed)
-            {
-                this.compositionGuides.Settings.ToggleSafeZones();
-                return true;
-            }
-
-            return false;
-        }
-
-        // ── Event interception ─────────────────────────────────────────────
-
-        private void HandleInputEvent(InputEventPtr eventPtr, InputDevice device)
-        {
-            if (!IsStateEvent(eventPtr))
-            {
-                return;
-            }
-
-            if (device is Keyboard keyboard)
-            {
-                this.UpdateModifierState(eventPtr, keyboard);
-                return;
-            }
-
-            if (device is Mouse mouse)
-                this.EnqueueScroll(eventPtr, mouse);
-        }
-
-        private void HandleKeyboardInput(Keyboard keyboard)
-        {
-            if (this.HandleToolSwitching(keyboard)) { return; }
-
-            if (this.HandlePanelToggle(keyboard)) { return; }
-
-            if (this.HandleViewToggle(keyboard)) { return; }
-
-            if (this.HandleAspectRatio(keyboard)) { return; }
-
-            if (this.HandleReset(keyboard)) { return; }
-
-            if (this.HandleToggles(keyboard)) { return; }
-
-            if (this.HandleGuideShortcuts(keyboard)) { return; }
-
-            this.HandleFocalLengthPresets(keyboard);
-        }
-
-        private bool HandlePanelToggle(Keyboard keyboard)
-        {
-            if (!keyboard.iKey.wasPressedThisFrame
-             || keyboard.ctrlKey.isPressed
-             || keyboard.altKey.isPressed
-             || keyboard.shiftKey.isPressed
-             || this.propertiesPanel == null)
-            {
-                return false;
-            }
-
-            this.propertiesPanel.Toggle();
-            return true;
-        }
-
-        private bool HandleReset(Keyboard keyboard)
-        {
-            if (!keyboard.ctrlKey.isPressed || !keyboard.rKey.wasPressedThisFrame)
-            {
-                return false;
-            }
-
-            // If a gizmo tool is active on a selected element, reset that
-            // tool's property. Otherwise fall through to camera reset.
-            if (this.gizmoController != null && this.gizmoController.TryResetActiveTool())
-            {
-                return true;
-            }
-
-            this._camera.Reset();
-            return true;
-        }
+        // ── Scroll processing ────────────────────────────────────────────
 
         private void HandleScrollSample(ScrollSample sample)
         {
             var action = this._scrollRouter.Route(sample.X,
-                                                  sample.Y,
-                                                  sample.CtrlHeld,
-                                                  sample.AltHeld,
-                                                  sample.ShiftHeld,
-                                                  sample.CommandHeld,
-                                                  Time.time);
+                                                   sample.Y,
+                                                   sample.CtrlHeld,
+                                                   sample.AltHeld,
+                                                   sample.ShiftHeld,
+                                                   sample.CommandHeld,
+                                                   Time.time);
 
             this.ApplyScrollAction(action);
         }
 
-        private bool HandleToggles(Keyboard keyboard)
-        {
-            if (keyboard.dKey.wasPressedThisFrame && keyboard.shiftKey.isPressed && !keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed)
-            {
-                this._camera.DofEnabled = !this._camera.DofEnabled;
-                return true;
-            }
-
-            if (keyboard.leftBracketKey.wasPressedThisFrame)
-            {
-                this._camera.StepApertureWider();
-                return true;
-            }
-
-            if (keyboard.rightBracketKey.wasPressedThisFrame)
-            {
-                this._camera.StepApertureNarrower();
-                return true;
-            }
-
-            if (keyboard.sKey.wasPressedThisFrame && !keyboard.ctrlKey.isPressed && !keyboard.altKey.isPressed && !keyboard.shiftKey.isPressed)
-            {
-                this._camera.ShakeEnabled = !this._camera.ShakeEnabled;
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool HandleViewToggle(Keyboard keyboard)
-        {
-            if (!keyboard.dKey.wasPressedThisFrame || keyboard.ctrlKey.isPressed || keyboard.altKey.isPressed || keyboard.shiftKey.isPressed)
-            {
-                return false;
-            }
-
-            if (this.cameraBehaviour == null)
-            {
-                return false;
-            }
-
-            this.cameraBehaviour.ToggleDirectorView();
-            this._camera = this.cameraBehaviour.ActiveCamera;
-            return true;
-        }
-
-        private bool HandleToolSwitching(Keyboard keyboard)
-        {
-            if (this.gizmoController == null || keyboard.ctrlKey.isPressed || keyboard.altKey.isPressed || keyboard.shiftKey.isPressed)
-            {
-                return false;
-            }
-
-            if (keyboard.qKey.wasPressedThisFrame)
-            {
-                this.gizmoController.SetActiveTool(ActiveTool.SELECT);
-                return true;
-            }
-
-            if (keyboard.wKey.wasPressedThisFrame)
-            {
-                this.gizmoController.SetActiveTool(ActiveTool.TRANSLATE);
-                return true;
-            }
-
-            if (keyboard.eKey.wasPressedThisFrame)
-            {
-                this.gizmoController.SetActiveTool(ActiveTool.ROTATE);
-                return true;
-            }
-
-            if (keyboard.rKey.wasPressedThisFrame)
-            {
-                this.gizmoController.SetActiveTool(ActiveTool.SCALE);
-                return true;
-            }
-
-            return false;
-        }
-
-        // ── Scroll processing ──────────────────────────────────────────────
-
         private void ProcessQueuedScroll()
         {
             while (this._pendingScrollSamples.Count > 0)
+            {
                 this.HandleScrollSample(this._pendingScrollSamples.Dequeue());
+            }
         }
+
+        // ── Modifier state tracking ──────────────────────────────────────
 
         private void ResetModifierState()
         {
@@ -462,8 +312,6 @@ namespace Fram3d.UI.Input
             this._leftCommandHeld  = false;
             this._rightCommandHeld = false;
         }
-
-        // ── Modifier state tracking ────────────────────────────────────────
 
         private void SyncModifierState(Keyboard keyboard)
         {
@@ -495,58 +343,28 @@ namespace Fram3d.UI.Input
             TryUpdateKey(keyboard.rightCommandKey, eventPtr, ref this._rightCommandHeld);
         }
 
-        // ── Helpers ────────────────────────────────────────────────────────
-        private static bool IsStateEvent(InputEventPtr eventPtr) => eventPtr.type == StateEvent.Type || eventPtr.type == DeltaStateEvent.Type;
+        // ── Helpers ──────────────────────────────────────────────────────
+
+        private static bool IsStateEvent(InputEventPtr eventPtr) =>
+            eventPtr.type == StateEvent.Type || eventPtr.type == DeltaStateEvent.Type;
 
         private static void TryUpdateKey(KeyControl key, InputEventPtr eventPtr, ref bool held)
         {
             if (key.ReadValueFromEvent(eventPtr, out var value))
+            {
                 held = value >= 0.5f;
-        }
-
-        private void OnEnable()
-        {
-            InputSystem.onEvent += this.HandleInputEvent;
-            this.SyncModifierState(Keyboard.current);
-            this._pendingScrollSamples.Clear();
+            }
         }
 
         private bool IsPointerOverBlockingUI()
         {
-            return (this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI)
-                || (this.viewLayoutView != null && this.viewLayoutView.IsPointerOverUI);
+            var overPanel = this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI;
+            var overLayout = this.viewLayoutView != null && this.viewLayoutView.IsPointerOverUI;
+            return overPanel || overLayout;
         }
 
-        private void Start()
-        {
-            this._camera         = this.cameraBehaviour.CameraElement;
-            this.propertiesPanel ??= FindAnyObjectByType<PropertiesPanelView>();
-            this.viewLayoutView  ??= FindAnyObjectByType<ViewLayoutView>();
-        }
+        // ── Unity lifecycle ──────────────────────────────────────────────
 
-        private void Update()
-        {
-            if (this.viewCameraManager != null)
-            {
-                // Route camera movement to the active slot's camera element
-                var activeCam = this.viewCameraManager.ActiveCameraElement;
-
-                if (activeCam != null)
-                {
-                    this._camera = activeCam;
-                }
-            }
-
-            this.Tick(Keyboard.current, Mouse.current);
-        }
-
-        /// <summary>
-        /// Resyncs modifier state when the application regains focus.
-        /// Without this, event-tracked modifier booleans can get stuck
-        /// if the user releases a modifier key while another app is focused
-        /// — Unity never sees the key-up event. This is the root cause of
-        /// the "Ctrl+scroll mode flip" bug (FRA-127).
-        /// </summary>
         private void OnApplicationFocus(bool hasFocus)
         {
             if (hasFocus)
@@ -561,6 +379,39 @@ namespace Fram3d.UI.Input
             InputSystem.onEvent -= this.HandleInputEvent;
             this.ResetModifierState();
             this._pendingScrollSamples.Clear();
+        }
+
+        private void OnEnable()
+        {
+            InputSystem.onEvent += this.HandleInputEvent;
+            this.SyncModifierState(Keyboard.current);
+            this._pendingScrollSamples.Clear();
+        }
+
+        private void Start()
+        {
+            this._camera         = this.cameraBehaviour.CameraElement;
+            this.propertiesPanel ??= FindAnyObjectByType<PropertiesPanelView>();
+            this.viewLayoutView  ??= FindAnyObjectByType<ViewLayoutView>();
+
+            this._keyboardRouter.Configure(this.cameraBehaviour,
+                                            this.compositionGuides,
+                                            this.gizmoController);
+        }
+
+        private void Update()
+        {
+            if (this.viewCameraManager != null)
+            {
+                var activeCam = this.viewCameraManager.ActiveCameraElement;
+
+                if (activeCam != null)
+                {
+                    this._camera = activeCam;
+                }
+            }
+
+            this.Tick(Keyboard.current, Mouse.current);
         }
 
 

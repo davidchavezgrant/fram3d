@@ -1,0 +1,228 @@
+using Fram3d.Core.Camera;
+using Fram3d.Core.Scene;
+using Fram3d.Core.Viewport;
+using Fram3d.Engine.Integration;
+using Fram3d.UI.Views;
+using UnityEngine.InputSystem;
+namespace Fram3d.UI.Input
+{
+    /// <summary>
+    /// Routes keyboard shortcuts to camera, gizmo, overlay, and panel actions.
+    /// Pure routing — no state, no scroll handling, no modifier tracking.
+    /// </summary>
+    public sealed class KeyboardShortcutRouter
+    {
+        private CameraBehaviour    _cameraBehaviour;
+        private CompositionGuideView _compositionGuides;
+        private GizmoController    _gizmoController;
+
+        public void Configure(CameraBehaviour    cameraBehaviour,
+                              CompositionGuideView compositionGuides,
+                              GizmoController    gizmoController)
+        {
+            this._cameraBehaviour  = cameraBehaviour;
+            this._compositionGuides = compositionGuides;
+            this._gizmoController  = gizmoController;
+        }
+
+        /// <summary>
+        /// Processes keyboard shortcuts for the given camera.
+        /// Returns true if a shortcut was handled (early-exit chain).
+        /// </summary>
+        public bool Route(Keyboard keyboard, CameraElement camera)
+        {
+            if (this.HandleToolSwitching(keyboard)) { return true; }
+
+            if (this.HandleAspectRatio(keyboard)) { return true; }
+
+            if (this.HandleReset(keyboard, camera)) { return true; }
+
+            if (this.HandleToggles(keyboard, camera)) { return true; }
+
+            if (this.HandleGuideShortcuts(keyboard)) { return true; }
+
+            this.HandleFocalLengthPresets(keyboard, camera);
+            return false;
+        }
+
+        private bool HandleAspectRatio(Keyboard keyboard)
+        {
+            if (!keyboard.aKey.wasPressedThisFrame
+             || keyboard.ctrlKey.isPressed
+             || keyboard.altKey.isPressed)
+            {
+                return false;
+            }
+
+            if (this._cameraBehaviour == null)
+            {
+                return false;
+            }
+
+            if (keyboard.shiftKey.isPressed)
+            {
+                this._cameraBehaviour.CycleAspectRatioBackward();
+            }
+            else
+            {
+                this._cameraBehaviour.CycleAspectRatioForward();
+            }
+
+            return true;
+        }
+
+        private void HandleFocalLengthPresets(Keyboard keyboard, CameraElement camera)
+        {
+            var activeLensSet = camera.ActiveLensSet;
+            var presets       = activeLensSet != null
+                ? activeLensSet.FocalLengths
+                : FocalLengthPresets.QUICK;
+
+            var digitKeys = new[]
+            {
+                keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key,
+                keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key,
+                keyboard.digit7Key, keyboard.digit8Key, keyboard.digit9Key
+            };
+
+            var presetCount = presets.Length < digitKeys.Length
+                ? presets.Length
+                : digitKeys.Length;
+
+            for (var i = 0; i < presetCount; i++)
+            {
+                if (!digitKeys[i].wasPressedThisFrame)
+                {
+                    continue;
+                }
+
+                camera.SetFocalLengthPreset(presets[i]);
+                break;
+            }
+        }
+
+        private bool HandleGuideShortcuts(Keyboard keyboard)
+        {
+            if (!keyboard.gKey.wasPressedThisFrame || this._compositionGuides == null)
+            {
+                return false;
+            }
+
+            var ctrl  = keyboard.ctrlKey.isPressed;
+            var alt   = keyboard.altKey.isPressed;
+            var shift = keyboard.shiftKey.isPressed;
+
+            if (!ctrl && !alt && !shift)
+            {
+                this._compositionGuides.Settings.ToggleAll();
+                return true;
+            }
+
+            if (shift && !ctrl && !alt)
+            {
+                this._compositionGuides.Settings.ToggleThirds();
+                return true;
+            }
+
+            if (ctrl && !alt && !shift)
+            {
+                this._compositionGuides.Settings.ToggleCenterCross();
+                return true;
+            }
+
+            if (alt && !ctrl && !shift)
+            {
+                this._compositionGuides.Settings.ToggleSafeZones();
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool HandleReset(Keyboard keyboard, CameraElement camera)
+        {
+            if (!keyboard.ctrlKey.isPressed || !keyboard.rKey.wasPressedThisFrame)
+            {
+                return false;
+            }
+
+            if (this._gizmoController != null && this._gizmoController.TryResetActiveTool())
+            {
+                return true;
+            }
+
+            camera.Reset();
+            return true;
+        }
+
+        private bool HandleToggles(Keyboard keyboard, CameraElement camera)
+        {
+            var ctrl  = keyboard.ctrlKey.isPressed;
+            var alt   = keyboard.altKey.isPressed;
+            var shift = keyboard.shiftKey.isPressed;
+
+            if (keyboard.dKey.wasPressedThisFrame && shift && !ctrl && !alt)
+            {
+                camera.DofEnabled = !camera.DofEnabled;
+                return true;
+            }
+
+            if (keyboard.leftBracketKey.wasPressedThisFrame)
+            {
+                camera.StepApertureWider();
+                return true;
+            }
+
+            if (keyboard.rightBracketKey.wasPressedThisFrame)
+            {
+                camera.StepApertureNarrower();
+                return true;
+            }
+
+            if (keyboard.sKey.wasPressedThisFrame && !ctrl && !alt && !shift)
+            {
+                camera.ShakeEnabled = !camera.ShakeEnabled;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool HandleToolSwitching(Keyboard keyboard)
+        {
+            if (this._gizmoController == null
+             || keyboard.ctrlKey.isPressed
+             || keyboard.altKey.isPressed
+             || keyboard.shiftKey.isPressed)
+            {
+                return false;
+            }
+
+            if (keyboard.qKey.wasPressedThisFrame)
+            {
+                this._gizmoController.SetActiveTool(ActiveTool.SELECT);
+                return true;
+            }
+
+            if (keyboard.wKey.wasPressedThisFrame)
+            {
+                this._gizmoController.SetActiveTool(ActiveTool.TRANSLATE);
+                return true;
+            }
+
+            if (keyboard.eKey.wasPressedThisFrame)
+            {
+                this._gizmoController.SetActiveTool(ActiveTool.ROTATE);
+                return true;
+            }
+
+            if (keyboard.rKey.wasPressedThisFrame)
+            {
+                this._gizmoController.SetActiveTool(ActiveTool.SCALE);
+                return true;
+            }
+
+            return false;
+        }
+    }
+}

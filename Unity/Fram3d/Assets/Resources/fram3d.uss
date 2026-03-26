@@ -464,6 +464,7 @@
     position: relative;
     overflow: hidden;
     background-color: rgb(34, 34, 34);
+    cursor: text;
 }
 
 .timeline-ruler__tick {
@@ -514,6 +515,11 @@
     flex-grow: 1;
     position: relative;
     overflow: hidden;
+    cursor: initial;
+}
+
+.shot-block {
+    cursor: link;
 }
 
 .timeline-shot__add-button {
@@ -573,6 +579,7 @@
     border-color: rgba(150, 150, 150, 0.3);
     border-radius: 3px;
     min-width: 30px;
+    cursor: grab;
 }
 
 .timeline-zoom-playhead {

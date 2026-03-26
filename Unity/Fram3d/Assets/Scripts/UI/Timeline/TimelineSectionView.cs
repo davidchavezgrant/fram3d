@@ -642,14 +642,7 @@ namespace Fram3d.UI.Timeline
             this._trackContent.RegisterCallback<WheelEvent>(this.OnStripWheel);
             this._trackContent.RegisterCallback<PointerDownEvent>(evt =>
             {
-                if (evt.button == 0)
-                {
-                    this._isScrubbing = true;
-                    this.ScrubToPixel(evt.localPosition.x);
-                    this._trackContent.CapturePointer(evt.pointerId);
-                    evt.StopPropagation();
-                }
-                else if (evt.button == 2)
+                if (evt.button == 2)
                 {
                     this._isPanning   = true;
                     this._panStartPos = evt.localPosition;
@@ -658,11 +651,6 @@ namespace Fram3d.UI.Timeline
             });
             this._trackContent.RegisterCallback<PointerMoveEvent>(evt =>
             {
-                if (this._isScrubbing && this._viewState != null)
-                {
-                    this.ScrubToPixel(evt.localPosition.x);
-                }
-
                 if (this._isPanning && this._viewState != null)
                 {
                     var delta = evt.localPosition.x - this._panStartPos.x;
@@ -676,12 +664,6 @@ namespace Fram3d.UI.Timeline
             });
             this._trackContent.RegisterCallback<PointerUpEvent>(evt =>
             {
-                if (evt.button == 0 && this._isScrubbing)
-                {
-                    this._isScrubbing = false;
-                    this._trackContent.ReleasePointer(evt.pointerId);
-                }
-
                 if (evt.button == 2)
                 {
                     this._isPanning = false;
@@ -1219,13 +1201,43 @@ namespace Fram3d.UI.Timeline
         {
             this._shotController.Registry.SetCurrentShot(block.Shot.Id);
 
-            if (this._viewState != null)
+            if (this._viewState == null)
             {
-                var reg   = this._shotController.Registry;
-                var start = reg.GetGlobalStartTime(block.Shot.Id).Seconds;
-                var end   = reg.GetGlobalEndTime(block.Shot.Id).Seconds;
+                return;
+            }
+
+            var reg           = this._shotController.Registry;
+            var shotIndex     = reg.IndexOf(block.Shot.Id);
+            var start         = reg.GetGlobalStartTime(block.Shot.Id).Seconds;
+            var end           = reg.GetGlobalEndTime(block.Shot.Id).Seconds;
+            var duration      = end - start;
+            var totalDuration = reg.TotalDuration;
+            var padding       = duration * 0.08;
+            var isFirst       = shotIndex == 0;
+            var isLast        = shotIndex == reg.Count - 1;
+
+            if (reg.Count == 1)
+            {
+                // Single shot: no padding, span full timeline
+                this._viewState.FitAll(totalDuration);
+            }
+            else if (isFirst)
+            {
+                // First shot: no left padding, right padding for next shot
+                this._viewState.SetViewRange(0, end + padding);
+            }
+            else if (isLast)
+            {
+                // Last shot: left padding for previous shot, extend to end
+                this._viewState.SetViewRange(start - padding, totalDuration);
+            }
+            else
+            {
+                // Middle shot: padding both sides
                 this._viewState.FitRange(start, end);
             }
+
+            this.RefreshAll();
         }
 
         // ══════════════════════════════════════════════════════════════════

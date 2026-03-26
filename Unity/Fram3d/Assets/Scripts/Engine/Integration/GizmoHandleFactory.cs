@@ -19,9 +19,9 @@ namespace Fram3d.Engine.Integration
                                                    0.2f,
                                                    1f);
 
-        private static readonly Color AXIS_Z = new(0.2f,
-                                                   0.5f,
-                                                   0.95f,
+        private static readonly Color AXIS_Z = new(0.15f,
+                                                   0.3f,
+                                                   0.9f,
                                                    1f);
 
         private static readonly Color SCALE_COLOR = new(0.85f,

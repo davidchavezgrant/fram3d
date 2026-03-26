@@ -97,7 +97,7 @@ namespace Fram3d.UI.Input
         /// (Alt+Left = orbit, Middle = pan/tilt). Hover raycasts are skipped
         /// during these gestures to avoid expensive per-frame hit testing.
         /// </summary>
-        private static bool IsCameraDragging(Keyboard keyboard, Mouse mouse)
+        private bool IsCameraDragging(Keyboard keyboard, Mouse mouse)
         {
             var altHeld    = keyboard.altKey.isPressed;
             var leftHeld   = mouse.leftButton.isPressed;

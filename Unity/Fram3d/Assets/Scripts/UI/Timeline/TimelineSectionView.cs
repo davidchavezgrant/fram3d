@@ -43,18 +43,21 @@ namespace Fram3d.UI.Timeline
 
         // ── Ruler ──
         private VisualElement _rulerContent;
+        private VisualElement _rulerOutOfRange;
         private VisualElement _rulerPlayhead;
 
         // ── Shot track ──
+        private VisualElement _dropIndicator;
         private VisualElement _shotLabelColumn;
         private VisualElement _shotStrip;
+        private VisualElement _shotStripOutOfRange;
         private VisualElement _shotStripPlayhead;
         private Label         _totalLabel;
-        private VisualElement _dropIndicator;
 
         // ── Track area ──
-        private VisualElement _trackLabels;
         private VisualElement _trackContent;
+        private VisualElement _trackLabels;
+        private VisualElement _trackOutOfRange;
         private VisualElement _trackPlayhead;
 
         // ── Zoom bar ──
@@ -395,6 +398,7 @@ namespace Fram3d.UI.Timeline
             this.HandlePlayback();
             this.HandleInputSystemScroll();
             this.UpdateBlockWidths();
+            this.UpdateOutOfRangeOverlays();
             this.UpdatePlayhead();
             this.UpdateRuler();
             this.UpdateTransport();
@@ -528,6 +532,11 @@ namespace Fram3d.UI.Timeline
 
             this._rulerContent.Add(this._rulerPlayhead);
 
+            this._rulerOutOfRange = new VisualElement();
+            this._rulerOutOfRange.AddToClassList("timeline-out-of-range");
+            this._rulerOutOfRange.pickingMode = PickingMode.Ignore;
+            this._rulerContent.Add(this._rulerOutOfRange);
+
             // Zoom/pan on ruler
             this._rulerContent.RegisterCallback<WheelEvent>(this.OnStripWheel);
 
@@ -617,6 +626,11 @@ namespace Fram3d.UI.Timeline
             this._shotStripPlayhead.style.display = DisplayStyle.None;
             this._shotStrip.Add(this._shotStripPlayhead);
 
+            this._shotStripOutOfRange = new VisualElement();
+            this._shotStripOutOfRange.AddToClassList("timeline-out-of-range");
+            this._shotStripOutOfRange.pickingMode = PickingMode.Ignore;
+            this._shotStrip.Add(this._shotStripOutOfRange);
+
             this._section.Add(row);
         }
 
@@ -637,6 +651,11 @@ namespace Fram3d.UI.Timeline
             this._trackPlayhead.AddToClassList("timeline-playhead");
             this._trackPlayhead.style.display = DisplayStyle.None;
             this._trackContent.Add(this._trackPlayhead);
+
+            this._trackOutOfRange = new VisualElement();
+            this._trackOutOfRange.AddToClassList("timeline-out-of-range");
+            this._trackOutOfRange.pickingMode = PickingMode.Ignore;
+            this._trackContent.Add(this._trackOutOfRange);
 
             // Zoom/pan on track area
             this._trackContent.RegisterCallback<WheelEvent>(this.OnStripWheel);
@@ -808,11 +827,13 @@ namespace Fram3d.UI.Timeline
                 }
             }
 
+            var totalDuration   = this._shotController.Registry.TotalDuration;
             var visibleDuration = this._viewState.VisibleDuration;
             var tickInterval    = this.ComputeTickInterval(visibleDuration);
             var majorInterval   = tickInterval * 5;
             var pxPerFrame      = this._viewState.PixelsPerSecond * FRAME_DURATION;
             var showFrameTicks  = pxPerFrame >= 4.0;
+            var tickEnd         = Math.Min(this._viewState.ViewEnd, totalDuration);
 
             // Find first tick within view
             var firstTick = Math.Ceiling(this._viewState.ViewStart / tickInterval) * tickInterval;
@@ -822,7 +843,7 @@ namespace Fram3d.UI.Timeline
             {
                 var firstFrame = Math.Ceiling(this._viewState.ViewStart / FRAME_DURATION) * FRAME_DURATION;
 
-                for (var t = firstFrame; t <= this._viewState.ViewEnd; t += FRAME_DURATION)
+                for (var t = firstFrame; t <= tickEnd; t += FRAME_DURATION)
                 {
                     if (t < 0)
                     {
@@ -841,8 +862,8 @@ namespace Fram3d.UI.Timeline
                 }
             }
 
-            // Major/minor ticks
-            for (var t = firstTick; t <= this._viewState.ViewEnd; t += tickInterval)
+            // Major/minor ticks — only within playable range
+            for (var t = firstTick; t <= tickEnd; t += tickInterval)
             {
                 if (t < 0)
                 {
@@ -957,6 +978,48 @@ namespace Fram3d.UI.Timeline
         }
 
         // ══════════════════════════════════════════════════════════════════
+        // Out-of-range overlays
+        // ══════════════════════════════════════════════════════════════════
+
+        private void UpdateOutOfRangeOverlays()
+        {
+            if (this._viewState == null)
+            {
+                return;
+            }
+
+            var totalDuration = this._shotController.Registry.TotalDuration;
+            var endPx         = (float)this._viewState.TimeToPixel(totalDuration);
+
+            this.PositionOutOfRange(this._rulerOutOfRange, endPx);
+            this.PositionOutOfRange(this._shotStripOutOfRange, endPx);
+            this.PositionOutOfRange(this._trackOutOfRange, endPx);
+        }
+
+        private void PositionOutOfRange(VisualElement overlay, float startPx)
+        {
+            if (overlay == null)
+            {
+                return;
+            }
+
+            overlay.style.position = Position.Absolute;
+            overlay.style.left     = startPx;
+            overlay.style.top      = 0;
+            overlay.style.bottom   = 0;
+            overlay.style.right    = 0;
+
+            if (startPx >= 0)
+            {
+                overlay.style.display = DisplayStyle.Flex;
+            }
+            else
+            {
+                overlay.style.display = DisplayStyle.None;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════════
         // Playhead
         // ══════════════════════════════════════════════════════════════════
 
@@ -967,8 +1030,22 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            var time = this._viewState.PixelToTime(px);
+            var stripWidth    = this._rulerContent.resolvedStyle.width;
             var totalDuration = this._shotController.Registry.TotalDuration;
+
+            // When dragging past the edges, pan the view proportionally
+            if (px < 0 && !float.IsNaN(stripWidth))
+            {
+                var overshoot = -px;
+                this._viewState.Pan(-overshoot);
+            }
+            else if (px > stripWidth && !float.IsNaN(stripWidth))
+            {
+                var overshoot = px - stripWidth;
+                this._viewState.Pan(overshoot);
+            }
+
+            var time = this._viewState.PixelToTime(px);
 
             // Snap to frame boundary
             var snappedFrame = Math.Round(time * FPS) / FPS;
@@ -990,15 +1067,13 @@ namespace Fram3d.UI.Timeline
                 var localTime = result.Value.localTime;
                 var position  = shot.EvaluateCameraPosition(localTime);
                 var rotation  = shot.EvaluateCameraRotation(localTime);
+
                 if (this._cameraBehaviour != null)
                 {
                     this._cameraBehaviour.ShotCamera.Position = position;
                     this._cameraBehaviour.ShotCamera.Rotation = rotation;
                 }
             }
-
-            // Auto-scroll if scrubbing past the visible edge
-            this._viewState.EnsureVisible(this._currentGlobalTime);
 
             this.UpdatePlayhead();
             this.UpdateTransport();

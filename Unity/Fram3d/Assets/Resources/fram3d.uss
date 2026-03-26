@@ -481,6 +481,16 @@
     background-color: rgb(50, 50, 50);
 }
 
+/* ── Out-of-range overlay (past total duration) ──────────────────── */
+
+.timeline-out-of-range {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.35);
+    z-index: 5;
+}
+
 .timeline-playhead {
     position: absolute;
     top: 0;

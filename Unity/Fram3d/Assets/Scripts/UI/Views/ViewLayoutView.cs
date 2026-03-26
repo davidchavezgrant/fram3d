@@ -234,11 +234,19 @@ namespace Fram3d.UI.Views
             var bottomInset = this._viewCameraManager.CameraBehaviour.BottomInsetPixels;
             var scale       = rootW > 0 ? Screen.width / rootW : 1f;
             var bottomCss   = bottomInset / scale;
+            var availableCss = rootH - bottomCss;
+            var bottomNorm   = Screen.height > 0 ? bottomInset / Screen.height : 0f;
+            var normRange    = 1f - bottomNorm;
+
+            if (normRange <= 0)
+            {
+                normRange = 1f;
+            }
 
             this._activeOutline.style.left   = vpRect.x * rootW;
-            this._activeOutline.style.top    = (1f - vpRect.y - vpRect.height) * (rootH - bottomCss);
+            this._activeOutline.style.top    = (1f - vpRect.y - vpRect.height) / normRange * availableCss;
             this._activeOutline.style.width  = vpRect.width * rootW;
-            this._activeOutline.style.height = vpRect.height * (rootH - bottomCss);
+            this._activeOutline.style.height = vpRect.height / normRange * availableCss;
         }
 
         private void PositionLayoutChooser()
@@ -298,16 +306,24 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            var bottomInset  = this._viewCameraManager.CameraBehaviour.BottomInsetPixels;
-            var screenScale  = Screen.width > 0 ? rootW / Screen.width : 1f;
-            var bottomCss    = bottomInset * screenScale;
+            var bottomInsetPx = this._viewCameraManager.CameraBehaviour.BottomInsetPixels;
+            var screenScale   = Screen.width > 0 ? rootW / Screen.width : 1f;
+            var bottomCss     = bottomInsetPx * screenScale;
+            var availCss      = rootH - bottomCss;
+            var bNorm         = Screen.height > 0 ? bottomInsetPx / Screen.height : 0f;
+            var nRange        = 1f - bNorm;
+
+            if (nRange <= 0)
+            {
+                nRange = 1f;
+            }
 
             for (var i = 0; i < this._viewHeaders.Length && i < count; i++)
             {
                 var vpRect = this._viewCameraManager.GetViewportRect(i);
 
                 this._viewHeaders[i].Root.style.left  = vpRect.x * rootW;
-                this._viewHeaders[i].Root.style.top   = (1f - vpRect.y - vpRect.height) * (rootH - bottomCss);
+                this._viewHeaders[i].Root.style.top   = (1f - vpRect.y - vpRect.height) / nRange * availCss;
                 this._viewHeaders[i].Root.style.width = vpRect.width * rootW;
             }
         }

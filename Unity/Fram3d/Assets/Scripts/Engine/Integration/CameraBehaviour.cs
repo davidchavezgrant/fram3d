@@ -15,6 +15,9 @@ namespace Fram3d.Engine.Integration
         private const float          SHAKE_ROTATION_SCALE    = 0.5f;
         private const float          SHAKE_TIME_OFFSET       = 100f;
         private       CameraElement    _cameraElement;
+
+        [SerializeField]
+        private Shader wireframeShader;
         private       CameraDatabase   _database;
         private       CameraElement    _directorCamera;
         private       bool             _directorInitialized;
@@ -253,11 +256,27 @@ namespace Fram3d.Engine.Integration
 
         private void CreateFrustumWireframe()
         {
+            var shader = this.wireframeShader;
+
+            if (shader == null)
+            {
+                shader = Shader.Find("Unlit/Color");
+            }
+
+            if (shader == null)
+            {
+                Debug.LogWarning("CameraBehaviour: No wireframe shader available. Frustum wireframe disabled.");
+                return;
+            }
+
+            var material = new Material(shader);
+            material.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+
             var go = new GameObject("Shot Camera Frustum");
             var behaviour = go.AddComponent<ElementBehaviour>();
             behaviour.Element = this._cameraElement;
             this._frustumWireframe = go.AddComponent<FrustumWireframe>();
-            this._frustumWireframe.Initialize(this._cameraElement);
+            this._frustumWireframe.Initialize(this._cameraElement, material);
             go.SetActive(false);
         }
 

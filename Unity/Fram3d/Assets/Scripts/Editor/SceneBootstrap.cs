@@ -124,11 +124,19 @@ namespace Fram3d.Editor
                 inputHandler = cameraGameObject.AddComponent<CameraInputHandler>();
             }
 
-            // Wire the serialized reference
+            // Wire the serialized references
             var serializedObject = new SerializedObject(inputHandler);
             var prop             = serializedObject.FindProperty("cameraBehaviour");
             prop.objectReferenceValue = cameraGameObject.GetComponent<CameraBehaviour>();
             serializedObject.ApplyModifiedProperties();
+
+            // Wire the wireframe shader on CameraBehaviour
+            var camBehaviour = cameraGameObject.GetComponent<CameraBehaviour>();
+            var camSo        = new SerializedObject(camBehaviour);
+            var shaderProp   = camSo.FindProperty("wireframeShader");
+            shaderProp.objectReferenceValue = Shader.Find("Unlit/Color");
+            camSo.ApplyModifiedProperties();
+
             EditorUtility.SetDirty(cameraGameObject);
         }
 

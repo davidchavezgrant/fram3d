@@ -21,24 +21,14 @@ namespace Fram3d.Engine.Integration
         private MeshFilter    _meshFilter;
         private MeshRenderer  _meshRenderer;
 
-        public void Initialize(CameraElement shotCamera) => this._shotCamera = shotCamera;
-
-        private void Start()
+        public void Initialize(CameraElement shotCamera, Material material)
         {
+            this._shotCamera = shotCamera;
+
             this._meshFilter   = this.gameObject.AddComponent<MeshFilter>();
             this._meshRenderer = this.gameObject.AddComponent<MeshRenderer>();
             this._collider     = this.gameObject.AddComponent<BoxCollider>();
 
-            var shader = Shader.Find("Unlit/Color") ?? Shader.Find("Universal Render Pipeline/Unlit");
-
-            if (shader == null)
-            {
-                Debug.LogError("FrustumWireframe: Could not find Unlit/Color or URP/Unlit shader.");
-                return;
-            }
-
-            var material = new Material(shader);
-            material.color                  = WIREFRAME_COLOR;
             this._meshRenderer.sharedMaterial = material;
             this.RebuildMesh();
         }

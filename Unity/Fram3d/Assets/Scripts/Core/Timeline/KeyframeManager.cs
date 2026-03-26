@@ -24,9 +24,8 @@ namespace Fram3d.Core.Timeline
         public IReadOnlyList<Keyframe<T>> Keyframes => this._sorted;
 
         /// <summary>
-        /// Adds a keyframe. If a keyframe with the same ID already exists, it is replaced.
-        /// If a keyframe already exists at the same time (different ID), the existing one
-        /// is removed first (merge behavior per spec 3.2.4).
+        /// Adds a new keyframe. Throws if a keyframe with the same ID already exists.
+        /// Throws if a keyframe already exists at the same time.
         /// </summary>
         public void Add(Keyframe<T> keyframe)
         {
@@ -35,20 +34,20 @@ namespace Fram3d.Core.Timeline
                 throw new ArgumentNullException(nameof(keyframe));
             }
 
-            // Remove existing keyframe with same ID (update case)
             if (this._byId.ContainsKey(keyframe.Id))
             {
-                this.RemoveById(keyframe.Id);
+                throw new InvalidOperationException(
+                    $"Keyframe with ID {keyframe.Id} already exists. Use Update to replace."
+                );
             }
 
-            // Remove existing keyframe at same time (merge behavior)
             var existingAtTime = this._sorted.FindIndex(k => k.Time == keyframe.Time);
 
             if (existingAtTime >= 0)
             {
-                var existing = this._sorted[existingAtTime];
-                this._byId.Remove(existing.Id);
-                this._sorted.RemoveAt(existingAtTime);
+                throw new InvalidOperationException(
+                    $"Keyframe already exists at time {keyframe.Time}. Use SetOrMerge to replace."
+                );
             }
 
             this._byId[keyframe.Id] = keyframe;
@@ -133,7 +132,9 @@ namespace Fram3d.Core.Timeline
         /// </summary>
         public IReadOnlyList<Keyframe<T>> GetInRange(TimePosition start, TimePosition end)
         {
-            return this._sorted.Where(k => k.Time >= start && k.Time <= end).ToList();
+            return this._sorted
+                .Where(k => k.Time >= start && k.Time <= end)
+                .ToList();
         }
 
         /// <summary>
@@ -149,6 +150,62 @@ namespace Fram3d.Core.Timeline
             this._byId.Remove(id);
             this._sorted.Remove(keyframe);
             return true;
+        }
+
+        /// <summary>
+        /// Adds or replaces. If a keyframe with the same ID exists, it is replaced.
+        /// If a different keyframe exists at the same time, the existing one is
+        /// removed first (merge behavior per spec 3.2.4: dragging a keyframe
+        /// onto another merges them).
+        /// </summary>
+        public void SetOrMerge(Keyframe<T> keyframe)
+        {
+            if (keyframe == null)
+            {
+                throw new ArgumentNullException(nameof(keyframe));
+            }
+
+            // Remove existing keyframe with same ID (update case)
+            if (this._byId.ContainsKey(keyframe.Id))
+            {
+                this.RemoveById(keyframe.Id);
+            }
+
+            // Remove existing keyframe at same time (merge behavior)
+            var existingAtTime = this._sorted.FindIndex(k => k.Time == keyframe.Time);
+
+            if (existingAtTime >= 0)
+            {
+                var existing = this._sorted[existingAtTime];
+                this._byId.Remove(existing.Id);
+                this._sorted.RemoveAt(existingAtTime);
+            }
+
+            this._byId[keyframe.Id] = keyframe;
+            this.InsertSorted(keyframe);
+        }
+
+        /// <summary>
+        /// Replaces an existing keyframe by ID. The keyframe must already exist.
+        /// The replacement can have a different time and/or value but keeps the same ID.
+        /// </summary>
+        public void Update(Keyframe<T> keyframe)
+        {
+            if (keyframe == null)
+            {
+                throw new ArgumentNullException(nameof(keyframe));
+            }
+
+            if (!this._byId.ContainsKey(keyframe.Id))
+            {
+                throw new InvalidOperationException(
+                    $"Keyframe with ID {keyframe.Id} not found. Use Add for new keyframes."
+                );
+            }
+
+            this.RemoveById(keyframe.Id);
+            this._byId[keyframe.Id] = keyframe;
+            this.InsertSorted(keyframe);
         }
 
         private void InsertSorted(Keyframe<T> keyframe)

@@ -46,63 +46,65 @@ namespace Fram3d.Core.Viewport
         /// </summary>
         public UnmaskedRect ComputeUnmaskedRect(float viewWidth, float viewHeight, SensorMode activeSensorMode = null)
         {
+            var fullView = new UnmaskedRect(0f, 0f, viewWidth, viewHeight);
+
             if (viewWidth <= 0f || viewHeight <= 0f)
             {
-                return new UnmaskedRect(0f,
-                                        0f,
-                                        viewWidth,
-                                        viewHeight);
+                return fullView;
             }
 
-            float targetRatio;
+            var targetRatio = this.ResolveTargetRatio(activeSensorMode);
 
+            if (targetRatio == null)
+            {
+                return fullView;
+            }
+
+            return FitRatioToView(targetRatio.Value, viewWidth, viewHeight);
+        }
+
+        /// <summary>
+        /// Determines the target aspect ratio to apply. Returns null for
+        /// Full Screen without a sensor mode (no bars needed).
+        /// </summary>
+        private float? ResolveTargetRatio(SensorMode activeSensorMode)
+        {
             if (this.Value != null)
             {
-                // Named ratio — fit directly to window
-                targetRatio = this.Value.Value;
-            }
-            else if (activeSensorMode != null && activeSensorMode.AspectRatio > 0f)
-            {
-                // Full Screen with sensor mode → open gate
-                targetRatio = activeSensorMode.AspectRatio;
-            }
-            else
-            {
-                // Full Screen without sensor mode → no bars
-                return new UnmaskedRect(0f,
-                                        0f,
-                                        viewWidth,
-                                        viewHeight);
+                return this.Value.Value;
             }
 
+            if (activeSensorMode != null && activeSensorMode.AspectRatio > 0f)
+            {
+                return activeSensorMode.AspectRatio;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Fits a target aspect ratio into a view, centering with letterbox
+        /// or pillarbox bars as needed.
+        /// </summary>
+        private static UnmaskedRect FitRatioToView(float targetRatio, float viewWidth, float viewHeight)
+        {
             var viewRatio = viewWidth / viewHeight;
 
             if (targetRatio > viewRatio)
             {
                 var height = viewWidth             / targetRatio;
                 var y      = (viewHeight - height) / 2f;
-
-                return new UnmaskedRect(0f,
-                                        y,
-                                        viewWidth,
-                                        height);
+                return new UnmaskedRect(0f, y, viewWidth, height);
             }
 
             if (targetRatio < viewRatio)
             {
                 var width = viewHeight          * targetRatio;
                 var x     = (viewWidth - width) / 2f;
-
-                return new UnmaskedRect(x,
-                                        0f,
-                                        width,
-                                        viewHeight);
+                return new UnmaskedRect(x, 0f, width, viewHeight);
             }
 
-            return new UnmaskedRect(0f,
-                                    0f,
-                                    viewWidth,
-                                    viewHeight);
+            return new UnmaskedRect(0f, 0f, viewWidth, viewHeight);
         }
 
         public AspectRatio Next()

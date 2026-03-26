@@ -127,46 +127,4 @@ namespace Fram3d.Core.Camera
             }
         }
     }
-
-
-    /// <summary>
-    /// Raw deserialized camera body from JSON. Field names use PascalCase
-    /// for Core; the Engine deserializer maps from snake_case JSON fields.
-    /// </summary>
-    public sealed class RawCamera
-    {
-        public string          Format;
-        public string          Manufacturer;
-        public string          Mount;
-        public string          Name;
-        public int[]           NativeResolution;
-        public float           SensorHeightMm;
-        public RawSensorMode[] SensorModes;
-        public float           SensorWidthMm;
-        public int[]           SupportedFps;
-        public int             Year;
-    }
-
-
-    public sealed class RawLens
-    {
-        public float   CloseFocusM;
-        public float   FocalLengthMm;
-        public float[] FocalRangeMm;
-        public bool    IsAnamorphic;
-        public float   MaxApertureTstop;
-        public string  Name;
-        public string  Set;
-        public float   SqueezeFactor;
-        public string  Type;
-    }
-
-
-    public sealed class RawSensorMode
-    {
-        public int    MaxFps;
-        public string Name;
-        public int[]  Resolution;
-        public float[] SensorAreaMm;
-    }
 }

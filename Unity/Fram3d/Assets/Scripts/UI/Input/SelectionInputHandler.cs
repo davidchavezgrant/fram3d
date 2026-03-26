@@ -76,11 +76,33 @@ namespace Fram3d.UI.Input
                 return;
             }
 
+            // Skip hover during camera drag (orbit, pan/tilt) — avoid expensive
+            // raycasts that cause frame drops during orbit.
+            if (this.IsCameraDragging(keyboard, mouse))
+            {
+                this.ClearInteractiveHover();
+                this.ResetCustomCursor();
+                return;
+            }
+
             this.HandleDuplicate(keyboard);
             this.UpdateHover(mousePosition);
             this.UpdateGizmoHover(mousePosition);
             this.UpdateCursor();
             this.UpdateSelection(mouse, keyboard, mousePosition);
+        }
+
+        /// <summary>
+        /// Returns true when the user is performing a camera drag gesture
+        /// (Alt+Left = orbit, Middle = pan/tilt). Hover raycasts are skipped
+        /// during these gestures to avoid expensive per-frame hit testing.
+        /// </summary>
+        private static bool IsCameraDragging(Keyboard keyboard, Mouse mouse)
+        {
+            var altHeld    = keyboard.altKey.isPressed;
+            var leftHeld   = mouse.leftButton.isPressed;
+            var middleHeld = mouse.middleButton.isPressed;
+            return (altHeld && leftHeld) || middleHeld;
         }
 
         private void ClearInteractiveHover()

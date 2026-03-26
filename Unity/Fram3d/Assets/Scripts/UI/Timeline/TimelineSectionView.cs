@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Fram3d.Core.Common;
 using Fram3d.Core.Shot;
+using Fram3d.Core.Timeline;
 using Fram3d.Engine.Cursor;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
@@ -107,12 +108,11 @@ namespace Fram3d.UI.Timeline
         private bool  _isZoomDragging;
         private float _zoomDragStartX;
 
-        // ── Playback state ──
-        private bool   _isPlaying;
+        // ── Playhead (Core) ──
+        private Playhead _playhead;
 
         // ── Scrub state ──
-        private double _currentGlobalTime;
-        private bool   _isScrubbing;
+        private bool _isScrubbing;
 
         // ── Tooltip state ──
         private ShotBlockElement _hoveredBlock;
@@ -163,7 +163,7 @@ namespace Fram3d.UI.Timeline
             }
 
             // Zoom centered on the playhead
-            this._viewState.ZoomAtPoint(this._currentGlobalTime, 1f);
+            this._viewState.ZoomAtPoint(this._playhead.CurrentTime, 1f);
             this.RefreshAll();
         }
 
@@ -174,7 +174,7 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            this._viewState.ZoomAtPoint(this._currentGlobalTime, -1f);
+            this._viewState.ZoomAtPoint(this._playhead.CurrentTime, -1f);
             this.RefreshAll();
         }
 
@@ -213,96 +213,92 @@ namespace Fram3d.UI.Timeline
 
         public void TogglePlayback()
         {
-            // If at end and user presses play, restart from beginning
-            if (!this._isPlaying && this._shotController != null)
+            var totalDuration = this._shotController.Registry.TotalDuration;
+            var wasAtEnd      = this._playhead.CurrentTime >= totalDuration - this._playhead.FrameRate.FrameDuration;
+            var isNowPlaying  = this._playhead.TogglePlayback(totalDuration);
+
+            // If restarted from end, scroll view back to beginning
+            if (isNowPlaying && wasAtEnd && this._viewState != null)
             {
-                var totalDuration = this._shotController.Registry.TotalDuration;
-
-                if (this._currentGlobalTime >= totalDuration - FRAME_DURATION)
-                {
-                    this._currentGlobalTime = 0;
-
-                    // Scroll view back to the beginning
-                    if (this._viewState != null)
-                    {
-                        var duration = this._viewState.VisibleDuration;
-                        this._viewState.SetViewRange(0, duration);
-                        this.RefreshAll();
-                    }
-                }
+                var duration = this._viewState.VisibleDuration;
+                this._viewState.SetViewRange(0, duration);
+                this.RefreshAll();
             }
 
-            this._isPlaying = !this._isPlaying;
+            this.UpdatePlayButton();
+        }
 
-            if (this._playButton != null)
+        private void UpdatePlayButton()
+        {
+            if (this._playButton == null)
             {
-                if (this._isPlaying)
-                {
-                    this._playButton.text = "\u25a0";
-                    this._playButton.AddToClassList("timeline-transport__play--active");
-                }
-                else
-                {
-                    this._playButton.text = "\u25b6";
-                    this._playButton.RemoveFromClassList("timeline-transport__play--active");
-                }
+                return;
+            }
+
+            if (this._playhead.IsPlaying)
+            {
+                this._playButton.text = "\u25a0";
+                this._playButton.AddToClassList("timeline-transport__play--active");
+            }
+            else
+            {
+                this._playButton.text = "\u25b6";
+                this._playButton.RemoveFromClassList("timeline-transport__play--active");
             }
         }
 
         private void HandlePlayback()
         {
-            if (!this._isPlaying)
-            {
-                return;
-            }
-
             var totalDuration = this._shotController.Registry.TotalDuration;
+            var stillPlaying  = this._playhead.Advance(Time.deltaTime, totalDuration);
 
-            if (totalDuration <= 0)
+            if (!stillPlaying)
             {
+                this.UpdatePlayButton();
                 return;
             }
 
-            this._currentGlobalTime += Time.deltaTime;
-
-            // Stop at end
-            if (this._currentGlobalTime >= totalDuration)
-            {
-                this._currentGlobalTime = totalDuration;
-                this.TogglePlayback();
-                return;
-            }
-
-            // Navigate to correct shot
-            var result = this._shotController.Registry.GetShotAtGlobalTime(
-                new TimePosition(this._currentGlobalTime));
-
-            if (result.HasValue)
-            {
-                var shot = result.Value.shot;
-
-                if (shot != this._shotController.Registry.CurrentShot)
-                {
-                    this._shotController.Registry.SetCurrentShot(shot.Id);
-                }
-
-                var localTime = result.Value.localTime;
-                var position  = shot.EvaluateCameraPosition(localTime);
-                var rotation  = shot.EvaluateCameraRotation(localTime);
-                if (this._cameraBehaviour != null)
-                {
-                    this._cameraBehaviour.ShotCamera.Position = position;
-                    this._cameraBehaviour.ShotCamera.Rotation = rotation;
-                }
-            }
+            this.EvaluateCameraAtPlayhead();
 
             // Page-flip: when playhead crosses the right edge, jump the view
             // forward by one full visible duration so the playhead starts at
             // the left edge again. Matches Premiere behavior.
-            if (this._viewState != null && this._currentGlobalTime > this._viewState.ViewEnd)
+            if (this._viewState != null
+             && this._playhead.CurrentTime > this._viewState.ViewEnd)
             {
                 var duration = this._viewState.VisibleDuration;
                 this._viewState.SetViewRange(this._viewState.ViewEnd, this._viewState.ViewEnd + duration);
+            }
+        }
+
+        /// <summary>
+        /// Evaluates the camera position/rotation at the current playhead time
+        /// and navigates to the correct shot.
+        /// </summary>
+        private void EvaluateCameraAtPlayhead()
+        {
+            var result = this._playhead.ResolveShot(this._shotController.Registry);
+
+            if (!result.HasValue)
+            {
+                return;
+            }
+
+            var shot = result.Value.shot;
+
+            if (shot != this._shotController.Registry.CurrentShot)
+            {
+                this._shotController.Registry.SetCurrentShot(shot.Id);
+            }
+
+            var localTime = result.Value.localTime;
+            var position  = shot.EvaluateCameraPosition(localTime);
+            var rotation  = shot.EvaluateCameraRotation(localTime);
+
+            if (this._cameraBehaviour != null)
+            {
+                this._cameraBehaviour.ShotCamera.Position = position;
+                this._cameraBehaviour.ShotCamera.Rotation = rotation;
             }
         }
 
@@ -365,6 +361,7 @@ namespace Fram3d.UI.Timeline
         {
             this._shotController  = FindAnyObjectByType<ShotController>();
             this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
+            this._playhead        = new Playhead(FrameRate.FPS_24);
 
             if (this._shotController == null)
             {
@@ -785,7 +782,7 @@ namespace Fram3d.UI.Timeline
 
             // Compute shot-local time from global scrub position
             var startTime = this._shotController.Registry.GetGlobalStartTime(current.Id).Seconds;
-            var localTime = Math.Max(0, this._currentGlobalTime - startTime);
+            var localTime = Math.Max(0, this._playhead.CurrentTime - startTime);
             localTime     = Math.Min(localTime, current.Duration);
 
             this._transportTime.text     = FormatTimecode(localTime, 24);
@@ -1030,39 +1027,12 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            var totalDuration = this._shotController.Registry.TotalDuration;
             var time          = this._viewState.PixelToTime(px);
+            var totalDuration = this._shotController.Registry.TotalDuration;
+            this._playhead.Scrub(time, totalDuration);
+            this.EvaluateCameraAtPlayhead();
 
-            // Snap to frame boundary
-            var snappedFrame = Math.Round(time * FPS) / FPS;
-            this._currentGlobalTime = Math.Clamp(snappedFrame, 0, totalDuration);
-
-            // Navigate to the shot at this time
-            var result = this._shotController.Registry.GetShotAtGlobalTime(
-                new TimePosition(this._currentGlobalTime));
-
-            if (result.HasValue)
-            {
-                var shot = result.Value.shot;
-
-                if (shot != this._shotController.Registry.CurrentShot)
-                {
-                    this._shotController.Registry.SetCurrentShot(shot.Id);
-                }
-
-                var localTime = result.Value.localTime;
-                var position  = shot.EvaluateCameraPosition(localTime);
-                var rotation  = shot.EvaluateCameraRotation(localTime);
-
-                if (this._cameraBehaviour != null)
-                {
-                    this._cameraBehaviour.ShotCamera.Position = position;
-                    this._cameraBehaviour.ShotCamera.Rotation = rotation;
-                }
-            }
-
-            // Scroll the view if the playhead is outside the visible range
-            this._viewState.EnsureVisible(this._currentGlobalTime);
+            this._viewState.EnsureVisible(this._playhead.CurrentTime);
             this.RefreshAll();
             this.UpdateTransport();
         }
@@ -1074,7 +1044,7 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            var px = (float)this._viewState.TimeToPixel(this._currentGlobalTime);
+            var px = (float)this._viewState.TimeToPixel(this._playhead.CurrentTime);
 
             this._rulerPlayhead.style.display      = DisplayStyle.Flex;
             this._rulerPlayhead.style.left          = px;

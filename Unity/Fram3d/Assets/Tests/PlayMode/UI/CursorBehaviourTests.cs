@@ -63,9 +63,9 @@ namespace Fram3d.Tests.UI
         [Test]
         public void SetCursor__DelegatesToService__When__ServiceIsSet()
         {
-            var result = CursorManager.SetCursor(CursorType.Crosshair);
+            var result = CursorManager.SetCursor(CursorType.Link);
             Assert.IsTrue(result);
-            Assert.AreEqual(CursorType.Crosshair, this._cursorService.LastCursor);
+            Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor);
         }
 
         [Test]

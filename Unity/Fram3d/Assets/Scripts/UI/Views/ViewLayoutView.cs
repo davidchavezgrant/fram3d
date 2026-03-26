@@ -329,7 +329,9 @@ namespace Fram3d.UI.Views
                     });
                 }
 
+#pragma warning disable CS0618 // GenericDropdownMenu.DropDown overload deprecated
                 menu.DropDown(this._label.worldBound, this._label, false, false);
+#pragma warning restore CS0618
             }
         }
     }

@@ -28,7 +28,8 @@ namespace Fram3d.UI.Timeline
         private const float  ZOOM_BAR_HEIGHT       = 18f;
 
         // ── References ──
-        private ShotController _shotController;
+        private CameraBehaviour _cameraBehaviour;
+        private ShotController  _shotController;
 
         // ── UI root ──
         private VisualElement _root;
@@ -186,6 +187,17 @@ namespace Fram3d.UI.Timeline
 
         public void TogglePlayback()
         {
+            // If at end and user presses play, restart from beginning
+            if (!this._isPlaying && this._shotController != null)
+            {
+                var totalDuration = this._shotController.Registry.TotalDuration;
+
+                if (this._currentGlobalTime >= totalDuration - FRAME_DURATION)
+                {
+                    this._currentGlobalTime = 0;
+                }
+            }
+
             this._isPlaying = !this._isPlaying;
 
             if (this._playButton != null)
@@ -243,12 +255,10 @@ namespace Fram3d.UI.Timeline
                 var localTime = result.Value.localTime;
                 var position  = shot.EvaluateCameraPosition(localTime);
                 var rotation  = shot.EvaluateCameraRotation(localTime);
-                var cam       = FindAnyObjectByType<CameraBehaviour>();
-
-                if (cam != null)
+                if (this._cameraBehaviour != null)
                 {
-                    cam.ShotCamera.Position = position;
-                    cam.ShotCamera.Rotation = rotation;
+                    this._cameraBehaviour.ShotCamera.Position = position;
+                    this._cameraBehaviour.ShotCamera.Rotation = rotation;
                 }
             }
 
@@ -273,7 +283,8 @@ namespace Fram3d.UI.Timeline
 
         private void Start()
         {
-            this._shotController = FindAnyObjectByType<ShotController>();
+            this._shotController  = FindAnyObjectByType<ShotController>();
+            this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
 
             if (this._shotController == null)
             {
@@ -432,6 +443,11 @@ namespace Fram3d.UI.Timeline
             this._rulerPlayhead = new VisualElement();
             this._rulerPlayhead.AddToClassList("timeline-playhead");
             this._rulerPlayhead.style.display = DisplayStyle.None;
+
+            var playheadHead = new VisualElement();
+            playheadHead.AddToClassList("timeline-playhead__head");
+            this._rulerPlayhead.Add(playheadHead);
+
             this._rulerContent.Add(this._rulerPlayhead);
 
             // Zoom/pan on ruler
@@ -911,17 +927,21 @@ namespace Fram3d.UI.Timeline
                 var localTime = result.Value.localTime;
                 var position  = shot.EvaluateCameraPosition(localTime);
                 var rotation  = shot.EvaluateCameraRotation(localTime);
-                var cam       = FindAnyObjectByType<CameraBehaviour>();
-
-                if (cam != null)
+                if (this._cameraBehaviour != null)
                 {
-                    cam.ShotCamera.Position = position;
-                    cam.ShotCamera.Rotation = rotation;
+                    this._cameraBehaviour.ShotCamera.Position = position;
+                    this._cameraBehaviour.ShotCamera.Rotation = rotation;
                 }
             }
 
+            // Auto-scroll if scrubbing past the visible edge
+            this._viewState.EnsureVisible(this._currentGlobalTime);
+
             this.UpdatePlayhead();
             this.UpdateTransport();
+            this.UpdateBlockWidths();
+            this.UpdateRuler();
+            this.UpdateZoomBar();
         }
 
         private void UpdatePlayhead()

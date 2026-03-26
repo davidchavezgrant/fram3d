@@ -489,6 +489,17 @@
     z-index: 10;
 }
 
+.timeline-playhead__head {
+    position: absolute;
+    top: -1px;
+    left: -5px;
+    width: 12px;
+    height: 10px;
+    background-color: rgb(255, 68, 102);
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
 /* ── Shot track row ──────────────────────────────────────────────── */
 
 .timeline-shot-row {

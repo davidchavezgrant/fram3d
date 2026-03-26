@@ -11,7 +11,6 @@ namespace Fram3d.UI.Timeline
     public sealed class TimelineViewState
     {
         private const double MIN_VISIBLE_DURATION = 0.5;
-        private const double MARGIN_SECONDS       = 0.5;
         private const double ZOOM_FACTOR          = 1.15;
 
         private double _totalDuration;
@@ -110,7 +109,7 @@ namespace Fram3d.UI.Timeline
                 newDuration = MIN_VISIBLE_DURATION;
             }
 
-            var maxDuration = this._totalDuration + MARGIN_SECONDS * 2;
+            var maxDuration = this._totalDuration;
 
             if (newDuration > maxDuration)
             {
@@ -154,7 +153,7 @@ namespace Fram3d.UI.Timeline
             }
 
             this._viewStart = 0;
-            this._viewEnd   = totalDuration + MARGIN_SECONDS;
+            this._viewEnd   = totalDuration;
             this.Changed?.Invoke();
         }
 
@@ -181,25 +180,30 @@ namespace Fram3d.UI.Timeline
         /// </summary>
         public void EnsureVisible(double seconds)
         {
+            // Small pixel margin so the playhead doesn't sit right on the edge
+            var edgeMargin = this.VisibleDuration * 0.05;
+
             if (seconds < this._viewStart)
             {
-                var shift = this._viewStart - seconds + MARGIN_SECONDS;
+                var shift = this._viewStart - seconds + edgeMargin;
                 this._viewStart -= shift;
                 this._viewEnd   -= shift;
+                this.Clamp();
                 this.Changed?.Invoke();
             }
             else if (seconds > this._viewEnd)
             {
-                var shift = seconds - this._viewEnd + MARGIN_SECONDS;
+                var shift = seconds - this._viewEnd + edgeMargin;
                 this._viewStart += shift;
                 this._viewEnd   += shift;
+                this.Clamp();
                 this.Changed?.Invoke();
             }
         }
 
         private void Clamp()
         {
-            var maxEnd = this._totalDuration + MARGIN_SECONDS;
+            var maxEnd = this._totalDuration;
 
             // Don't let view start go below 0
             if (this._viewStart < 0)

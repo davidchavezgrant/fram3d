@@ -28,14 +28,9 @@ namespace Fram3d.Editor
         private static extern void Fram3dFreeCursorPixels(IntPtr pixels);
     #endif
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void Setup()
-        {
-            var service = new EditorCursorService();
-            CursorManager.SetFallbackService(service);
-            CursorManager.SetService(service);
-            EditorApplication.playModeStateChanged += service.OnPlayModeStateChanged;
-        }
+        // Disabled — UnityCursorService handles all platforms now.
+        // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        // private static void Setup() { ... }
 
         public void ResetCursor()
         {

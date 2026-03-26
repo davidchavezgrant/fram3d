@@ -26,20 +26,9 @@ namespace Fram3d.Engine.Cursor
         [DllImport("CursorWrapper")]
         private static extern void Fram3dFreeCursorPixels(IntPtr pixels);
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void Setup()
-        {
-            var go = new GameObject("CursorManager#MacOS")
-            {
-                hideFlags = HideFlags.HideAndDontSave
-            };
-            DontDestroyOnLoad(go);
-
-            var service = go.AddComponent<MacOSCursorService>();
-            service.ExtractAllCursors();
-            CursorManager.SetFallbackService(service);
-            CursorManager.SetService(service);
-        }
+        // Disabled — UnityCursorService handles all platforms now.
+        // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        // static void Setup() { ... }
 
         public bool SetCursor(CursorType cursor)
         {

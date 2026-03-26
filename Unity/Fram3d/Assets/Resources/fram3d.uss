@@ -506,7 +506,7 @@
     top: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.35);
-    z-index: 5;
+    /* z-ordering handled by element order in parent */
 }
 
 .timeline-playhead {
@@ -515,7 +515,7 @@
     bottom: 0;
     width: 2px;
     background-color: rgb(255, 68, 102);
-    z-index: 10;
+    /* z-ordering handled by BringToFront in code */
 }
 
 .timeline-playhead__head {
@@ -543,7 +543,7 @@
     flex-grow: 1;
     position: relative;
     overflow: hidden;
-    cursor: initial;
+    cursor: arrow;
 }
 
 .shot-block {
@@ -607,7 +607,7 @@
     border-color: rgba(150, 150, 150, 0.3);
     border-radius: 3px;
     min-width: 30px;
-    cursor: grab;
+    cursor: pan;
 }
 
 .timeline-zoom-playhead {
@@ -688,7 +688,7 @@
     top: 0;
     bottom: 0;
     margin-left: -4px;
-    cursor: col-resize;
+    cursor: resize-horizontal;
 }
 
 .shot-track__boundary:hover {

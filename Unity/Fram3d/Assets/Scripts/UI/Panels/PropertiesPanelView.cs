@@ -237,7 +237,9 @@ namespace Fram3d.UI.Panels
 
                 if (current.ClassListContains("dropdown-selector")
                  || current.ClassListContains("dropdown-list-row")
-                 || current.ClassListContains("sensor-dropdown"))
+                 || current.ClassListContains("sensor-dropdown")
+                 || current.ClassListContains("unity-base-dropdown__item")
+                 || current.ClassListContains("unity-base-dropdown__label"))
                 {
                     return true;
                 }

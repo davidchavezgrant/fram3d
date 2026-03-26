@@ -18,6 +18,8 @@ namespace Fram3d.UI.Timeline
     {
         private const float  BOUNDARY_HIT_WIDTH  = 8f;
         private const double DOUBLE_CLICK_MS      = 350;
+        private const int    FPS                    = 24;
+        private const double FRAME_DURATION         = 1.0 / FPS;
         private const int    HOLD_THRESHOLD_MS     = 200;
         private const float  LABEL_COLUMN_WIDTH    = 140f;
         private const float  RULER_HEIGHT          = 22f;
@@ -33,9 +35,10 @@ namespace Fram3d.UI.Timeline
         private VisualElement _section;
 
         // ── Transport bar ──
-        private Label _transportTime;
-        private Label _transportDuration;
-        private Label _transportShot;
+        private Button _playButton;
+        private Label  _transportDuration;
+        private Label  _transportShot;
+        private Label  _transportTime;
 
         // ── Ruler ──
         private VisualElement _rulerContent;
@@ -44,6 +47,7 @@ namespace Fram3d.UI.Timeline
         // ── Shot track ──
         private VisualElement _shotLabelColumn;
         private VisualElement _shotStrip;
+        private VisualElement _shotStripPlayhead;
         private Label         _totalLabel;
         private VisualElement _dropIndicator;
 
@@ -98,6 +102,9 @@ namespace Fram3d.UI.Timeline
         // ── Zoom bar drag ──
         private bool  _isZoomDragging;
         private float _zoomDragStartX;
+
+        // ── Playback state ──
+        private bool   _isPlaying;
 
         // ── Scrub state ──
         private double _currentGlobalTime;
@@ -174,6 +181,83 @@ namespace Fram3d.UI.Timeline
         }
 
         // ══════════════════════════════════════════════════════════════════
+        // Playback
+        // ══════════════════════════════════════════════════════════════════
+
+        public void TogglePlayback()
+        {
+            this._isPlaying = !this._isPlaying;
+
+            if (this._playButton != null)
+            {
+                if (this._isPlaying)
+                {
+                    this._playButton.text = "\u23f8"; // Pause icon
+                    this._playButton.AddToClassList("timeline-transport__play--active");
+                }
+                else
+                {
+                    this._playButton.text = "\u25b6"; // Play icon
+                    this._playButton.RemoveFromClassList("timeline-transport__play--active");
+                }
+            }
+        }
+
+        private void HandlePlayback()
+        {
+            if (!this._isPlaying)
+            {
+                return;
+            }
+
+            var totalDuration = this._shotController.Registry.TotalDuration;
+
+            if (totalDuration <= 0)
+            {
+                return;
+            }
+
+            this._currentGlobalTime += Time.deltaTime;
+
+            // Wrap at end
+            if (this._currentGlobalTime >= totalDuration)
+            {
+                this._currentGlobalTime = 0;
+            }
+
+            // Navigate to correct shot
+            var result = this._shotController.Registry.GetShotAtGlobalTime(
+                new TimePosition(this._currentGlobalTime));
+
+            if (result.HasValue)
+            {
+                var shot = result.Value.shot;
+
+                if (shot != this._shotController.Registry.CurrentShot)
+                {
+                    this._shotController.Registry.SetCurrentShot(shot.Id);
+                }
+
+                var localTime = result.Value.localTime;
+                var position  = shot.EvaluateCameraPosition(localTime);
+                var rotation  = shot.EvaluateCameraRotation(localTime);
+                var cam       = FindAnyObjectByType<CameraBehaviour>();
+
+                if (cam != null)
+                {
+                    cam.ShotCamera.Position = position;
+                    cam.ShotCamera.Rotation = rotation;
+                }
+            }
+
+            // Auto-scroll if playhead exits visible range
+            if (this._viewState != null)
+            {
+                this._viewState.EnsureVisible(this._currentGlobalTime);
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════════
         // Lifecycle
         // ══════════════════════════════════════════════════════════════════
 
@@ -218,6 +302,7 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
+            this.HandlePlayback();
             this.UpdateBlockWidths();
             this.UpdatePlayhead();
             this.UpdateRuler();
@@ -304,11 +389,10 @@ namespace Fram3d.UI.Timeline
             bar.AddToClassList("timeline-transport");
             bar.style.height = TRANSPORT_HEIGHT;
 
-            var playBtn = new Button();
-            playBtn.text = "\u25b6";
-            playBtn.AddToClassList("timeline-transport__play");
-            playBtn.SetEnabled(false);
-            bar.Add(playBtn);
+            this._playButton = new Button(this.TogglePlayback);
+            this._playButton.text = "\u25b6";
+            this._playButton.AddToClassList("timeline-transport__play");
+            bar.Add(this._playButton);
 
             this._transportTime = new Label("00;00;00;00");
             this._transportTime.AddToClassList("timeline-transport__time");
@@ -423,6 +507,12 @@ namespace Fram3d.UI.Timeline
             this._dropIndicator.AddToClassList("shot-track__drop-indicator");
             this._dropIndicator.style.display = DisplayStyle.None;
             this._shotStrip.Add(this._dropIndicator);
+
+            // Playhead on top of shot blocks
+            this._shotStripPlayhead = new VisualElement();
+            this._shotStripPlayhead.AddToClassList("timeline-playhead");
+            this._shotStripPlayhead.style.display = DisplayStyle.None;
+            this._shotStrip.Add(this._shotStripPlayhead);
 
             this._section.Add(row);
         }
@@ -636,10 +726,37 @@ namespace Fram3d.UI.Timeline
             var visibleDuration = this._viewState.VisibleDuration;
             var tickInterval    = this.ComputeTickInterval(visibleDuration);
             var majorInterval   = tickInterval * 5;
+            var pxPerFrame      = this._viewState.PixelsPerSecond * FRAME_DURATION;
+            var showFrameTicks  = pxPerFrame >= 4.0;
 
             // Find first tick within view
             var firstTick = Math.Ceiling(this._viewState.ViewStart / tickInterval) * tickInterval;
 
+            // Frame dividers (when zoomed in enough)
+            if (showFrameTicks)
+            {
+                var firstFrame = Math.Ceiling(this._viewState.ViewStart / FRAME_DURATION) * FRAME_DURATION;
+
+                for (var t = firstFrame; t <= this._viewState.ViewEnd; t += FRAME_DURATION)
+                {
+                    if (t < 0)
+                    {
+                        continue;
+                    }
+
+                    var framePx   = this._viewState.TimeToPixel(t);
+                    var frameTick = new VisualElement();
+                    frameTick.AddToClassList("timeline-ruler__frame-tick");
+                    frameTick.style.position = Position.Absolute;
+                    frameTick.style.left     = (float)framePx;
+                    frameTick.style.top      = RULER_HEIGHT - 5f;
+                    frameTick.style.width    = 1;
+                    frameTick.style.height   = 5;
+                    this._rulerContent.Add(frameTick);
+                }
+            }
+
+            // Major/minor ticks
             for (var t = firstTick; t <= this._viewState.ViewEnd; t += tickInterval)
             {
                 if (t < 0)
@@ -666,7 +783,7 @@ namespace Fram3d.UI.Timeline
                     label.AddToClassList("timeline-ruler__label");
                     label.style.position = Position.Absolute;
                     label.style.left     = (float)px + 3f;
-                    label.style.top      = 4f;
+                    label.style.top      = 2f;
                     this._rulerContent.Add(label);
                 }
             }
@@ -764,7 +881,10 @@ namespace Fram3d.UI.Timeline
 
             var time = this._viewState.PixelToTime(px);
             var totalDuration = this._shotController.Registry.TotalDuration;
-            this._currentGlobalTime = Math.Clamp(time, 0, totalDuration);
+
+            // Snap to frame boundary
+            var snappedFrame = Math.Round(time * FPS) / FPS;
+            this._currentGlobalTime = Math.Clamp(snappedFrame, 0, totalDuration);
 
             // Navigate to the shot at this time
             var result = this._shotController.Registry.GetShotAtGlobalTime(
@@ -779,13 +899,10 @@ namespace Fram3d.UI.Timeline
                     this._shotController.Registry.SetCurrentShot(shot.Id);
                 }
 
-                // Evaluate camera at local time within the shot
                 var localTime = result.Value.localTime;
                 var position  = shot.EvaluateCameraPosition(localTime);
                 var rotation  = shot.EvaluateCameraRotation(localTime);
-                this._shotController.Registry.CurrentShot
-                    .EvaluateCameraPosition(localTime);
-                var cam = FindAnyObjectByType<CameraBehaviour>();
+                var cam       = FindAnyObjectByType<CameraBehaviour>();
 
                 if (cam != null)
                 {
@@ -807,11 +924,14 @@ namespace Fram3d.UI.Timeline
 
             var px = (float)this._viewState.TimeToPixel(this._currentGlobalTime);
 
-            this._rulerPlayhead.style.display = DisplayStyle.Flex;
-            this._rulerPlayhead.style.left    = px;
+            this._rulerPlayhead.style.display      = DisplayStyle.Flex;
+            this._rulerPlayhead.style.left          = px;
 
-            this._trackPlayhead.style.display = DisplayStyle.Flex;
-            this._trackPlayhead.style.left    = px;
+            this._shotStripPlayhead.style.display   = DisplayStyle.Flex;
+            this._shotStripPlayhead.style.left      = px;
+
+            this._trackPlayhead.style.display       = DisplayStyle.Flex;
+            this._trackPlayhead.style.left          = px;
         }
 
         // ══════════════════════════════════════════════════════════════════

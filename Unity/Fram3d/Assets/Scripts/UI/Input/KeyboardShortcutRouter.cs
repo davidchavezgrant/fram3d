@@ -199,6 +199,16 @@ namespace Fram3d.UI.Input
                 return true;
             }
 
+            if (keyboard.spaceKey.wasPressedThisFrame && !ctrl && !alt && !shift)
+            {
+                if (this._timelineSection != null)
+                {
+                    this._timelineSection.TogglePlayback();
+                }
+
+                return true;
+            }
+
             return false;
         }
 

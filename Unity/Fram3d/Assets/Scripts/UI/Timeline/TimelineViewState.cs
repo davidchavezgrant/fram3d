@@ -153,7 +153,7 @@ namespace Fram3d.UI.Timeline
                 totalDuration = 5.0;
             }
 
-            this._viewStart = -MARGIN_SECONDS;
+            this._viewStart = 0;
             this._viewEnd   = totalDuration + MARGIN_SECONDS;
             this.Changed?.Invoke();
         }
@@ -201,10 +201,10 @@ namespace Fram3d.UI.Timeline
         {
             var maxEnd = this._totalDuration + MARGIN_SECONDS;
 
-            // Don't let view start go too far left
-            if (this._viewStart < -MARGIN_SECONDS)
+            // Don't let view start go below 0
+            if (this._viewStart < 0)
             {
-                var shift = -MARGIN_SECONDS - this._viewStart;
+                var shift = -this._viewStart;
                 this._viewStart += shift;
                 this._viewEnd   += shift;
             }
@@ -216,10 +216,10 @@ namespace Fram3d.UI.Timeline
                 this._viewStart -= shift;
                 this._viewEnd   -= shift;
 
-                // Re-clamp left in case the shift pushed us past
-                if (this._viewStart < -MARGIN_SECONDS)
+                // Re-clamp left
+                if (this._viewStart < 0)
                 {
-                    this._viewStart = -MARGIN_SECONDS;
+                    this._viewStart = 0;
                 }
             }
         }

@@ -226,10 +226,18 @@ namespace Fram3d.UI.Views
             var activeSlot = this._viewCameraManager.ActiveSlot;
             var vpRect     = this._viewCameraManager.GetViewportRect(activeSlot);
 
+            // Account for the bottom inset (timeline section) when converting
+            // Camera.rect (normalized) to CSS pixels. Camera.rect.y starts at
+            // bottomNorm, so the available viewport height in CSS is rootH minus
+            // the bottom inset.
+            var bottomInset = this._viewCameraManager.CameraBehaviour.BottomInsetPixels;
+            var scale       = rootW > 0 ? Screen.width / rootW : 1f;
+            var bottomCss   = bottomInset / scale;
+
             this._activeOutline.style.left   = vpRect.x * rootW;
-            this._activeOutline.style.top    = (1f - vpRect.y - vpRect.height) * rootH;
-            this._activeOutline.style.width  = vpRect.width  * rootW;
-            this._activeOutline.style.height = vpRect.height * rootH;
+            this._activeOutline.style.top    = (1f - vpRect.y - vpRect.height) * (rootH - bottomCss);
+            this._activeOutline.style.width  = vpRect.width * rootW;
+            this._activeOutline.style.height = vpRect.height * (rootH - bottomCss);
         }
 
         private void PositionHeaders()

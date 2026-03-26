@@ -215,12 +215,18 @@ namespace Fram3d.UI.Timeline
         {
             this.ClampLeft();
 
-            // Don't let view start go past total duration (nothing to see)
-            if (this._viewStart > this._totalDuration)
+            // Don't let view end go past total duration
+            if (this._viewEnd > this._totalDuration)
             {
                 var duration = this.VisibleDuration;
-                this._viewStart = Math.Max(0, this._totalDuration - duration);
-                this._viewEnd   = this._viewStart + duration;
+                this._viewEnd   = this._totalDuration;
+                this._viewStart = this._totalDuration - duration;
+
+                // Re-clamp left in case duration > totalDuration
+                if (this._viewStart < 0)
+                {
+                    this._viewStart = 0;
+                }
             }
         }
 

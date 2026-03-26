@@ -1027,12 +1027,18 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            var time          = this._viewState.PixelToTime(px);
+            var rawTime       = this._viewState.PixelToTime(px);
             var totalDuration = this._shotController.Registry.TotalDuration;
-            this._playhead.Scrub(time, totalDuration);
+            this._playhead.Scrub(rawTime, totalDuration);
             this.EvaluateCameraAtPlayhead();
 
-            this._viewState.EnsureVisible(this._playhead.CurrentTime);
+            // Use the raw (unsnapped) time for scrolling, clamped to the
+            // playable range. Frame snapping can round the playhead time to
+            // exactly viewEnd, making the > check false and stalling the scroll.
+            // The raw time avoids this — it's always past viewEnd when the
+            // mouse is past the ruler edge.
+            var scrollTime = Math.Clamp(rawTime, 0, totalDuration);
+            this._viewState.EnsureVisible(scrollTime);
             this.RefreshAll();
             this.UpdateTransport();
         }

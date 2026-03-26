@@ -205,13 +205,27 @@ static void Fram3dInvalidateOnce(void)
 extern "C" {
 
     /// Called once per frame from C#. Installs the overlay if not yet
-    /// installed. Does NOT invalidate cursor rects — that only happens
-    /// when the cursor kind changes.
+    /// installed, and re-applies [cursor set] to counteract Unity's
+    /// render loop resetting the cursor. Does NOT invalidate cursor
+    /// rects — that only happens when the cursor kind changes.
     __attribute__((visibility("default"))) void Fram3dEnsureOverlay(void)
     {
         @autoreleasepool
         {
             Fram3dInstallOverlay();
+        }
+    }
+
+    /// Re-applies the active cursor via [cursor set] without
+    /// invalidating cursor rects. Called every frame when a custom
+    /// cursor is active to counteract Unity resetting the cursor
+    /// during its render loop.
+    __attribute__((visibility("default"))) void Fram3dReapplyCursor(void)
+    {
+        @autoreleasepool
+        {
+            if (sActiveCursor != Fram3dCursorKindDefault)
+                [Fram3dCursorForKind(sActiveCursor) set];
         }
     }
 

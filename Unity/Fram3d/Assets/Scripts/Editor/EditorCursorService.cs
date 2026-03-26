@@ -27,6 +27,9 @@ namespace Fram3d.Editor
         private static extern void RefreshActiveCursor();
 
         [DllImport("CursorWrapper")]
+        private static extern void Fram3dReapplyCursor();
+
+        [DllImport("CursorWrapper")]
         private static extern void SetCursorToArrow();
 
         [DllImport("CursorWrapper")]
@@ -139,9 +142,17 @@ namespace Fram3d.Editor
             if (_useManagedFallback && !_callbackRegistered)
                 TryRegisterGameViewCallbacks();
 
-            // Don't re-apply cursors every frame — the native overlay handles
-            // persistence via cursorUpdate: and cursor rects. Per-frame [cursor set]
-            // calls fight macOS and cause flicker.
+            // Re-apply [cursor set] every frame to counteract Unity's Editor
+            // repaint resetting the cursor. This does NOT invalidate cursor
+            // rects — that's the key difference from the old code that flickered.
+            if (_activeCursor.HasValue)
+            {
+                if (!TryReapplyNativeCursor())
+                {
+                    EnsureCursorRectsDisabled();
+                    ApplyManagedCursor(_activeCursor.Value);
+                }
+            }
         #endif
         }
 
@@ -184,6 +195,23 @@ namespace Fram3d.Editor
             }
 
             _callbackRegistered = true;
+        }
+
+        private bool TryReapplyNativeCursor()
+        {
+            if (_useManagedFallback)
+                return false;
+
+            try
+            {
+                Fram3dReapplyCursor();
+                return true;
+            }
+            catch (Exception ex) when (ex is DllNotFoundException || ex is EntryPointNotFoundException)
+            {
+                ActivateManagedFallback(ex);
+                return false;
+            }
         }
 
         private bool TryRefreshNativeCursor()

@@ -14,10 +14,14 @@ namespace Fram3d.Engine.Cursor
     /// </summary>
     public class MacOSCursorService : MonoBehaviour, ICursorService
     {
-        private bool _overlayInstalled;
+        private CursorType? _activeCursor;
+        private bool        _overlayInstalled;
 
         [DllImport("CursorWrapper")]
         private static extern void Fram3dEnsureOverlay();
+
+        [DllImport("CursorWrapper")]
+        private static extern void Fram3dReapplyCursor();
 
         [DllImport("CursorWrapper")]
         private static extern void Fram3dSetCursor(int kind);
@@ -83,6 +87,8 @@ namespace Fram3d.Engine.Cursor
                 return true;
             }
 
+            this._activeCursor = cursor;
+
             switch (cursor)
             {
                 case CursorType.IBeam:             SetCursorToIBeam();               return true;
@@ -97,13 +103,26 @@ namespace Fram3d.Engine.Cursor
                 case CursorType.OpenHand:          SetCursorToOpenHand();            return true;
                 case CursorType.ClosedHand:        SetCursorToClosedHand();          return true;
                 case CursorType.ResizeAll:         this.ResetCursor();               return true;
-                default:                                                              return false;
+                default:                           this._activeCursor = null;         return false;
             }
         }
 
         public void ResetCursor()
         {
+            this._activeCursor = null;
             SetCursorToArrow();
+        }
+
+        /// <summary>
+        /// Re-applies [cursor set] every frame to counteract Unity's render
+        /// loop resetting the cursor. Does NOT invalidate cursor rects.
+        /// </summary>
+        private void Update()
+        {
+            if (this._activeCursor.HasValue)
+            {
+                Fram3dReapplyCursor();
+            }
         }
 
         private void EnsureOverlay()

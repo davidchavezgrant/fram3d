@@ -43,6 +43,7 @@ namespace Fram3d.Core.Timeline
 
             // Remove existing keyframe at same time (merge behavior)
             var existingAtTime = this._sorted.FindIndex(k => k.Time == keyframe.Time);
+
             if (existingAtTime >= 0)
             {
                 var existing = this._sorted[existingAtTime];
@@ -89,6 +90,7 @@ namespace Fram3d.Core.Timeline
 
             // After last keyframe — clamp
             var last = this._sorted[this._sorted.Count - 1];
+
             if (time >= last.Time)
             {
                 return last.Value;
@@ -103,6 +105,7 @@ namespace Fram3d.Core.Timeline
                 if (time >= current.Time && time <= next.Time)
                 {
                     var span = next.Time.Seconds - current.Time.Seconds;
+
                     if (span < 1e-9)
                     {
                         return current.Value;
@@ -130,9 +133,7 @@ namespace Fram3d.Core.Timeline
         /// </summary>
         public IReadOnlyList<Keyframe<T>> GetInRange(TimePosition start, TimePosition end)
         {
-            return this._sorted
-                .Where(k => k.Time >= start && k.Time <= end)
-                .ToList();
+            return this._sorted.Where(k => k.Time >= start && k.Time <= end).ToList();
         }
 
         /// <summary>
@@ -153,6 +154,7 @@ namespace Fram3d.Core.Timeline
         private void InsertSorted(Keyframe<T> keyframe)
         {
             var index = this._sorted.BinarySearch(keyframe);
+
             if (index < 0)
             {
                 index = ~index;

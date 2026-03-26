@@ -17,38 +17,31 @@ namespace Fram3d.Core.Shot
     /// </summary>
     public sealed class Shot
     {
-        public const  int    MAX_NAME_LENGTH = 32;
-        public const  double MAX_DURATION    = 300.0;
-        public const  double MIN_DURATION    = 0.1;
+        public const  double MAX_DURATION     = 300.0;
+        public const  int    MAX_NAME_LENGTH  = 32;
+        public const  double MIN_DURATION     = 0.1;
         public static double DEFAULT_DURATION = 5.0;
+        private       double _duration;
+        private       string _name;
 
-        private double _duration;
-        private string _name;
-
-        public Shot(ShotId id, string name, Vector3 cameraPosition, Quaternion cameraRotation)
+        public Shot(ShotId     id,
+                    string     name,
+                    Vector3    cameraPosition,
+                    Quaternion cameraRotation)
         {
             this.Id = id ?? throw new ArgumentNullException(nameof(id));
             this.SetName(name);
-            this._duration = DEFAULT_DURATION;
-
+            this._duration               = DEFAULT_DURATION;
             this.CameraPositionKeyframes = new KeyframeManager<Vector3>();
             this.CameraRotationKeyframes = new KeyframeManager<Quaternion>();
 
             // Create the mandatory initial keyframes at t=0
-            this.CameraPositionKeyframes.Add(
-                new Keyframe<Vector3>(
-                    new KeyframeId(Guid.NewGuid()),
-                    TimePosition.ZERO,
-                    cameraPosition
-                )
-            );
-            this.CameraRotationKeyframes.Add(
-                new Keyframe<Quaternion>(
-                    new KeyframeId(Guid.NewGuid()),
-                    TimePosition.ZERO,
-                    cameraRotation
-                )
-            );
+            var positionId = new KeyframeId(Guid.NewGuid());
+            var rotationId = new KeyframeId(Guid.NewGuid());
+            var positionKf = new Keyframe<Vector3>(positionId, TimePosition.ZERO, cameraPosition);
+            var rotationKf = new Keyframe<Quaternion>(rotationId, TimePosition.ZERO, cameraRotation);
+            this.CameraPositionKeyframes.Add(positionKf);
+            this.CameraRotationKeyframes.Add(rotationKf);
         }
 
         /// <summary>
@@ -92,22 +85,19 @@ namespace Fram3d.Core.Shot
         }
 
         /// <summary>
+        /// Total number of camera keyframes (position + rotation).
+        /// </summary>
+        public int TotalCameraKeyframeCount => this.CameraPositionKeyframes.Count + this.CameraRotationKeyframes.Count;
+
+        /// <summary>
         /// Evaluates the camera position at a local shot time (0 to Duration).
         /// </summary>
-        public Vector3 EvaluateCameraPosition(TimePosition localTime) =>
-            this.CameraPositionKeyframes.Evaluate(localTime, Vector3.Lerp);
+        public Vector3 EvaluateCameraPosition(TimePosition localTime) => this.CameraPositionKeyframes.Evaluate(localTime, Vector3.Lerp);
 
         /// <summary>
         /// Evaluates the camera rotation at a local shot time (0 to Duration).
         /// </summary>
-        public Quaternion EvaluateCameraRotation(TimePosition localTime) =>
-            this.CameraRotationKeyframes.Evaluate(localTime, Quaternion.Slerp);
-
-        /// <summary>
-        /// Total number of camera keyframes (position + rotation).
-        /// </summary>
-        public int TotalCameraKeyframeCount =>
-            this.CameraPositionKeyframes.Count + this.CameraRotationKeyframes.Count;
+        public Quaternion EvaluateCameraRotation(TimePosition localTime) => this.CameraRotationKeyframes.Evaluate(localTime, Quaternion.Slerp);
 
         private void SetName(string value)
         {

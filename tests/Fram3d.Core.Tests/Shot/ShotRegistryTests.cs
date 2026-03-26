@@ -68,23 +68,23 @@ namespace Fram3d.Core.Tests.Shot
         }
 
         [Fact]
-        public void AddShot__FiresShotAddedEvent__When__Added()
+        public void AddShot__EmitsShotAdded__When__Added()
         {
             var reg = MakeRegistry();
-            Core.Shot.Shot firedShot = null;
-            reg.ShotAdded += (_, s) => firedShot = s;
+            Core.Shot.Shot emitted = null;
+            reg.ShotAdded.Subscribe(s => emitted = s);
             var shot = AddDefaultShot(reg);
-            firedShot.Should().Be(shot);
+            emitted.Should().Be(shot);
         }
 
         [Fact]
-        public void AddShot__FiresCurrentShotChanged__When__Added()
+        public void AddShot__EmitsCurrentShotChanged__When__Added()
         {
             var reg = MakeRegistry();
-            Core.Shot.Shot firedShot = null;
-            reg.CurrentShotChanged += (_, s) => firedShot = s;
+            Core.Shot.Shot emitted = null;
+            reg.CurrentShotChanged.Subscribe(s => emitted = s);
             var shot = AddDefaultShot(reg);
-            firedShot.Should().Be(shot);
+            emitted.Should().Be(shot);
         }
 
         // --- RemoveShot ---
@@ -138,14 +138,14 @@ namespace Fram3d.Core.Tests.Shot
         }
 
         [Fact]
-        public void RemoveShot__FiresShotRemovedEvent__When__Removed()
+        public void RemoveShot__EmitsShotRemoved__When__Removed()
         {
             var reg = MakeRegistry();
             var shot = AddDefaultShot(reg);
-            Core.Shot.Shot firedShot = null;
-            reg.ShotRemoved += (_, s) => firedShot = s;
+            Core.Shot.Shot emitted = null;
+            reg.ShotRemoved.Subscribe(s => emitted = s);
             reg.RemoveShot(shot.Id);
-            firedShot.Should().Be(shot);
+            emitted.Should().Be(shot);
         }
 
         [Fact]
@@ -216,14 +216,14 @@ namespace Fram3d.Core.Tests.Shot
         }
 
         [Fact]
-        public void SetCurrentShot__DoesNotFireEvent__When__SameShot()
+        public void SetCurrentShot__DoesNotEmit__When__SameShot()
         {
             var reg = MakeRegistry();
             var shot = AddDefaultShot(reg);
-            var fired = false;
-            reg.CurrentShotChanged += (_, _) => fired = true;
+            var emitted = false;
+            reg.CurrentShotChanged.Subscribe(_ => emitted = true);
             reg.SetCurrentShot(shot.Id);
-            fired.Should().BeFalse();
+            emitted.Should().BeFalse();
         }
 
         // --- Reorder ---
@@ -254,27 +254,27 @@ namespace Fram3d.Core.Tests.Shot
         }
 
         [Fact]
-        public void Reorder__FiresEvent__When__Reordered()
+        public void Reorder__EmitsReordered__When__Reordered()
         {
             var reg = MakeRegistry();
             var s1 = AddDefaultShot(reg);
             AddDefaultShot(reg);
-            var fired = false;
-            reg.ShotsReordered += (_, _) => fired = true;
+            var emitted = false;
+            reg.Reordered.Subscribe(_ => emitted = true);
             reg.Reorder(s1.Id, 1);
-            fired.Should().BeTrue();
+            emitted.Should().BeTrue();
         }
 
         [Fact]
-        public void Reorder__DoesNothing__When__SamePosition()
+        public void Reorder__DoesNotEmit__When__SamePosition()
         {
             var reg = MakeRegistry();
             var s1 = AddDefaultShot(reg);
             AddDefaultShot(reg);
-            var fired = false;
-            reg.ShotsReordered += (_, _) => fired = true;
+            var emitted = false;
+            reg.Reordered.Subscribe(_ => emitted = true);
             reg.Reorder(s1.Id, 0);
-            fired.Should().BeFalse();
+            emitted.Should().BeFalse();
         }
 
         [Fact]
@@ -474,13 +474,13 @@ namespace Fram3d.Core.Tests.Shot
         }
 
         [Fact]
-        public void Clear__FiresShotRemovedEvents__When__Called()
+        public void Clear__EmitsShotRemoved__When__Called()
         {
             var reg = MakeRegistry();
             AddDefaultShot(reg);
             AddDefaultShot(reg);
             var removedShots = new List<Core.Shot.Shot>();
-            reg.ShotRemoved += (_, s) => removedShots.Add(s);
+            reg.ShotRemoved.Subscribe(s => removedShots.Add(s));
             reg.Clear();
             removedShots.Should().HaveCount(2);
         }

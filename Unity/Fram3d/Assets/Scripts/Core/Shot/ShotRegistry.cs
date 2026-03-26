@@ -14,12 +14,24 @@ namespace Fram3d.Core.Shot
     /// </summary>
     public sealed class ShotRegistry
     {
-        private const string NAME_PREFIX = "Shot_";
+        private const    string          NAME_PREFIX      = "Shot_";
+        private readonly Subject<Shot>   _added           = new();
+        private readonly Subject<Shot>   _currentChanged  = new();
+        private readonly Subject<Shot>   _removed         = new();
+        private readonly Subject<bool>   _reordered       = new();
+        private readonly List<Shot>      _shots           = new();
+        private          Shot            _currentShot;
+        private          int             _nextNumber      = 1;
 
-        private readonly List<Shot> _shots = new();
+        /// <summary>
+        /// Emits the new current shot when it changes.
+        /// </summary>
+        public IObservable<Shot> CurrentShotChanged => this._currentChanged;
 
-        private int  _nextNumber = 1;
-        private Shot _currentShot;
+        /// <summary>
+        /// Number of shots in the registry.
+        /// </summary>
+        public int Count => this._shots.Count;
 
         /// <summary>
         /// The shot currently being viewed/edited. Null when no shots exist.
@@ -35,14 +47,24 @@ namespace Fram3d.Core.Shot
                 }
 
                 this._currentShot = value;
-                this.CurrentShotChanged?.Invoke(this, value);
+                this._currentChanged.OnNext(value);
             }
         }
 
         /// <summary>
-        /// Number of shots in the registry.
+        /// Emits when shots are reordered.
         /// </summary>
-        public int Count => this._shots.Count;
+        public IObservable<bool> Reordered => this._reordered;
+
+        /// <summary>
+        /// Emits the shot that was added.
+        /// </summary>
+        public IObservable<Shot> ShotAdded => this._added;
+
+        /// <summary>
+        /// Emits the shot that was removed.
+        /// </summary>
+        public IObservable<Shot> ShotRemoved => this._removed;
 
         /// <summary>
         /// All shots in sequence order. Read-only view.
@@ -55,51 +77,132 @@ namespace Fram3d.Core.Shot
         public double TotalDuration => this._shots.Sum(s => s.Duration);
 
         /// <summary>
-        /// Fired when the current shot changes.
-        /// </summary>
-        public event EventHandler<Shot> CurrentShotChanged;
-
-        /// <summary>
-        /// Fired when a shot is added.
-        /// </summary>
-        public event EventHandler<Shot> ShotAdded;
-
-        /// <summary>
-        /// Fired when a shot is removed.
-        /// </summary>
-        public event EventHandler<Shot> ShotRemoved;
-
-        /// <summary>
-        /// Fired when shots are reordered.
-        /// </summary>
-        public event EventHandler ShotsReordered;
-
-        /// <summary>
         /// Adds a new shot at the end of the sequence, capturing the given camera state.
         /// Auto-generates a name. Returns the new shot.
         /// </summary>
         public Shot AddShot(Vector3 cameraPosition, Quaternion cameraRotation)
         {
             var name = this.GenerateName();
-            var shot = new Shot(
-                new ShotId(Guid.NewGuid()),
-                name,
-                cameraPosition,
-                cameraRotation
-            );
+            var id   = new ShotId(Guid.NewGuid());
+
+            var shot = new Shot(id,
+                                name,
+                                cameraPosition,
+                                cameraRotation);
+
             this._shots.Add(shot);
             this.CurrentShot = shot;
-            this.ShotAdded?.Invoke(this, shot);
+            this._added.OnNext(shot);
             return shot;
         }
 
         /// <summary>
+        /// Removes all shots and resets the name counter.
+        /// </summary>
+        public void Clear()
+        {
+            var removed = new List<Shot>(this._shots);
+            this._shots.Clear();
+            this.CurrentShot = null;
+            this._nextNumber = 1;
+
+            foreach (var shot in removed)
+            {
+                this._removed.OnNext(shot);
+            }
+        }
+
+        /// <summary>
+        /// Gets a shot by ID, or null if not found.
+        /// </summary>
+        public Shot GetById(ShotId id) =>
+            this._shots.FirstOrDefault(s => s.Id == id);
+
+        /// <summary>
+        /// Computes the end time of a shot on the global element timeline.
+        /// </summary>
+        public TimePosition GetGlobalEndTime(ShotId id)
+        {
+            var start = this.GetGlobalStartTime(id);
+            var shot  = this.GetById(id);
+            return start.Add(shot.Duration);
+        }
+
+        /// <summary>
+        /// Computes the start time of a shot on the global element timeline.
+        /// Shots are contiguous — each starts where the previous one ends.
+        /// </summary>
+        public TimePosition GetGlobalStartTime(ShotId id)
+        {
+            var seconds = 0.0;
+
+            foreach (var shot in this._shots)
+            {
+                if (shot.Id == id)
+                {
+                    return new TimePosition(seconds);
+                }
+
+                seconds += shot.Duration;
+            }
+
+            throw new ArgumentException(
+                $"Shot with ID {id} not found in registry"
+            );
+        }
+
+        /// <summary>
+        /// Converts a global timeline time to a (Shot, localTime) pair.
+        /// Returns null if the time is outside all shots.
+        /// </summary>
+        public (Shot shot, TimePosition localTime)? GetShotAtGlobalTime(
+            TimePosition globalTime)
+        {
+            var seconds = 0.0;
+
+            foreach (var shot in this._shots)
+            {
+                var end = seconds + shot.Duration;
+
+                if (globalTime.Seconds >= seconds && globalTime.Seconds < end)
+                {
+                    var localSeconds = globalTime.Seconds - seconds;
+                    var localTime    = new TimePosition(localSeconds);
+                    return (shot, localTime);
+                }
+
+                seconds = end;
+            }
+
+            // Check if exactly at the end of the last shot
+            var isAtEnd = this._shots.Count > 0
+                       && Math.Abs(globalTime.Seconds - seconds) < 1e-9;
+
+            if (isAtEnd)
+            {
+                var lastShot  = this._shots[this._shots.Count - 1];
+                var localTime = new TimePosition(lastShot.Duration);
+                return (lastShot, localTime);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the index of a shot in the sequence, or -1 if not found.
+        /// </summary>
+        public int IndexOf(ShotId id) =>
+            this._shots.FindIndex(s => s.Id == id);
+
+        /// <summary>
         /// Removes a shot by ID. Returns true if found and removed.
-        /// When the current shot is removed, selects the next shot (or previous if last).
+        /// When the current shot is removed, selects the next shot
+        /// (or previous if it was the last).
         /// </summary>
         public bool RemoveShot(ShotId id)
         {
             var index = this._shots.FindIndex(s => s.Id == id);
+
             if (index < 0)
             {
                 return false;
@@ -108,7 +211,7 @@ namespace Fram3d.Core.Shot
             var shot       = this._shots[index];
             var wasCurrent = this.CurrentShot == shot;
             this._shots.RemoveAt(index);
-            this.ShotRemoved?.Invoke(this, shot);
+            this._removed.OnNext(shot);
 
             if (wasCurrent)
             {
@@ -122,35 +225,12 @@ namespace Fram3d.Core.Shot
                 }
                 else
                 {
-                    this.CurrentShot = this._shots[this._shots.Count - 1];
+                    var lastIndex = this._shots.Count - 1;
+                    this.CurrentShot = this._shots[lastIndex];
                 }
             }
 
             return true;
-        }
-
-        /// <summary>
-        /// Gets a shot by ID, or null if not found.
-        /// </summary>
-        public Shot GetById(ShotId id) => this._shots.FirstOrDefault(s => s.Id == id);
-
-        /// <summary>
-        /// Gets the index of a shot in the sequence, or -1 if not found.
-        /// </summary>
-        public int IndexOf(ShotId id) => this._shots.FindIndex(s => s.Id == id);
-
-        /// <summary>
-        /// Sets the current shot. The shot must exist in the registry.
-        /// </summary>
-        public void SetCurrentShot(ShotId id)
-        {
-            var shot = this.GetById(id);
-            if (shot == null)
-            {
-                throw new ArgumentException($"Shot with ID {id} not found in registry");
-            }
-
-            this.CurrentShot = shot;
         }
 
         /// <summary>
@@ -160,9 +240,12 @@ namespace Fram3d.Core.Shot
         public void Reorder(ShotId id, int newIndex)
         {
             var oldIndex = this.IndexOf(id);
+
             if (oldIndex < 0)
             {
-                throw new ArgumentException($"Shot with ID {id} not found in registry");
+                throw new ArgumentException(
+                    $"Shot with ID {id} not found in registry"
+                );
             }
 
             if (newIndex < 0 || newIndex >= this._shots.Count)
@@ -178,81 +261,24 @@ namespace Fram3d.Core.Shot
             var shot = this._shots[oldIndex];
             this._shots.RemoveAt(oldIndex);
             this._shots.Insert(newIndex, shot);
-            this.ShotsReordered?.Invoke(this, EventArgs.Empty);
+            this._reordered.OnNext(true);
         }
 
         /// <summary>
-        /// Computes the start time of a shot on the global element timeline.
-        /// Shots are contiguous — each starts where the previous one ends.
+        /// Sets the current shot. The shot must exist in the registry.
         /// </summary>
-        public TimePosition GetGlobalStartTime(ShotId id)
+        public void SetCurrentShot(ShotId id)
         {
-            var seconds = 0.0;
-            foreach (var shot in this._shots)
-            {
-                if (shot.Id == id)
-                {
-                    return new TimePosition(seconds);
-                }
+            var shot = this.GetById(id);
 
-                seconds += shot.Duration;
+            if (shot == null)
+            {
+                throw new ArgumentException(
+                    $"Shot with ID {id} not found in registry"
+                );
             }
 
-            throw new ArgumentException($"Shot with ID {id} not found in registry");
-        }
-
-        /// <summary>
-        /// Computes the end time of a shot on the global element timeline.
-        /// </summary>
-        public TimePosition GetGlobalEndTime(ShotId id)
-        {
-            var start = this.GetGlobalStartTime(id);
-            var shot  = this.GetById(id);
-            return start.Add(shot.Duration);
-        }
-
-        /// <summary>
-        /// Converts a global timeline time to a (Shot, localTime) pair.
-        /// Returns null if the time is outside all shots.
-        /// </summary>
-        public (Shot shot, TimePosition localTime)? GetShotAtGlobalTime(TimePosition globalTime)
-        {
-            var seconds = 0.0;
-            foreach (var shot in this._shots)
-            {
-                var end = seconds + shot.Duration;
-                if (globalTime.Seconds >= seconds && globalTime.Seconds < end)
-                {
-                    return (shot, new TimePosition(globalTime.Seconds - seconds));
-                }
-
-                seconds = end;
-            }
-
-            // Check if exactly at the end of the last shot
-            if (this._shots.Count > 0 && Math.Abs(globalTime.Seconds - seconds) < 1e-9)
-            {
-                var lastShot = this._shots[this._shots.Count - 1];
-                return (lastShot, new TimePosition(lastShot.Duration));
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Removes all shots and resets the name counter.
-        /// </summary>
-        public void Clear()
-        {
-            var removed = new List<Shot>(this._shots);
-            this._shots.Clear();
-            this.CurrentShot = null;
-            this._nextNumber = 1;
-
-            foreach (var shot in removed)
-            {
-                this.ShotRemoved?.Invoke(this, shot);
-            }
+            this.CurrentShot = shot;
         }
 
         private string GenerateName()

@@ -11,7 +11,11 @@ namespace Fram3d.Core.Tests.Timeline
     {
         private static Keyframe<float> MakeKeyframe(double time, float value)
         {
-            return new Keyframe<float>(new KeyframeId(Guid.NewGuid()), new TimePosition(time), value);
+            return new Keyframe<float>(
+                new KeyframeId(Guid.NewGuid()),
+                new TimePosition(time),
+                value
+            );
         }
 
         private static float FloatLerp(float a, float b, float t) => a + (b - a) * t;
@@ -47,24 +51,113 @@ namespace Fram3d.Core.Tests.Timeline
         }
 
         [Fact]
-        public void Add__ReplacesExisting__When__SameIdAdded()
+        public void Add__ThrowsInvalidOperation__When__SameIdExists()
         {
             var mgr = new KeyframeManager<float>();
             var id = new KeyframeId(Guid.NewGuid());
             mgr.Add(new Keyframe<float>(id, new TimePosition(1.0), 5.0f));
-            mgr.Add(new Keyframe<float>(id, new TimePosition(1.0), 10.0f));
+            Action act = () => mgr.Add(new Keyframe<float>(id, new TimePosition(2.0), 10.0f));
+            act.Should().Throw<InvalidOperationException>();
+        }
+
+        [Fact]
+        public void Add__ThrowsInvalidOperation__When__SameTimeExists()
+        {
+            var mgr = new KeyframeManager<float>();
+            mgr.Add(MakeKeyframe(1.0, 5.0f));
+            Action act = () => mgr.Add(MakeKeyframe(1.0, 10.0f));
+            act.Should().Throw<InvalidOperationException>();
+        }
+
+        // --- Update ---
+
+        [Fact]
+        public void Update__ReplacesValue__When__SameIdExists()
+        {
+            var mgr = new KeyframeManager<float>();
+            var id = new KeyframeId(Guid.NewGuid());
+            mgr.Add(new Keyframe<float>(id, new TimePosition(1.0), 5.0f));
+            mgr.Update(new Keyframe<float>(id, new TimePosition(1.0), 10.0f));
             mgr.Count.Should().Be(1);
             mgr.Keyframes[0].Value.Should().Be(10.0f);
         }
 
         [Fact]
-        public void Add__MergesAtSameTime__When__DifferentIdAtSameTime()
+        public void Update__MovesTime__When__SameIdDifferentTime()
         {
             var mgr = new KeyframeManager<float>();
-            mgr.Add(MakeKeyframe(1.0, 5.0f));
-            mgr.Add(MakeKeyframe(1.0, 10.0f));
+            var id = new KeyframeId(Guid.NewGuid());
+            mgr.Add(new Keyframe<float>(id, new TimePosition(1.0), 5.0f));
+            mgr.Update(new Keyframe<float>(id, new TimePosition(3.0), 5.0f));
+            mgr.Count.Should().Be(1);
+            mgr.Keyframes[0].Time.Seconds.Should().Be(3.0);
+        }
+
+        [Fact]
+        public void Update__ThrowsInvalidOperation__When__IdNotFound()
+        {
+            var mgr = new KeyframeManager<float>();
+            var kf = MakeKeyframe(1.0, 5.0f);
+            Action act = () => mgr.Update(kf);
+            act.Should().Throw<InvalidOperationException>();
+        }
+
+        [Fact]
+        public void Update__ThrowsArgumentNull__When__KeyframeIsNull()
+        {
+            var mgr = new KeyframeManager<float>();
+            Action act = () => mgr.Update(null);
+            act.Should().Throw<ArgumentNullException>();
+        }
+
+        // --- SetOrMerge ---
+
+        [Fact]
+        public void SetOrMerge__AddsNew__When__NoConflict()
+        {
+            var mgr = new KeyframeManager<float>();
+            mgr.SetOrMerge(MakeKeyframe(1.0, 5.0f));
+            mgr.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void SetOrMerge__ReplacesExisting__When__SameIdAdded()
+        {
+            var mgr = new KeyframeManager<float>();
+            var id = new KeyframeId(Guid.NewGuid());
+            mgr.SetOrMerge(new Keyframe<float>(id, new TimePosition(1.0), 5.0f));
+            mgr.SetOrMerge(new Keyframe<float>(id, new TimePosition(1.0), 10.0f));
             mgr.Count.Should().Be(1);
             mgr.Keyframes[0].Value.Should().Be(10.0f);
+        }
+
+        [Fact]
+        public void SetOrMerge__MergesAtSameTime__When__DifferentIdAtSameTime()
+        {
+            var mgr = new KeyframeManager<float>();
+            mgr.SetOrMerge(MakeKeyframe(1.0, 5.0f));
+            mgr.SetOrMerge(MakeKeyframe(1.0, 10.0f));
+            mgr.Count.Should().Be(1);
+            mgr.Keyframes[0].Value.Should().Be(10.0f);
+        }
+
+        [Fact]
+        public void SetOrMerge__UpdatesPosition__When__SameIdDifferentTime()
+        {
+            var mgr = new KeyframeManager<float>();
+            var id = new KeyframeId(Guid.NewGuid());
+            mgr.SetOrMerge(new Keyframe<float>(id, new TimePosition(1.0), 5.0f));
+            mgr.SetOrMerge(new Keyframe<float>(id, new TimePosition(3.0), 5.0f));
+            mgr.Count.Should().Be(1);
+            mgr.Keyframes[0].Time.Seconds.Should().Be(3.0);
+        }
+
+        [Fact]
+        public void SetOrMerge__ThrowsArgumentNull__When__KeyframeIsNull()
+        {
+            var mgr = new KeyframeManager<float>();
+            Action act = () => mgr.SetOrMerge(null);
+            act.Should().Throw<ArgumentNullException>();
         }
 
         // --- RemoveById ---
@@ -209,7 +302,6 @@ namespace Fram3d.Core.Tests.Timeline
             mgr.Add(MakeKeyframe(0.0, 0.0f));
             mgr.Add(MakeKeyframe(2.0, 10.0f));
             mgr.Add(MakeKeyframe(4.0, 30.0f));
-            // Between kf[1] and kf[2]: t=3.0 is 50% between 2.0 and 4.0
             mgr.Evaluate(new TimePosition(3.0), FloatLerp).Should().Be(20.0f);
         }
 
@@ -242,25 +334,11 @@ namespace Fram3d.Core.Tests.Timeline
             mgr.Add(new Keyframe<Quaternion>(id1, new TimePosition(0.0), q1));
             mgr.Add(new Keyframe<Quaternion>(id2, new TimePosition(2.0), q2));
             var result = mgr.Evaluate(new TimePosition(1.0), Quaternion.Slerp);
-            // At t=0.5 between identity and 90° around Y, should be ~45°
             var expected = Quaternion.Slerp(q1, q2, 0.5f);
             result.X.Should().BeApproximately(expected.X, 0.01f);
             result.Y.Should().BeApproximately(expected.Y, 0.01f);
             result.Z.Should().BeApproximately(expected.Z, 0.01f);
             result.W.Should().BeApproximately(expected.W, 0.01f);
-        }
-
-        // --- Update keyframe (re-add with same ID, new time) ---
-
-        [Fact]
-        public void Add__UpdatesPosition__When__SameIdDifferentTime()
-        {
-            var mgr = new KeyframeManager<float>();
-            var id = new KeyframeId(Guid.NewGuid());
-            mgr.Add(new Keyframe<float>(id, new TimePosition(1.0), 5.0f));
-            mgr.Add(new Keyframe<float>(id, new TimePosition(3.0), 5.0f));
-            mgr.Count.Should().Be(1);
-            mgr.Keyframes[0].Time.Seconds.Should().Be(3.0);
         }
     }
 }

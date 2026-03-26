@@ -143,6 +143,17 @@ namespace Fram3d.UI.Timeline
         }
 
         /// <summary>
+        /// Sets the view range directly. Used for page-flip during playback.
+        /// </summary>
+        public void SetViewRange(double start, double end)
+        {
+            this._viewStart = start;
+            this._viewEnd   = end;
+            this.Clamp();
+            this.Changed?.Invoke();
+        }
+
+        /// <summary>
         /// Fits the entire duration into the strip with margin.
         /// </summary>
         public void FitAll(double totalDuration)
@@ -203,8 +214,6 @@ namespace Fram3d.UI.Timeline
 
         private void Clamp()
         {
-            var maxEnd = this._totalDuration;
-
             // Don't let view start go below 0
             if (this._viewStart < 0)
             {
@@ -213,18 +222,12 @@ namespace Fram3d.UI.Timeline
                 this._viewEnd   += shift;
             }
 
-            // Don't let view end go too far right
-            if (this._viewEnd > maxEnd)
+            // Don't let view start go past total duration (nothing to see)
+            if (this._viewStart > this._totalDuration)
             {
-                var shift = this._viewEnd - maxEnd;
-                this._viewStart -= shift;
-                this._viewEnd   -= shift;
-
-                // Re-clamp left
-                if (this._viewStart < 0)
-                {
-                    this._viewStart = 0;
-                }
+                var duration = this.VisibleDuration;
+                this._viewStart = Math.Max(0, this._totalDuration - duration);
+                this._viewEnd   = this._viewStart + duration;
             }
         }
     }

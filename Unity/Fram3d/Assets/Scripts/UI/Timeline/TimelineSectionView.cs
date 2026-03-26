@@ -152,6 +152,29 @@ namespace Fram3d.UI.Timeline
             }
         }
 
+        public void ZoomIn()
+        {
+            if (this._viewState == null)
+            {
+                return;
+            }
+
+            // Zoom centered on the playhead
+            this._viewState.ZoomAtPoint(this._currentGlobalTime, 1f);
+            this.RefreshAll();
+        }
+
+        public void ZoomOut()
+        {
+            if (this._viewState == null)
+            {
+                return;
+            }
+
+            this._viewState.ZoomAtPoint(this._currentGlobalTime, -1f);
+            this.RefreshAll();
+        }
+
         public void Toggle()
         {
             this._visible = !this._visible;
@@ -262,10 +285,13 @@ namespace Fram3d.UI.Timeline
                 }
             }
 
-            // Auto-scroll if playhead exits visible range
-            if (this._viewState != null)
+            // Page-flip: when playhead crosses the right edge, jump the view
+            // forward by one full visible duration so the playhead starts at
+            // the left edge again. Matches Premiere behavior.
+            if (this._viewState != null && this._currentGlobalTime > this._viewState.ViewEnd)
             {
-                this._viewState.EnsureVisible(this._currentGlobalTime);
+                var duration = this._viewState.VisibleDuration;
+                this._viewState.SetViewRange(this._viewState.ViewEnd, this._viewState.ViewEnd + duration);
             }
         }
 
@@ -1493,20 +1519,29 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            // Pick dominant scroll axis to avoid cross-contamination on trackpads
-            var absX = Math.Abs(evt.delta.x);
-            var absY = Math.Abs(evt.delta.y);
-
-            if (absY > absX)
+            // Ctrl+scroll = pinch-to-zoom (macOS translates trackpad pinch this way)
+            if (evt.ctrlKey)
             {
-                // Vertical dominant: zoom at cursor
                 var cursorTime = this._viewState.PixelToTime(evt.localMousePosition.x);
                 this._viewState.ZoomAtPoint(cursorTime, -evt.delta.y);
             }
-            else if (absX > 0.01f)
+            else
             {
-                // Horizontal dominant: pan
-                this._viewState.Pan(evt.delta.x * 2.0);
+                // Pick dominant scroll axis to avoid cross-contamination on trackpads
+                var absX = Math.Abs(evt.delta.x);
+                var absY = Math.Abs(evt.delta.y);
+
+                if (absY > absX)
+                {
+                    // Vertical dominant: zoom at cursor
+                    var cursorTime = this._viewState.PixelToTime(evt.localMousePosition.x);
+                    this._viewState.ZoomAtPoint(cursorTime, -evt.delta.y);
+                }
+                else if (absX > 0.01f)
+                {
+                    // Horizontal dominant: pan
+                    this._viewState.Pan(evt.delta.x * 2.0);
+                }
             }
 
             this.UpdateBlockWidths();
@@ -1579,6 +1614,14 @@ namespace Fram3d.UI.Timeline
         // ══════════════════════════════════════════════════════════════════
         // Helpers
         // ══════════════════════════════════════════════════════════════════
+
+        private void RefreshAll()
+        {
+            this.UpdateBlockWidths();
+            this.UpdatePlayhead();
+            this.UpdateRuler();
+            this.UpdateZoomBar();
+        }
 
         private ShotBlockElement FindBlockAt(Vector2 localPos)
         {

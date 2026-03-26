@@ -209,6 +209,26 @@ namespace Fram3d.UI.Input
                 return true;
             }
 
+            if (keyboard.equalsKey.wasPressedThisFrame && !alt && !shift)
+            {
+                if (this._timelineSection != null)
+                {
+                    this._timelineSection.ZoomIn();
+                }
+
+                return true;
+            }
+
+            if (keyboard.minusKey.wasPressedThisFrame && !alt && !shift)
+            {
+                if (this._timelineSection != null)
+                {
+                    this._timelineSection.ZoomOut();
+                }
+
+                return true;
+            }
+
             return false;
         }
 

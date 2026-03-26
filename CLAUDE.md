@@ -75,9 +75,11 @@ tests/Fram3d.Core.Tests/
 Unity/Fram3d/Assets/Tests/
   PlayMode/
     Fram3d.PlayMode.Tests.asmdef  ← NUnit, references Core + Engine + UI
-    Engine/                       ← CameraBehaviour, CameraDatabaseLoader
+    Engine/                       ← CameraBehaviour, CameraDatabaseLoader,
+                                    ViewCameraManager
     UI/                           ← AspectRatioMaskView, CameraInputHandler,
-                                    PropertiesPanelView, SearchableDropdown
+                                    CursorBehaviour, PropertiesPanelView,
+                                    SearchableDropdown, SelectionInputHandler
 ```
 
 Run Core tests: `dotnet test tests/Fram3d.Core.Tests`
@@ -114,6 +116,11 @@ Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 - **Don't test implementation details.** Avoid reflection to read private fields for assertions. If a test needs to verify something, the component should expose it as a public computed property (e.g., `IsVisible`, `IsHoveringHandle`). This makes tests compile-safe and documents the component's observable API.
 - **Child GameObjects vs scene roots.** Runtime-created child objects (like gizmo handles) should be parented to the owning MonoBehaviour's transform, not left as scene roots. Child objects auto-destroy with their parent — no manual cleanup needed. Scene root orphans require complex TearDown and leak if cleanup is missed.
 - **Input state machines must handle simultaneous transitions.** `wasPressedThisFrame` and `wasReleasedThisFrame` can both be true when a frame hitch (GC, domain reload) exceeds the duration of the physical click. Any state machine with `if (pressed) { return; }` before `if (released)` will silently discard the click. Always check for `pressed && released` first and handle it as an instant action.
+- **Multi-camera test isolation.** When testing `ViewCameraManager` or multi-view layouts, each test must destroy all cameras and GameObjects created. Camera.allCameras persists across tests — a stale camera from a previous test will corrupt viewport rect assertions. Use the `_extras` list pattern and `DestroyImmediate` in TearDown.
+
+## Unity API Gotchas
+
+**`GenericDropdownMenu.DropDown` overload ambiguity.** `DropDown(Rect, VisualElement)` and `DropDown(Rect, VisualElement, bool)` both exist. When passing just two args, the compiler may select the wrong overload depending on context. Always pass all 4 args explicitly to disambiguate: `menu.DropDown(rect, element, false)`.
 
 ## Unity Rendering
 
@@ -122,6 +129,12 @@ Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 **`MaterialPropertyBlock` for per-renderer visual variation.** Use `SetPropertyBlock(block)` to overlay properties without creating material instances. `SetPropertyBlock(null)` removes the overlay entirely. Never use `renderer.material` (creates instances that are hard to clean up) — use `renderer.sharedMaterial` for reads and `MaterialPropertyBlock` for writes. The `_EMISSION` keyword cannot be toggled via PropertyBlock (it's a shader compile variant, not a property).
 
 **`ZTest Always` for always-on-top rendering.** Gizmos use a shader with `ZTest Always` and `ZWrite Off` on a dedicated layer. The main camera renders them — no separate overlay camera needed. Objects on the Gizmo layer are excluded from `SelectionRaycaster` via layer mask.
+
+**Shader stripping in builds.** Unity strips shaders not referenced by materials in the build. If a shader is only used at runtime (e.g., `Unlit/Color` for frustum wireframes created via `new Material(Shader.Find(...))`), it will be stripped. Fix: add a `[SerializeField] private Shader` field referencing the shader, or add it to `Project Settings → Graphics → Always Included Shaders`. A `[SerializeField]` reference is preferred — it's explicit and discoverable.
+
+**`Camera.rect` for multi-viewport layout.** Use `Camera.rect` (normalized 0–1) to split the screen into viewports instead of RenderTextures. Camera.rect is cheaper (no extra render targets), composites naturally, and Unity handles input coordinate mapping. When combined with UI Toolkit overlays, convert screen pixels to CSS pixels via `screenPixels / (Screen.width / root.resolvedStyle.width)` because PanelSettings may scale the UI independently of screen resolution.
+
+**`rootVisualElement` may be null in `Start()`.** UI Toolkit documents can fail to initialize by `Start()` if the UIDocument's panel hasn't been created yet. Guard with a null check and retry next frame: `if (uiDocument.rootVisualElement == null) { StartCoroutine(RetryInit()); return; }`. This is especially common when UIDocuments are created at runtime via `AddComponent`.
 
 ## Input Handling
 
@@ -134,6 +147,30 @@ Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 **Resync event-tracked state on focus change.** `InputSystem.onEvent` doesn't fire while the app is unfocused. Any state tracked incrementally from events (modifier booleans, accumulated deltas) can get stuck if the user releases a key while another app has focus. `OnApplicationFocus(true)` must resync from polled values (`keyboard.leftCtrlKey.isPressed` etc.) and clear stale event queues. Without this, modifier state permanently inverts after Cmd-tab (FRA-127).
 
 **Clamp mouse delta to reject focus-change spikes.** `mouse.delta.ReadValue()` can return a huge accumulated value (hundreds of pixels) when the app regains focus. Apply a `MAX_DELTA_SQR_MAGNITUDE` guard in drag handlers — anything above ~200px/frame is a focus artifact, not real user input (FRA-126).
+
+**Raycast hover instability near collider edges.** When a ground plane (or other large collider) is in the scene, `Physics.Raycast` can intermittently hit the ground instead of a small element — especially at oblique angles near element edges. This causes single-frame hover loss and cursor flicker. Fix: keep the previous hover if the raycast misses but the mouse hasn't moved far from the last hit position (`HOVER_KEEP_DISTANCE_SQ = 400f`, ~20px). Hover only clears when the mouse moves away. Don't try to fix this by adjusting collider sizes or layer masks — the raycast miss is a geometric reality at certain angles.
+
+## Multi-View System
+
+**`ViewCameraManager` owns all camera lifecycle.** Creates, positions, and destroys cameras for each view slot. In single-view mode, one camera fills the screen. In multi-view, each slot gets a camera with a `Camera.rect` defining its viewport region. The Camera View slot always uses the main `CameraBehaviour` camera; Director View creates a separate camera. When switching layouts, existing cameras are recycled — don't destroy and recreate if the slot type hasn't changed.
+
+**Stale slot state when switching view modes.** When switching from single Director view to a split layout, the Director camera's state (position, rotation) can leak into the Camera View slot if the slot model isn't reset. Always reset slot state on layout change, not just camera properties.
+
+**Screen pixels vs CSS pixels for UI overlays.** `PanelSettings.scaleMode` may cause UI Toolkit to use different coordinates than `Screen.width/height`. The ratio `Screen.width / root.resolvedStyle.width` gives the conversion factor. All viewport inset calculations (properties panel width, overlay positioning) must use CSS pixels, not screen pixels. This was the root cause of 3 separate bugs during FRA-52.
+
+**Extract shared viewport scoping into `ViewportScope`.** `AspectRatioMaskView` and `CompositionGuideView` both need to position themselves within the Camera View's viewport (accounting for properties panel inset in single-view, or slot rect in multi-view). This logic was duplicated until extracted into `ViewportScope.Apply()`. When adding new overlays that scope to the camera viewport, use `ViewportScope` — don't reimplement the inset/rect logic.
+
+## Cursor Management
+
+**Software cursor overlay via `OnGUI`, not native plugins.** All platform-specific native cursor code was deleted (MacOSCursorService, EditorCursorService, LinuxCursorService, WindowsCursorPatch, CursorWrapper.dylib, NativeCursorsWebGL.jslib). The replacement is `SoftwareCursorOverlay` — a `MonoBehaviour` that renders cursor textures via `GUI.DrawTexture` in `OnGUI`. When a custom cursor is active, `Cursor.visible = false` hides the OS cursor and the overlay draws the texture at the mouse position. When reset, `Cursor.visible = true` and the overlay stops drawing. This approach:
+- Works identically in Editor and standalone
+- Has zero platform-specific code
+- Cannot flicker (it's rendered by Unity, not fighting the OS cursor system)
+- Trails by one frame (acceptable for hover/drag cursors, not for the primary pointer)
+
+**Why native cursor management failed (8 approaches).** macOS resets the cursor on every `NSMouseMoved` event via its cursor rect system. Any approach that calls `[NSCursor set]` from outside AppKit's view hierarchy fights this reset. Approaches tried and abandoned: (1) `Cursor.SetCursor` — overridden by Editor IMGUI. (2) Native dylib with `[NSCursor pointingHandCursor] set` — flickered between set and reset. (3) Transparent overlay NSView with `cursorUpdate:` — worked in standalone but Unity Editor inserts subviews above it during repaint. (4) `[NSWindow disableCursorRects]` — Unity re-enables during repaint. (5) Per-frame re-application in `EditorApplication.update` — still one-frame flashes. (6) Persistent overlay with grace-based reset. (7) Raising the overlay NSView above Unity's subviews each frame. (8) Combined belt-and-suspenders of all above. The lesson: **don't fight the platform's cursor system from outside it**. The software overlay sidesteps the entire problem.
+
+**Cursor textures from PNG assets, not programmatic pixels.** Early attempts drew cursor shapes via explicit `Color32` arrays (~100 lines for a 19x24 hand). This is fragile, looks bad at Retina resolutions, and is unmaintainable. Use actual PNG files loaded from `Resources/Cursors/` with correct import settings: `isReadable=true`, `alphaIsTransparency=true`, `enableMipMap=false`, `textureType=Cursor`, `filterMode=Point`, no compression. `Cursor.SetCursor` requires readable textures — calling `texture.Apply(false, true)` makes them non-readable and triggers "Invalid texture used for cursor" errors.
 
 ## Implementation Workflow
 

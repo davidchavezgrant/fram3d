@@ -195,16 +195,16 @@ namespace Fram3d.UI.Timeline
 
             if (seconds < this._viewStart)
             {
-                // Place the time at 10% from the left edge
-                this._viewStart = seconds - duration * 0.1;
+                // Place the time at the left edge
+                this._viewStart = seconds;
                 this._viewEnd   = this._viewStart + duration;
                 this.ClampLeft();
                 this.Changed?.Invoke();
             }
             else if (seconds > this._viewEnd)
             {
-                // Place the time at 10% from the right edge
-                this._viewEnd   = seconds + duration * 0.1;
+                // Place the time at the right edge
+                this._viewEnd   = seconds;
                 this._viewStart = this._viewEnd - duration;
                 this.ClampLeft();
                 this.Changed?.Invoke();

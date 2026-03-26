@@ -29,7 +29,15 @@ namespace Fram3d.Engine.Integration
             this._meshRenderer = this.gameObject.AddComponent<MeshRenderer>();
             this._collider     = this.gameObject.AddComponent<BoxCollider>();
 
-            var material = new Material(Shader.Find("Unlit/Color"));
+            var shader = Shader.Find("Unlit/Color") ?? Shader.Find("Universal Render Pipeline/Unlit");
+
+            if (shader == null)
+            {
+                Debug.LogError("FrustumWireframe: Could not find Unlit/Color or URP/Unlit shader.");
+                return;
+            }
+
+            var material = new Material(shader);
             material.color                  = WIREFRAME_COLOR;
             this._meshRenderer.sharedMaterial = material;
             this.RebuildMesh();

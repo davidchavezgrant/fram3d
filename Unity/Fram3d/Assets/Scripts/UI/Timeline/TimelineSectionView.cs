@@ -17,8 +17,8 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class TimelineSectionView : MonoBehaviour
     {
-        private const float  BOUNDARY_HIT_WIDTH  = 8f;
         private const double DOUBLE_CLICK_MS      = 350;
+        private const float  EDGE_HIT_PX          = 6f;
         private const int    FPS                    = 24;
         private const double FRAME_DURATION         = 1.0 / FPS;
         private const int    HOLD_THRESHOLD_MS     = 200;
@@ -73,8 +73,7 @@ namespace Fram3d.UI.Timeline
         private Label         _boundaryTooltipText;
 
         // ── Shot block tracking ──
-        private readonly List<ShotBlockElement> _blocks     = new();
-        private readonly List<VisualElement>    _boundaries = new();
+        private readonly List<ShotBlockElement> _blocks = new();
         private TimelineViewState _viewState;
 
         // ── Subscriptions ──
@@ -1031,22 +1030,8 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            var stripWidth    = this._rulerContent.resolvedStyle.width;
             var totalDuration = this._shotController.Registry.TotalDuration;
-
-            // When dragging past the edges, pan the view proportionally
-            if (px < 0 && !float.IsNaN(stripWidth))
-            {
-                var overshoot = -px;
-                this._viewState.Pan(-overshoot);
-            }
-            else if (px > stripWidth && !float.IsNaN(stripWidth))
-            {
-                var overshoot = px - stripWidth;
-                this._viewState.Pan(overshoot);
-            }
-
-            var time = this._viewState.PixelToTime(px);
+            var time          = this._viewState.PixelToTime(px);
 
             // Snap to frame boundary
             var snappedFrame = Math.Round(time * FPS) / FPS;
@@ -1076,11 +1061,10 @@ namespace Fram3d.UI.Timeline
                 }
             }
 
-            this.UpdatePlayhead();
+            // Scroll the view if the playhead is outside the visible range
+            this._viewState.EnsureVisible(this._currentGlobalTime);
+            this.RefreshAll();
             this.UpdateTransport();
-            this.UpdateBlockWidths();
-            this.UpdateRuler();
-            this.UpdateZoomBar();
         }
 
         private void UpdatePlayhead()
@@ -1115,13 +1099,6 @@ namespace Fram3d.UI.Timeline
 
             this._blocks.Clear();
 
-            foreach (var boundary in this._boundaries)
-            {
-                boundary.RemoveFromHierarchy();
-            }
-
-            this._boundaries.Clear();
-
             var reg = this._shotController.Registry;
 
             for (var i = 0; i < reg.Shots.Count; i++)
@@ -1137,26 +1114,6 @@ namespace Fram3d.UI.Timeline
 
                 this._shotStrip.Insert(this._shotStrip.childCount - 1, block);
                 this._blocks.Add(block);
-
-                if (i < reg.Shots.Count - 1)
-                {
-                    var boundaryIndex = i;
-                    var boundary      = new VisualElement();
-                    boundary.AddToClassList("shot-track__boundary");
-                    boundary.RegisterCallback<PointerDownEvent>(evt =>
-                        this.OnBoundaryPointerDown(evt, boundaryIndex));
-                    boundary.RegisterCallback<PointerEnterEvent>(_ =>
-                        CursorManager.SetCursor(CursorType.ResizeHorizontal));
-                    boundary.RegisterCallback<PointerLeaveEvent>(_ =>
-                    {
-                        if (!this._isBoundaryDragging)
-                        {
-                            CursorManager.ResetCursor();
-                        }
-                    });
-                    this._shotStrip.Insert(this._shotStrip.childCount - 1, boundary);
-                    this._boundaries.Add(boundary);
-                }
             }
 
             // Playhead and out-of-range overlay must render on top of shot blocks
@@ -1190,7 +1147,6 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            var boundaryIdx = 0;
             var runningTime = 0.0;
 
             for (var i = 0; i < this._blocks.Count; i++)
@@ -1208,15 +1164,6 @@ namespace Fram3d.UI.Timeline
                 block.style.bottom   = 0;
 
                 block.Refresh();
-
-                if (boundaryIdx < this._boundaries.Count && i < this._blocks.Count - 1)
-                {
-                    var boundaryPx = this._viewState.TimeToPixel(runningTime + shot.Duration);
-                    this._boundaries[boundaryIdx].style.position = Position.Absolute;
-                    this._boundaries[boundaryIdx].style.left     = (float)boundaryPx - BOUNDARY_HIT_WIDTH / 2f;
-                    boundaryIdx++;
-                }
-
                 runningTime += shot.Duration;
             }
         }
@@ -1435,6 +1382,19 @@ namespace Fram3d.UI.Timeline
         {
             if (evt.button == 0)
             {
+                // Check if near a shot edge first (boundary resize takes priority)
+                var edgeIndex = this.FindShotEdgeAt(evt.localPosition.x);
+
+                if (edgeIndex >= 0)
+                {
+                    this._isBoundaryDragging            = true;
+                    this._boundaryLeftIndex              = edgeIndex;
+                    this._boundaryTooltip.style.display  = DisplayStyle.Flex;
+                    this._shotStrip.CapturePointer(evt.pointerId);
+                    evt.StopPropagation();
+                    return;
+                }
+
                 this._pointerDownTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 this._pointerDownPos  = evt.localPosition;
                 this._pointerIsDown   = true;
@@ -1485,11 +1445,28 @@ namespace Fram3d.UI.Timeline
             if (this._isDragging)
             {
                 this.UpdateDropIndicator(evt.localPosition);
+                return;
             }
 
             if (this._isBoundaryDragging)
             {
                 this.UpdateBoundaryDrag(evt.localPosition);
+                return;
+            }
+
+            // Show resize cursor when hovering near shot edges
+            if (!this._pointerIsDown)
+            {
+                var edgeIndex = this.FindShotEdgeAt(evt.localPosition.x);
+
+                if (edgeIndex >= 0)
+                {
+                    CursorManager.SetCursor(CursorType.ResizeHorizontal);
+                }
+                else
+                {
+                    CursorManager.ResetCursor();
+                }
             }
         }
 
@@ -1615,22 +1592,6 @@ namespace Fram3d.UI.Timeline
         // ══════════════════════════════════════════════════════════════════
         // Shot boundary dragging
         // ══════════════════════════════════════════════════════════════════
-
-        private void OnBoundaryPointerDown(PointerDownEvent evt, int leftIndex)
-        {
-            if (evt.button != 0)
-            {
-                return;
-            }
-
-            this._isBoundaryDragging            = true;
-            this._boundaryLeftIndex             = leftIndex;
-            this._boundaryTooltip.style.display = DisplayStyle.Flex;
-
-            // Capture on the strip so PointerMove/Up events reach OnStripPointerMove/Up
-            this._shotStrip.CapturePointer(evt.pointerId);
-            evt.StopPropagation();
-        }
 
         private void UpdateBoundaryDrag(Vector2 localPos)
         {
@@ -1785,6 +1746,34 @@ namespace Fram3d.UI.Timeline
             this.UpdatePlayhead();
             this.UpdateRuler();
             this.UpdateZoomBar();
+        }
+
+        /// <summary>
+        /// Returns the index of the shot whose right edge is within EDGE_HIT_PX
+        /// of the given x position. Includes the last shot's right edge.
+        /// Returns -1 if no edge is near.
+        /// </summary>
+        private int FindShotEdgeAt(float x)
+        {
+            if (this._viewState == null)
+            {
+                return -1;
+            }
+
+            var runningTime = 0.0;
+
+            for (var i = 0; i < this._blocks.Count; i++)
+            {
+                runningTime += this._blocks[i].Shot.Duration;
+                var edgePx = (float)this._viewState.TimeToPixel(runningTime);
+
+                if (Math.Abs(x - edgePx) <= EDGE_HIT_PX)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private ShotBlockElement FindBlockAt(Vector2 localPos)

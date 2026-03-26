@@ -25,6 +25,7 @@ namespace Fram3d.Engine.Integration
         private       DepthOfField     _dof;
         private       FrustumWireframe _frustumWireframe;
         private       float            _rightInsetPixels;
+        private       ShotController   _shotController;
         private       Camera           _unityCamera;
         private       ViewMode         _viewMode = ViewMode.CAMERA;
 
@@ -36,14 +37,37 @@ namespace Fram3d.Engine.Integration
                                            ? this._directorCamera
                                            : this._cameraElement;
 
-        public        AspectRatio      ActiveAspectRatio   => this._cameraElement.ActiveAspectRatio;
-        public        SensorMode       ActiveSensorMode    => this._cameraElement.ActiveSensorMode;
-        public        CameraElement    CameraElement       => this._cameraElement;
-        public        CameraDatabase   Database            => this._database;
-        public        CameraElement    DirectorCamera      => this._directorCamera;
+        public        AspectRatio      ActiveAspectRatio    => this._cameraElement.ActiveAspectRatio;
+        public        SensorMode       ActiveSensorMode     => this._cameraElement.ActiveSensorMode;
+
+        /// <summary>
+        /// Bottom inset in screen pixels reserved by the shot track bar.
+        /// </summary>
+        public float BottomInsetPixels
+        {
+            get
+            {
+                if (this._shotController != null)
+                {
+                    return this._shotController.BottomInsetPixels;
+                }
+
+                return 0f;
+            }
+        }
+
+        public        CameraElement    CameraElement        => this._cameraElement;
+        public        CameraDatabase   Database             => this._database;
+        public        CameraElement    DirectorCamera       => this._directorCamera;
         public        float            DisplayedFocalLength => this._displayedFocalLength;
-        public        FrustumWireframe FrustumWireframe    => this._frustumWireframe;
-        public        bool             IsDirectorView      => this._viewMode == ViewMode.DIRECTOR;
+        public        FrustumWireframe FrustumWireframe     => this._frustumWireframe;
+        public        bool             IsDirectorView       => this._viewMode == ViewMode.DIRECTOR;
+
+        /// <summary>
+        /// The right-side inset in pixels reserved for the properties panel.
+        /// Overlay views read this to constrain their containers.
+        /// </summary>
+        public float RightInsetPixels => this._rightInsetPixels;
 
         /// <summary>
         /// The shot camera element. Exposed so the frustum wireframe and
@@ -51,12 +75,6 @@ namespace Fram3d.Engine.Integration
         /// when Director View is active.
         /// </summary>
         public CameraElement ShotCamera => this._cameraElement;
-
-        /// <summary>
-        /// The right-side inset in pixels reserved for the properties panel.
-        /// Overlay views read this to constrain their containers.
-        /// </summary>
-        public float RightInsetPixels => this._rightInsetPixels;
 
         public void CycleAspectRatioBackward() => this._cameraElement.CycleAspectRatioBackward();
         public void CycleAspectRatioForward()  => this._cameraElement.CycleAspectRatioForward();
@@ -200,9 +218,10 @@ namespace Fram3d.Engine.Integration
 
         private void SyncViewportRect()
         {
-            var screenWidth = (float)Screen.width;
+            var screenWidth  = (float)Screen.width;
+            var screenHeight = (float)Screen.height;
 
-            if (screenWidth <= 0)
+            if (screenWidth <= 0 || screenHeight <= 0)
             {
                 this._unityCamera.rect = new Rect(0,
                                                   0,
@@ -212,18 +231,22 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
-            // Camera.rect only accounts for the panel inset.
+            // Camera.rect accounts for panel insets on right and bottom.
             // Sensor aspect masking is handled by the UI mask bars.
-            var availableWidth = (screenWidth - this._rightInsetPixels) / screenWidth;
+            var availableWidth  = (screenWidth - this._rightInsetPixels) / screenWidth;
+            var bottomInset     = this.BottomInsetPixels;
+            var bottomNorm      = bottomInset / screenHeight;
+            var availableHeight = 1f - bottomNorm;
 
             this._unityCamera.rect = new Rect(0,
-                                              0,
+                                              bottomNorm,
                                               availableWidth,
-                                              1);
+                                              availableHeight);
         }
 
         private void Awake()
         {
+            this._shotController                    = FindAnyObjectByType<ShotController>();
             this._unityCamera                       = this.GetComponent<Camera>();
             this._cameraElement                     = new CameraElement(new ElementId(System.Guid.NewGuid()), "Main Camera");
             this._directorCamera                    = new CameraElement(new ElementId(System.Guid.NewGuid()), "Director Camera");

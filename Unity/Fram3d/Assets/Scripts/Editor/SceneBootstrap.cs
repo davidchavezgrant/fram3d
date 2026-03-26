@@ -1,6 +1,7 @@
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
 using Fram3d.UI.Panels;
+using Fram3d.UI.Timeline;
 using Fram3d.UI.Views;
 using UnityEditor;
 using UnityEngine;
@@ -19,6 +20,8 @@ namespace Fram3d.Editor
         {
             SetupCamera();
             SetupSelection();
+            SetupShotController();
+            SetupShotTrack();
             SetupViewLayout();
             SetupAspectRatioMask();
             SetupCompositionGuides();
@@ -319,6 +322,52 @@ namespace Fram3d.Editor
 
             EditorUtility.SetDirty(cameraGo);
             EditorUtility.SetDirty(layoutGo);
+        }
+
+        private static void SetupShotController()
+        {
+            var cameraGo = GameObject.Find("Main Camera");
+
+            if (cameraGo == null)
+            {
+                return;
+            }
+
+            if (cameraGo.GetComponent<ShotController>() == null)
+            {
+                cameraGo.AddComponent<ShotController>();
+            }
+
+            EditorUtility.SetDirty(cameraGo);
+        }
+
+        private static void SetupShotTrack()
+        {
+            var shotTrackGo = GameObject.Find("Shot Track");
+
+            if (shotTrackGo == null)
+            {
+                shotTrackGo = new GameObject("Shot Track");
+            }
+
+            var uiDoc = shotTrackGo.GetComponent<UIDocument>();
+
+            if (uiDoc == null)
+            {
+                uiDoc               = shotTrackGo.AddComponent<UIDocument>();
+                uiDoc.panelSettings = GetOrCreatePanelSettings();
+            }
+
+            // Shot track renders below overlays but above nothing — sorting order 0
+            // is fine since it's at the bottom of the screen, not overlapping other UI.
+            uiDoc.sortingOrder = 0;
+
+            if (shotTrackGo.GetComponent<ShotTrackView>() == null)
+            {
+                shotTrackGo.AddComponent<ShotTrackView>();
+            }
+
+            EditorUtility.SetDirty(shotTrackGo);
         }
 
         private static void SetupSelection()

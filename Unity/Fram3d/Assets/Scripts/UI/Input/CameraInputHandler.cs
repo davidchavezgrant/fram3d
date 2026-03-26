@@ -53,6 +53,8 @@ namespace Fram3d.UI.Input
         [SerializeField]
         private ViewLayoutView viewLayoutView;
 
+        private Timeline.ShotTrackView _shotTrackView;
+
         public void Tick(Keyboard keyboard, Mouse mouse)
         {
             if (this._camera == null)
@@ -67,7 +69,10 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            if (this.propertiesPanel != null && this.propertiesPanel.HasFocusedTextField)
+            var panelHasFocus     = this.propertiesPanel != null && this.propertiesPanel.HasFocusedTextField;
+            var shotTrackHasFocus = this._shotTrackView  != null && this._shotTrackView.HasFocusedTextField;
+
+            if (panelHasFocus || shotTrackHasFocus)
             {
                 this._pendingScrollSamples.Clear();
                 return;
@@ -358,9 +363,10 @@ namespace Fram3d.UI.Input
 
         private bool IsPointerOverBlockingUI()
         {
-            var overPanel = this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI;
-            var overLayout = this.viewLayoutView != null && this.viewLayoutView.IsPointerOverUI;
-            return overPanel || overLayout;
+            var overPanel    = this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI;
+            var overLayout   = this.viewLayoutView  != null && this.viewLayoutView.IsPointerOverUI;
+            var overShotTrack = this._shotTrackView  != null && this._shotTrackView.IsPointerOverUI;
+            return overPanel || overLayout || overShotTrack;
         }
 
         // ── Unity lifecycle ──────────────────────────────────────────────
@@ -393,6 +399,7 @@ namespace Fram3d.UI.Input
             this._camera         = this.cameraBehaviour.CameraElement;
             this.propertiesPanel ??= FindAnyObjectByType<PropertiesPanelView>();
             this.viewLayoutView  ??= FindAnyObjectByType<ViewLayoutView>();
+            this._shotTrackView  = FindAnyObjectByType<Timeline.ShotTrackView>();
 
             this._keyboardRouter.Configure(this.cameraBehaviour,
                                             this.compositionGuides,

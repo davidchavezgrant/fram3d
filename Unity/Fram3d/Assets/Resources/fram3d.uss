@@ -179,6 +179,24 @@
     background-color: var(--color-selector-bg);
     border-width: 1px;
     border-color: var(--color-selector-border);
+    border-radius: 3px;
+    padding: 5px 8px;
+    cursor: link;
+}
+
+.sensor-dropdown .unity-base-popup-field__input {
+    background-color: var(--color-selector-bg);
+    border-width: 0;
+    padding: 0;
+}
+
+.sensor-dropdown .unity-base-popup-field__text {
+    font-size: var(--font-body);
+    color: var(--color-text-light);
+}
+
+.sensor-dropdown .unity-base-popup-field__arrow {
+    -unity-background-image-tint-color: var(--color-text-mid);
 }
 
 /* ── Shake section ────────────────────────────────────────────────── */

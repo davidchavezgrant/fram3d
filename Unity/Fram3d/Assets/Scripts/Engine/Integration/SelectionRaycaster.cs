@@ -83,13 +83,21 @@ namespace Fram3d.Engine.Integration
 
             var elementBehaviour = hit.collider.GetComponentInParent<ElementBehaviour>();
 
-            this._hadHitLastFrame  = elementBehaviour != null;
-            this._lastHitScreenPos = screenPosition;
-
             if (elementBehaviour == null)
             {
+                if (this._hadHitLastFrame)
+                {
+                    Debug.Log($"[Raycaster] Hit non-element after element! obj={hit.collider.gameObject.name} " +
+                              $"layer={hit.collider.gameObject.layer} pos=({screenPosition.x},{screenPosition.y}) " +
+                              $"hitPoint={hit.point} dist={hit.distance:F2}");
+                }
+
+                this._hadHitLastFrame = false;
                 return null;
             }
+
+            this._hadHitLastFrame  = true;
+            this._lastHitScreenPos = screenPosition;
 
             return elementBehaviour.Element;
         }

@@ -3,7 +3,8 @@ namespace Fram3d.Engine.Cursor
     public enum CursorType
     {
         Default,
-        Link
+        Link,
+        ClosedHand
     }
 
     public interface ICursorService

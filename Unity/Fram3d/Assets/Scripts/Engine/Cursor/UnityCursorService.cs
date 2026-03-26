@@ -26,10 +26,36 @@ namespace Fram3d.Engine.Cursor
 
             if (cursor == CursorType.Link)
             {
+                var pointingHand = CursorTextures.PointingHand;
+
+                if (pointingHand == null)
+                {
+                    Debug.LogWarning("[Cursor] Pointing hand texture failed to load. Cursor remains default.");
+                    return false;
+                }
+
                 UnityEngine.Cursor.SetCursor(
-                    CursorTextures.PointingHand,
+                    pointingHand,
                     CursorTextures.PointingHandHotspot,
-                    CursorMode.Auto);
+                    CursorMode.ForceSoftware);
+
+                return true;
+            }
+
+            if (cursor == CursorType.ClosedHand)
+            {
+                var closedHand = CursorTextures.ClosedHand;
+
+                if (closedHand == null)
+                {
+                    Debug.LogWarning("[Cursor] Closed hand texture failed to load. Cursor remains default.");
+                    return false;
+                }
+
+                UnityEngine.Cursor.SetCursor(
+                    closedHand,
+                    CursorTextures.ClosedHandHotspot,
+                    CursorMode.ForceSoftware);
 
                 return true;
             }

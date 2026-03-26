@@ -9,9 +9,29 @@ namespace Fram3d.Engine.Cursor
     /// </summary>
     public static class CursorTextures
     {
-        private static readonly Vector2 POINTING_HAND_HOTSPOT = new(9, 0);
+        private static readonly Vector2 CLOSED_HAND_HOTSPOT = new(19, 4);
+        private static readonly Vector2 POINTING_HAND_HOTSPOT = new(19, 4);
 
+        private static Texture2D _closedHand;
         private static Texture2D _pointingHand;
+
+        public static Texture2D ClosedHand
+        {
+            get
+            {
+                if (_closedHand == null)
+                {
+                    _closedHand = Resources.Load<Texture2D>("Cursors/closedHand");
+
+                    if (_closedHand == null)
+                    {
+                        Debug.LogWarning("[Cursor] Cursors/closedHand texture not found in Resources.");
+                    }
+                }
+
+                return _closedHand;
+            }
+        }
 
         public static Texture2D PointingHand
         {
@@ -31,6 +51,7 @@ namespace Fram3d.Engine.Cursor
             }
         }
 
+        public static Vector2 ClosedHandHotspot => CLOSED_HAND_HOTSPOT;
         public static Vector2 PointingHandHotspot => POINTING_HAND_HOTSPOT;
     }
 }

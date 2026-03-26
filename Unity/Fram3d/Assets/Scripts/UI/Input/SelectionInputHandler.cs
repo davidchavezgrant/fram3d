@@ -19,6 +19,7 @@ namespace Fram3d.UI.Input
         private const    int           CURSOR_RESET_GRACE_FRAMES = 10;
         private const    float         HOVER_KEEP_DISTANCE_SQ   = 400f; // 20px — keep hover if mouse within this
         private readonly ClickDetector _clickDetector            = new();
+        private          bool          _cursorIsClosedHand;
         private          bool          _cursorIsPointer;
         private          int           _framesWithoutHover;
         private          bool          _isGizmoDragging;
@@ -81,7 +82,7 @@ namespace Fram3d.UI.Input
         {
             this._selection?.ClearHover();
             this.gizmoController?.ClearHover();
-            this.ResetPointerCursor();
+            this.ResetCustomCursor();
         }
 
         private bool IsPointerOverBlockingUI()
@@ -105,15 +106,30 @@ namespace Fram3d.UI.Input
             ElementDuplicator.TryDuplicate(this._selection);
         }
 
-        private void ResetPointerCursor()
+        private void ResetCustomCursor()
         {
-            if (!this._cursorIsPointer)
+            if (!this._cursorIsPointer && !this._cursorIsClosedHand)
             {
                 return;
             }
 
             CursorManager.ResetCursor();
+            this._cursorIsClosedHand = false;
             this._cursorIsPointer = false;
+        }
+
+        private void SetClosedHandCursor()
+        {
+            CursorManager.SetCursor(CursorType.ClosedHand);
+            this._cursorIsClosedHand = true;
+            this._cursorIsPointer    = false;
+        }
+
+        private void SetPointerCursor()
+        {
+            CursorManager.SetCursor(CursorType.Link);
+            this._cursorIsClosedHand = false;
+            this._cursorIsPointer    = true;
         }
 
         private void UpdateCursor()
@@ -130,10 +146,9 @@ namespace Fram3d.UI.Input
             {
                 this._framesWithoutHover = 0;
 
-                if (!this._cursorIsPointer)
+                if (!this._cursorIsPointer || this._cursorIsClosedHand)
                 {
-                    CursorManager.SetCursor(CursorType.Link);
-                    this._cursorIsPointer = true;
+                    this.SetPointerCursor();
                 }
 
                 return;
@@ -151,13 +166,18 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            this.ResetPointerCursor();
+            this.ResetCustomCursor();
         }
 
         private void UpdateGizmoDrag(Mouse mouse, Vector2 mousePosition)
         {
             if (mouse.leftButton.isPressed)
             {
+                if (!this._cursorIsClosedHand)
+                {
+                    this.SetClosedHandCursor();
+                }
+
                 this.gizmoController.UpdateDrag(mousePosition);
                 return;
             }
@@ -165,6 +185,7 @@ namespace Fram3d.UI.Input
             // Mouse released — end drag
             this.gizmoController.EndDrag();
             this._isGizmoDragging = false;
+            this.ResetCustomCursor();
         }
 
         private void UpdateGizmoHover(Vector2 mousePosition)
@@ -220,6 +241,7 @@ namespace Fram3d.UI.Input
                 if (this.gizmoController != null && this.gizmoController.TryBeginDrag(mousePosition))
                 {
                     this._isGizmoDragging = true;
+                    this.SetClosedHandCursor();
                     this._clickDetector.Suppress();
                     return;
                 }
@@ -274,7 +296,7 @@ namespace Fram3d.UI.Input
 
         private void OnDisable()
         {
-            this.ResetPointerCursor();
+            this.ResetCustomCursor();
         }
     }
 }

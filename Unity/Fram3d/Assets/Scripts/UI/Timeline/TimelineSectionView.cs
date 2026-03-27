@@ -417,7 +417,7 @@ namespace Fram3d.UI.Timeline
 
                 block.RegisterCallback<PointerEnterEvent>(_ =>
                 {
-                    this._tooltipText.text      = this._controllerFormatShotTooltip(shot);
+                    this._tooltipText.text      = this._controller.FormatShotTooltip(shot);
                     this._tooltip.style.display = DisplayStyle.Flex;
                 });
                 block.RegisterCallback<PointerLeaveEvent>(_ =>
@@ -425,7 +425,7 @@ namespace Fram3d.UI.Timeline
                 block.RegisterCallback<ContextualMenuPopulateEvent>(evt =>
                 {
                     evt.menu.AppendAction("Delete Shot", _ =>
-                        this._controllerRemoveShot(shot.Id));
+                        this._controller.RemoveShot(shot.Id));
                 });
 
                 this._shotTrackArea.Insert(this._shotTrackArea.childCount - 3, block);

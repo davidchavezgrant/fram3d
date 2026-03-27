@@ -1,6 +1,5 @@
 using System;
 using Fram3d.Core.Timelines;
-using Timeline = Fram3d.Core.Timelines.Timeline;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Timeline
 {
@@ -57,7 +56,7 @@ namespace Fram3d.UI.Timeline
             }
         }
 
-        public void UpdateTransport(Playhead playhead, Timeline track)
+        public void UpdateTransport(Playhead playhead, Fram3d.Core.Timelines.Timeline track)
         {
             var current = track.CurrentShot;
 

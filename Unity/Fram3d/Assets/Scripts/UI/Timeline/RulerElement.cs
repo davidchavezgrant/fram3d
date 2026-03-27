@@ -1,6 +1,5 @@
 using System;
 using Fram3d.Core.Timelines;
-using Timeline = Fram3d.Core.Timelines.Timeline;
 using UnityEngine;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Timeline
@@ -90,14 +89,14 @@ namespace Fram3d.UI.Timeline
             });
         }
 
-        public void UpdatePlayhead(Timeline state, double currentTime)
+        public void UpdatePlayhead(Fram3d.Core.Timelines.Timeline state, double currentTime)
         {
             var px = (float)state.TimeToPixel(currentTime);
             this._playhead.style.display = DisplayStyle.Flex;
             this._playhead.style.left    = px;
         }
 
-        public void UpdateOutOfRange(Timeline state, double totalDuration)
+        public void UpdateOutOfRange(Fram3d.Core.Timelines.Timeline state, double totalDuration)
         {
             var endPx = (float)state.TimeToPixel(totalDuration);
             this._outOfRange.style.position = Position.Absolute;
@@ -108,7 +107,7 @@ namespace Fram3d.UI.Timeline
             this._outOfRange.style.display  = endPx >= 0 ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        public void UpdateTicks(Timeline state, double totalDuration)
+        public void UpdateTicks(Fram3d.Core.Timelines.Timeline state, double totalDuration)
         {
             // Remove old ticks (keep playhead and out-of-range)
             for (var i = this._content.childCount - 1; i >= 0; i--)

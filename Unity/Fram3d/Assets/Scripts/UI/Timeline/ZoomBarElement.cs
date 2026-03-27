@@ -1,6 +1,5 @@
 using System;
 using Fram3d.Core.Timelines;
-using Timeline = Fram3d.Core.Timelines.Timeline;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Timeline
 {
@@ -83,7 +82,7 @@ namespace Fram3d.UI.Timeline
             });
         }
 
-        public void UpdateThumb(Timeline state, double totalDuration)
+        public void UpdateThumb(Fram3d.Core.Timelines.Timeline state, double totalDuration)
         {
             if (totalDuration <= 0)
             {

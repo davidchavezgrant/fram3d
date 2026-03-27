@@ -3,7 +3,6 @@ using Fram3d.Core.Timelines;
 using Fram3d.Engine.Cursor;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
-using Timeline = Fram3d.Core.Timelines.Timeline;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -21,7 +20,7 @@ namespace Fram3d.UI.Timeline
         private const float SECTION_HEIGHT = 320f;
 
         // ── References ──
-        private Timeline _controller;
+        private Fram3d.Core.Timelines.Timeline _controller;
         private ShotController     _shotController;
 
         // ── UI root ──

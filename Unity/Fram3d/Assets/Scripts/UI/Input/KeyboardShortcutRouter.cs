@@ -1,6 +1,6 @@
-using Fram3d.Core.Camera;
-using Fram3d.Core.Scene;
-using Fram3d.Core.Viewport;
+using Fram3d.Core.Cameras;
+using Fram3d.Core.Scenes;
+using Fram3d.Core.Viewports;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Timeline;
 using Fram3d.UI.Views;

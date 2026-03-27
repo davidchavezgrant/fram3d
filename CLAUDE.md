@@ -16,7 +16,8 @@ Fram3d is a 3D previsualization tool for filmmakers. Unity project (Unity 6, URP
 The `.editorconfig` at the project root is the source of truth for formatting. These rules cover what editorconfig can't express.
 
 ### Type patterns
-- **Sealed class over enum for closed value sets.** Use a sealed class with a private constructor and `static readonly` instances (see `AspectRatio`, `ActiveTool`). Each instance carries typed data (display name, shortcut key). No switch statements needed. The private constructor guarantees the set is closed at compile time.
+- **Sealed class over enum for closed value sets.** Use a sealed class with a private constructor and `static readonly` instances (see `AspectRatio`, `ActiveTool`, `StripInteraction`). Each instance carries typed data (display name, shortcut key). No switch statements needed. The private constructor guarantees the set is closed at compile time. Never use C# `enum` for domain concepts.
+- **`IObservable<T>` over delegates and events.** Use `Subject<T>` (Core.Common) for all event streams. Expose as `IObservable<T>` properties, never as `event` delegates. Subscribers use `source.Subscribe(action)` via `ObservableExtensions`. This keeps a single eventing pattern across the codebase — no mixing of `event Action<T>` with `IObservable<T>`.
 
 ### Language restrictions
 - **C# 9 maximum.** Unity 6 supports C# 9. Do not use C# 10+ features (`record struct`, `global using`, file-scoped namespaces, `required`, etc.). Do not use `record` or `init` — Unity's runtime lacks `IsExternalInit` and polyfilling it is a hack. Use plain classes or structs instead.

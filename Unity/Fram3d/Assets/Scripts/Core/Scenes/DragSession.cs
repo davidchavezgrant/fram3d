@@ -1,6 +1,6 @@
 using System.Numerics;
 using Fram3d.Core.Common;
-namespace Fram3d.Core.Scene
+namespace Fram3d.Core.Scenes
 {
     /// <summary>
     /// Encapsulates the state of an active gizmo drag. Created when a drag

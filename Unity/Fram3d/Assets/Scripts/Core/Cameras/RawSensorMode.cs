@@ -1,4 +1,4 @@
-namespace Fram3d.Core.Camera
+namespace Fram3d.Core.Cameras
 {
     public sealed class RawSensorMode
     {

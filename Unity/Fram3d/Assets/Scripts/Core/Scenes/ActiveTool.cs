@@ -1,4 +1,4 @@
-namespace Fram3d.Core.Scene
+namespace Fram3d.Core.Scenes
 {
     /// <summary>
     /// The current manipulation tool. Sealed class with private constructor —

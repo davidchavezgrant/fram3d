@@ -1,4 +1,4 @@
-namespace Fram3d.Core.Camera
+namespace Fram3d.Core.Cameras
 {
     /// <summary>
     /// Per-lens physical properties: focal length, maximum aperture (T-stop),

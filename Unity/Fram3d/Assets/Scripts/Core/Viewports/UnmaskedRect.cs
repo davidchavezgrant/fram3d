@@ -1,4 +1,4 @@
-namespace Fram3d.Core.Viewport
+namespace Fram3d.Core.Viewports
 {
     public readonly struct UnmaskedRect
     {

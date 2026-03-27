@@ -70,22 +70,6 @@ namespace Fram3d.Core.Tests.Timelines
         }
 
         [Fact]
-        public void ResolveShot__ReturnsCorrectShot__When__InSecondShot()
-        {
-            var timeline = new Timeline(FPS_24);
-            timeline.AddShot(Vector3.Zero, Quaternion.Identity);
-            timeline.AddShot(Vector3.Zero, Quaternion.Identity);
-
-            var playhead = new Playhead(FPS_24);
-            playhead.Scrub(7.0, 10.0);
-
-            var result = playhead.ResolveShot(timeline);
-
-            result.Should().NotBeNull();
-            result.Value.shot.Name.Should().Be("Shot_02");
-        }
-
-        [Fact]
         public void Reset__SetsTimeToZeroAndStops__When__Called()
         {
             var playhead = new Playhead(FPS_24);

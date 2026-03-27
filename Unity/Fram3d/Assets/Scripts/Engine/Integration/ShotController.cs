@@ -12,9 +12,10 @@ namespace Fram3d.Engine.Integration
     /// </summary>
     public sealed class ShotController : MonoBehaviour
     {
-        private float              _bottomInsetPixels;
-        private CameraBehaviour    _cameraBehaviour;
-        private IDisposable        _currentShotSub;
+        private float           _bottomInsetPixels;
+        private CameraBehaviour _cameraBehaviour;
+        private IDisposable     _cameraEvalSub;
+        private IDisposable     _currentShotSub;
 
         public float BottomInsetPixels => this._bottomInsetPixels;
 
@@ -27,15 +28,15 @@ namespace Fram3d.Engine.Integration
             this.Controller = new Timeline(FrameRate.FPS_24);
         }
 
-        private void OnCameraEvaluationRequested(Shot shot, TimePosition localTime)
+        private void OnCameraEvaluationRequested(CameraEvaluation eval)
         {
             if (this._cameraBehaviour == null)
             {
                 return;
             }
 
-            var position = shot.EvaluateCameraPosition(localTime);
-            var rotation = shot.EvaluateCameraRotation(localTime);
+            var position = eval.Shot.EvaluateCameraPosition(eval.LocalTime);
+            var rotation = eval.Shot.EvaluateCameraRotation(eval.LocalTime);
             this._cameraBehaviour.ShotCamera.Position = position;
             this._cameraBehaviour.ShotCamera.Rotation = rotation;
         }
@@ -55,8 +56,8 @@ namespace Fram3d.Engine.Integration
 
         private void OnDestroy()
         {
+            this._cameraEvalSub?.Dispose();
             this._currentShotSub?.Dispose();
-            this.Controller.CameraEvaluationRequested -= this.OnCameraEvaluationRequested;
         }
 
         private void Start()
@@ -72,9 +73,9 @@ namespace Fram3d.Engine.Integration
             this._currentShotSub = this.Controller.CurrentShotChanged
                 .Subscribe(this.OnCurrentShotChanged);
 
-            this.Controller.CameraEvaluationRequested += this.OnCameraEvaluationRequested;
+            this._cameraEvalSub = this.Controller.CameraEvaluationRequested
+                .Subscribe(this.OnCameraEvaluationRequested);
 
-            // Default state: one shot capturing the current camera
             var cam = this._cameraBehaviour.ShotCamera;
             this.Controller.AddShot(cam.Position, cam.Rotation);
         }

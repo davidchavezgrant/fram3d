@@ -1,6 +1,6 @@
 using System.Numerics;
 using FluentAssertions;
-using Fram3d.Core.Scene;
+using Fram3d.Core.Scenes;
 using Xunit;
 namespace Fram3d.Core.Tests.Scene
 {

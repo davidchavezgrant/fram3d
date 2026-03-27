@@ -1,6 +1,6 @@
 using System.Collections;
-using Fram3d.Core.Camera;
-using Fram3d.Core.Viewport;
+using Fram3d.Core.Cameras;
+using Fram3d.Core.Viewports;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Views;
 using NUnit.Framework;

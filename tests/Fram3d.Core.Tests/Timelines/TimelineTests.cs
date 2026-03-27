@@ -218,7 +218,7 @@ namespace Fram3d.Core.Tests.Timelines
         {
             var t     = Create();
             Shot shot = null;
-            t.CameraEvaluationRequested += (s, _) => shot = s;
+            t.CameraEvaluationRequested.Subscribe(eval => shot = eval.Shot);
             t.TogglePlayback();
 
             t.Advance(0.1);

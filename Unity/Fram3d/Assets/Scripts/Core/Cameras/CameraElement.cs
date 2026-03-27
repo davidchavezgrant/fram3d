@@ -1,8 +1,8 @@
 using System;
 using System.Numerics;
 using Fram3d.Core.Common;
-using Fram3d.Core.Viewport;
-namespace Fram3d.Core.Camera
+using Fram3d.Core.Viewports;
+namespace Fram3d.Core.Cameras
 {
     public class CameraElement: Element
     {

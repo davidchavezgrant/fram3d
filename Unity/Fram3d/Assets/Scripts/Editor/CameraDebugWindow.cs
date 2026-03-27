@@ -1,5 +1,5 @@
 using System.Linq;
-using Fram3d.Core.Camera;
+using Fram3d.Core.Cameras;
 using Fram3d.Engine.Integration;
 using UnityEditor;
 using UnityEngine;

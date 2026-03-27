@@ -1,4 +1,4 @@
-namespace Fram3d.Core.Scene
+namespace Fram3d.Core.Scenes
 {
     public sealed class ClickResultKind
     {

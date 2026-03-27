@@ -1,5 +1,5 @@
 using Fram3d.Core.Common;
-using Fram3d.Core.Scene;
+using Fram3d.Core.Scenes;
 using UnityEngine;
 namespace Fram3d.Engine.Integration
 {

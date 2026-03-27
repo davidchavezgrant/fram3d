@@ -1,5 +1,5 @@
-using Fram3d.Core.Camera;
-using Fram3d.Core.Viewport;
+using Fram3d.Core.Cameras;
+using Fram3d.Core.Viewports;
 using UnityEngine;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Panels

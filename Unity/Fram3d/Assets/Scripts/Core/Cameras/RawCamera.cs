@@ -1,4 +1,4 @@
-namespace Fram3d.Core.Camera
+namespace Fram3d.Core.Cameras
 {
     /// <summary>
     /// Raw deserialized camera body from JSON. Field names use PascalCase

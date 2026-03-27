@@ -1,5 +1,5 @@
-using Fram3d.Core.Viewport;
-namespace Fram3d.Core.Camera
+using Fram3d.Core.Viewports;
+namespace Fram3d.Core.Cameras
 {
     /// <summary>
     /// Manages camera body, sensor mode, aspect ratio, and the resulting effective

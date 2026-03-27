@@ -1,6 +1,6 @@
 using System.Numerics;
 using Fram3d.Core.Common;
-namespace Fram3d.Core.Scene
+namespace Fram3d.Core.Scenes
 {
     /// <summary>
     /// Pure state management for the transform gizmo: active tool,

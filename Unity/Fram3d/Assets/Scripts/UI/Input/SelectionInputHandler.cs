@@ -1,4 +1,4 @@
-using Fram3d.Core.Scene;
+using Fram3d.Core.Scenes;
 using Fram3d.Engine.Cursor;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;

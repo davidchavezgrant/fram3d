@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-namespace Fram3d.Core.Camera
+namespace Fram3d.Core.Cameras
 {
     public sealed class CameraDatabase
     {

@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using Fram3d.Core.Scene;
+using Fram3d.Core.Scenes;
 using Fram3d.Engine.Integration;
 using NUnit.Framework;
 using UnityEngine;

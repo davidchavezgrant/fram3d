@@ -1,6 +1,6 @@
 using System;
 using Fram3d.Core.Common;
-using Fram3d.Core.Scene;
+using Fram3d.Core.Scenes;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
 using UnityEngine;

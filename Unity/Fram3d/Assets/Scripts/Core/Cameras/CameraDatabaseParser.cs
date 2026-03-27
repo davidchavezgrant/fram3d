@@ -1,5 +1,5 @@
 using System.Linq;
-namespace Fram3d.Core.Camera
+namespace Fram3d.Core.Cameras
 {
     /// <summary>
     /// Parses raw deserialized camera/lens data into Core domain types.

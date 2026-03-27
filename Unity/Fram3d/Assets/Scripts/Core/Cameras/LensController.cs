@@ -1,5 +1,5 @@
 using System;
-namespace Fram3d.Core.Camera
+namespace Fram3d.Core.Cameras
 {
     /// <summary>
     /// Manages focal length, aperture, focus distance, and lens set selection.

@@ -1,4 +1,4 @@
-namespace Fram3d.Core.Scene
+namespace Fram3d.Core.Scenes
 {
     /// <summary>
     /// Which camera the user is looking through. Camera View is the shot

@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Fram3d.Core.Camera;
+using Fram3d.Core.Cameras;
 using Fram3d.Core.Input;
 using Xunit;
 namespace Fram3d.Core.Tests.Input

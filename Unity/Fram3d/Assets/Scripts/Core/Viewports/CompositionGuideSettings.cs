@@ -1,4 +1,4 @@
-namespace Fram3d.Core.Viewport
+namespace Fram3d.Core.Viewports
 {
     /// <summary>
     /// Visibility state and configuration for composition guides (rule of thirds,

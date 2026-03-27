@@ -1,5 +1,5 @@
 using System;
-namespace Fram3d.Core.Camera
+namespace Fram3d.Core.Cameras
 {
     /// <summary>
     /// A recording mode available on a camera body. Each mode defines a resolution,

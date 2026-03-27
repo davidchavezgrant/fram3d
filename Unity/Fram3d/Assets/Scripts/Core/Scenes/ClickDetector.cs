@@ -1,5 +1,5 @@
 using System.Numerics;
-namespace Fram3d.Core.Scene
+namespace Fram3d.Core.Scenes
 {
     /// <summary>
     /// Discriminates between clicks and drags using a 3-frame lifecycle:

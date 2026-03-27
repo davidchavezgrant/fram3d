@@ -88,21 +88,6 @@ namespace Fram3d.Core.Timelines
         }
 
         /// <summary>
-        /// Resolves which shot the playhead is in and returns the shot-local time.
-        /// </summary>
-        public (Shots.Shot shot, TimePosition localTime)? ResolveShot(Timeline timeline) =>
-            timeline.GetShotAtGlobalTime(new TimePosition(this._currentTime));
-
-        /// <summary>
-        /// Jumps to the start of a specific shot.
-        /// </summary>
-        public void GoToShot(Timeline timeline, ShotId shotId)
-        {
-            var startTime = timeline.GetGlobalStartTime(shotId).Seconds;
-            this.SetTime(startTime);
-        }
-
-        /// <summary>
         /// Resets to time 0.
         /// </summary>
         public void Reset()

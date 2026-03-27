@@ -1,5 +1,5 @@
 using System.Numerics;
-namespace Fram3d.Core.Scene
+namespace Fram3d.Core.Scenes
 {
     /// <summary>
     /// The axis constraint for a gizmo drag operation.

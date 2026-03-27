@@ -235,7 +235,9 @@ namespace Fram3d.Core.Timelines
 
         public double OutOfRangeStartPixel => this.TimeToPixel(this.TotalDuration);
 
-        public event Action ViewChanged;
+        private readonly Subject<bool> _viewChanged = new();
+
+        public IObservable<bool> ViewChanged => this._viewChanged;
 
         public void InitializeViewRange(double stripWidth)
         {
@@ -248,7 +250,7 @@ namespace Fram3d.Core.Timelines
             }
             else
             {
-                this.ViewChanged?.Invoke();
+                this._viewChanged.OnNext(true);
             }
         }
 
@@ -271,7 +273,7 @@ namespace Fram3d.Core.Timelines
             this._viewStart = anchorSeconds - t * newDuration;
             this._viewEnd   = anchorSeconds + (1.0 - t) * newDuration;
             this.ClampView();
-            this.ViewChanged?.Invoke();
+            this._viewChanged.OnNext(true);
         }
 
         public void Pan(double deltaPx)
@@ -280,7 +282,7 @@ namespace Fram3d.Core.Timelines
             this._viewStart += delta;
             this._viewEnd   += delta;
             this.ClampView();
-            this.ViewChanged?.Invoke();
+            this._viewChanged.OnNext(true);
         }
 
         public void FitAll()
@@ -288,7 +290,7 @@ namespace Fram3d.Core.Timelines
             var total = Math.Max(this.TotalDuration, 1.0);
             this._viewStart = 0;
             this._viewEnd   = total;
-            this.ViewChanged?.Invoke();
+            this._viewChanged.OnNext(true);
         }
 
         public void FitRange(double start, double end)
@@ -297,7 +299,7 @@ namespace Fram3d.Core.Timelines
             var padding  = duration * 0.08;
             this._viewStart = start - padding;
             this._viewEnd   = end + padding;
-            this.ViewChanged?.Invoke();
+            this._viewChanged.OnNext(true);
         }
 
         public void SetViewRange(double start, double end)
@@ -305,7 +307,7 @@ namespace Fram3d.Core.Timelines
             this._viewStart = start;
             this._viewEnd   = end;
             this.ClampView();
-            this.ViewChanged?.Invoke();
+            this._viewChanged.OnNext(true);
         }
 
         public void EnsureVisible(double seconds)
@@ -317,14 +319,14 @@ namespace Fram3d.Core.Timelines
                 this._viewStart = seconds;
                 this._viewEnd   = seconds + duration;
                 this.ClampViewLeft();
-                this.ViewChanged?.Invoke();
+                this._viewChanged.OnNext(true);
             }
             else if (seconds > this._viewEnd)
             {
                 this._viewEnd   = seconds;
                 this._viewStart = seconds - duration;
                 this.ClampViewLeft();
-                this.ViewChanged?.Invoke();
+                this._viewChanged.OnNext(true);
             }
         }
 
@@ -596,7 +598,9 @@ namespace Fram3d.Core.Timelines
         // Events
         // ══════════════════════════════════════════════════════════════════
 
-        public event Action<Shot, TimePosition> CameraEvaluationRequested;
+        private readonly Subject<CameraEvaluation> _cameraEvaluationRequested = new();
+
+        public IObservable<CameraEvaluation> CameraEvaluationRequested => this._cameraEvaluationRequested;
 
         // ══════════════════════════════════════════════════════════════════
         // Private
@@ -614,9 +618,15 @@ namespace Fram3d.Core.Timelines
             return total;
         }
 
+        /// <summary>
+        /// Resolves which shot the playhead is in and returns the shot-local time.
+        /// </summary>
+        public (Shot shot, TimePosition localTime)? ResolveShot() =>
+            this.GetShotAtGlobalTime(new TimePosition(this.Playhead.CurrentTime));
+
         private void EvaluateCamera()
         {
-            var result = this.Playhead.ResolveShot(this);
+            var result = this.ResolveShot();
 
             if (!result.HasValue)
             {
@@ -630,7 +640,7 @@ namespace Fram3d.Core.Timelines
                 this.SetCurrentShot(shot.Id);
             }
 
-            this.CameraEvaluationRequested?.Invoke(shot, result.Value.localTime);
+            this._cameraEvaluationRequested.OnNext(new CameraEvaluation(shot, result.Value.localTime));
         }
 
         private void HandleShotClick(ShotId shotId)
@@ -724,16 +734,44 @@ namespace Fram3d.Core.Timelines
         }
     }
 
-    public enum StripInteraction
+    /// <summary>
+    /// Result of a shot strip pointer event. Sealed class pattern —
+    /// closed set with typed data.
+    /// </summary>
+    public sealed class StripInteraction
     {
-        NONE,
-        BOUNDARY_COMPLETE,
-        BOUNDARY_DRAG,
-        CLICK,
-        DRAG_COMPLETE,
-        DRAG_MOVE,
-        DRAG_START,
-        NEAR_EDGE,
-        POTENTIAL_CLICK
+        public static readonly StripInteraction BOUNDARY_COMPLETE = new("Boundary Complete");
+        public static readonly StripInteraction BOUNDARY_DRAG     = new("Boundary Drag");
+        public static readonly StripInteraction CLICK             = new("Click");
+        public static readonly StripInteraction DRAG_COMPLETE     = new("Drag Complete");
+        public static readonly StripInteraction DRAG_MOVE         = new("Drag Move");
+        public static readonly StripInteraction DRAG_START        = new("Drag Start");
+        public static readonly StripInteraction NEAR_EDGE         = new("Near Edge");
+        public static readonly StripInteraction NONE              = new("None");
+        public static readonly StripInteraction POTENTIAL_CLICK   = new("Potential Click");
+
+        private StripInteraction(string name)
+        {
+            this.Name = name;
+        }
+
+        public string Name { get; }
+
+        public override string ToString() => this.Name;
+    }
+
+    /// <summary>
+    /// Value type emitted when the camera should evaluate at a shot-local time.
+    /// </summary>
+    public sealed class CameraEvaluation
+    {
+        public CameraEvaluation(Shot shot, TimePosition localTime)
+        {
+            this.Shot      = shot;
+            this.LocalTime = localTime;
+        }
+
+        public TimePosition LocalTime { get; }
+        public Shot         Shot      { get; }
     }
 }

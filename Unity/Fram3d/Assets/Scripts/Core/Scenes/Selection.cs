@@ -1,5 +1,5 @@
 using Fram3d.Core.Common;
-namespace Fram3d.Core.Scene
+namespace Fram3d.Core.Scenes
 {
     public sealed class Selection
     {

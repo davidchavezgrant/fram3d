@@ -1,6 +1,6 @@
 using FluentAssertions;
-using Fram3d.Core.Camera;
-using Fram3d.Core.Viewport;
+using Fram3d.Core.Cameras;
+using Fram3d.Core.Viewports;
 using Xunit;
 
 namespace Fram3d.Core.Tests.Viewport

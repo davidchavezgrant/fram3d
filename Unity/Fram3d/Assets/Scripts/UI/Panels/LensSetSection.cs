@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Fram3d.Core.Camera;
+using Fram3d.Core.Cameras;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Panels
 {

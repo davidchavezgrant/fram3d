@@ -93,16 +93,16 @@ Fram3d.Services
 
 Fram3d.Engine
   ├── Integration — ElementBehaviour, CameraBehaviour, CharacterBehaviour,
-  │                 LightBehaviour, GizmoController, SelectionRaycaster
+  │                 LightBehaviour, GizmoBehaviour, ElementPicker, ShotEvaluator
   ├── Evaluation  — SceneEvaluator
   ├── Assets      — RuntimeModelImporter, ThumbnailRenderer, EnvironmentLoader
   └── Rendering   — OfflineFrameRenderer, VideoEncoder, ImageExporter
 
 Fram3d.UI
-  ├── Timeline   — TimelineEditorView, ShotTrackView, TrackView, CurveEditorView
+  ├── Timeline   — TimelineSectionView, ShotBlock, Ruler, TransportBar, ZoomBar
   ├── Panels     — ElementsPanelView, PropertiesPanelView, AssetsPanelView
-  ├── Views      — ViewLayoutManager, AspectRatioMaskRenderer, CameraInfoOverlay
-  ├── Input      — KeyboardShortcutHandler, CameraInputHandler, MarqueeSelectionView
+  ├── Views      — ViewLayoutView, AspectRatioMaskView, CompositionGuideView
+  ├── Input      — KeyboardShortcutRouter, CameraInputHandler, SelectionInputHandler
   └── SetBuilder — SetBuilderPageView, WallDrawingToolView
 ```
 

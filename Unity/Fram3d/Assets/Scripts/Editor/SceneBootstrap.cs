@@ -1,6 +1,7 @@
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
 using Fram3d.UI.Panels;
+using Fram3d.UI.Timeline;
 using Fram3d.UI.Views;
 using UnityEditor;
 using UnityEngine;
@@ -19,6 +20,8 @@ namespace Fram3d.Editor
         {
             SetupCamera();
             SetupSelection();
+            SetupShotEvaluator();
+            SetupShotTrack();
             SetupViewLayout();
             SetupAspectRatioMask();
             SetupCompositionGuides();
@@ -321,40 +324,85 @@ namespace Fram3d.Editor
             EditorUtility.SetDirty(layoutGo);
         }
 
+        private static void SetupShotEvaluator()
+        {
+            var cameraGo = GameObject.Find("Main Camera");
+
+            if (cameraGo == null)
+            {
+                return;
+            }
+
+            if (cameraGo.GetComponent<ShotEvaluator>() == null)
+            {
+                cameraGo.AddComponent<ShotEvaluator>();
+            }
+
+            EditorUtility.SetDirty(cameraGo);
+        }
+
+        private static void SetupShotTrack()
+        {
+            var shotTrackGo = GameObject.Find("Shot Track");
+
+            if (shotTrackGo == null)
+            {
+                shotTrackGo = new GameObject("Shot Track");
+            }
+
+            var uiDoc = shotTrackGo.GetComponent<UIDocument>();
+
+            if (uiDoc == null)
+            {
+                uiDoc               = shotTrackGo.AddComponent<UIDocument>();
+                uiDoc.panelSettings = GetOrCreatePanelSettings();
+            }
+
+            // Timeline renders on top of all views and overlays
+            uiDoc.sortingOrder = 10;
+
+            if (shotTrackGo.GetComponent<TimelineSectionView>() == null)
+            {
+                shotTrackGo.AddComponent<TimelineSectionView>();
+            }
+
+            EditorUtility.SetDirty(shotTrackGo);
+        }
+
         private static void SetupSelection()
         {
             var cameraGo = GameObject.Find("Main Camera");
 
-            // SelectionRaycaster on the camera
-            var raycaster = cameraGo.GetComponent<SelectionRaycaster>();
+            // ElementPicker on the camera
+            var elementPicker = cameraGo.GetComponent<ElementPicker>();
 
-            if (raycaster == null)
+            if (elementPicker == null)
             {
-                raycaster = cameraGo.AddComponent<SelectionRaycaster>();
+                elementPicker = cameraGo.AddComponent<ElementPicker>();
             }
 
-            var raycasterSo = new SerializedObject(raycaster);
-            raycasterSo.FindProperty("targetCamera").objectReferenceValue = cameraGo.GetComponent<Camera>();
-            raycasterSo.ApplyModifiedProperties();
+            var elementPickerSo = new SerializedObject(elementPicker);
+            elementPickerSo.FindProperty("targetCamera").objectReferenceValue = cameraGo.GetComponent<Camera>();
+            elementPickerSo.ApplyModifiedProperties();
 
-            // SelectionHighlighter on the camera
-            var highlighter = cameraGo.GetComponent<SelectionHighlighter>();
+            // SelectionDisplay on the camera
+            var selectionDisplay = cameraGo.GetComponent<SelectionDisplay>();
 
-            if (highlighter == null)
+            if (selectionDisplay == null)
             {
-                highlighter = cameraGo.AddComponent<SelectionHighlighter>();
+                selectionDisplay = cameraGo.AddComponent<SelectionDisplay>();
             }
 
-            // GizmoController on the camera
-            var gizmoController = cameraGo.GetComponent<GizmoController>();
+            // GizmoBehaviour on the camera
+            var gizmoBehaviour = cameraGo.GetComponent<GizmoBehaviour>();
 
-            if (gizmoController == null)
+            if (gizmoBehaviour == null)
             {
-                gizmoController = cameraGo.AddComponent<GizmoController>();
+                gizmoBehaviour = cameraGo.AddComponent<GizmoBehaviour>();
             }
 
-            var gizmoSo = new SerializedObject(gizmoController);
-            gizmoSo.FindProperty("selectionHighlighter").objectReferenceValue = highlighter;
+            var gizmoSo = new SerializedObject(gizmoBehaviour);
+            gizmoSo.FindProperty("selectionDisplay").objectReferenceValue = selectionDisplay;
             gizmoSo.FindProperty("targetCamera").objectReferenceValue         = cameraGo.GetComponent<Camera>();
             gizmoSo.ApplyModifiedProperties();
 
@@ -367,15 +415,15 @@ namespace Fram3d.Editor
             }
 
             var selectionInputSo = new SerializedObject(selectionInput);
-            selectionInputSo.FindProperty("selectionHighlighter").objectReferenceValue = highlighter;
-            selectionInputSo.FindProperty("raycaster").objectReferenceValue            = raycaster;
-            selectionInputSo.FindProperty("gizmoController").objectReferenceValue      = gizmoController;
+            selectionInputSo.FindProperty("selectionDisplay").objectReferenceValue  = selectionDisplay;
+            selectionInputSo.FindProperty("elementPicker").objectReferenceValue   = elementPicker;
+            selectionInputSo.FindProperty("gizmoBehaviour").objectReferenceValue  = gizmoBehaviour;
             selectionInputSo.ApplyModifiedProperties();
 
-            // Wire gizmo controller on camera input handler
+            // Wire gizmo behaviour on camera input handler
             var cameraInput   = cameraGo.GetComponent<CameraInputHandler>();
             var cameraInputSo = new SerializedObject(cameraInput);
-            cameraInputSo.FindProperty("gizmoController").objectReferenceValue = gizmoController;
+            cameraInputSo.FindProperty("gizmoBehaviour").objectReferenceValue = gizmoBehaviour;
             cameraInputSo.ApplyModifiedProperties();
             EditorUtility.SetDirty(cameraGo);
         }

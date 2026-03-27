@@ -1,6 +1,6 @@
 using System.Collections;
-using Fram3d.Core.Camera;
-using Fram3d.Core.Viewport;
+using Fram3d.Core.Cameras;
+using Fram3d.Core.Viewports;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Views;
 using NUnit.Framework;
@@ -27,6 +27,16 @@ namespace Fram3d.Tests.UI
         [SetUp]
         public void SetUp()
         {
+            foreach (var cam in Object.FindObjectsByType<CameraBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(cam.gameObject);
+            }
+
+            foreach (var f in Object.FindObjectsByType<FrustumWireframe>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(f.gameObject);
+            }
+
             this._cameraGo   = new GameObject("TestCamera");
             this._behaviour  = this._cameraGo.AddComponent<CameraBehaviour>();
             this._uiGo       = new GameObject("TestUI");
@@ -105,6 +115,14 @@ namespace Fram3d.Tests.UI
         public void TearDown()
         {
             Object.DestroyImmediate(this._uiGo);
+
+            var frustums = Object.FindObjectsByType<FrustumWireframe>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            foreach (var f in frustums)
+            {
+                Object.DestroyImmediate(f.gameObject);
+            }
+
             Object.DestroyImmediate(this._cameraGo);
 
             if (this._renderTexture != null)
@@ -114,7 +132,9 @@ namespace Fram3d.Tests.UI
             }
 
             if (this._panelSettings != null)
+            {
                 Object.DestroyImmediate(this._panelSettings);
+            }
         }
 
         [UnityTest]

@@ -6,7 +6,7 @@ namespace Fram3d.Engine.Integration
 {
     /// <summary>
     /// Thin MonoBehaviour wrapper for a domain Element. Placed on the root
-    /// GameObject of each interactive scene element. SelectionRaycaster walks
+    /// GameObject of each interactive scene element. ElementPicker walks
     /// up the transform hierarchy looking for this component to resolve
     /// compound elements (multi-mesh models) as single selectable units.
     ///

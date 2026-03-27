@@ -20,7 +20,7 @@ namespace Fram3d.Engine.Cursor
         private static void Setup()
         {
             var service = new UnityCursorService();
-            CursorManager.SetService(service);
+            CursorService.SetService(service);
         }
 
         public bool SetCursor(CursorType cursor)
@@ -49,15 +49,25 @@ namespace Fram3d.Engine.Cursor
 
         private static bool TryGetTexture(CursorType cursor, out Texture2D texture, out Vector2 hotspot)
         {
-            if (cursor == CursorType.Link)
+            if (cursor == CursorType.ClosedHand)
+            {
+                texture = CursorTextures.ClosedHand;
+                hotspot = CursorTextures.ClosedHandHotspot;
+            }
+            else if (cursor == CursorType.IBeam)
+            {
+                texture = CursorTextures.IBeam;
+                hotspot = CursorTextures.IBeamHotspot;
+            }
+            else if (cursor == CursorType.Link)
             {
                 texture = CursorTextures.PointingHand;
                 hotspot = CursorTextures.PointingHandHotspot;
             }
-            else if (cursor == CursorType.ClosedHand)
+            else if (cursor == CursorType.ResizeHorizontal)
             {
-                texture = CursorTextures.ClosedHand;
-                hotspot = CursorTextures.ClosedHandHotspot;
+                texture = CursorTextures.ResizeHorizontal;
+                hotspot = CursorTextures.ResizeHorizontalHotspot;
             }
             else
             {

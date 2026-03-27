@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Fram3d.Core.Camera;
+using Fram3d.Core.Cameras;
 using Fram3d.Core.Input;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
@@ -45,13 +45,15 @@ namespace Fram3d.UI.Input
         private ViewCameraManager viewCameraManager;
 
         [SerializeField]
-        private GizmoController gizmoController;
+        private GizmoBehaviour gizmoBehaviour;
 
         [SerializeField]
         private PropertiesPanelView propertiesPanel;
 
         [SerializeField]
         private ViewLayoutView viewLayoutView;
+
+        private Timeline.TimelineSectionView _timelineSection;
 
         public void Tick(Keyboard keyboard, Mouse mouse)
         {
@@ -67,7 +69,10 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            if (this.propertiesPanel != null && this.propertiesPanel.HasFocusedTextField)
+            var panelHasFocus     = this.propertiesPanel != null && this.propertiesPanel.HasFocusedTextField;
+            var shotTrackHasFocus = this._timelineSection != null && this._timelineSection.HasFocusedTextField;
+
+            if (panelHasFocus || shotTrackHasFocus)
             {
                 this._pendingScrollSamples.Clear();
                 return;
@@ -358,9 +363,10 @@ namespace Fram3d.UI.Input
 
         private bool IsPointerOverBlockingUI()
         {
-            var overPanel = this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI;
-            var overLayout = this.viewLayoutView != null && this.viewLayoutView.IsPointerOverUI;
-            return overPanel || overLayout;
+            var overPanel    = this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI;
+            var overLayout   = this.viewLayoutView  != null && this.viewLayoutView.IsPointerOverUI;
+            var overShotTrack = this._timelineSection != null && this._timelineSection.IsPointerOverUI;
+            return overPanel || overLayout || overShotTrack;
         }
 
         // ── Unity lifecycle ──────────────────────────────────────────────
@@ -393,10 +399,12 @@ namespace Fram3d.UI.Input
             this._camera         = this.cameraBehaviour.CameraElement;
             this.propertiesPanel ??= FindAnyObjectByType<PropertiesPanelView>();
             this.viewLayoutView  ??= FindAnyObjectByType<ViewLayoutView>();
+            this._timelineSection = FindAnyObjectByType<Timeline.TimelineSectionView>();
 
             this._keyboardRouter.Configure(this.cameraBehaviour,
                                             this.compositionGuides,
-                                            this.gizmoController);
+                                            this.gizmoBehaviour,
+                                            this._timelineSection);
         }
 
         private void Update()

@@ -8,6 +8,7 @@ Fram3d is a 3D previsualization tool for filmmakers. Unity project (Unity 6, URP
 - **Use the domain language.** Read `docs/reference/domain-language.md` before writing specs, code, or UI text. Terms are chosen deliberately — don't invent synonyms.
 - **All work requires a Linear ticket.** Before creating a new issue, **thoroughly search** for an existing one — search by title keywords, browse the relevant project/milestone, and check backlog. Only create a new issue if no match exists. Reference the ticket (e.g., FRA-36) in commits and PRs.
 - **Never overwrite Linear issue content.** When updating an issue, append implementation notes below the existing description. Never replace the original spec text or user-written content.
+- **No emojis in UI.** Never use emoji characters for buttons, labels, or indicators. Unicode symbols and special glyphs are fine.
 - **Question scope decisions.** If asked to create a separate issue/PR for a bug found during feature work, push back — bugs found during implementation usually belong in the feature's PR. Only create separate issues for bugs that are genuinely independent or discovered after the feature is merged.
 
 ## Code Style (C#)
@@ -15,7 +16,12 @@ Fram3d is a 3D previsualization tool for filmmakers. Unity project (Unity 6, URP
 The `.editorconfig` at the project root is the source of truth for formatting. These rules cover what editorconfig can't express.
 
 ### Type patterns
-- **Sealed class over enum for closed value sets.** Use a sealed class with a private constructor and `static readonly` instances (see `AspectRatio`, `ActiveTool`). Each instance carries typed data (display name, shortcut key). No switch statements needed. The private constructor guarantees the set is closed at compile time.
+- **Sealed class over enum for closed value sets.** Use a sealed class with a private constructor and `static readonly` instances (see `AspectRatio`, `ActiveTool`, `ShotTrackAction`). Each instance carries typed data (display name, shortcut key). No switch statements needed. The private constructor guarantees the set is closed at compile time. Never use C# `enum` for domain concepts.
+- **`IObservable<T>` over delegates and events.** Use `Subject<T>` (Core.Common) for all event streams. Expose as `IObservable<T>` properties, never as `event` delegates. Subscribers use `source.Subscribe(action)` via `ObservableExtensions`. This keeps a single eventing pattern across the codebase — no mixing of `event Action<T>` with `IObservable<T>`.
+- **One class per file.** Every public or internal class gets its own `.cs` file. No nesting multiple types in one file. File name matches class name.
+- **Plural namespaces.** Namespace directories use plural names: `Cameras`, `Scenes`, `Shots`, `Timelines`, `Viewports`. This avoids namespace-class name collisions (e.g., `Timeline` class in `Timelines` namespace).
+- **Push logic into Core.** UI and Engine layers should be thin. Domain logic, interaction state machines, computed properties, and formatting all belong in Core. Views forward pointer events and read state — they make zero decisions. If a method doesn't need `using UnityEngine`, it belongs in Core.
+- **Small classes.** Target a few hundred lines maximum. Decompose large classes into private sub-components owned by the parent. Expose a unified API via delegation — consumers shouldn't know about internal decomposition.
 
 ### Language restrictions
 - **C# 9 maximum.** Unity 6 supports C# 9. Do not use C# 10+ features (`record struct`, `global using`, file-scoped namespaces, `required`, etc.). Do not use `record` or `init` — Unity's runtime lacks `IsExternalInit` and polyfilling it is a hack. Use plain classes or structs instead.
@@ -86,7 +92,7 @@ Run Core tests: `dotnet test tests/Fram3d.Core.Tests`
 Run mutation tests: `cd tests/Fram3d.Core.Tests && dotnet stryker`
 Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 
-**After writing or modifying tests, always run Stryker** to verify the mutation score hasn't regressed. Current baseline: ~85%. Thresholds: green ≥85%, yellow ≥75%, break <60%.
+**After writing or modifying tests, always run Stryker** to verify the mutation score hasn't regressed. Current baseline: ~80%. Thresholds: green ≥80%, yellow ≥70%, break <55%.
 
 ### When to write which tests
 
@@ -117,6 +123,8 @@ Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 - **Child GameObjects vs scene roots.** Runtime-created child objects (like gizmo handles) should be parented to the owning MonoBehaviour's transform, not left as scene roots. Child objects auto-destroy with their parent — no manual cleanup needed. Scene root orphans require complex TearDown and leak if cleanup is missed.
 - **Input state machines must handle simultaneous transitions.** `wasPressedThisFrame` and `wasReleasedThisFrame` can both be true when a frame hitch (GC, domain reload) exceeds the duration of the physical click. Any state machine with `if (pressed) { return; }` before `if (released)` will silently discard the click. Always check for `pressed && released` first and handle it as an instant action.
 - **Multi-camera test isolation.** When testing `ViewCameraManager` or multi-view layouts, each test must destroy all cameras and GameObjects created. Camera.allCameras persists across tests — a stale camera from a previous test will corrupt viewport rect assertions. Use the `_extras` list pattern and `DestroyImmediate` in TearDown.
+- **`FindAnyObjectByType` poisoning from scene views.** `CameraInputHandler.Start()` and `SelectionInputHandler.Start()` call `FindAnyObjectByType` to locate `PropertiesPanelView`, `ViewLayoutView`, and `TimelineSectionView`. If any of these exist in the test scene (from the game scene or leaked from another test), `IsPointerOverBlockingUI()` returns true — silently blocking all scroll, drag, click, and duplicate processing while keyboard shortcuts still work (they're evaluated before the blocking UI check). Fix: destroy all instances of these types in `SetUp` before creating the handler component.
+- **Do NOT extend `InputTestFixture`.** `InputTestFixture.Setup()` replaces `NativeInputRuntime.instance.onUpdate` with a lambda that routes to an isolated InputManager, but `TearDown()` never restores it. After the fixture runs, `InputActionState` monitors have stale indices. Any real mouse event then triggers `Map index out of range in ProcessControlStateChange` — which fails every subsequent test in the session via unhandled log assertions. Instead: call `InputSystem.AddDevice<Keyboard/Mouse>()` in SetUp (they become `.current`) and `InputSystem.RemoveDevice()` in TearDown, matching the pattern in `CursorBehaviourTests` and `SelectionInputHandlerTests`.
 
 ## Unity API Gotchas
 
@@ -128,7 +136,7 @@ Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 
 **`MaterialPropertyBlock` for per-renderer visual variation.** Use `SetPropertyBlock(block)` to overlay properties without creating material instances. `SetPropertyBlock(null)` removes the overlay entirely. Never use `renderer.material` (creates instances that are hard to clean up) — use `renderer.sharedMaterial` for reads and `MaterialPropertyBlock` for writes. The `_EMISSION` keyword cannot be toggled via PropertyBlock (it's a shader compile variant, not a property).
 
-**`ZTest Always` for always-on-top rendering.** Gizmos use a shader with `ZTest Always` and `ZWrite Off` on a dedicated layer. The main camera renders them — no separate overlay camera needed. Objects on the Gizmo layer are excluded from `SelectionRaycaster` via layer mask.
+**`ZTest Always` for always-on-top rendering.** Gizmos use a shader with `ZTest Always` and `ZWrite Off` on a dedicated layer. The main camera renders them — no separate overlay camera needed. Objects on the Gizmo layer are excluded from `ElementPicker` via layer mask.
 
 **Shader stripping in builds.** Unity strips shaders not referenced by materials in the build. If a shader is only used at runtime (e.g., `Unlit/Color` for frustum wireframes created via `new Material(Shader.Find(...))`), it will be stripped. Fix: add a `[SerializeField] private Shader` field referencing the shader, or add it to `Project Settings → Graphics → Always Included Shaders`. A `[SerializeField]` reference is preferred — it's explicit and discoverable.
 

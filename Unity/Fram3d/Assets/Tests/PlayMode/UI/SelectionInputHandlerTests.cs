@@ -1,7 +1,10 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
+using Fram3d.UI.Panels;
+using Fram3d.UI.Views;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -27,8 +30,9 @@ namespace Fram3d.Tests.UI
     {
         private GameObject            _cameraGo;
         private GameObject            _cube;
+        private readonly List<GameObject> _extras = new();
         private SelectionInputHandler _handler;
-        private SelectionHighlighter  _highlighter;
+        private SelectionDisplay  _highlighter;
         private Keyboard              _keyboard;
         private Mouse                 _mouse;
 
@@ -79,8 +83,11 @@ namespace Fram3d.Tests.UI
             Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Precondition");
 
             // Click empty space (top-left corner, far from cube)
+            // 3-frame click lifecycle: press → yield → held → yield → release → yield
+            // Update() calls Tick() — do NOT call Tick() explicitly (double-fire issue)
             var corner = new Vector2(10f, Screen.height - 10f);
 
+            // Frame 1: press
             InputSystem.QueueStateEvent(this._mouse,
                                         new MouseState
                                         {
@@ -90,11 +97,10 @@ namespace Fram3d.Tests.UI
 
             yield return null;
 
-            this._handler.Tick(this._mouse, this._keyboard);
+            // Frame 2: held (drag threshold check)
             yield return null;
 
-            this._handler.Tick(this._mouse, this._keyboard);
-
+            // Frame 3: release
             InputSystem.QueueStateEvent(this._mouse,
                                         new MouseState
                                         {
@@ -104,7 +110,6 @@ namespace Fram3d.Tests.UI
 
             yield return null;
 
-            this._handler.Tick(this._mouse, this._keyboard);
             Assert.IsNull(this._highlighter.Selection.SelectedId, "Clicking empty space should deselect");
         }
 
@@ -220,22 +225,20 @@ namespace Fram3d.Tests.UI
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             yield return null;
 
-            // Verify duplication occurred — selection should have changed to the duplicate
-            Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Something should be selected");
-            Assert.AreNotEqual(element.Id, this._highlighter.Selection.SelectedId, "Duplicate should be selected, not original");
-
-            // Count elements — should be 2 (original + duplicate)
+            // Track duplicates for TearDown cleanup before assertions
             var behaviours = Object.FindObjectsByType<ElementBehaviour>(FindObjectsSortMode.None);
-            Assert.AreEqual(2, behaviours.Length, "Should have original + duplicate");
 
-            // Clean up the duplicate
             foreach (var b in behaviours)
             {
                 if (b.gameObject != this._cube)
                 {
-                    Object.DestroyImmediate(b.gameObject);
+                    this._extras.Add(b.gameObject);
                 }
             }
+
+            Assert.IsNotNull(this._highlighter.Selection.SelectedId, "Something should be selected");
+            Assert.AreNotEqual(element.Id, this._highlighter.Selection.SelectedId, "Duplicate should be selected, not original");
+            Assert.AreEqual(2, behaviours.Length, "Should have original + duplicate");
         }
 
         [UnityTest]
@@ -454,16 +457,31 @@ namespace Fram3d.Tests.UI
         [SetUp]
         public void SetUp()
         {
+            foreach (var eb in Object.FindObjectsByType<ElementBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(eb.gameObject);
+            }
+
+            foreach (var panel in Object.FindObjectsByType<PropertiesPanelView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(panel.gameObject);
+            }
+
+            foreach (var layout in Object.FindObjectsByType<ViewLayoutView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(layout.gameObject);
+            }
+
             this._cameraGo = new GameObject("TestCamera");
             var camera = this._cameraGo.AddComponent<Camera>();
             this._cameraGo.transform.position = Vector3.zero;
             this._cameraGo.transform.rotation = Quaternion.identity;
-            var raycaster = this._cameraGo.AddComponent<SelectionRaycaster>();
+            var raycaster = this._cameraGo.AddComponent<ElementPicker>();
             SetField(raycaster, "targetCamera", camera);
-            this._highlighter = this._cameraGo.AddComponent<SelectionHighlighter>();
+            this._highlighter = this._cameraGo.AddComponent<SelectionDisplay>();
             this._handler     = this._cameraGo.AddComponent<SelectionInputHandler>();
-            SetField(this._handler, "selectionHighlighter", this._highlighter);
-            SetField(this._handler, "raycaster",            raycaster);
+            SetField(this._handler, "selectionDisplay", this._highlighter);
+            SetField(this._handler, "elementPicker",            raycaster);
             this._cube                    = GameObject.CreatePrimitive(PrimitiveType.Cube);
             this._cube.name               = "TestCube";
             this._cube.transform.position = new Vector3(0f, 0f, 5f);
@@ -475,12 +493,26 @@ namespace Fram3d.Tests.UI
         [TearDown]
         public void TearDown()
         {
+            foreach (var go in this._extras)
+            {
+                if (go != null)
+                {
+                    Object.DestroyImmediate(go);
+                }
+            }
+
+            this._extras.Clear();
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             InputSystem.QueueStateEvent(this._mouse,    new MouseState());
             InputSystem.RemoveDevice(this._keyboard);
             InputSystem.RemoveDevice(this._mouse);
             Object.DestroyImmediate(this._cube);
             Object.DestroyImmediate(this._cameraGo);
+
+            foreach (var eb in Object.FindObjectsByType<ElementBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(eb.gameObject);
+            }
         }
 
         private static void SetField(object target, string fieldName, object value)

@@ -6,7 +6,7 @@
 
 ---
 
-Each shot is an independent camera animation over shared world-space elements. A director thinks within shots. "Shot 1: wide establishing. Shot 2: over-the-shoulder. Shot 3: close-up reaction." The shot track is their shot list made tangible -- a horizontal strip of thumbnails representing the structure of the scene.
+Each shot is an independent camera animation over shared world-space elements. A director thinks within shots. "Shot 1: wide establishing. Shot 2: over-the-shoulder. Shot 3: close-up reaction." The shot track is their shot list made tangible -- a horizontal bar of colored blocks representing the structure and timing of the scene.
 
 ---
 
@@ -88,7 +88,7 @@ Each shot is an independent camera animation over shared world-space elements. A
 
 ## 3.1.2 Shot Track UI
 
-***A scrollable horizontal thumbnail strip at the bottom of the view. Each thumbnail represents one shot. The director sees their shot list at a glance and restructures it by dragging.***
+***A horizontal bar integrated into the timeline where each shot is a colored block proportional to its duration. The director sees their shot list at a glance and restructures it by dragging.***
 
 ### Layout
 
@@ -97,8 +97,6 @@ Each shot is an independent camera animation over shared world-space elements. A
 - Right side: horizontally scrollable strip of shot blocks, each rendered as a colored rectangle sized proportionally to the shot's duration within the visible time range
 - Contains: shot blocks (one row per camera in multi-camera shots), an "Add Shot" button (in the label column), aggregate duration display, shot boundary drag handles
 - Shot bar height: 20px per camera row, auto-adjusts to the maximum camera count across all shots (e.g., 22px for single-camera, 42px for two-camera). See also 9.1.3 for multi-camera shot bar states.
-
-> **Note:** The roadmap originally described shot thumbnails (120x100px cards with preview images). The mockup evolved to a timeline-style horizontal bar where shots are colored blocks proportional to duration. The timeline bar approach provides better spatial context for shot timing and integrates naturally with the ruler, tracks, and zoom bar. The thumbnail preview approach (for a shot list/overview context) may be revisited as a separate panel.
 
 ### Aggregate Duration
 
@@ -116,46 +114,55 @@ Each shot is an independent camera animation over shared world-space elements. A
       <== aggregate duration displays "Total: 0.0s"
 ```
 
-### Shot Thumbnails
+### Shot Blocks
 
-- Each shot renders as a thumbnail within the strip
-- Thumbnail dimensions: 120px wide, 100px tall
-- Thumbnail contents from top to bottom: preview image, shot name, editable duration field
-- Preview image shows a render of the camera's view at t=0 of that shot (the first frame)
+- Each shot renders as a colored rectangle (shot block) in the shot bar, sized proportionally to the shot's duration within the visible time range
+- One row per camera in multi-camera shots; label format: "A: SHOT NAME" (camera letter + shot name), 9px bold
+- Visual states (see `ui-layout-spec.md` §4.5 for full details):
+
+| State | Condition | Appearance |
+|-------|-----------|------------|
+| **Active camera** | This camera is active in the current shot | Bright border, brightness 1.2, high text opacity |
+| **Previewed** | Single-clicked but not activated | White text, brightness 0.9 |
+| **Dimmed** | Other cameras in the current shot | Brightness 0.65, opacity 0.55 |
+| **Inactive** | Cameras in non-current shots | Brightness 0.45, opacity 0.35 |
 
 ``` python
-  .if >> user modifies the camera position at t=0 of a shot
-      <== that shot's thumbnail updates to reflect the new framing
-      !== thumbnail updates for keyframes at times other than t=0
-
   .if >> shot is currently selected
-      <== shot displays a visible highlight border distinguishing it from unselected shots
+      <== shot block displays active styling distinguishing it from unselected shots
 
-  .if >> user clicks a shot on the shot track
+  .if >> user clicks a shot on the shot track (different shot)
       <== that shot becomes the current shot
-      <== view jumps to t=0 of that shot
-      <== camera and all elements evaluate to their t=0 state for that shot
+      <== playhead moves to the start of that shot
+      <== camera and all elements evaluate to their state at that time
       <== keyframe editor (3.2) loads that shot's tracks, .if >> keyframe editor exists
+
+  .if >> user double-clicks a shot block (within 350ms)
+      <== that camera is activated AND the view zooms to fit the shot (8% padding)
+
+  .if >> user single-clicks a different camera row within the current shot
+      <== that camera is set as the previewed camera (dimmed display, non-destructive)
 ```
 
-### Scrolling
+### Scrolling and Zoom
+
+The shot bar shares the timeline view range — it zooms and pans with the ruler, tracks, and zoom bar.
 
 ``` python
-  .if >> total thumbnail width exceeds available horizontal space
-      <== horizontal scrollbar appears below the thumbnails
-      <== user scrolls via scrollbar drag, mouse wheel over the shot track area, or trackpad horizontal scroll
+  .if >> user scrolls the mouse wheel over the shot bar
+      <== timeline zooms at the cursor position (same as track area zoom)
 
-  .if >> total thumbnail width fits within available space
-      !== scrollbar shown
+  .if >> user middle-click drags on the shot bar
+      <== timeline pans horizontally (same as track area pan)
 
-  .if >> new shot is added while scrolled
+  .if >> new shot is added outside the visible time range
       <== shot track auto-scrolls to reveal the new shot
 ```
 
 ### Add Shot
 
-- An "Add Shot" button appears at the right end of the thumbnail strip, after the last shot
-- The button is always visible (scrolls along using the strip)
+- An "Add Shot" button appears in the label column of the shot track
+- The button is always visible regardless of scroll/zoom position
 
 ``` python
   .if >> user clicks "Add Shot"
@@ -243,7 +250,7 @@ Each shot is an independent camera animation over shared world-space elements. A
       <== remaining shots shift to accommodate
       <== shot names are unchanged (Shot_01 dragged to position 3 is still "Shot_01")
       <== the moved shot remains the current shot
-      <== thumbnail order reflects the new sequence
+      <== shot block order reflects the new sequence
 
   .if >> user releases the shot at its original position
       <== no change to sequence order
@@ -271,7 +278,7 @@ Each shot is an independent camera animation over shared world-space elements. A
 
   .if >> user presses Enter or clicks away from the duration field
       <== value is validated and applied per Duration rules above
-      <== thumbnail does not change (duration change does not affect the t=0 frame)
+      <== shot block resizes to reflect the new duration proportionally
 ```
 
 ### Shot Boundary Dragging (Ripple Editing)
@@ -475,7 +482,7 @@ This means reordering shots changes the camera coverage order but not the elemen
 
 2. User renames Shot_02 to "Over the Shoulder"
    ``` python
-   <== shot thumbnail shows "Over the Shoulder"
+   <== shot block shows "Over the Shoulder"
    <== other shot names unchanged
    ```
 
@@ -498,7 +505,7 @@ This means reordering shots changes the camera coverage order but not the elemen
 5. User drags Shot_03 before Shot_01
    ``` python
    <== sequence order is now: Shot_03, Shot_01
-   <== thumbnails reflect the new order
+   <== shot blocks reflect the new order
    <== shot names are unchanged
    ```
 

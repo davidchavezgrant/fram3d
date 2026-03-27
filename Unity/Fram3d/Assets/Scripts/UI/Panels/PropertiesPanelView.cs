@@ -1,7 +1,7 @@
-using Fram3d.Core.Camera;
-using Fram3d.Core.Viewport;
-using Fram3d.Engine.Cursor;
+using Fram3d.Core.Cameras;
+using Fram3d.Core.Viewports;
 using Fram3d.Engine.Integration;
+using Fram3d.UI.Views;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -11,20 +11,20 @@ namespace Fram3d.UI.Panels
     /// Properties panel MonoBehaviour. Creates a docked side panel with camera info,
     /// body picker, and lens set picker. Toggled with I key.
     /// Thin orchestrator — delegates to CameraInfoSection, CameraBodySection, LensSetSection.
+    /// Cursor management delegated to <see cref="PanelCursorHandler"/>.
     /// </summary>
     public sealed class PropertiesPanelView: MonoBehaviour
     {
         private const float             PANEL_WIDTH = 440f;
         private       CameraBodySection _bodySection;
         private       CameraBehaviour   _cameraBehaviour;
+        private       PanelCursorHandler _cursorHandler;
         private       CameraInfoSection _infoSection;
         private       LensSetSection    _lensSetSection;
         private       VisualElement     _panel;
         private       VisualElement     _root;
         private       SensorModeSection _sensorModeSection;
         private       ShakeSection      _shakeSection;
-        private       CursorType        _ownedCursor = CursorType.Default;
-        private       bool              _isDraggingInteractiveControl;
         private       bool              _visible = true;
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace Fram3d.UI.Panels
         }
 
         public bool  IsVisible         => this._visible;
-        public bool  OwnsCustomCursor  => this._ownedCursor != CursorType.Default;
+        public bool  OwnsCustomCursor  => this._cursorHandler != null && this._cursorHandler.OwnsCustomCursor;
         public float PanelWidth => PANEL_WIDTH;
 
         public void Toggle()
@@ -62,7 +62,7 @@ namespace Fram3d.UI.Panels
 
             if (!this._visible)
             {
-                this.ReleaseOwnedCursor();
+                this._cursorHandler?.Release();
             }
         }
 
@@ -143,6 +143,7 @@ namespace Fram3d.UI.Panels
 
             this._root = uiDocument.rootVisualElement;
             StyleSheetLoader.Apply(this._root);
+            this._cursorHandler = new PanelCursorHandler();
             this.BuildPanel();
             this._cameraBehaviour.SetRightInset(this._visible? PANEL_WIDTH : 0f);
         }
@@ -154,10 +155,9 @@ namespace Fram3d.UI.Panels
                 return;
             }
 
-            // Keep the viewport inset in screen pixels (CSS pixels × scale).
-            // PanelSettings scale means PANEL_WIDTH CSS px ≠ PANEL_WIDTH screen px.
             this.UpdateRightInset();
-            this.UpdateCursor();
+            this.UpdateBottomForTimeline();
+            this._cursorHandler?.Update(this._root, this._visible);
 
             if (!this._visible)
             {
@@ -167,6 +167,17 @@ namespace Fram3d.UI.Panels
             var cam = this._cameraBehaviour.CameraElement;
             this._infoSection?.UpdateValues(cam, this._cameraBehaviour.ActiveAspectRatio);
             this._shakeSection?.UpdateValues(cam);
+        }
+
+        private void UpdateBottomForTimeline()
+        {
+            if (this._panel == null || this._root == null)
+            {
+                return;
+            }
+
+            this._panel.style.bottom = ViewportScope.ScreenToCss(this._root,
+                this._cameraBehaviour.BottomInsetPixels);
         }
 
         private void UpdateRightInset()
@@ -184,119 +195,12 @@ namespace Fram3d.UI.Panels
                 return;
             }
 
-            var scale = Screen.width / rootW;
-            this._cameraBehaviour.SetRightInset(PANEL_WIDTH * scale);
-        }
-
-        private void ApplyOwnedCursor(CursorType cursor)
-        {
-            if (this._ownedCursor == cursor)
-            {
-                return;
-            }
-
-            if (cursor == CursorType.Default)
-            {
-                this.ReleaseOwnedCursor();
-                return;
-            }
-
-            CursorManager.SetCursor(cursor);
-            this._ownedCursor = cursor;
-        }
-
-        private static bool HasInteractiveCursor(VisualElement element)
-        {
-            for (var current = element; current != null; current = current.parent)
-            {
-                if (current is Slider || current is Toggle || current is Button || current is DropdownField)
-                {
-                    return true;
-                }
-
-                if (current.ClassListContains("dropdown-selector") || current.ClassListContains("dropdown-list-row"))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool IsDraggableControl(VisualElement element)
-        {
-            for (var current = element; current != null; current = current.parent)
-            {
-                if (current is Slider)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private void ReleaseOwnedCursor()
-        {
-            if (this._ownedCursor == CursorType.Default)
-            {
-                return;
-            }
-
-            CursorManager.ResetCursor();
-            this._ownedCursor = CursorType.Default;
-        }
-
-        private void UpdateCursor()
-        {
-            if (!this._visible || this._root == null || this._root.panel == null || Mouse.current == null)
-            {
-                this._isDraggingInteractiveControl = false;
-                this.ReleaseOwnedCursor();
-                return;
-            }
-
-            var mousePos  = Mouse.current.position.ReadValue();
-            var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
-            var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
-            var picked    = this._root.panel.Pick(panelPos);
-
-            if (!Mouse.current.leftButton.isPressed)
-            {
-                this._isDraggingInteractiveControl = false;
-            }
-
-            if (picked != null && Mouse.current.leftButton.wasPressedThisFrame && IsDraggableControl(picked))
-            {
-                this._isDraggingInteractiveControl = true;
-            }
-
-            if (this._isDraggingInteractiveControl)
-            {
-                this.ApplyOwnedCursor(CursorType.ClosedHand);
-                return;
-            }
-
-            if (picked == null)
-            {
-                // Outside the panel: relinquish ownership without resetting
-                // so scene-side cursor logic can take over in the same frame.
-                this._ownedCursor = CursorType.Default;
-                return;
-            }
-
-            if (picked != null && HasInteractiveCursor(picked))
-            {
-                this.ApplyOwnedCursor(CursorType.Link);
-                return;
-            }
-
-            this.ReleaseOwnedCursor();
+            this._cameraBehaviour.SetRightInset(ViewportScope.CssToScreen(this._root, PANEL_WIDTH));
         }
 
         private void OnDisable()
         {
-            this.ReleaseOwnedCursor();
+            this._cursorHandler?.Release();
         }
     }
 }

@@ -1,6 +1,6 @@
 using System.Collections;
-using Fram3d.Core.Camera;
-using Fram3d.Core.Viewport;
+using Fram3d.Core.Cameras;
+using Fram3d.Core.Viewports;
 using Fram3d.Engine.Integration;
 using NUnit.Framework;
 using UnityEngine;
@@ -841,12 +841,13 @@ namespace Fram3d.Tests.Engine
         [TearDown]
         public void TearDown()
         {
-            // CameraBehaviour.Awake creates a FrustumWireframe GO as a scene root
-            var frustum = GameObject.Find("Shot Camera Frustum");
+            // CameraBehaviour.Awake creates a FrustumWireframe GO as a scene root.
+            // GameObject.Find misses inactive objects — use FindObjectsByType instead.
+            var frustums = Object.FindObjectsByType<FrustumWireframe>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
-            if (frustum != null)
+            foreach (var f in frustums)
             {
-                Object.DestroyImmediate(frustum);
+                Object.DestroyImmediate(f.gameObject);
             }
 
             Object.DestroyImmediate(this._go);

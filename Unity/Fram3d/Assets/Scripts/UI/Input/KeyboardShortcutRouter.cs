@@ -1,7 +1,8 @@
-using Fram3d.Core.Camera;
-using Fram3d.Core.Scene;
-using Fram3d.Core.Viewport;
+using Fram3d.Core.Cameras;
+using Fram3d.Core.Scenes;
+using Fram3d.Core.Viewports;
 using Fram3d.Engine.Integration;
+using Fram3d.UI.Timeline;
 using Fram3d.UI.Views;
 using UnityEngine.InputSystem;
 namespace Fram3d.UI.Input
@@ -12,17 +13,20 @@ namespace Fram3d.UI.Input
     /// </summary>
     public sealed class KeyboardShortcutRouter
     {
-        private CameraBehaviour    _cameraBehaviour;
+        private CameraBehaviour      _cameraBehaviour;
         private CompositionGuideView _compositionGuides;
-        private GizmoController    _gizmoController;
+        private GizmoBehaviour      _gizmoController;
+        private TimelineSectionView  _timelineSection;
 
-        public void Configure(CameraBehaviour    cameraBehaviour,
+        public void Configure(CameraBehaviour      cameraBehaviour,
                               CompositionGuideView compositionGuides,
-                              GizmoController    gizmoController)
+                              GizmoBehaviour      gizmoController,
+                              TimelineSectionView  timelineSection)
         {
             this._cameraBehaviour  = cameraBehaviour;
             this._compositionGuides = compositionGuides;
             this._gizmoController  = gizmoController;
+            this._timelineSection  = timelineSection;
         }
 
         /// <summary>
@@ -182,6 +186,46 @@ namespace Fram3d.UI.Input
             if (keyboard.sKey.wasPressedThisFrame && !ctrl && !alt && !shift)
             {
                 camera.ShakeEnabled = !camera.ShakeEnabled;
+                return true;
+            }
+
+            if (keyboard.tKey.wasPressedThisFrame && !ctrl && !alt && !shift)
+            {
+                if (this._timelineSection != null)
+                {
+                    this._timelineSection.Toggle();
+                }
+
+                return true;
+            }
+
+            if (keyboard.spaceKey.wasPressedThisFrame && !ctrl && !alt && !shift)
+            {
+                if (this._timelineSection != null)
+                {
+                    this._timelineSection.TogglePlayback();
+                }
+
+                return true;
+            }
+
+            if (keyboard.equalsKey.wasPressedThisFrame && !alt && !shift)
+            {
+                if (this._timelineSection != null)
+                {
+                    this._timelineSection.ZoomIn();
+                }
+
+                return true;
+            }
+
+            if (keyboard.minusKey.wasPressedThisFrame && !alt && !shift)
+            {
+                if (this._timelineSection != null)
+                {
+                    this._timelineSection.ZoomOut();
+                }
+
                 return true;
             }
 

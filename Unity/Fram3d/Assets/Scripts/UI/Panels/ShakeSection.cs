@@ -1,4 +1,4 @@
-using Fram3d.Core.Camera;
+using Fram3d.Core.Cameras;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Panels
 {
@@ -21,6 +21,7 @@ namespace Fram3d.UI.Panels
             this.Add(Theme.CreateSectionLabel("SHAKE"));
             this._toggle       = new Toggle("Enabled");
             this._toggle.value = camera.ShakeEnabled;
+            this._toggle.AddToClassList("section-toggle");
             this._toggle.AddToClassList("shake-toggle");
             this._toggle.RegisterValueChangedCallback(e => camera.ShakeEnabled = e.newValue);
             this.Add(this._toggle);

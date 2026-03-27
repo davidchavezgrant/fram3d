@@ -1,11 +1,13 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
-using Fram3d.Core.Camera;
-using Fram3d.Core.Scene;
-using Fram3d.Core.Viewport;
+using Fram3d.Core.Cameras;
+using Fram3d.Core.Scenes;
+using Fram3d.Core.Viewports;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
 using Fram3d.UI.Panels;
+using Fram3d.UI.Timeline;
 using Fram3d.UI.Views;
 using NUnit.Framework;
 using UnityEngine;
@@ -18,18 +20,20 @@ namespace Fram3d.Tests.UI
     /// <summary>
     /// Play Mode tests for CameraInputHandler keyboard shortcuts and input routing.
     ///
-    /// Extends InputTestFixture to isolate the Input System — all Editor devices
-    /// are removed, so test devices are the only Keyboard.current / Mouse.current.
-    /// This prevents the .current identity race that caused persistent flaking.
+    /// Adds test Keyboard and Mouse devices via InputSystem.AddDevice — these become
+    /// Keyboard.current / Mouse.current. Update() → Tick(Keyboard.current, Mouse.current)
+    /// uses the test devices directly. No explicit Tick() calls needed.
     ///
-    /// With isolation, Update() → Tick(Keyboard.current, Mouse.current) uses the
-    /// test devices directly. No explicit Tick() calls needed.
+    /// Does NOT extend InputTestFixture. InputTestFixture replaces
+    /// NativeInputRuntime.instance.onUpdate but never restores it, poisoning
+    /// InputActionState monitors for all subsequent tests in the session.
     /// </summary>
-    public sealed class CameraInputHandlerTests: InputTestFixture
+    public sealed class CameraInputHandlerTests
     {
         private CameraBehaviour      _behaviour;
         private CameraElement        _cam;
-        private GizmoController      _gizmoController;
+        private readonly List<GameObject> _extras = new();
+        private GizmoBehaviour      _gizmoController;
         private GameObject           _go;
         private GameObject           _guideGo;
         private CompositionGuideView _guideView;
@@ -386,7 +390,8 @@ namespace Fram3d.Tests.UI
             this._cam = this._behaviour.CameraElement;
 
             // Create a PropertiesPanelView and wire it to the handler
-            var panelGo    = new GameObject("TestPanel");
+            var panelGo = new GameObject("TestPanel");
+            this._extras.Add(panelGo);
             var uiDocument = panelGo.AddComponent<UIDocument>();
             var guids      = UnityEditor.AssetDatabase.FindAssets("t:PanelSettings");
 
@@ -409,7 +414,6 @@ namespace Fram3d.Tests.UI
 
             if (bodySection == null)
             {
-                Object.DestroyImmediate(panelGo);
                 Assert.Inconclusive("Could not access body section for focus test");
                 yield break;
             }
@@ -419,7 +423,6 @@ namespace Fram3d.Tests.UI
 
             if (dropdown == null)
             {
-                Object.DestroyImmediate(panelGo);
                 Assert.Inconclusive("Could not access dropdown for focus test");
                 yield break;
             }
@@ -448,7 +451,6 @@ namespace Fram3d.Tests.UI
 
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             Assert.AreNotSame(before, this._cam.ActiveAspectRatio, "A key should cycle aspect ratio after search field closes");
-            Object.DestroyImmediate(panelGo);
         }
 
         // --- Bracket keys: aperture ---
@@ -740,9 +742,27 @@ namespace Fram3d.Tests.UI
         }
 
         [SetUp]
-        public override void Setup()
+        public void Setup()
         {
-            base.Setup();
+            foreach (var panel in Object.FindObjectsByType<PropertiesPanelView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(panel.gameObject);
+            }
+
+            foreach (var layout in Object.FindObjectsByType<ViewLayoutView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(layout.gameObject);
+            }
+
+            foreach (var timeline in Object.FindObjectsByType<TimelineSectionView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(timeline.gameObject);
+            }
+
+            foreach (var f in Object.FindObjectsByType<FrustumWireframe>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(f.gameObject);
+            }
 
             // Add devices FIRST — they become the only .current devices
             this._keyboard = InputSystem.AddDevice<Keyboard>();
@@ -769,12 +789,12 @@ namespace Fram3d.Tests.UI
             this._guideView = this._guideGo.AddComponent<CompositionGuideView>();
             SetField(this._handler, "compositionGuides", this._guideView);
 
-            // Wire GizmoController for Q/W/E/R tests
-            var highlighter = this._go.AddComponent<SelectionHighlighter>();
-            this._gizmoController = this._go.AddComponent<GizmoController>();
-            SetField(this._gizmoController, "selectionHighlighter", highlighter);
+            // Wire GizmoBehaviour for Q/W/E/R tests
+            var highlighter = this._go.AddComponent<SelectionDisplay>();
+            this._gizmoController = this._go.AddComponent<GizmoBehaviour>();
+            SetField(this._gizmoController, "selectionDisplay", highlighter);
             SetField(this._gizmoController, "targetCamera",         this._go.GetComponent<Camera>());
-            SetField(this._handler,         "gizmoController",      this._gizmoController);
+            SetField(this._handler,         "gizmoBehaviour",      this._gizmoController);
         }
 
         [UnityTest]
@@ -841,8 +861,18 @@ namespace Fram3d.Tests.UI
         }
 
         [TearDown]
-        public override void TearDown()
+        public void TearDown()
         {
+            foreach (var go in this._extras)
+            {
+                if (go != null)
+                {
+                    Object.DestroyImmediate(go);
+                }
+            }
+
+            this._extras.Clear();
+
             var gizmoRoot = GameObject.Find("GizmoRoot");
 
             if (gizmoRoot != null)
@@ -850,16 +880,19 @@ namespace Fram3d.Tests.UI
                 Object.DestroyImmediate(gizmoRoot);
             }
 
-            var frustum = GameObject.Find("Shot Camera Frustum");
+            var frustums = Object.FindObjectsByType<FrustumWireframe>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
-            if (frustum != null)
+            foreach (var f in frustums)
             {
-                Object.DestroyImmediate(frustum);
+                Object.DestroyImmediate(f.gameObject);
             }
 
             Object.DestroyImmediate(this._guideGo);
             Object.DestroyImmediate(this._go);
-            base.TearDown();
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            InputSystem.QueueStateEvent(this._mouse,    new MouseState());
+            InputSystem.RemoveDevice(this._keyboard);
+            InputSystem.RemoveDevice(this._mouse);
         }
 
         [UnityTest]

@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using Fram3d.Core.Scene;
+using Fram3d.Core.Scenes;
 using Fram3d.Engine.Integration;
 using NUnit.Framework;
 using UnityEngine;
@@ -17,7 +17,7 @@ namespace Fram3d.Tests.Engine
     {
         private List<GameObject>     _extras;
         private Selection            _selection;
-        private SelectionHighlighter _highlighter;
+        private SelectionDisplay _highlighter;
         private GameObject           _cameraGo;
         private GameObject           _cube;
 
@@ -206,7 +206,7 @@ namespace Fram3d.Tests.Engine
         {
             this._extras   = new List<GameObject>();
             this._cameraGo = new GameObject("TestCamera");
-            this._highlighter = this._cameraGo.AddComponent<SelectionHighlighter>();
+            this._highlighter = this._cameraGo.AddComponent<SelectionDisplay>();
             this._selection   = this._highlighter.Selection;
             this._cube                    = GameObject.CreatePrimitive(PrimitiveType.Cube);
             this._cube.name               = "TestCube";

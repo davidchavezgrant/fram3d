@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Fram3d.Core.Common;
-using Fram3d.Core.Scene;
+using Fram3d.Core.Scenes;
 using UnityEngine;
 using SysVector3 = System.Numerics.Vector3;
 namespace Fram3d.Engine.Integration

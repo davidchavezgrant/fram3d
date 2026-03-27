@@ -2,7 +2,7 @@ using System;
 using System.Numerics;
 using FluentAssertions;
 using Fram3d.Core.Common;
-using Fram3d.Core.Scene;
+using Fram3d.Core.Scenes;
 using Xunit;
 namespace Fram3d.Core.Tests.Scene
 {
@@ -76,6 +76,52 @@ namespace Fram3d.Core.Tests.Scene
             session.UpdateTranslation(new Vector3(5, 0, -10), Vector3.UnitZ, Vector3.UnitZ);
 
             element.Position.X.Should().NotBe(0f);
+        }
+
+        [Fact]
+        public void UpdateScale__ReducesScale__When__NegativeDelta()
+        {
+            var element = CreateElement(Vector3.Zero);
+            var axis    = GizmoAxis.Parse("Uniform_Scale");
+            var session = new DragSession(axis, element, 100f, 200f, Vector3.Zero);
+
+            // delta = 100 - 200 = -100. Scale = 1 * (1 + (-100) * 0.005) = 0.5
+            session.UpdateScale(100f);
+
+            element.Scale.Should().BeApproximately(0.5f, 0.01f);
+        }
+
+        [Fact]
+        public void UpdateScale__ClampsToMinimum__When__LargeNegativeDelta()
+        {
+            var element = CreateElement(Vector3.Zero);
+            var axis    = GizmoAxis.Parse("Uniform_Scale");
+            var session = new DragSession(axis, element, 100f, 200f, Vector3.Zero);
+
+            // delta = -10000 - 200 = -10200, would produce negative scale
+            session.UpdateScale(-10000f);
+
+            element.Scale.Should().BeApproximately(0.01f, 0.001f);
+        }
+
+        [Fact]
+        public void UpdateRotation__RotatesInOppositeDirection__When__NegativeDelta()
+        {
+            var element = CreateElement(Vector3.Zero);
+            var axis    = GizmoAxis.Parse("Y_Rotate");
+            var session = new DragSession(axis, element, 100f, 200f, Vector3.Zero);
+
+            session.UpdateRotation(50f);
+            var rotNeg = element.Rotation;
+
+            element.Rotation = Quaternion.Identity;
+            var session2 = new DragSession(axis, element, 100f, 200f, Vector3.Zero);
+            session2.UpdateRotation(150f);
+            var rotPos = element.Rotation;
+
+            // Negative delta (50 - 100 = -50) and positive delta (150 - 100 = 50)
+            // should produce Y rotations in opposite directions
+            MathF.Sign(rotNeg.Y).Should().NotBe(MathF.Sign(rotPos.Y));
         }
     }
 }

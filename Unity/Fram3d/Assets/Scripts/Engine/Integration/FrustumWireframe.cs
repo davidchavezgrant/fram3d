@@ -1,5 +1,5 @@
 using System;
-using Fram3d.Core.Camera;
+using Fram3d.Core.Cameras;
 using UnityEngine;
 namespace Fram3d.Engine.Integration
 {

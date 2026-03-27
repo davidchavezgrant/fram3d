@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using Fram3d.Core.Common;
-using Fram3d.Core.Scene;
+using Fram3d.Core.Scenes;
 using Fram3d.Engine.Integration;
 using NUnit.Framework;
 using UnityEngine;
@@ -417,11 +417,11 @@ namespace Fram3d.Tests.Engine
                 }
             }
 
-            var frustum = GameObject.Find("Shot Camera Frustum");
+            var frustums = Object.FindObjectsByType<FrustumWireframe>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
-            if (frustum != null)
+            foreach (var f in frustums)
             {
-                Object.DestroyImmediate(frustum);
+                Object.DestroyImmediate(f.gameObject);
             }
 
             Object.DestroyImmediate(this._cameraGo);

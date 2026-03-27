@@ -1,9 +1,9 @@
 using System;
 using System.Numerics;
 using FluentAssertions;
-using Fram3d.Core.Camera;
+using Fram3d.Core.Cameras;
 using Fram3d.Core.Common;
-using Fram3d.Core.Viewport;
+using Fram3d.Core.Viewports;
 using Xunit;
 
 namespace Fram3d.Core.Tests.Camera
@@ -1986,6 +1986,420 @@ namespace Fram3d.Core.Tests.Camera
 			var expectedWidth = 29.90f * (2560f / 5120f);
 			cam.SensorWidth.Should().BeApproximately(expectedWidth, 0.01f);
 			cam.SensorHeight.Should().BeApproximately(expectedWidth / 2.39f, 0.01f);
+		}
+
+		// --- FOV computed properties ---
+
+		[Fact]
+		public void VerticalFov__MatchesFormula__When__DefaultSettings()
+		{
+			var cam      = CreateCamera();
+			var expected = 2f * MathF.Atan(cam.SensorHeight / (2f * cam.FocalLength));
+
+			cam.VerticalFov.Should().BeApproximately(expected, 1e-6f);
+		}
+
+		[Fact]
+		public void HorizontalFov__MatchesFormula__When__DefaultSettings()
+		{
+			var cam      = CreateCamera();
+			var expected = 2f * MathF.Atan(cam.SensorWidth / (2f * cam.FocalLength));
+
+			cam.HorizontalFov.Should().BeApproximately(expected, 1e-6f);
+		}
+
+		[Fact]
+		public void VerticalFov__Decreases__When__FocalLengthIncreases()
+		{
+			var cam    = CreateCamera();
+			var fovAt50 = cam.VerticalFov;
+
+			cam.FocalLength = 100f;
+
+			cam.VerticalFov.Should().BeLessThan(fovAt50);
+		}
+
+		// --- CanDollyZoom ---
+
+		[Fact]
+		public void CanDollyZoom__ReturnsTrue__When__NoLensSet()
+		{
+			var cam = CreateCamera();
+
+			cam.CanDollyZoom.Should().BeTrue();
+		}
+
+		[Fact]
+		public void CanDollyZoom__ReturnsTrue__When__ZoomLens()
+		{
+			var cam  = CreateCamera();
+			var zoom = new LensSet("Zoom", 24f, 70f, false, 1.0f);
+			cam.SetLensSet(zoom);
+
+			cam.CanDollyZoom.Should().BeTrue();
+		}
+
+		[Fact]
+		public void CanDollyZoom__ReturnsFalse__When__PrimeLens()
+		{
+			var cam    = CreateCamera();
+			var primes = new LensSet("Primes", new[] { 24f, 35f, 50f, 85f }, false, 1.0f);
+			cam.SetLensSet(primes);
+
+			cam.CanDollyZoom.Should().BeFalse();
+		}
+
+		// --- Aperture stepping ---
+
+		[Fact]
+		public void StepApertureNarrower__IncreasesAperture__When__NotAtNarrowest()
+		{
+			var cam     = CreateCamera();
+			var before = cam.Aperture;
+
+			cam.StepApertureNarrower();
+
+			cam.Aperture.Should().BeGreaterThan(before);
+		}
+
+		[Fact]
+		public void StepApertureWider__DecreasesAperture__When__NotAtWidest()
+		{
+			var cam = CreateCamera();
+			// Default is index 4 (f/5.6), step narrower first then step wider
+			cam.StepApertureNarrower();
+			var before = cam.Aperture;
+
+			cam.StepApertureWider();
+
+			cam.Aperture.Should().BeLessThan(before);
+		}
+
+		[Fact]
+		public void StepApertureWider__ClampsToLensMaxAperture__When__LensIsRestrictive()
+		{
+			var cam = CreateCamera();
+			// Create a prime set where the lens max aperture is T/2.8
+			var specs  = new[] { new LensSpec(50f, 2.8f, 0.3f) };
+			var primes = new LensSet("Restrictive", specs, false, 1.0f);
+			cam.SetLensSet(primes);
+
+			// Aperture should have been clamped to 2.8 or wider
+			// Try stepping wider — should be blocked since 2.8 is the max
+			var apertureAfterSet = cam.Aperture;
+			cam.StepApertureWider();
+
+			cam.Aperture.Should().BeGreaterThanOrEqualTo(2.8f);
+		}
+
+		// --- Focus distance ---
+
+		[Fact]
+		public void FocusDistance__HasDefaultValue__When__Constructed()
+		{
+			var cam = CreateCamera();
+
+			cam.FocusDistance.Should().Be(10f);
+		}
+
+		[Fact]
+		public void FocusDistance__ClampsAboveMinimum__When__SetTooLow()
+		{
+			var cam = CreateCamera();
+
+			cam.FocusDistance = -5f;
+
+			cam.FocusDistance.Should().BeGreaterThan(0f);
+		}
+
+		[Fact]
+		public void FocusDistance__ClampsToMaximum__When__SetTooHigh()
+		{
+			var cam = CreateCamera();
+
+			cam.FocusDistance = 999f;
+
+			cam.FocusDistance.Should().BeLessOrEqualTo(100f);
+		}
+
+		// --- SetLensSet null ---
+
+		[Fact]
+		public void SetLensSet__ClearsLensSet__When__NullPassed()
+		{
+			var cam    = CreateCamera();
+			var primes = new LensSet("Primes", new[] { 24f, 35f, 50f }, false, 1.0f);
+			cam.SetLensSet(primes);
+			cam.SetLensSet(null);
+
+			cam.ActiveLensSet.Should().BeNull();
+		}
+
+		[Fact]
+		public void SetLensSet__PreservesFocalLength__When__NullPassed()
+		{
+			var cam    = CreateCamera();
+			var primes = new LensSet("Primes", new[] { 24f, 35f, 50f }, false, 1.0f);
+			cam.SetLensSet(primes);
+			var focalAfterSet = cam.FocalLength;
+
+			cam.SetLensSet(null);
+
+			cam.FocalLength.Should().Be(focalAfterSet);
+		}
+
+		// --- Lens set aperture clamping ---
+
+		[Fact]
+		public void SetLensSet__ClampsAperture__When__PrimeLensHasRestrictiveMaxAperture()
+		{
+			var cam = CreateCamera();
+			// Default aperture is f/5.6 (index 4). Step wider twice to f/2.8 (index 2)
+			cam.StepApertureWider();
+			cam.StepApertureWider();
+			cam.Aperture.Should().BeApproximately(2.8f, 0.01f);
+
+			// Now set a lens whose max aperture is T/4.0
+			var specs  = new[] { new LensSpec(50f, 4.0f, 0.3f) };
+			var primes = new LensSet("Restrictive", specs, false, 1.0f);
+			cam.SetLensSet(primes);
+
+			// Aperture should clamp to at least 4.0
+			cam.Aperture.Should().BeGreaterThanOrEqualTo(4.0f);
+		}
+
+		[Fact]
+		public void SetLensSet__ClampsFocusDistance__When__PrimeHasCloseFocusLimit()
+		{
+			var cam = CreateCamera();
+			cam.FocusDistance = 0.15f;
+
+			// Lens with close focus of 0.5m
+			var specs  = new[] { new LensSpec(50f, 2.0f, 0.5f) };
+			var primes = new LensSet("CloseLimit", specs, false, 1.0f);
+			cam.SetLensSet(primes);
+
+			cam.FocusDistance.Should().BeGreaterThanOrEqualTo(0.5f);
+		}
+
+		// --- SyncEffectiveSensor branches (via SetSensorMode + AspectRatio) ---
+
+		[Fact]
+		public void SensorDimensions__UseFullGate__When__AspectRatioIsFullScreen()
+		{
+			var cam = CreateCamera();
+			var body = new CameraBody("Test", "Test", 2024, 30f, 20f, "S35", "PL",
+				new[] { 4096, 3072 }, new[] { 24 },
+				new[] { new SensorMode("Open Gate", 4096, 3072, 30f, 20f, 24) });
+			cam.SetBody(body);
+			cam.SetSensorMode(body.SensorModes[0]);
+
+			// Cycle to Full Screen (null value) — uses gate dimensions directly
+			while (cam.ActiveAspectRatio.Value != null)
+			{
+				cam.CycleAspectRatioForward();
+			}
+
+			// Gate: 30mm wide, 4096/3072 = 1.333 ratio → height = 30/1.333 = 22.5
+			cam.SensorWidth.Should().BeApproximately(30f, 0.01f);
+			cam.SensorHeight.Should().BeApproximately(22.5f, 0.1f);
+		}
+
+		[Fact]
+		public void SensorDimensions__CropHeight__When__DeliveryRatioWiderThanGate()
+		{
+			var cam = CreateCamera();
+			var body = new CameraBody("Test", "Test", 2024, 30f, 20f, "S35", "PL",
+				new[] { 4096, 3072 }, new[] { 24 },
+				new[] { new SensorMode("Open Gate", 4096, 3072, 30f, 20f, 24) });
+			cam.SetBody(body);
+			cam.SetSensorMode(body.SensorModes[0]);
+
+			// Gate ratio = 4096/3072 = 1.333:1. Cycle to a wider ratio like 2.39:1
+			// 2.39 > 1.333 → delivery wider than gate → crop height
+			while (cam.ActiveAspectRatio.Value == null || cam.ActiveAspectRatio.Value < 2.0f)
+			{
+				cam.CycleAspectRatioForward();
+			}
+
+			// Width should stay at gate, height should be cropped
+			cam.SensorWidth.Should().BeApproximately(30f, 0.01f);
+			cam.SensorHeight.Should().BeLessThan(20f);
+		}
+
+		// --- StepApertureWider boundary ---
+
+		[Fact]
+		public void StepApertureWider__NoOp__When__AlreadyAtWidest()
+		{
+			var cam = CreateCamera();
+			// Step wider 4 times to reach index 0 (f/1.4)
+			cam.StepApertureWider();
+			cam.StepApertureWider();
+			cam.StepApertureWider();
+			cam.StepApertureWider();
+			var atWidest = cam.Aperture;
+
+			cam.StepApertureWider();
+
+			cam.Aperture.Should().Be(atWidest);
+		}
+
+		[Fact]
+		public void StepApertureNarrower__NoOp__When__AlreadyAtNarrowest()
+		{
+			var cam = CreateCamera();
+			// Step narrower many times to reach the end (f/22)
+			for (var i = 0; i < 20; i++)
+			{
+				cam.StepApertureNarrower();
+			}
+
+			var atNarrowest = cam.Aperture;
+			cam.StepApertureNarrower();
+
+			cam.Aperture.Should().Be(atNarrowest);
+			cam.Aperture.Should().Be(22f);
+		}
+
+		// --- FocalLength with zoom lens ---
+
+		[Fact]
+		public void FocalLength__ClampsToZoomRange__When__ZoomLensSet()
+		{
+			var cam  = CreateCamera();
+			var zoom = new LensSet("Zoom", 24f, 70f, false, 1.0f);
+			cam.SetLensSet(zoom);
+
+			cam.FocalLength = 10f;
+			cam.FocalLength.Should().BeGreaterThanOrEqualTo(24f);
+
+			cam.FocalLength = 200f;
+			cam.FocalLength.Should().BeLessOrEqualTo(70f);
+		}
+
+		[Fact]
+		public void FocalLength__IgnoresSet__When__PrimeLens()
+		{
+			var cam    = CreateCamera();
+			var primes = new LensSet("Primes", new[] { 24f, 35f, 50f }, false, 1.0f);
+			cam.SetLensSet(primes);
+			var focalBefore = cam.FocalLength;
+
+			cam.FocalLength = 100f;
+
+			// Should be a no-op for prime lens sets
+			cam.FocalLength.Should().Be(focalBefore);
+		}
+
+		[Fact]
+		public void StepFocalLengthUp__SnapsToNextPrime__When__PrimeLensSet()
+		{
+			var cam    = CreateCamera();
+			var primes = new LensSet("Primes", new[] { 24f, 35f, 50f, 85f }, false, 1.0f);
+			cam.SetLensSet(primes); // snaps to nearest (50)
+			cam.FocalLength.Should().Be(50f);
+
+			cam.StepFocalLengthUp();
+
+			cam.FocalLength.Should().Be(85f);
+		}
+
+		[Fact]
+		public void StepFocalLengthDown__SnapsToShorterPrime__When__PrimeLensSet()
+		{
+			var cam    = CreateCamera();
+			var primes = new LensSet("Primes", new[] { 24f, 35f, 50f, 85f }, false, 1.0f);
+			cam.SetLensSet(primes); // snaps to 50
+			cam.FocalLength.Should().Be(50f);
+
+			cam.StepFocalLengthDown();
+
+			cam.FocalLength.Should().Be(35f);
+		}
+
+		[Fact]
+		public void StepFocalLengthDown__NoOp__When__AtShortestPrime()
+		{
+			var cam    = CreateCamera();
+			var primes = new LensSet("Primes", new[] { 24f, 35f, 50f }, false, 1.0f);
+			cam.SetLensSet(primes);
+			// Step all the way down
+			cam.StepFocalLengthDown();
+			cam.StepFocalLengthDown();
+			cam.StepFocalLengthDown();
+
+			cam.FocalLength.Should().Be(24f);
+			cam.StepFocalLengthDown();
+			cam.FocalLength.Should().Be(24f);
+		}
+
+		[Fact]
+		public void StepFocalLengthUp__NoOp__When__NoLensSet()
+		{
+			var cam    = CreateCamera();
+			var before = cam.FocalLength;
+
+			cam.StepFocalLengthUp();
+
+			cam.FocalLength.Should().Be(before);
+		}
+
+		[Fact]
+		public void StepFocalLengthUp__NoOp__When__ZoomLens()
+		{
+			var cam  = CreateCamera();
+			var zoom = new LensSet("Zoom", 24f, 70f, false, 1.0f);
+			cam.SetLensSet(zoom);
+			var before = cam.FocalLength;
+
+			cam.StepFocalLengthUp();
+
+			cam.FocalLength.Should().Be(before);
+		}
+
+		[Fact]
+		public void SetFocalLengthPreset__WorksOnPrimeLens__When__Called()
+		{
+			var cam    = CreateCamera();
+			var primes = new LensSet("Primes", new[] { 24f, 35f, 50f }, false, 1.0f);
+			cam.SetLensSet(primes);
+
+			cam.SetFocalLengthPreset(85f);
+
+			cam.FocalLength.Should().Be(85f);
+		}
+
+		[Fact]
+		public void SnapFocalLength__SetsTrue__When__LensSetAssigned()
+		{
+			var cam    = CreateCamera();
+			var primes = new LensSet("Primes", new[] { 24f, 35f, 50f }, false, 1.0f);
+
+			cam.SetLensSet(primes);
+
+			cam.SnapFocalLength.Should().BeTrue();
+		}
+
+		[Fact]
+		public void SetSensorMode__ChangesSensorDimensions__When__ModeHasSensorArea()
+		{
+			var cam = CreateCamera();
+			var modes = new[]
+			{
+				new SensorMode("Open Gate", 4096, 3072, 30f, 20f, 24),
+				new SensorMode("Crop", 2048, 1080, 15f, 8f, 60)
+			};
+			var body = new CameraBody("Test", "Test", 2024, 30f, 20f, "S35", "PL",
+				new[] { 4096, 3072 }, new[] { 24 }, modes);
+			cam.SetBody(body);
+			cam.SetSensorMode(modes[0]);
+			var widthBefore = cam.SensorWidth;
+
+			cam.SetSensorMode(modes[1]);
+
+			// Sensor should be narrower in the crop mode
+			cam.SensorWidth.Should().BeLessThan(widthBefore);
 		}
 	}
 }

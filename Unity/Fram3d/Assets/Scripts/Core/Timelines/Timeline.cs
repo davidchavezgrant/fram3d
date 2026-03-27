@@ -6,25 +6,18 @@ using Fram3d.Core.Shots;
 namespace Fram3d.Core.Timelines
 {
     /// <summary>
-    /// THE timeline. Owns a ShotTrack (shot collection + track operations),
-    /// the Playhead, the visible time range, and interaction state machines.
-    /// Pure C# — no Unity dependencies.
+    /// THE timeline. Orchestrates ShotTrack, Playhead, and ViewRange.
+    /// Owns interaction state machines (scrub, boundary drag, shot drag reorder)
+    /// and playback. Pure C# — no Unity dependencies.
     /// </summary>
     public sealed class Timeline
     {
-        // ── Constants ──
-        private const double DOUBLE_CLICK_MS      = 350;
-        private const double EDGE_TOLERANCE_PX    = 6.0;
-        private const int    HOLD_THRESHOLD_MS    = 200;
-        private const double MIN_VISIBLE_DURATION = 0.5;
-        private const double ZOOM_FACTOR          = 1.15;
+        private const double DOUBLE_CLICK_MS   = 350;
+        private const double EDGE_TOLERANCE_PX = 6.0;
+        private const int    HOLD_THRESHOLD_MS = 200;
 
-        // ── View range ──
         private readonly Subject<CameraEvaluation> _cameraEvaluationRequested = new();
-        private readonly Subject<bool>             _viewChanged = new();
-        private          double _stripWidth  = 1.0;
-        private          double _viewEnd;
-        private          double _viewStart;
+        private readonly ViewRange _view;
 
         // ── Interaction state ──
         private int    _boundaryDragIndex = -1;
@@ -44,6 +37,7 @@ namespace Fram3d.Core.Timelines
         {
             this.Playhead = new Playhead(frameRate);
             this.Track    = new ShotTrack(frameRate);
+            this._view    = new ViewRange();
         }
 
         // ══════════════════════════════════════════════════════════════════
@@ -55,23 +49,20 @@ namespace Fram3d.Core.Timelines
         private ShotTrack Track { get; }
 
         // ══════════════════════════════════════════════════════════════════
-        // Delegated shot properties (convenience)
+        // Delegated shot properties
         // ══════════════════════════════════════════════════════════════════
 
-        // ── Properties ──
         public int                  Count              => this.Track.Count;
         public Shot                 CurrentShot        => this.Track.CurrentShot;
         public FrameRate            FrameRate          => this.Track.FrameRate;
         public IReadOnlyList<Shot>  Shots              => this.Track.Shots;
         public double               TotalDuration      => this.Track.TotalDuration;
 
-        // ── Observables ──
         public IObservable<Shot>    CurrentShotChanged => this.Track.CurrentShotChanged;
         public IObservable<bool>    Reordered          => this.Track.Reordered;
         public IObservable<Shot>    ShotAdded          => this.Track.ShotAdded;
         public IObservable<Shot>    ShotRemoved        => this.Track.ShotRemoved;
 
-        // ── Delegated shot methods ──
         public int              FindEdgeAtTime(double time, double tolerance) => this.Track.FindEdgeAtTime(time, tolerance);
         public int              FindInsertionIndex(double time)               => this.Track.FindInsertionIndex(time);
         public string           FormatResizeTooltip(int index, bool shift)    => this.Track.FormatResizeTooltip(index, shift);
@@ -87,110 +78,50 @@ namespace Fram3d.Core.Timelines
         public void             SetCurrentShot(ShotId id)                     => this.Track.SetCurrentShot(id);
 
         // ══════════════════════════════════════════════════════════════════
-        // View range
+        // Delegated view range properties
         // ══════════════════════════════════════════════════════════════════
 
-        public IObservable<bool> ViewChanged => this._viewChanged;
+        public IObservable<bool> ViewChanged        => this._view.Changed;
+        public double            PlayheadPixel      => this._view.TimeToPixel(this.Playhead.CurrentTime);
+        public double            OutOfRangeStartPixel => this._view.TimeToPixel(this.TotalDuration);
+        public double            PixelsPerSecond    => this._view.PixelsPerSecond;
+        public double            ViewEnd            => this._view.ViewEnd;
+        public double            ViewStart          => this._view.ViewStart;
+        public double            VisibleDuration    => this._view.VisibleDuration;
 
-        public double PlayheadPixel        => this.TimeToPixel(this.Playhead.CurrentTime);
-        public double OutOfRangeStartPixel => this.TimeToPixel(this.TotalDuration);
-        public double PixelsPerSecond      => this.VisibleDuration > 0 ? this._stripWidth / this.VisibleDuration : this._stripWidth;
-        public double ViewEnd              => this._viewEnd;
-        public double ViewStart            => this._viewStart;
-        public double VisibleDuration      => this._viewEnd - this._viewStart;
+        public double TimeToPixel(double seconds) => this._view.TimeToPixel(seconds);
+        public double PixelToTime(double px)       => this._view.PixelToTime(px);
 
-        public void InitializeViewRange(double stripWidth)
-        {
-            this._stripWidth = Math.Max(stripWidth, 1.0);
+        public void InitializeViewRange(double stripWidth) =>
+            this._view.Initialize(stripWidth, this.TotalDuration);
 
-            if (this._viewEnd <= 0)
-            {
-                this.FitAll();
-            }
-            else
-            {
-                this._viewChanged.OnNext(true);
-            }
-        }
+        public void ZoomAtPoint(double anchorSeconds, float scrollDelta) =>
+            this._view.ZoomAtPoint(anchorSeconds, scrollDelta, this.TotalDuration);
 
-        public double TimeToPixel(double seconds) => (seconds - this._viewStart) * this.PixelsPerSecond;
-        public double PixelToTime(double px)       => this._viewStart + px / this.PixelsPerSecond;
+        public void Pan(double deltaPx) =>
+            this._view.Pan(deltaPx, this.TotalDuration);
 
-        public void ZoomAtPoint(double anchorSeconds, float scrollDelta)
-        {
-            var factor      = scrollDelta > 0 ? 1.0 / ZOOM_FACTOR : ZOOM_FACTOR;
-            var newDuration = Math.Clamp(this.VisibleDuration * factor, MIN_VISIBLE_DURATION, this.TotalDuration);
-            var t           = this.VisibleDuration > 0 ? (anchorSeconds - this._viewStart) / this.VisibleDuration : 0.5;
+        public void FitAll() =>
+            this._view.FitAll(this.TotalDuration);
 
-            this._viewStart = anchorSeconds - t * newDuration;
-            this._viewEnd   = anchorSeconds + (1.0 - t) * newDuration;
-            this.ClampView();
-            this._viewChanged.OnNext(true);
-        }
+        public void FitRange(double start, double end) =>
+            this._view.FitRange(start, end);
 
-        public void Pan(double deltaPx)
-        {
-            var delta = deltaPx / this.PixelsPerSecond;
-            this._viewStart += delta;
-            this._viewEnd   += delta;
-            this.ClampView();
-            this._viewChanged.OnNext(true);
-        }
+        public void SetViewRange(double start, double end) =>
+            this._view.SetRange(start, end, this.TotalDuration);
 
-        public void FitAll()
-        {
-            var total = Math.Max(this.TotalDuration, 1.0);
-            this._viewStart = 0;
-            this._viewEnd   = total;
-            this._viewChanged.OnNext(true);
-        }
-
-        public void FitRange(double start, double end)
-        {
-            var duration = Math.Max(end - start, 1.0);
-            var padding  = duration * 0.08;
-            this._viewStart = start - padding;
-            this._viewEnd   = end + padding;
-            this._viewChanged.OnNext(true);
-        }
-
-        public void SetViewRange(double start, double end)
-        {
-            this._viewStart = start;
-            this._viewEnd   = end;
-            this.ClampView();
-            this._viewChanged.OnNext(true);
-        }
-
-        public void EnsureVisible(double seconds)
-        {
-            var duration = this.VisibleDuration;
-
-            if (seconds < this._viewStart)
-            {
-                this._viewStart = seconds;
-                this._viewEnd   = seconds + duration;
-                this.ClampViewLeft();
-                this._viewChanged.OnNext(true);
-            }
-            else if (seconds > this._viewEnd)
-            {
-                this._viewEnd   = seconds;
-                this._viewStart = seconds - duration;
-                this.ClampViewLeft();
-                this._viewChanged.OnNext(true);
-            }
-        }
+        public void EnsureVisible(double seconds) =>
+            this._view.EnsureVisible(seconds);
 
         // ══════════════════════════════════════════════════════════════════
-        // Shot lifecycle (delegates to Track + updates view)
+        // Shot lifecycle
         // ══════════════════════════════════════════════════════════════════
 
         public Shot AddShot(Vector3 cameraPosition, Quaternion cameraRotation)
         {
             var shot = this.Track.AddShot(cameraPosition, cameraRotation);
 
-            if (this._viewEnd > 0)
+            if (this._view.IsInitialized)
             {
                 this.FitAll();
             }
@@ -205,18 +136,16 @@ namespace Fram3d.Core.Timelines
             var end       = this.Track.GetGlobalEndTime(shotId).Seconds;
             var duration  = end - start;
             var padding   = duration * 0.08;
-            var isFirst   = shotIndex == 0;
-            var isLast    = shotIndex == this.Track.Count - 1;
 
             if (this.Track.Count == 1)
             {
                 this.FitAll();
             }
-            else if (isFirst)
+            else if (shotIndex == 0)
             {
                 this.SetViewRange(0, end + padding);
             }
-            else if (isLast)
+            else if (shotIndex == this.Track.Count - 1)
             {
                 this.SetViewRange(start - padding, this.TotalDuration);
             }
@@ -251,10 +180,10 @@ namespace Fram3d.Core.Timelines
             {
                 this.EvaluateCamera();
 
-                if (this.Playhead.CurrentTime > this._viewEnd)
+                if (this.Playhead.CurrentTime > this._view.ViewEnd)
                 {
                     var duration = this.VisibleDuration;
-                    this.SetViewRange(this._viewEnd, this._viewEnd + duration);
+                    this.SetViewRange(this._view.ViewEnd, this._view.ViewEnd + duration);
                 }
             }
 
@@ -279,7 +208,7 @@ namespace Fram3d.Core.Timelines
         }
 
         // ══════════════════════════════════════════════════════════════════
-        // Shot strip interaction state machine
+        // Shot track interaction state machine
         // ══════════════════════════════════════════════════════════════════
 
         public int  BoundaryDragIndex  => this._boundaryDragIndex;
@@ -287,7 +216,7 @@ namespace Fram3d.Core.Timelines
         public bool IsBoundaryDragging => this._isBoundaryDragging;
         public bool IsDragging         => this._isDragging;
 
-        public StripInteraction StripPointerDown(double px, long timestampMs)
+        public ShotTrackAction StripPointerDown(double px, long timestampMs)
         {
             var time      = this.PixelToTime(px);
             var tolerance = this.PixelsPerSecond > 0 ? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
@@ -297,7 +226,7 @@ namespace Fram3d.Core.Timelines
             {
                 this._isBoundaryDragging = true;
                 this._boundaryDragIndex  = edgeIndex;
-                return StripInteraction.BOUNDARY_DRAG;
+                return ShotTrackAction.BOUNDARY_DRAG;
             }
 
             this._pointerDownTime = timestampMs;
@@ -312,15 +241,15 @@ namespace Fram3d.Core.Timelines
                 this._dragOriginalIndex = shotIndex;
             }
 
-            return StripInteraction.POTENTIAL_CLICK;
+            return ShotTrackAction.POTENTIAL_CLICK;
         }
 
-        public StripInteraction StripPointerMove(double px, long timestampMs)
+        public ShotTrackAction StripPointerMove(double px, long timestampMs)
         {
             if (this._isBoundaryDragging)
             {
                 this.Track.ResizeShotAtEdge(this._boundaryDragIndex, this.PixelToTime(px));
-                return StripInteraction.BOUNDARY_DRAG;
+                return ShotTrackAction.BOUNDARY_DRAG;
             }
 
             if (this._pointerIsDown && this._dragShotId != null && !this._isDragging)
@@ -329,14 +258,14 @@ namespace Fram3d.Core.Timelines
                  || Math.Abs(px - this._pointerDownX) > 5)
                 {
                     this._isDragging = true;
-                    return StripInteraction.DRAG_START;
+                    return ShotTrackAction.DRAG_START;
                 }
             }
 
             if (this._isDragging)
             {
                 this._dragTargetIndex = this.Track.FindInsertionIndex(this.PixelToTime(px));
-                return StripInteraction.DRAG_MOVE;
+                return ShotTrackAction.DRAG_MOVE;
             }
 
             if (!this._pointerIsDown)
@@ -346,42 +275,42 @@ namespace Fram3d.Core.Timelines
 
                 if (this.Track.FindEdgeAtTime(time, tolerance) >= 0)
                 {
-                    return StripInteraction.NEAR_EDGE;
+                    return ShotTrackAction.NEAR_EDGE;
                 }
             }
 
-            return StripInteraction.NONE;
+            return ShotTrackAction.NONE;
         }
 
-        public StripInteraction StripPointerUp()
+        public ShotTrackAction StripPointerUp()
         {
             if (this._isBoundaryDragging)
             {
                 this._isBoundaryDragging = false;
                 this._boundaryDragIndex  = -1;
-                return StripInteraction.BOUNDARY_COMPLETE;
+                return ShotTrackAction.BOUNDARY_COMPLETE;
             }
 
             if (this._isDragging)
             {
                 this.CompleteDrag();
                 this.ResetPointerState();
-                return StripInteraction.DRAG_COMPLETE;
+                return ShotTrackAction.DRAG_COMPLETE;
             }
 
             if (this._dragShotId != null)
             {
                 this.HandleShotClick(this._dragShotId);
                 this.ResetPointerState();
-                return StripInteraction.CLICK;
+                return ShotTrackAction.CLICK;
             }
 
             this.ResetPointerState();
-            return StripInteraction.NONE;
+            return ShotTrackAction.NONE;
         }
 
         // ══════════════════════════════════════════════════════════════════
-        // Formatting (delegates to Track)
+        // Formatting
         // ══════════════════════════════════════════════════════════════════
 
         public string FormatBoundaryTooltip(bool shiftHeld)
@@ -404,9 +333,6 @@ namespace Fram3d.Core.Timelines
         // Query
         // ══════════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Resolves which shot the playhead is in and returns the shot-local time.
-        /// </summary>
         public (Shot shot, TimePosition localTime)? ResolveShot() =>
             this.Track.GetShotAtGlobalTime(new TimePosition(this.Playhead.CurrentTime));
 
@@ -495,51 +421,21 @@ namespace Fram3d.Core.Timelines
 
             return -1;
         }
-
-        private void ClampView()
-        {
-            this.ClampViewLeft();
-
-            if (this._viewEnd > this.TotalDuration)
-            {
-                var duration    = this.VisibleDuration;
-                this._viewEnd   = this.TotalDuration;
-                this._viewStart = this.TotalDuration - duration;
-
-                if (this._viewStart < 0)
-                {
-                    this._viewStart = 0;
-                }
-            }
-        }
-
-        private void ClampViewLeft()
-        {
-            if (this._viewStart < 0)
-            {
-                var shift = -this._viewStart;
-                this._viewStart += shift;
-                this._viewEnd   += shift;
-            }
-        }
     }
 
-    /// <summary>
-    /// Result of a shot strip pointer event. Sealed class pattern.
-    /// </summary>
-    public sealed class StripInteraction
+    public sealed class ShotTrackAction
     {
-        public static readonly StripInteraction BOUNDARY_COMPLETE = new("Boundary Complete");
-        public static readonly StripInteraction BOUNDARY_DRAG     = new("Boundary Drag");
-        public static readonly StripInteraction CLICK             = new("Click");
-        public static readonly StripInteraction DRAG_COMPLETE     = new("Drag Complete");
-        public static readonly StripInteraction DRAG_MOVE         = new("Drag Move");
-        public static readonly StripInteraction DRAG_START        = new("Drag Start");
-        public static readonly StripInteraction NEAR_EDGE         = new("Near Edge");
-        public static readonly StripInteraction NONE              = new("None");
-        public static readonly StripInteraction POTENTIAL_CLICK   = new("Potential Click");
+        public static readonly ShotTrackAction BOUNDARY_COMPLETE = new("Boundary Complete");
+        public static readonly ShotTrackAction BOUNDARY_DRAG     = new("Boundary Drag");
+        public static readonly ShotTrackAction CLICK             = new("Click");
+        public static readonly ShotTrackAction DRAG_COMPLETE     = new("Drag Complete");
+        public static readonly ShotTrackAction DRAG_MOVE         = new("Drag Move");
+        public static readonly ShotTrackAction DRAG_START        = new("Drag Start");
+        public static readonly ShotTrackAction NEAR_EDGE         = new("Near Edge");
+        public static readonly ShotTrackAction NONE              = new("None");
+        public static readonly ShotTrackAction POTENTIAL_CLICK   = new("Potential Click");
 
-        private StripInteraction(string name)
+        private ShotTrackAction(string name)
         {
             this.Name = name;
         }
@@ -549,9 +445,6 @@ namespace Fram3d.Core.Timelines
         public override string ToString() => this.Name;
     }
 
-    /// <summary>
-    /// Emitted when the camera should evaluate at a shot-local time.
-    /// </summary>
     public sealed class CameraEvaluation
     {
         public CameraEvaluation(Shot shot, TimePosition localTime)

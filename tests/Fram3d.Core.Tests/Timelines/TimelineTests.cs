@@ -246,7 +246,7 @@ namespace Fram3d.Core.Tests.Timelines
             var t      = Create();
             var edgePx = t.TimeToPixel(5.0);
 
-            t.StripPointerDown(edgePx, 0).Should().Be(StripInteraction.BOUNDARY_DRAG);
+            t.StripPointerDown(edgePx, 0).Should().Be(ShotTrackAction.BOUNDARY_DRAG);
         }
 
         [Fact]
@@ -254,7 +254,7 @@ namespace Fram3d.Core.Tests.Timelines
         {
             var t = Create();
 
-            t.StripPointerDown(250, 0).Should().Be(StripInteraction.POTENTIAL_CLICK);
+            t.StripPointerDown(250, 0).Should().Be(ShotTrackAction.POTENTIAL_CLICK);
         }
 
         [Fact]
@@ -263,7 +263,7 @@ namespace Fram3d.Core.Tests.Timelines
             var t = Create();
             t.StripPointerDown(250, 0);
 
-            t.StripPointerUp().Should().Be(StripInteraction.CLICK);
+            t.StripPointerUp().Should().Be(ShotTrackAction.CLICK);
         }
 
         [Fact]
@@ -272,7 +272,7 @@ namespace Fram3d.Core.Tests.Timelines
             var t = Create();
             t.StripPointerDown(250, 0);
 
-            t.StripPointerMove(250, 300).Should().Be(StripInteraction.DRAG_START);
+            t.StripPointerMove(250, 300).Should().Be(ShotTrackAction.DRAG_START);
         }
 
         // ── Formatting ─────────────────────────────────────────────────

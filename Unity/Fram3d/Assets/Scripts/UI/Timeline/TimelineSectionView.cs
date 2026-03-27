@@ -521,7 +521,7 @@ namespace Fram3d.UI.Timeline
                 var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 var result = this._controller.StripPointerDown(evt.localPosition.x, now);
 
-                if (result == StripInteraction.BOUNDARY_DRAG)
+                if (result == ShotTrackAction.BOUNDARY_DRAG)
                 {
                     this._boundaryTooltip.style.display = DisplayStyle.Flex;
                     this._shotStrip.CapturePointer(evt.pointerId);
@@ -539,11 +539,11 @@ namespace Fram3d.UI.Timeline
             var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var result = this._controller.StripPointerMove(evt.localPosition.x, now);
 
-            if (result == StripInteraction.NEAR_EDGE)
+            if (result == ShotTrackAction.NEAR_EDGE)
             {
                 CursorManager.SetCursor(CursorType.ResizeHorizontal);
             }
-            else if (result == StripInteraction.NONE && !this._controller.IsBoundaryDragging)
+            else if (result == ShotTrackAction.NONE && !this._controller.IsBoundaryDragging)
             {
                 CursorManager.ResetCursor();
             }
@@ -558,13 +558,13 @@ namespace Fram3d.UI.Timeline
 
             var result = this._controller.StripPointerUp();
 
-            if (result == StripInteraction.BOUNDARY_COMPLETE)
+            if (result == ShotTrackAction.BOUNDARY_COMPLETE)
             {
                 this._boundaryTooltip.style.display = DisplayStyle.None;
                 CursorManager.ResetCursor();
             }
 
-            if (result == StripInteraction.DRAG_COMPLETE)
+            if (result == ShotTrackAction.DRAG_COMPLETE)
             {
                 this._dropIndicator.style.display = DisplayStyle.None;
             }

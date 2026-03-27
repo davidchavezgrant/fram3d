@@ -1,9 +1,9 @@
 using System;
-using Fram3d.Core.Common;
 using Fram3d.Core.Timelines;
 using Fram3d.Engine.Cursor;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
+using Timeline = Fram3d.Core.Timelines.Timeline;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;

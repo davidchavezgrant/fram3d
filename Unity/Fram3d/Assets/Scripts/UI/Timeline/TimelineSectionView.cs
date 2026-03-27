@@ -347,7 +347,7 @@ namespace Fram3d.UI.Timeline
             this._zoomBar.UpdateThumb(state, total);
             this._transport.UpdateTransport(
                 this._controller.Playhead,
-                this._controller.Track);
+                this._controller);
             this._totalLabel.text = $"Total: {total:F1}s";
 
             // Drop indicator

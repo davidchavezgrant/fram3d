@@ -1,6 +1,6 @@
 using System;
 using Fram3d.Core.Common;
-using Fram3d.Core.Timeline;
+using Fram3d.Core.Timelines;
 using Fram3d.Engine.Cursor;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
@@ -11,7 +11,7 @@ namespace Fram3d.UI.Timeline
 {
     /// <summary>
     /// Thin View for the timeline section. Creates VisualElements, forwards
-    /// pointer events to TimelineController, reads controller state to
+    /// pointer events to Timeline, reads controller state to
     /// position elements. Zero domain logic.
     /// </summary>
     public sealed class TimelineSectionView : MonoBehaviour
@@ -21,7 +21,7 @@ namespace Fram3d.UI.Timeline
         private const float SECTION_HEIGHT = 320f;
 
         // ── References ──
-        private TimelineController _controller;
+        private Timeline _controller;
         private ShotController     _shotController;
 
         // ── UI root ──
@@ -128,10 +128,10 @@ namespace Fram3d.UI.Timeline
             this.BuildLayout();
 
             // Subscribe to rebuilds
-            this._controller.Track.ShotAdded.Subscribe(_ => this.RebuildShotBlocks());
-            this._controller.Track.ShotRemoved.Subscribe(_ => this.RebuildShotBlocks());
-            this._controller.Track.Reordered.Subscribe(_ => this.RebuildShotBlocks());
-            this._controller.Track.CurrentShotChanged.Subscribe(_ => this.UpdateActiveStates());
+            this._controller.ShotAdded.Subscribe(_ => this.RebuildShotBlocks());
+            this._controller.ShotRemoved.Subscribe(_ => this.RebuildShotBlocks());
+            this._controller.Reordered.Subscribe(_ => this.RebuildShotBlocks());
+            this._controller.CurrentShotChanged.Subscribe(_ => this.UpdateActiveStates());
 
             this.RebuildShotBlocks();
         }
@@ -325,7 +325,7 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            var total = this._controller.Track.TotalDuration;
+            var total = this._controller.TotalDuration;
             var px    = (float)this._controller.PlayheadPixel;
             var endPx = (float)this._controller.OutOfRangeStartPixel;
 
@@ -408,7 +408,7 @@ namespace Fram3d.UI.Timeline
                 }
             }
 
-            var shots = this._controller.Track.Shots;
+            var shots = this._controller.Shots;
 
             for (var i = 0; i < shots.Count; i++)
             {
@@ -417,7 +417,7 @@ namespace Fram3d.UI.Timeline
 
                 block.RegisterCallback<PointerEnterEvent>(_ =>
                 {
-                    this._tooltipText.text      = this._controller.Track.FormatShotTooltip(shot);
+                    this._tooltipText.text      = this._controller.FormatShotTooltip(shot);
                     this._tooltip.style.display = DisplayStyle.Flex;
                 });
                 block.RegisterCallback<PointerLeaveEvent>(_ =>
@@ -425,7 +425,7 @@ namespace Fram3d.UI.Timeline
                 block.RegisterCallback<ContextualMenuPopulateEvent>(evt =>
                 {
                     evt.menu.AppendAction("Delete Shot", _ =>
-                        this._controller.Track.RemoveShot(shot.Id));
+                        this._controller.RemoveShot(shot.Id));
                 });
 
                 this._shotStrip.Insert(this._shotStrip.childCount - 3, block);
@@ -438,13 +438,13 @@ namespace Fram3d.UI.Timeline
 
             if (this._controller.State != null)
             {
-                this._controller.State.SetTotalDuration(this._controller.Track.TotalDuration);
+                this._controller.State.SetTotalDuration(this._controller.TotalDuration);
             }
         }
 
         private void UpdateActiveStates()
         {
-            var current = this._controller.Track.CurrentShot;
+            var current = this._controller.CurrentShot;
 
             for (var i = 0; i < this._shotStrip.childCount; i++)
             {
@@ -499,7 +499,7 @@ namespace Fram3d.UI.Timeline
             }
 
             var runningTime = 0.0;
-            var shots       = this._controller.Track.Shots;
+            var shots       = this._controller.Shots;
 
             for (var i = 0; i < targetIndex && i < shots.Count; i++)
             {

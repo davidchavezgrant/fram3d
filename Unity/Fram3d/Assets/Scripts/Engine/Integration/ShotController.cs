@@ -1,7 +1,7 @@
 using System;
 using Fram3d.Core.Common;
 using Fram3d.Core.Shots;
-using Fram3d.Core.Timeline;
+using Fram3d.Core.Timelines;
 using Fram3d.Engine.Conversion;
 using UnityEngine;
 namespace Fram3d.Engine.Integration
@@ -18,13 +18,13 @@ namespace Fram3d.Engine.Integration
 
         public float BottomInsetPixels => this._bottomInsetPixels;
 
-        public TimelineController Controller { get; private set; }
+        public Timeline Controller { get; private set; }
 
         public void SetBottomInset(float pixels) => this._bottomInsetPixels = pixels;
 
         private void Awake()
         {
-            this.Controller = new TimelineController(FrameRate.FPS_24);
+            this.Controller = new Timeline(FrameRate.FPS_24);
         }
 
         private void OnCameraEvaluationRequested(Shot shot, TimePosition localTime)
@@ -69,7 +69,7 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
-            this._currentShotSub = this.Controller.Track.CurrentShotChanged
+            this._currentShotSub = this.Controller.CurrentShotChanged
                 .Subscribe(this.OnCurrentShotChanged);
 
             this.Controller.CameraEvaluationRequested += this.OnCameraEvaluationRequested;

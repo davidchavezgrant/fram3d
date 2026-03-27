@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Fram3d.Core.Common;
-namespace Fram3d.Core.Timeline
+namespace Fram3d.Core.Timelines
 {
     /// <summary>
     /// Manages an ordered collection of keyframes for a single property track.

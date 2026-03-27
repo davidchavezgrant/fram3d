@@ -1,6 +1,6 @@
 using System;
 using Fram3d.Core.Common;
-namespace Fram3d.Core.Timeline
+namespace Fram3d.Core.Timelines
 {
     /// <summary>
     /// A recorded value at a specific point in time. Generic over the value type.

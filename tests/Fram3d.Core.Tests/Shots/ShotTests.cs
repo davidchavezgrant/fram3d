@@ -3,7 +3,7 @@ using System.Numerics;
 using FluentAssertions;
 using Fram3d.Core.Common;
 using Fram3d.Core.Shots;
-using Fram3d.Core.Timeline;
+using Fram3d.Core.Timelines;
 using Xunit;
 
 namespace Fram3d.Core.Tests.Shots

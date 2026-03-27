@@ -2,10 +2,10 @@ using System;
 using System.Numerics;
 using FluentAssertions;
 using Fram3d.Core.Common;
-using Fram3d.Core.Timeline;
+using Fram3d.Core.Timelines;
 using Xunit;
 
-namespace Fram3d.Core.Tests.Timeline
+namespace Fram3d.Core.Tests.Timelines
 {
     public class KeyframeManagerTests
     {

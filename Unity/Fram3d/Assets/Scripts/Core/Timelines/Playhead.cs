@@ -1,6 +1,6 @@
 using System;
 using Fram3d.Core.Common;
-namespace Fram3d.Core.Timeline
+namespace Fram3d.Core.Timelines
 {
     /// <summary>
     /// Current time position on the global timeline. Supports scrubbing
@@ -90,15 +90,15 @@ namespace Fram3d.Core.Timeline
         /// <summary>
         /// Resolves which shot the playhead is in and returns the shot-local time.
         /// </summary>
-        public (Shots.Shot shot, TimePosition localTime)? ResolveShot(ShotTrack track) =>
-            track.GetShotAtGlobalTime(new TimePosition(this._currentTime));
+        public (Shots.Shot shot, TimePosition localTime)? ResolveShot(Timeline timeline) =>
+            timeline.GetShotAtGlobalTime(new TimePosition(this._currentTime));
 
         /// <summary>
         /// Jumps to the start of a specific shot.
         /// </summary>
-        public void GoToShot(ShotTrack track, ShotId shotId)
+        public void GoToShot(Timeline timeline, ShotId shotId)
         {
-            var startTime = track.GetGlobalStartTime(shotId).Seconds;
+            var startTime = timeline.GetGlobalStartTime(shotId).Seconds;
             this.SetTime(startTime);
         }
 

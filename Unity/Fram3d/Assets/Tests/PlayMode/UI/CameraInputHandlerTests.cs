@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using Fram3d.Core.Cameras;
 using Fram3d.Core.Scenes;
@@ -6,6 +7,7 @@ using Fram3d.Core.Viewports;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
 using Fram3d.UI.Panels;
+using Fram3d.UI.Timeline;
 using Fram3d.UI.Views;
 using NUnit.Framework;
 using UnityEngine;
@@ -29,6 +31,7 @@ namespace Fram3d.Tests.UI
     {
         private CameraBehaviour      _behaviour;
         private CameraElement        _cam;
+        private readonly List<GameObject> _extras = new();
         private GizmoBehaviour      _gizmoController;
         private GameObject           _go;
         private GameObject           _guideGo;
@@ -386,7 +389,8 @@ namespace Fram3d.Tests.UI
             this._cam = this._behaviour.CameraElement;
 
             // Create a PropertiesPanelView and wire it to the handler
-            var panelGo    = new GameObject("TestPanel");
+            var panelGo = new GameObject("TestPanel");
+            this._extras.Add(panelGo);
             var uiDocument = panelGo.AddComponent<UIDocument>();
             var guids      = UnityEditor.AssetDatabase.FindAssets("t:PanelSettings");
 
@@ -409,7 +413,6 @@ namespace Fram3d.Tests.UI
 
             if (bodySection == null)
             {
-                Object.DestroyImmediate(panelGo);
                 Assert.Inconclusive("Could not access body section for focus test");
                 yield break;
             }
@@ -419,7 +422,6 @@ namespace Fram3d.Tests.UI
 
             if (dropdown == null)
             {
-                Object.DestroyImmediate(panelGo);
                 Assert.Inconclusive("Could not access dropdown for focus test");
                 yield break;
             }
@@ -448,7 +450,6 @@ namespace Fram3d.Tests.UI
 
             InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
             Assert.AreNotSame(before, this._cam.ActiveAspectRatio, "A key should cycle aspect ratio after search field closes");
-            Object.DestroyImmediate(panelGo);
         }
 
         // --- Bracket keys: aperture ---
@@ -744,6 +745,26 @@ namespace Fram3d.Tests.UI
         {
             base.Setup();
 
+            foreach (var panel in Object.FindObjectsByType<PropertiesPanelView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(panel.gameObject);
+            }
+
+            foreach (var layout in Object.FindObjectsByType<ViewLayoutView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(layout.gameObject);
+            }
+
+            foreach (var timeline in Object.FindObjectsByType<TimelineSectionView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(timeline.gameObject);
+            }
+
+            foreach (var f in Object.FindObjectsByType<FrustumWireframe>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(f.gameObject);
+            }
+
             // Add devices FIRST — they become the only .current devices
             this._keyboard = InputSystem.AddDevice<Keyboard>();
             this._mouse    = InputSystem.AddDevice<Mouse>();
@@ -843,6 +864,16 @@ namespace Fram3d.Tests.UI
         [TearDown]
         public override void TearDown()
         {
+            foreach (var go in this._extras)
+            {
+                if (go != null)
+                {
+                    Object.DestroyImmediate(go);
+                }
+            }
+
+            this._extras.Clear();
+
             var gizmoRoot = GameObject.Find("GizmoRoot");
 
             if (gizmoRoot != null)

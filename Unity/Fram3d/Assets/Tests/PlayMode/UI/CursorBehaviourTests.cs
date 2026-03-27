@@ -2,6 +2,8 @@ using System.Collections;
 using System.Reflection;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Input;
+using Fram3d.UI.Panels;
+using Fram3d.UI.Views;
 using NUnit.Framework;
 using Fram3d.Engine.Cursor;
 using UnityEngine;
@@ -85,6 +87,21 @@ namespace Fram3d.Tests.UI
         [SetUp]
         public void SetUp()
         {
+            foreach (var eb in Object.FindObjectsByType<ElementBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(eb.gameObject);
+            }
+
+            foreach (var panel in Object.FindObjectsByType<PropertiesPanelView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(panel.gameObject);
+            }
+
+            foreach (var layout in Object.FindObjectsByType<ViewLayoutView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(layout.gameObject);
+            }
+
             this._cameraGo = new GameObject("TestCamera");
             var camera = this._cameraGo.AddComponent<Camera>();
             this._cameraGo.transform.position = Vector3.zero;
@@ -111,16 +128,16 @@ namespace Fram3d.Tests.UI
         [TearDown]
         public void TearDown()
         {
-            // Restore original cursor service before cleanup
-            if (this._originalService != null)
-            {
-                CursorService.SetService(this._originalService);
-            }
-
+            CursorService.SetService(this._originalService);
             InputSystem.QueueStateEvent(this._mouse, new MouseState());
             InputSystem.RemoveDevice(this._mouse);
             Object.DestroyImmediate(this._cube);
             Object.DestroyImmediate(this._cameraGo);
+
+            foreach (var eb in Object.FindObjectsByType<ElementBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(eb.gameObject);
+            }
         }
 
         [UnityTest]

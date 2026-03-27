@@ -27,6 +27,16 @@ namespace Fram3d.Tests.UI
         [SetUp]
         public void SetUp()
         {
+            foreach (var cam in Object.FindObjectsByType<CameraBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(cam.gameObject);
+            }
+
+            foreach (var f in Object.FindObjectsByType<FrustumWireframe>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                Object.DestroyImmediate(f.gameObject);
+            }
+
             this._cameraGo   = new GameObject("TestCamera");
             this._behaviour  = this._cameraGo.AddComponent<CameraBehaviour>();
             this._uiGo       = new GameObject("TestUI");

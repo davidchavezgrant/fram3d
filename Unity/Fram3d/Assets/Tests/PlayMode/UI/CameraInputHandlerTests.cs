@@ -20,14 +20,15 @@ namespace Fram3d.Tests.UI
     /// <summary>
     /// Play Mode tests for CameraInputHandler keyboard shortcuts and input routing.
     ///
-    /// Extends InputTestFixture to isolate the Input System — all Editor devices
-    /// are removed, so test devices are the only Keyboard.current / Mouse.current.
-    /// This prevents the .current identity race that caused persistent flaking.
+    /// Adds test Keyboard and Mouse devices via InputSystem.AddDevice — these become
+    /// Keyboard.current / Mouse.current. Update() → Tick(Keyboard.current, Mouse.current)
+    /// uses the test devices directly. No explicit Tick() calls needed.
     ///
-    /// With isolation, Update() → Tick(Keyboard.current, Mouse.current) uses the
-    /// test devices directly. No explicit Tick() calls needed.
+    /// Does NOT extend InputTestFixture. InputTestFixture replaces
+    /// NativeInputRuntime.instance.onUpdate but never restores it, poisoning
+    /// InputActionState monitors for all subsequent tests in the session.
     /// </summary>
-    public sealed class CameraInputHandlerTests: InputTestFixture
+    public sealed class CameraInputHandlerTests
     {
         private CameraBehaviour      _behaviour;
         private CameraElement        _cam;
@@ -741,10 +742,8 @@ namespace Fram3d.Tests.UI
         }
 
         [SetUp]
-        public override void Setup()
+        public void Setup()
         {
-            base.Setup();
-
             foreach (var panel in Object.FindObjectsByType<PropertiesPanelView>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 Object.DestroyImmediate(panel.gameObject);
@@ -862,7 +861,7 @@ namespace Fram3d.Tests.UI
         }
 
         [TearDown]
-        public override void TearDown()
+        public void TearDown()
         {
             foreach (var go in this._extras)
             {
@@ -890,7 +889,10 @@ namespace Fram3d.Tests.UI
 
             Object.DestroyImmediate(this._guideGo);
             Object.DestroyImmediate(this._go);
-            base.TearDown();
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            InputSystem.QueueStateEvent(this._mouse,    new MouseState());
+            InputSystem.RemoveDevice(this._keyboard);
+            InputSystem.RemoveDevice(this._mouse);
         }
 
         [UnityTest]

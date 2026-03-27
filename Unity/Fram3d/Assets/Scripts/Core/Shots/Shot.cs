@@ -2,7 +2,7 @@ using System;
 using System.Numerics;
 using Fram3d.Core.Common;
 using Fram3d.Core.Timeline;
-namespace Fram3d.Core.Shot
+namespace Fram3d.Core.Shots
 {
     /// <summary>
     /// Aggregate root for a shot. A shot is a named time range with per-shot

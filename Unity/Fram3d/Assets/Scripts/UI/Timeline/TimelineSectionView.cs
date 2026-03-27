@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Fram3d.Core.Common;
-using Fram3d.Core.Shot;
+using Fram3d.Core.Shots;
 using Fram3d.Core.Timeline;
 using Fram3d.Engine.Cursor;
 using Fram3d.Engine.Integration;

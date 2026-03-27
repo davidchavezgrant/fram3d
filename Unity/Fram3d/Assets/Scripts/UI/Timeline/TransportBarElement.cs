@@ -1,5 +1,5 @@
 using System;
-using Fram3d.Core.Shot;
+using Fram3d.Core.Shots;
 using Fram3d.Core.Timeline;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Timeline

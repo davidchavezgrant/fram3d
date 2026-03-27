@@ -1,6 +1,6 @@
 using System;
 using Fram3d.Core.Common;
-using Fram3d.Core.Shot;
+using Fram3d.Core.Shots;
 namespace Fram3d.Core.Timeline
 {
     /// <summary>
@@ -77,7 +77,7 @@ namespace Fram3d.Core.Timeline
             var startTime = this._registry.GetGlobalStartTime(shot.Id).Seconds;
             var newDuration = newEndTime - startTime;
             var snapped   = this._frameRate.SnapToFrame(
-                new TimePosition(Math.Max(newDuration, Shot.Shot.MIN_DURATION)));
+                new TimePosition(Math.Max(newDuration, Shot.MIN_DURATION)));
 
             shot.Duration = snapped.Seconds;
             return snapped.Seconds;
@@ -137,7 +137,7 @@ namespace Fram3d.Core.Timeline
         /// <summary>
         /// Computes hover tooltip content for a shot.
         /// </summary>
-        public string FormatShotTooltip(Shot.Shot shot)
+        public string FormatShotTooltip(Shot shot)
         {
             var frames  = new TimePosition(shot.Duration).ToFrame(this._frameRate);
             var kfCount = shot.TotalCameraKeyframeCount;

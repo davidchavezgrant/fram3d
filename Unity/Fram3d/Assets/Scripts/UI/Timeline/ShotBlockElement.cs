@@ -1,4 +1,4 @@
-using Fram3d.Core.Shot;
+using Fram3d.Core.Shots;
 using UnityEngine;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Timeline

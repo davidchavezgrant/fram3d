@@ -2,20 +2,20 @@ using System;
 using System.Numerics;
 using FluentAssertions;
 using Fram3d.Core.Common;
-using Fram3d.Core.Shot;
+using Fram3d.Core.Shots;
 using Fram3d.Core.Timeline;
 using Xunit;
 
-namespace Fram3d.Core.Tests.Shot
+namespace Fram3d.Core.Tests.Shots
 {
     public class ShotTests
     {
-        private static Core.Shot.Shot MakeShot(
+        private static Shot MakeShot(
             string name = "Shot_01",
             Vector3? position = null,
             Quaternion? rotation = null)
         {
-            return new Core.Shot.Shot(
+            return new Shot(
                 new ShotId(Guid.NewGuid()),
                 name,
                 position ?? Vector3.Zero,
@@ -28,7 +28,7 @@ namespace Fram3d.Core.Tests.Shot
         [Fact]
         public void Constructor__ThrowsArgumentNull__When__IdIsNull()
         {
-            Action act = () => new Core.Shot.Shot(null, "Shot_01", Vector3.Zero, Quaternion.Identity);
+            Action act = () => new Shot(null, "Shot_01", Vector3.Zero, Quaternion.Identity);
             act.Should().Throw<ArgumentNullException>();
         }
 
@@ -50,7 +50,7 @@ namespace Fram3d.Core.Tests.Shot
         public void Constructor__SetsDefaultDuration__When__Created()
         {
             var shot = MakeShot();
-            shot.Duration.Should().Be(Core.Shot.Shot.DEFAULT_DURATION);
+            shot.Duration.Should().Be(Shot.DEFAULT_DURATION);
         }
 
         [Fact]
@@ -112,7 +112,7 @@ namespace Fram3d.Core.Tests.Shot
             var shot = MakeShot();
             var longName = new string('A', 50);
             shot.Name = longName;
-            shot.Name.Length.Should().Be(Core.Shot.Shot.MAX_NAME_LENGTH);
+            shot.Name.Length.Should().Be(Shot.MAX_NAME_LENGTH);
         }
 
         [Fact]
@@ -131,7 +131,7 @@ namespace Fram3d.Core.Tests.Shot
         {
             var shot = MakeShot();
             shot.Duration = 0.0;
-            shot.Duration.Should().Be(Core.Shot.Shot.MIN_DURATION);
+            shot.Duration.Should().Be(Shot.MIN_DURATION);
         }
 
         [Fact]
@@ -139,7 +139,7 @@ namespace Fram3d.Core.Tests.Shot
         {
             var shot = MakeShot();
             shot.Duration = 999.0;
-            shot.Duration.Should().Be(Core.Shot.Shot.MAX_DURATION);
+            shot.Duration.Should().Be(Shot.MAX_DURATION);
         }
 
         [Fact]
@@ -155,7 +155,7 @@ namespace Fram3d.Core.Tests.Shot
         {
             var shot = MakeShot();
             shot.Duration = -5.0;
-            shot.Duration.Should().Be(Core.Shot.Shot.MIN_DURATION);
+            shot.Duration.Should().Be(Shot.MIN_DURATION);
         }
 
         // --- Camera keyframes preserved when duration shortened ---

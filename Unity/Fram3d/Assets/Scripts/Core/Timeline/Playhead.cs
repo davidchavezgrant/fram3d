@@ -1,6 +1,6 @@
 using System;
 using Fram3d.Core.Common;
-using Fram3d.Core.Shot;
+using Fram3d.Core.Shots;
 namespace Fram3d.Core.Timeline
 {
     /// <summary>
@@ -91,7 +91,7 @@ namespace Fram3d.Core.Timeline
         /// <summary>
         /// Resolves which shot the playhead is in and returns the shot-local time.
         /// </summary>
-        public (Shot.Shot shot, TimePosition localTime)? ResolveShot(ShotRegistry registry) =>
+        public (Shot shot, TimePosition localTime)? ResolveShot(ShotRegistry registry) =>
             registry.GetShotAtGlobalTime(new TimePosition(this._currentTime));
 
         /// <summary>

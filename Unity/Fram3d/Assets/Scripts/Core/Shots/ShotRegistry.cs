@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Fram3d.Core.Common;
-namespace Fram3d.Core.Shot
+namespace Fram3d.Core.Shots
 {
     /// <summary>
     /// Ordered collection of shots. Manages shot lifecycle (add, remove, reorder),

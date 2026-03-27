@@ -1,6 +1,6 @@
 using System;
 using Fram3d.Core.Common;
-using Fram3d.Core.Shot;
+using Fram3d.Core.Shots;
 using Fram3d.Engine.Conversion;
 using UnityEngine;
 namespace Fram3d.Engine.Integration

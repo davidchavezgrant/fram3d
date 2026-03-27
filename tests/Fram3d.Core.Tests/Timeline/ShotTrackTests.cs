@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Fram3d.Core.Common;
 using Fram3d.Core.Timeline;
-using Fram3d.Core.Shot;
+using Fram3d.Core.Shots;
 using Fram3d.Core.Timeline;
 using System.Numerics;
 using Xunit;

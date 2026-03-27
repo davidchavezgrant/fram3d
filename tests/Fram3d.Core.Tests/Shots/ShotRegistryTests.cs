@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Numerics;
 using FluentAssertions;
 using Fram3d.Core.Common;
-using Fram3d.Core.Shot;
+using Fram3d.Core.Shots;
 using Xunit;
 
-namespace Fram3d.Core.Tests.Shot
+namespace Fram3d.Core.Tests.Shots
 {
     public class ShotRegistryTests
     {
@@ -15,7 +15,7 @@ namespace Fram3d.Core.Tests.Shot
 
         private ShotRegistry MakeRegistry() => new();
 
-        private Core.Shot.Shot AddDefaultShot(ShotRegistry registry) =>
+        private Shot AddDefaultShot(ShotRegistry registry) =>
             registry.AddShot(DEFAULT_POS, DEFAULT_ROT);
 
         // --- AddShot ---
@@ -71,7 +71,7 @@ namespace Fram3d.Core.Tests.Shot
         public void AddShot__EmitsShotAdded__When__Added()
         {
             var reg = MakeRegistry();
-            Core.Shot.Shot emitted = null;
+            Shot emitted = null;
             reg.ShotAdded.Subscribe(s => emitted = s);
             var shot = AddDefaultShot(reg);
             emitted.Should().Be(shot);
@@ -81,7 +81,7 @@ namespace Fram3d.Core.Tests.Shot
         public void AddShot__EmitsCurrentShotChanged__When__Added()
         {
             var reg = MakeRegistry();
-            Core.Shot.Shot emitted = null;
+            Shot emitted = null;
             reg.CurrentShotChanged.Subscribe(s => emitted = s);
             var shot = AddDefaultShot(reg);
             emitted.Should().Be(shot);
@@ -142,7 +142,7 @@ namespace Fram3d.Core.Tests.Shot
         {
             var reg = MakeRegistry();
             var shot = AddDefaultShot(reg);
-            Core.Shot.Shot emitted = null;
+            Shot emitted = null;
             reg.ShotRemoved.Subscribe(s => emitted = s);
             reg.RemoveShot(shot.Id);
             emitted.Should().Be(shot);
@@ -479,7 +479,7 @@ namespace Fram3d.Core.Tests.Shot
             var reg = MakeRegistry();
             AddDefaultShot(reg);
             AddDefaultShot(reg);
-            var removedShots = new List<Core.Shot.Shot>();
+            var removedShots = new List<Shot>();
             reg.ShotRemoved.Subscribe(s => removedShots.Add(s));
             reg.Clear();
             removedShots.Should().HaveCount(2);
@@ -577,21 +577,21 @@ namespace Fram3d.Core.Tests.Shot
         [Fact]
         public void AcceptanceCriteria16__DurationClampsToMin__When__ZeroEntered()
         {
-            var shot = new Core.Shot.Shot(
+            var shot = new Shot(
                 new ShotId(Guid.NewGuid()), "Test", Vector3.Zero, Quaternion.Identity
             );
             shot.Duration = 0.0;
-            shot.Duration.Should().Be(Core.Shot.Shot.MIN_DURATION);
+            shot.Duration.Should().Be(Shot.MIN_DURATION);
         }
 
         [Fact]
         public void AcceptanceCriteria17__DurationClampsToMax__When__999Entered()
         {
-            var shot = new Core.Shot.Shot(
+            var shot = new Shot(
                 new ShotId(Guid.NewGuid()), "Test", Vector3.Zero, Quaternion.Identity
             );
             shot.Duration = 999.0;
-            shot.Duration.Should().Be(Core.Shot.Shot.MAX_DURATION);
+            shot.Duration.Should().Be(Shot.MAX_DURATION);
         }
     }
 }

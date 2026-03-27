@@ -1,4 +1,5 @@
 using System;
+using Fram3d.Core.Common;
 using Fram3d.Core.Timelines;
 using Fram3d.Engine.Cursor;
 using Fram3d.Engine.Integration;
@@ -97,8 +98,8 @@ namespace Fram3d.UI.Timeline
             this._transport.UpdatePlayButton(this._controller.Playhead.IsPlaying);
         }
 
-        public void ZoomIn()  => this._controller?.ZoomIn();
-        public void ZoomOut() => this._controller?.ZoomOut();
+        public void ZoomIn()  => this._controller?.ZoomAtPoint(this._controller.Playhead.CurrentTime, 1f);
+        public void ZoomOut() => this._controller?.ZoomAtPoint(this._controller.Playhead.CurrentTime, -1f);
 
         // ══════════════════════════════════════════════════════════════════
         // Lifecycle
@@ -194,7 +195,7 @@ namespace Fram3d.UI.Timeline
 
                 if (!float.IsNaN(w) && w > 0)
                 {
-                    this._controller.InitializeState(w);
+                    this._controller.InitializeViewRange(w);
                     this.SyncVisuals();
                     this.UpdateBottomInset();
                 }
@@ -317,7 +318,7 @@ namespace Fram3d.UI.Timeline
 
         private void SyncVisuals()
         {
-            var state = this._controller.State;
+            var state = this._controller;
 
             if (state == null)
             {
@@ -434,11 +435,6 @@ namespace Fram3d.UI.Timeline
             this._shotStripOutOfRange.BringToFront();
 
             this.UpdateActiveStates();
-
-            if (this._controller.State != null)
-            {
-                this._controller.State.SetTotalDuration(this._controller.TotalDuration);
-            }
         }
 
         private void UpdateActiveStates()
@@ -456,7 +452,7 @@ namespace Fram3d.UI.Timeline
 
         private void UpdateShotBlockPositions()
         {
-            var state = this._controller.State;
+            var state = this._controller;
 
             if (state == null)
             {
@@ -490,7 +486,7 @@ namespace Fram3d.UI.Timeline
         private float ComputeDropIndicatorPx()
         {
             var targetIndex = this._controller.DragTargetIndex;
-            var state       = this._controller.State;
+            var state       = this._controller;
 
             if (state == null)
             {
@@ -581,14 +577,14 @@ namespace Fram3d.UI.Timeline
 
         private void OnWheel(WheelEvent evt)
         {
-            if (this._controller.State == null)
+            if (this._controller.VisibleDuration <= 0)
             {
                 return;
             }
 
             if (evt.ctrlKey)
             {
-                this._controller.ZoomAtPixel(evt.localMousePosition.x, -evt.delta.y);
+                this._controller.ZoomAtPoint(this._controller.PixelToTime(evt.localMousePosition.x), -evt.delta.y);
             }
             else
             {
@@ -597,7 +593,7 @@ namespace Fram3d.UI.Timeline
 
                 if (absY > absX)
                 {
-                    this._controller.ZoomAtPixel(evt.localMousePosition.x, -evt.delta.y);
+                    this._controller.ZoomAtPoint(this._controller.PixelToTime(evt.localMousePosition.x), -evt.delta.y);
                 }
                 else if (absX > 0.01f)
                 {
@@ -610,7 +606,7 @@ namespace Fram3d.UI.Timeline
 
         private void HandleInputSystemScroll()
         {
-            if (this._controller.State == null || !this.IsPointerOverUI || Mouse.current == null)
+            if (this._controller.VisibleDuration <= 0 || !this.IsPointerOverUI || Mouse.current == null)
             {
                 return;
             }
@@ -630,7 +626,7 @@ namespace Fram3d.UI.Timeline
             var mousePos  = Mouse.current.position.ReadValue();
             var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
             var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
-            this._controller.ZoomAtPixel(panelPos.x - LABEL_COL_W, scroll.y);
+            this._controller.ZoomAtPoint(this._controller.PixelToTime(panelPos.x - LABEL_COL_W), scroll.y);
         }
 
         // ══════════════════════════════════════════════════════════════════

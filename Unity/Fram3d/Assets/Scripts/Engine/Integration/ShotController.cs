@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Fram3d.Engine.Integration
 {
     /// <summary>
-    /// Bridges the TimelineController to the Unity scene. Creates a default
+    /// Bridges the Timeline to the Unity scene. Creates a default
     /// shot on start. Routes camera evaluation requests to CameraBehaviour.
     /// </summary>
     public sealed class ShotController : MonoBehaviour

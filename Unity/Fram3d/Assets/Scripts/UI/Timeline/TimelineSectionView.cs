@@ -20,8 +20,6 @@ namespace Fram3d.UI.Timeline
     {
         private const double DOUBLE_CLICK_MS  = 350;
         private const float  EDGE_HIT_PX      = 6f;
-        private const int    FPS              = 24;
-        private const double FRAME_DURATION   = 1.0 / FPS;
         private const int    HOLD_THRESHOLD_MS = 200;
         private const float  LABEL_COLUMN_WIDTH = 140f;
         private const float  SECTION_HEIGHT   = 320f;
@@ -30,6 +28,7 @@ namespace Fram3d.UI.Timeline
         private CameraBehaviour _cameraBehaviour;
         private Playhead        _playhead;
         private ShotController  _shotController;
+        private ShotTrack       _shotTrack;
         private TimelineState   _timelineState;
 
         // ── UI root ──
@@ -316,6 +315,10 @@ namespace Fram3d.UI.Timeline
                     this._timelineState = new TimelineState(
                         this._shotController.Registry.TotalDuration,
                         stripWidth);
+                    this._shotTrack = new ShotTrack(
+                        this._shotController.Registry,
+                        this._timelineState,
+                        this._playhead.FrameRate);
                 }
                 else
                 {
@@ -887,39 +890,11 @@ namespace Fram3d.UI.Timeline
         {
             this._shotController.Registry.SetCurrentShot(block.Shot.Id);
 
-            if (this._timelineState == null)
+            if (this._shotTrack != null)
             {
-                return;
+                this._shotTrack.FitToShot(block.Shot.Id);
+                this.RefreshAll();
             }
-
-            var reg           = this._shotController.Registry;
-            var shotIndex     = reg.IndexOf(block.Shot.Id);
-            var start         = reg.GetGlobalStartTime(block.Shot.Id).Seconds;
-            var end           = reg.GetGlobalEndTime(block.Shot.Id).Seconds;
-            var duration      = end - start;
-            var totalDuration = reg.TotalDuration;
-            var padding       = duration * 0.08;
-            var isFirst       = shotIndex == 0;
-            var isLast        = shotIndex == reg.Count - 1;
-
-            if (reg.Count == 1)
-            {
-                this._timelineState.FitAll(totalDuration);
-            }
-            else if (isFirst)
-            {
-                this._timelineState.SetViewRange(0, end + padding);
-            }
-            else if (isLast)
-            {
-                this._timelineState.SetViewRange(start - padding, totalDuration);
-            }
-            else
-            {
-                this._timelineState.FitRange(start, end);
-            }
-
-            this.RefreshAll();
         }
 
         // ══════════════════════════════════════════════════════════════════
@@ -1140,35 +1115,19 @@ namespace Fram3d.UI.Timeline
 
         private void UpdateBoundaryDrag(Vector2 localPos)
         {
-            if (this._timelineState == null)
+            if (this._shotTrack == null || this._timelineState == null)
             {
                 return;
             }
 
-            var reg        = this._shotController.Registry;
-            var leftShot   = reg.Shots[this._boundaryLeftIndex];
-            var startTime  = reg.GetGlobalStartTime(leftShot.Id).Seconds;
             var cursorTime = this._timelineState.PixelToTime(localPos.x);
-            var newDuration = cursorTime - startTime;
-
-            var snapped = FrameRate.FPS_24.SnapToFrame(
-                new TimePosition(Math.Max(newDuration, Shot.MIN_DURATION)));
-            leftShot.Duration = snapped.Seconds;
+            this._shotTrack.ResizeShotAtEdge(this._boundaryLeftIndex, cursorTime);
 
             this.UpdateShotBlockWidths();
             this.UpdateTotalLabel();
 
-            var fps    = FrameRate.FPS_24;
-            var frames = snapped.ToFrame(fps);
-            var mode   = "[ripple]";
-
-            if (Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed)
-            {
-                mode = "[shots only]";
-            }
-
-            this._boundaryTooltipText.text =
-                $"{leftShot.Name}: {leftShot.Duration:F1}s ({frames}f) {mode}";
+            var shiftHeld = Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed;
+            this._boundaryTooltipText.text = this._shotTrack.FormatResizeTooltip(this._boundaryLeftIndex, shiftHeld);
         }
 
         // ══════════════════════════════════════════════════════════════════
@@ -1178,11 +1137,12 @@ namespace Fram3d.UI.Timeline
         private void ShowTooltip(ShotBlockElement block)
         {
             this._hoveredBlock = block;
-            var shot    = block.Shot;
-            var fps     = FrameRate.FPS_24;
-            var frames  = new TimePosition(shot.Duration).ToFrame(fps);
-            var kfCount = shot.TotalCameraKeyframeCount;
-            this._tooltipText.text      = $"{shot.Name}\nCam A \u00b7 {shot.Duration:F1}s ({frames}f) \u00b7 {kfCount} kf";
+
+            if (this._shotTrack != null)
+            {
+                this._tooltipText.text = this._shotTrack.FormatShotTooltip(block.Shot);
+            }
+
             this._tooltip.style.display = DisplayStyle.Flex;
         }
 
@@ -1241,25 +1201,14 @@ namespace Fram3d.UI.Timeline
 
         private int FindShotEdgeAt(float x)
         {
-            if (this._timelineState == null)
+            if (this._shotTrack == null || this._timelineState == null)
             {
                 return -1;
             }
 
-            var runningTime = 0.0;
-
-            for (var i = 0; i < this._blocks.Count; i++)
-            {
-                runningTime += this._blocks[i].Shot.Duration;
-                var edgePx = (float)this._timelineState.TimeToPixel(runningTime);
-
-                if (Math.Abs(x - edgePx) <= EDGE_HIT_PX)
-                {
-                    return i;
-                }
-            }
-
-            return -1;
+            var time      = this._timelineState.PixelToTime(x);
+            var tolerance = this._shotTrack.PixelToleranceToTime(EDGE_HIT_PX);
+            return this._shotTrack.FindEdgeAtTime(time, tolerance);
         }
 
         private ShotBlockElement FindBlockAt(Vector2 localPos)

@@ -12,21 +12,21 @@ namespace Fram3d.Core.Timelines
         private const double ZOOM_FACTOR          = 1.15;
 
         private readonly Subject<bool> _changed = new();
-        private          double        _stripWidth = 1.0;
+        private          double        _trackWidth = 1.0;
         private          double        _viewEnd;
         private          double        _viewStart;
 
         public IObservable<bool> Changed       => this._changed;
-        public double            PixelsPerSecond => this.VisibleDuration > 0 ? this._stripWidth / this.VisibleDuration : this._stripWidth;
+        public double            PixelsPerSecond => this.VisibleDuration > 0 ? this._trackWidth / this.VisibleDuration : this._trackWidth;
         public double            ViewEnd        => this._viewEnd;
         public double            ViewStart      => this._viewStart;
         public double            VisibleDuration => this._viewEnd - this._viewStart;
 
         public bool IsInitialized => this._viewEnd > 0;
 
-        public void Initialize(double stripWidth, double totalDuration)
+        public void Initialize(double trackWidth, double totalDuration)
         {
-            this._stripWidth = Math.Max(stripWidth, 1.0);
+            this._trackWidth = Math.Max(trackWidth, 1.0);
 
             if (!this.IsInitialized)
             {
@@ -38,9 +38,9 @@ namespace Fram3d.Core.Timelines
             }
         }
 
-        public void SetStripWidth(double width)
+        public void SetTrackWidth(double width)
         {
-            this._stripWidth = Math.Max(width, 1.0);
+            this._trackWidth = Math.Max(width, 1.0);
             this._changed.OnNext(true);
         }
 

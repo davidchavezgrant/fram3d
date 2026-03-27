@@ -241,38 +241,38 @@ namespace Fram3d.Core.Tests.Timelines
         // ── Strip interaction ──────────────────────────────────────────
 
         [Fact]
-        public void StripPointerDown__StartsBoundaryDrag__When__NearEdge()
+        public void ShotTrackPointerDown__StartsBoundaryDrag__When__NearEdge()
         {
             var t      = Create();
             var edgePx = t.TimeToPixel(5.0);
 
-            t.StripPointerDown(edgePx, 0).Should().Be(ShotTrackAction.BOUNDARY_DRAG);
+            t.ShotTrackPointerDown(edgePx, 0).Should().Be(ShotTrackAction.BOUNDARY_DRAG);
         }
 
         [Fact]
-        public void StripPointerDown__StartsPotentialClick__When__OnShot()
+        public void ShotTrackPointerDown__StartsPotentialClick__When__OnShot()
         {
             var t = Create();
 
-            t.StripPointerDown(250, 0).Should().Be(ShotTrackAction.POTENTIAL_CLICK);
+            t.ShotTrackPointerDown(250, 0).Should().Be(ShotTrackAction.POTENTIAL_CLICK);
         }
 
         [Fact]
-        public void StripPointerUp__CompletesClick__When__NoMove()
+        public void ShotTrackPointerUp__CompletesClick__When__NoMove()
         {
             var t = Create();
-            t.StripPointerDown(250, 0);
+            t.ShotTrackPointerDown(250, 0);
 
-            t.StripPointerUp().Should().Be(ShotTrackAction.CLICK);
+            t.ShotTrackPointerUp().Should().Be(ShotTrackAction.CLICK);
         }
 
         [Fact]
-        public void StripPointerMove__StartsDrag__When__HeldLongEnough()
+        public void ShotTrackPointerMove__StartsDrag__When__HeldLongEnough()
         {
             var t = Create();
-            t.StripPointerDown(250, 0);
+            t.ShotTrackPointerDown(250, 0);
 
-            t.StripPointerMove(250, 300).Should().Be(ShotTrackAction.DRAG_START);
+            t.ShotTrackPointerMove(250, 300).Should().Be(ShotTrackAction.DRAG_START);
         }
 
         // ── Formatting ─────────────────────────────────────────────────

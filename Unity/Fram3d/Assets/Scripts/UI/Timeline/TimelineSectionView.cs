@@ -34,9 +34,9 @@ namespace Fram3d.UI.Timeline
         private ZoomBarElement      _zoomBar;
 
         // ── Shot strip elements ──
-        private VisualElement _shotStrip;
-        private VisualElement _shotStripPlayhead;
-        private VisualElement _shotStripOutOfRange;
+        private VisualElement _shotTrackArea;
+        private VisualElement _shotTrackAreaPlayhead;
+        private VisualElement _shotTrackAreaOutOfRange;
         private VisualElement _dropIndicator;
         private Label         _totalLabel;
 
@@ -178,7 +178,7 @@ namespace Fram3d.UI.Timeline
             this._ruler.Content.RegisterCallback<WheelEvent>(this.OnWheel);
             this._section.Add(this._ruler);
 
-            this.BuildShotStrip();
+            this.BuildShotTrack();
             this.BuildTrackArea();
 
             this._zoomBar = new ZoomBarElement();
@@ -189,9 +189,9 @@ namespace Fram3d.UI.Timeline
             this.BuildTooltips();
             this._root.Add(this._section);
 
-            this._shotStrip.RegisterCallback<GeometryChangedEvent>(_ =>
+            this._shotTrackArea.RegisterCallback<GeometryChangedEvent>(_ =>
             {
-                var w = this._shotStrip.resolvedStyle.width;
+                var w = this._shotTrackArea.resolvedStyle.width;
 
                 if (!float.IsNaN(w) && w > 0)
                 {
@@ -202,7 +202,7 @@ namespace Fram3d.UI.Timeline
             });
         }
 
-        private void BuildShotStrip()
+        private void BuildShotTrack()
         {
             var row = new VisualElement();
             row.AddToClassList("timeline-shot-row");
@@ -237,29 +237,29 @@ namespace Fram3d.UI.Timeline
             labelCol.Add(this._totalLabel);
             row.Add(labelCol);
 
-            this._shotStrip = new VisualElement();
-            this._shotStrip.AddToClassList("timeline-shot-strip");
-            row.Add(this._shotStrip);
+            this._shotTrackArea = new VisualElement();
+            this._shotTrackArea.AddToClassList("timeline-shot-strip");
+            row.Add(this._shotTrackArea);
 
-            this._shotStrip.RegisterCallback<WheelEvent>(this.OnWheel);
-            this._shotStrip.RegisterCallback<PointerDownEvent>(this.OnStripDown);
-            this._shotStrip.RegisterCallback<PointerMoveEvent>(this.OnStripMove);
-            this._shotStrip.RegisterCallback<PointerUpEvent>(this.OnStripUp);
+            this._shotTrackArea.RegisterCallback<WheelEvent>(this.OnWheel);
+            this._shotTrackArea.RegisterCallback<PointerDownEvent>(this.OnStripDown);
+            this._shotTrackArea.RegisterCallback<PointerMoveEvent>(this.OnStripMove);
+            this._shotTrackArea.RegisterCallback<PointerUpEvent>(this.OnStripUp);
 
             this._dropIndicator = new VisualElement();
             this._dropIndicator.AddToClassList("shot-track__drop-indicator");
             this._dropIndicator.style.display = DisplayStyle.None;
-            this._shotStrip.Add(this._dropIndicator);
+            this._shotTrackArea.Add(this._dropIndicator);
 
-            this._shotStripPlayhead = new VisualElement();
-            this._shotStripPlayhead.AddToClassList("timeline-playhead");
-            this._shotStripPlayhead.style.display = DisplayStyle.None;
-            this._shotStrip.Add(this._shotStripPlayhead);
+            this._shotTrackAreaPlayhead = new VisualElement();
+            this._shotTrackAreaPlayhead.AddToClassList("timeline-playhead");
+            this._shotTrackAreaPlayhead.style.display = DisplayStyle.None;
+            this._shotTrackArea.Add(this._shotTrackAreaPlayhead);
 
-            this._shotStripOutOfRange = new VisualElement();
-            this._shotStripOutOfRange.AddToClassList("timeline-out-of-range");
-            this._shotStripOutOfRange.pickingMode = PickingMode.Ignore;
-            this._shotStrip.Add(this._shotStripOutOfRange);
+            this._shotTrackAreaOutOfRange = new VisualElement();
+            this._shotTrackAreaOutOfRange.AddToClassList("timeline-out-of-range");
+            this._shotTrackAreaOutOfRange.pickingMode = PickingMode.Ignore;
+            this._shotTrackArea.Add(this._shotTrackAreaOutOfRange);
 
             this._section.Add(row);
         }
@@ -333,12 +333,12 @@ namespace Fram3d.UI.Timeline
             this.UpdateShotBlockPositions();
 
             // Playheads
-            this.SetPlayhead(this._shotStripPlayhead, px);
+            this.SetPlayhead(this._shotTrackAreaPlayhead, px);
             this.SetPlayhead(this._trackPlayhead, px);
             this._ruler.UpdatePlayhead(state, this._controller.Playhead.CurrentTime);
 
             // Out-of-range
-            this.SetOutOfRange(this._shotStripOutOfRange, endPx);
+            this.SetOutOfRange(this._shotTrackAreaOutOfRange, endPx);
             this.SetOutOfRange(this._trackOutOfRange, endPx);
             this._ruler.UpdateOutOfRange(state, total);
 
@@ -396,13 +396,13 @@ namespace Fram3d.UI.Timeline
         private void RebuildShotBlocks()
         {
             // Remove all shot block children (keep playhead, out-of-range, drop indicator)
-            for (var i = this._shotStrip.childCount - 1; i >= 0; i--)
+            for (var i = this._shotTrackArea.childCount - 1; i >= 0; i--)
             {
-                var child = this._shotStrip[i];
+                var child = this._shotTrackArea[i];
 
                 if (child != this._dropIndicator
-                 && child != this._shotStripPlayhead
-                 && child != this._shotStripOutOfRange)
+                 && child != this._shotTrackAreaPlayhead
+                 && child != this._shotTrackAreaOutOfRange)
                 {
                     child.RemoveFromHierarchy();
                 }
@@ -428,11 +428,11 @@ namespace Fram3d.UI.Timeline
                         this._controllerRemoveShot(shot.Id));
                 });
 
-                this._shotStrip.Insert(this._shotStrip.childCount - 3, block);
+                this._shotTrackArea.Insert(this._shotTrackArea.childCount - 3, block);
             }
 
-            this._shotStripPlayhead.BringToFront();
-            this._shotStripOutOfRange.BringToFront();
+            this._shotTrackAreaPlayhead.BringToFront();
+            this._shotTrackAreaOutOfRange.BringToFront();
 
             this.UpdateActiveStates();
         }
@@ -441,9 +441,9 @@ namespace Fram3d.UI.Timeline
         {
             var current = this._controller.CurrentShot;
 
-            for (var i = 0; i < this._shotStrip.childCount; i++)
+            for (var i = 0; i < this._shotTrackArea.childCount; i++)
             {
-                if (this._shotStrip[i] is ShotBlockElement block)
+                if (this._shotTrackArea[i] is ShotBlockElement block)
                 {
                     block.SetActive(block.Shot == current);
                 }
@@ -461,9 +461,9 @@ namespace Fram3d.UI.Timeline
 
             var runningTime = 0.0;
 
-            for (var i = 0; i < this._shotStrip.childCount; i++)
+            for (var i = 0; i < this._shotTrackArea.childCount; i++)
             {
-                if (this._shotStrip[i] is not ShotBlockElement block)
+                if (this._shotTrackArea[i] is not ShotBlockElement block)
                 {
                     continue;
                 }
@@ -519,12 +519,12 @@ namespace Fram3d.UI.Timeline
             if (evt.button == 0)
             {
                 var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var result = this._controller.StripPointerDown(evt.localPosition.x, now);
+                var result = this._controller.ShotTrackPointerDown(evt.localPosition.x, now);
 
                 if (result == ShotTrackAction.BOUNDARY_DRAG)
                 {
                     this._boundaryTooltip.style.display = DisplayStyle.Flex;
-                    this._shotStrip.CapturePointer(evt.pointerId);
+                    this._shotTrackArea.CapturePointer(evt.pointerId);
                     evt.StopPropagation();
                 }
             }
@@ -537,7 +537,7 @@ namespace Fram3d.UI.Timeline
         private void OnStripMove(PointerMoveEvent evt)
         {
             var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var result = this._controller.StripPointerMove(evt.localPosition.x, now);
+            var result = this._controller.ShotTrackPointerMove(evt.localPosition.x, now);
 
             if (result == ShotTrackAction.NEAR_EDGE)
             {
@@ -556,7 +556,7 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            var result = this._controller.StripPointerUp();
+            var result = this._controller.ShotTrackPointerUp();
 
             if (result == ShotTrackAction.BOUNDARY_COMPLETE)
             {
@@ -569,9 +569,9 @@ namespace Fram3d.UI.Timeline
                 this._dropIndicator.style.display = DisplayStyle.None;
             }
 
-            if (this._shotStrip.HasPointerCapture(evt.pointerId))
+            if (this._shotTrackArea.HasPointerCapture(evt.pointerId))
             {
-                this._shotStrip.ReleasePointer(evt.pointerId);
+                this._shotTrackArea.ReleasePointer(evt.pointerId);
             }
         }
 

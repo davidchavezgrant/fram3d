@@ -92,8 +92,8 @@ namespace Fram3d.Core.Timelines
         public double TimeToPixel(double seconds) => this._view.TimeToPixel(seconds);
         public double PixelToTime(double px)       => this._view.PixelToTime(px);
 
-        public void InitializeViewRange(double stripWidth) =>
-            this._view.Initialize(stripWidth, this.TotalDuration);
+        public void InitializeViewRange(double trackWidth) =>
+            this._view.Initialize(trackWidth, this.TotalDuration);
 
         public void ZoomAtPoint(double anchorSeconds, float scrollDelta) =>
             this._view.ZoomAtPoint(anchorSeconds, scrollDelta, this.TotalDuration);
@@ -216,7 +216,7 @@ namespace Fram3d.Core.Timelines
         public bool IsBoundaryDragging => this._isBoundaryDragging;
         public bool IsDragging         => this._isDragging;
 
-        public ShotTrackAction StripPointerDown(double px, long timestampMs)
+        public ShotTrackAction ShotTrackPointerDown(double px, long timestampMs)
         {
             var time      = this.PixelToTime(px);
             var tolerance = this.PixelsPerSecond > 0 ? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
@@ -244,7 +244,7 @@ namespace Fram3d.Core.Timelines
             return ShotTrackAction.POTENTIAL_CLICK;
         }
 
-        public ShotTrackAction StripPointerMove(double px, long timestampMs)
+        public ShotTrackAction ShotTrackPointerMove(double px, long timestampMs)
         {
             if (this._isBoundaryDragging)
             {
@@ -282,7 +282,7 @@ namespace Fram3d.Core.Timelines
             return ShotTrackAction.NONE;
         }
 
-        public ShotTrackAction StripPointerUp()
+        public ShotTrackAction ShotTrackPointerUp()
         {
             if (this._isBoundaryDragging)
             {

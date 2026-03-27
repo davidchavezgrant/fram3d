@@ -74,10 +74,7 @@ namespace Fram3d.Tests.UI
 
             this._panel.Toggle();
 
-            // After toggle, panel should be hidden
-            // We can't easily check the internal _panel display style,
-            // but we can verify Toggle doesn't throw
-            Assert.IsNotNull(this._panel);
+            Assert.IsFalse(this._panel.IsVisible, "Panel should be hidden after single toggle");
         }
 
         [UnityTest]
@@ -88,7 +85,81 @@ namespace Fram3d.Tests.UI
 
             this._panel.Toggle(); // hide
             this._panel.Toggle(); // show again
-            Assert.IsNotNull(this._panel);
+
+            Assert.IsTrue(this._panel.IsVisible, "Panel should be visible after double toggle");
+        }
+
+        [Test]
+        public void IsVisible__ReturnsTrue__When__Initialized()
+        {
+            Assert.IsTrue(this._panel.IsVisible, "Panel should be visible by default");
+        }
+
+        [Test]
+        public void HasFocusedTextField__ReturnsFalse__When__NoFieldFocused()
+        {
+            Assert.IsFalse(this._panel.HasFocusedTextField,
+                "No field should have focus before initialization");
+        }
+
+        [Test]
+        public void PanelWidth__ReturnsExpectedValue__When__Accessed()
+        {
+            Assert.AreEqual(440f, this._panel.PanelWidth,
+                "Panel width should be 440px");
+        }
+
+        [UnityTest]
+        public IEnumerator Toggle__SetsRightInsetToZero__When__Hidden()
+        {
+            yield return null;
+            yield return null;
+
+            this._panel.Toggle(); // hide
+
+            // CameraBehaviour should have right inset of 0 when panel is hidden
+            Assert.AreEqual(0f, this._behaviour.RightInsetPixels, 0.01f,
+                "Right inset should be 0 when panel is hidden");
+        }
+
+        [UnityTest]
+        public IEnumerator Toggle__RestoresRightInset__When__Shown()
+        {
+            yield return null;
+            yield return null;
+
+            this._panel.Toggle(); // hide
+            this._panel.Toggle(); // show
+
+            // After showing, right inset should be non-zero (PANEL_WIDTH converted to screen)
+            // The exact value depends on screen/CSS scaling, so just verify it's positive
+            Assert.Greater(this._behaviour.RightInsetPixels, 0f,
+                "Right inset should be positive when panel is visible");
+        }
+
+        [UnityTest]
+        public IEnumerator Start__BuildsPanelWithHeader__When__Created()
+        {
+            yield return null;
+            yield return null;
+
+            var root = this._uiDocument.rootVisualElement;
+
+            // Find the properties-panel element
+            VisualElement panel = null;
+
+            for (var i = 0; i < root.childCount; i++)
+            {
+                if (root[i].ClassListContains("properties-panel"))
+                {
+                    panel = root[i];
+                    break;
+                }
+            }
+
+            Assert.IsNotNull(panel, "Should find properties-panel element");
+            Assert.Greater(panel.childCount, 1,
+                "Panel should have header + content sections");
         }
     }
 }

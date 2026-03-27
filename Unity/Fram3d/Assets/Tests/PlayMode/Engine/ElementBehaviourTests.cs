@@ -169,6 +169,43 @@ namespace Fram3d.Tests.Engine
             Object.DestroyImmediate(this._go);
         }
 
+        // --- Ground offset ---
+
+        [Test]
+        public void Awake__ComputesGroundOffset__When__PrimitiveMeshPresent()
+        {
+            // A unit cube at y=2 has bounds.min.y = 1.5
+            // GroundOffset = position.y - bounds.min.y = 2 - 1.5 = 0.5
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.transform.position = new Vector3(0f, 2f, 0f);
+            go.AddComponent<ElementBehaviour>();
+            this._extras.Add(go);
+
+            var element = go.GetComponent<ElementBehaviour>().Element;
+            Assert.AreEqual(0.5f, element.GroundOffset, 0.01f,
+                "Ground offset should be distance from origin to mesh bottom");
+        }
+
+        [Test]
+        public void Awake__GroundOffsetIsZero__When__NoRenderer()
+        {
+            // A plain GameObject with no Renderer
+            var element = this._go.GetComponent<ElementBehaviour>().Element;
+
+            Assert.AreEqual(0f, element.GroundOffset, 0.001f,
+                "Ground offset should be 0 when no Renderer exists");
+        }
+
+        // --- Scale capture ---
+
+        [Test]
+        public void Awake__ScaleDefaultsToOne__When__Created()
+        {
+            var element = this._go.GetComponent<ElementBehaviour>().Element;
+
+            Assert.AreEqual(1f, element.Scale, 0.001f);
+        }
+
         // --- Helpers ---
 
         private GameObject CreateExtra(string name)

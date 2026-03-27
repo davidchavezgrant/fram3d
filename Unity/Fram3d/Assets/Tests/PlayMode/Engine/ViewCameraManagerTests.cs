@@ -417,11 +417,11 @@ namespace Fram3d.Tests.Engine
                 }
             }
 
-            var frustum = GameObject.Find("Shot Camera Frustum");
+            var frustums = Object.FindObjectsByType<FrustumWireframe>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
-            if (frustum != null)
+            foreach (var f in frustums)
             {
-                Object.DestroyImmediate(frustum);
+                Object.DestroyImmediate(f.gameObject);
             }
 
             Object.DestroyImmediate(this._cameraGo);

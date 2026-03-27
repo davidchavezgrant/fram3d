@@ -105,6 +105,14 @@ namespace Fram3d.Tests.UI
         public void TearDown()
         {
             Object.DestroyImmediate(this._uiGo);
+
+            var frustums = Object.FindObjectsByType<FrustumWireframe>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            foreach (var f in frustums)
+            {
+                Object.DestroyImmediate(f.gameObject);
+            }
+
             Object.DestroyImmediate(this._cameraGo);
 
             if (this._renderTexture != null)
@@ -114,7 +122,9 @@ namespace Fram3d.Tests.UI
             }
 
             if (this._panelSettings != null)
+            {
                 Object.DestroyImmediate(this._panelSettings);
+            }
         }
 
         [UnityTest]

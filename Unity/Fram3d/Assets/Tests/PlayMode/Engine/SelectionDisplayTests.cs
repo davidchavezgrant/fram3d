@@ -207,6 +207,58 @@ namespace Fram3d.Tests.Engine
                             "Second element should have selection color (cyan)");
         }
 
+        // --- Edge cases ---
+
+        [UnityTest]
+        public IEnumerator LateUpdate__HandlesDestroyedElement__When__SelectedElementDestroyed()
+        {
+            yield return null;
+
+            var element = this._cube.GetComponent<ElementBehaviour>().Element;
+            this._highlighter.Selection.Select(element.Id);
+            yield return null;
+
+            // Destroy the selected element's GameObject
+            Object.DestroyImmediate(this._cube);
+            this._cube = null;
+            yield return null;
+
+            // LateUpdate should handle the missing behaviour gracefully
+            Assert.Pass("No exception when selected element is destroyed");
+        }
+
+        [UnityTest]
+        public IEnumerator LateUpdate__HoverDoesNotAffectSelection__When__BothActive()
+        {
+            yield return null;
+
+            var cubeB = CreateExtra(PrimitiveType.Sphere, "HoverTarget");
+            yield return null;
+
+            var elementA = this._cube.GetComponent<ElementBehaviour>().Element;
+            var elementB = cubeB.GetComponent<ElementBehaviour>().Element;
+
+            // Select A, hover B
+            this._highlighter.Selection.Select(elementA.Id);
+            this._highlighter.Selection.Hover(elementB.Id);
+            yield return null;
+
+            // A should still have selection color (cyan)
+            var rendererA = this._cube.GetComponent<Renderer>();
+            var blockA    = new MaterialPropertyBlock();
+            rendererA.GetPropertyBlock(blockA);
+            var colorA = blockA.GetColor(BASE_COLOR);
+            Assert.AreEqual(0f, colorA.r, 0.01f, "Selected element should keep cyan");
+            Assert.AreEqual(1f, colorA.g, 0.01f);
+
+            // B should have hover color (yellow)
+            var rendererB = cubeB.GetComponent<Renderer>();
+            var blockB    = new MaterialPropertyBlock();
+            rendererB.GetPropertyBlock(blockB);
+            var colorB = blockB.GetColor(BASE_COLOR);
+            Assert.AreEqual(1f, colorB.r, 0.01f, "Hovered element should be yellow");
+        }
+
         [SetUp]
         public void SetUp()
         {

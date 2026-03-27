@@ -94,6 +94,14 @@ namespace Fram3d.Tests.UI
         public void TearDown()
         {
             Object.DestroyImmediate(this._uiGo);
+
+            var frustums = Object.FindObjectsByType<FrustumWireframe>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            foreach (var f in frustums)
+            {
+                Object.DestroyImmediate(f.gameObject);
+            }
+
             Object.DestroyImmediate(this._cameraGo);
         }
 
@@ -127,6 +135,7 @@ namespace Fram3d.Tests.UI
         public IEnumerator ToggleAll__ShowsAllGuides__When__NoneVisible()
         {
             yield return null;
+            yield return null;
 
             this._guideView.Settings.ToggleAll();
             yield return null;
@@ -149,6 +158,7 @@ namespace Fram3d.Tests.UI
         public IEnumerator ToggleCenterCross__ShowsCrossElements__When__Enabled()
         {
             yield return null;
+            yield return null;
 
             this._guideView.Settings.ToggleCenterCross();
             yield return null;
@@ -165,6 +175,7 @@ namespace Fram3d.Tests.UI
         public IEnumerator ToggleSafeZones__ShowsSafeZoneElements__When__Enabled()
         {
             yield return null;
+            yield return null;
 
             this._guideView.Settings.ToggleSafeZones();
             yield return null;
@@ -178,6 +189,7 @@ namespace Fram3d.Tests.UI
         [UnityTest]
         public IEnumerator ToggleThirds__HidesCrossAndSafeZones__When__OnlyThirdsEnabled()
         {
+            yield return null;
             yield return null;
 
             this._guideView.Settings.ToggleThirds();
@@ -197,6 +209,7 @@ namespace Fram3d.Tests.UI
         [UnityTest]
         public IEnumerator ToggleThirds__ShowsThirdsElements__When__Enabled()
         {
+            yield return null;
             yield return null;
 
             this._guideView.Settings.ToggleThirds();

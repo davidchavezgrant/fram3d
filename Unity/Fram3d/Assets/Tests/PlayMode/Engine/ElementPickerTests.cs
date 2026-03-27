@@ -96,6 +96,83 @@ namespace Fram3d.Tests.Engine
             Assert.IsNull(element, "Should return null for objects without ElementBehaviour");
         }
 
+        // --- Viewport boundary ---
+
+        [UnityTest]
+        public IEnumerator Raycast__ReturnsNull__When__PositionOutsideViewport()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            // Position far outside the camera's pixel rect
+            var outsidePos = new Vector2(-100f, -100f);
+            var element    = this._raycaster.Raycast(outsidePos);
+
+            Assert.IsNull(element, "Raycast outside viewport should return null");
+        }
+
+        [UnityTest]
+        public IEnumerator Raycast__ReturnsNull__When__FarBeyondViewport()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            var outsidePos = new Vector2(Screen.width + 500f, Screen.height + 500f);
+            var element    = this._raycaster.Raycast(outsidePos);
+
+            Assert.IsNull(element, "Raycast far beyond viewport should return null");
+        }
+
+        // --- SetCamera ---
+
+        [Test]
+        public void SetCamera__DoesNotThrow__When__CalledWithNull()
+        {
+            this._raycaster.SetCamera(null);
+
+            Assert.Pass("Null camera does not throw");
+        }
+
+        [UnityTest]
+        public IEnumerator SetCamera__UpdatesTargetCamera__When__CalledWithValidCamera()
+        {
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            // Create a second camera pointing at the cube
+            var newCamGo                    = new GameObject("NewCamera");
+            var newCam                      = newCamGo.AddComponent<Camera>();
+            newCamGo.transform.position = new Vector3(0f, 0f, 0f);
+            newCamGo.transform.rotation = Quaternion.identity;
+            this._extras.Add(newCamGo);
+
+            this._raycaster.SetCamera(newCam);
+            yield return null;
+            yield return new WaitForFixedUpdate();
+
+            // Should still hit the cube through the new camera
+            var screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
+            var element      = this._raycaster.Raycast(screenCenter);
+            Assert.IsNotNull(element, "Should hit cube through the new camera");
+        }
+
+        // --- Null camera guard ---
+
+        [Test]
+        public void Raycast__ReturnsNull__When__NoCameraConfigured()
+        {
+            // Create a picker with no camera wired
+            var go     = new GameObject("NoCamPicker");
+            this._extras.Add(go);
+            var picker = go.AddComponent<ElementPicker>();
+
+            // Don't wire targetCamera — Awake tries GetComponent<Camera> which
+            // returns null since there's no Camera on this GO
+            var result = picker.Raycast(new Vector2(100f, 100f));
+
+            Assert.IsNull(result, "Should return null when no camera is configured");
+        }
+
         [SetUp]
         public void SetUp()
         {

@@ -1,39 +1,43 @@
 using System;
 using Fram3d.Core.Common;
 using Fram3d.Core.Shots;
+using Fram3d.Core.Timeline;
 using Fram3d.Engine.Conversion;
 using UnityEngine;
 namespace Fram3d.Engine.Integration
 {
     /// <summary>
-    /// Owns the ShotRegistry and bridges it to the Unity scene.
-    /// Creates a default shot on start. When the current shot changes,
-    /// evaluates the camera at t=0 of the new shot.
+    /// Bridges the TimelineController to the Unity scene. Creates a default
+    /// shot on start. Routes camera evaluation requests to CameraBehaviour.
     /// </summary>
     public sealed class ShotController : MonoBehaviour
     {
-        private float       _bottomInsetPixels;
-        private CameraBehaviour _cameraBehaviour;
-        private IDisposable _currentShotSub;
+        private float              _bottomInsetPixels;
+        private CameraBehaviour    _cameraBehaviour;
+        private IDisposable        _currentShotSub;
 
         public float BottomInsetPixels => this._bottomInsetPixels;
 
-        public ShotRegistry Registry { get; private set; }
-
-        /// <summary>
-        /// Adds a new shot capturing the current camera position and rotation.
-        /// </summary>
-        public Shot AddShot()
-        {
-            var cam = this._cameraBehaviour.ShotCamera;
-            return this.Registry.AddShot(cam.Position, cam.Rotation);
-        }
+        public TimelineController Controller { get; private set; }
 
         public void SetBottomInset(float pixels) => this._bottomInsetPixels = pixels;
 
         private void Awake()
         {
-            this.Registry = new ShotRegistry();
+            this.Controller = new TimelineController(FrameRate.FPS_24);
+        }
+
+        private void OnCameraEvaluationRequested(Shot shot, TimePosition localTime)
+        {
+            if (this._cameraBehaviour == null)
+            {
+                return;
+            }
+
+            var position = shot.EvaluateCameraPosition(localTime);
+            var rotation = shot.EvaluateCameraRotation(localTime);
+            this._cameraBehaviour.ShotCamera.Position = position;
+            this._cameraBehaviour.ShotCamera.Rotation = rotation;
         }
 
         private void OnCurrentShotChanged(Shot shot)
@@ -52,6 +56,7 @@ namespace Fram3d.Engine.Integration
         private void OnDestroy()
         {
             this._currentShotSub?.Dispose();
+            this.Controller.CameraEvaluationRequested -= this.OnCameraEvaluationRequested;
         }
 
         private void Start()
@@ -64,11 +69,14 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
-            this._currentShotSub = this.Registry.CurrentShotChanged
+            this._currentShotSub = this.Controller.Track.CurrentShotChanged
                 .Subscribe(this.OnCurrentShotChanged);
 
+            this.Controller.CameraEvaluationRequested += this.OnCameraEvaluationRequested;
+
             // Default state: one shot capturing the current camera
-            this.AddShot();
+            var cam = this._cameraBehaviour.ShotCamera;
+            this.Controller.AddShot(cam.Position, cam.Rotation);
         }
     }
 }

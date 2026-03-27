@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Fram3d.Core.Common;
-using Fram3d.Core.Shots;
 using Fram3d.Core.Timeline;
 using System.Numerics;
 using Xunit;
@@ -131,14 +130,14 @@ namespace Fram3d.Core.Tests.Timeline
         [Fact]
         public void ResolveShot__ReturnsCorrectShot__When__InMiddleOfSecondShot()
         {
-            var registry = new ShotRegistry();
-            registry.AddShot(Vector3.Zero, Quaternion.Identity); // Shot_01, 5s
-            registry.AddShot(Vector3.Zero, Quaternion.Identity); // Shot_02, 5s
+            var track = new ShotTrack(FrameRate.FPS_24);
+            track.AddShot(Vector3.Zero, Quaternion.Identity); // Shot_01, 5s
+            track.AddShot(Vector3.Zero, Quaternion.Identity); // Shot_02, 5s
 
             var playhead = new Playhead(FPS_24);
             playhead.Scrub(7.0, 10.0);
 
-            var result = playhead.ResolveShot(registry);
+            var result = playhead.ResolveShot(track);
 
             result.Should().NotBeNull();
             result.Value.shot.Name.Should().Be("Shot_02");
@@ -148,12 +147,12 @@ namespace Fram3d.Core.Tests.Timeline
         [Fact]
         public void GoToShot__SetsTimeToShotStart__When__Called()
         {
-            var registry = new ShotRegistry();
-            var shot1 = registry.AddShot(Vector3.Zero, Quaternion.Identity);
-            var shot2 = registry.AddShot(Vector3.Zero, Quaternion.Identity);
+            var track = new ShotTrack(FrameRate.FPS_24);
+            var shot1 = track.AddShot(Vector3.Zero, Quaternion.Identity);
+            var shot2 = track.AddShot(Vector3.Zero, Quaternion.Identity);
 
             var playhead = new Playhead(FPS_24);
-            playhead.GoToShot(registry, shot2.Id);
+            playhead.GoToShot(track, shot2.Id);
 
             playhead.CurrentTime.Should().Be(5.0);
         }

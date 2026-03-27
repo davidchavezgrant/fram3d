@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using Fram3d.Core.Common;
-using Fram3d.Core.Shots;
 using Fram3d.Core.Timeline;
 using Fram3d.Engine.Cursor;
 using Fram3d.Engine.Integration;
@@ -12,24 +10,19 @@ using UnityEngine.UIElements;
 namespace Fram3d.UI.Timeline
 {
     /// <summary>
-    /// MonoBehaviour orchestrator for the timeline section. Delegates rendering
-    /// and interaction to child components: TransportBarElement, RulerElement,
-    /// ShotStripElement (inline), track area, and ZoomBarElement.
+    /// Thin View for the timeline section. Creates VisualElements, forwards
+    /// pointer events to TimelineController, reads controller state to
+    /// position elements. Zero domain logic.
     /// </summary>
     public sealed class TimelineSectionView : MonoBehaviour
     {
-        private const double DOUBLE_CLICK_MS  = 350;
-        private const float  EDGE_HIT_PX      = 6f;
-        private const int    HOLD_THRESHOLD_MS = 200;
-        private const float  LABEL_COLUMN_WIDTH = 140f;
-        private const float  SECTION_HEIGHT   = 320f;
+        private const float EDGE_HIT_PX    = 6f;
+        private const float LABEL_COL_W    = 140f;
+        private const float SECTION_HEIGHT = 320f;
 
         // ── References ──
-        private CameraBehaviour _cameraBehaviour;
-        private Playhead        _playhead;
-        private ShotController  _shotController;
-        private ShotTrack       _shotTrack;
-        private TimelineState   _timelineState;
+        private TimelineController _controller;
+        private ShotController     _shotController;
 
         // ── UI root ──
         private VisualElement _root;
@@ -40,19 +33,17 @@ namespace Fram3d.UI.Timeline
         private RulerElement        _ruler;
         private ZoomBarElement      _zoomBar;
 
-        // ── Shot strip (inline until further decomposition) ──
-        private readonly List<ShotBlockElement> _blocks = new();
-        private VisualElement _shotLabelColumn;
+        // ── Shot strip elements ──
         private VisualElement _shotStrip;
-        private VisualElement _shotStripOutOfRange;
         private VisualElement _shotStripPlayhead;
+        private VisualElement _shotStripOutOfRange;
         private VisualElement _dropIndicator;
         private Label         _totalLabel;
 
         // ── Track area ──
         private VisualElement _trackContent;
-        private VisualElement _trackOutOfRange;
         private VisualElement _trackPlayhead;
+        private VisualElement _trackOutOfRange;
 
         // ── Tooltips ──
         private VisualElement _tooltip;
@@ -60,64 +51,20 @@ namespace Fram3d.UI.Timeline
         private VisualElement _boundaryTooltip;
         private Label         _boundaryTooltipText;
 
-        // ── Subscriptions ──
-        private IDisposable _addedSub;
-        private IDisposable _currentChangedSub;
-        private IDisposable _removedSub;
-        private IDisposable _reorderedSub;
-
-        // ── Drag state ──
-        private ShotBlockElement _dragBlock;
-        private int              _dragOriginalIndex;
-        private int              _dragTargetIndex;
-        private bool             _isDragging;
-        private long             _pointerDownTime;
-        private Vector2          _pointerDownPos;
-        private bool             _pointerIsDown;
-
-        // ── Boundary drag state ──
-        private int  _boundaryLeftIndex;
-        private bool _isBoundaryDragging;
-
-        // ── Double-click state ──
-        private ShotId _lastClickShotId;
-        private long   _lastClickTime;
-
-        // ── Pan state ──
-        private bool    _isPanning;
-        private Vector2 _panStartPos;
-
-        // ── Tooltip state ──
-        private ShotBlockElement _hoveredBlock;
-
         // ── Visibility ──
         private bool _visible = true;
 
         // ══════════════════════════════════════════════════════════════════
-        // Public API
+        // Public API (called by keyboard router)
         // ══════════════════════════════════════════════════════════════════
 
-        public bool HasFocusedTextField
-        {
-            get
-            {
-                foreach (var block in this._blocks)
-                {
-                    if (block.IsEditing)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        }
+        public bool HasFocusedTextField => false; // TODO: check inline duration edits
 
         public bool IsPointerOverUI
         {
             get
             {
-                if (this._root == null || this._root.panel == null || Mouse.current == null)
+                if (this._root?.panel == null || Mouse.current == null)
                 {
                     return false;
                 }
@@ -137,129 +84,79 @@ namespace Fram3d.UI.Timeline
 
             if (this._section != null)
             {
-                if (this._visible)
-                {
-                    this._section.style.display = DisplayStyle.Flex;
-                }
-                else
-                {
-                    this._section.style.display = DisplayStyle.None;
-                }
+                this._section.style.display = this._visible
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
             }
 
-            if (this._shotController != null)
-            {
-                var inset = 0f;
-
-                if (this._visible)
-                {
-                    inset = SECTION_HEIGHT;
-                }
-
-                this._shotController.SetBottomInset(inset);
-            }
+            this._shotController?.SetBottomInset(this._visible ? SECTION_HEIGHT : 0f);
         }
 
         public void TogglePlayback()
         {
-            var totalDuration = this._shotController.Registry.TotalDuration;
-            var wasAtEnd      = this._playhead.CurrentTime >= totalDuration - this._playhead.FrameRate.FrameDuration;
-            var isNowPlaying  = this._playhead.TogglePlayback(totalDuration);
-
-            if (isNowPlaying && wasAtEnd && this._timelineState != null)
-            {
-                var duration = this._timelineState.VisibleDuration;
-                this._timelineState.SetViewRange(0, duration);
-                this.RefreshAll();
-            }
-
-            this._transport.UpdatePlayButton(this._playhead.IsPlaying);
+            this._controller.TogglePlayback();
+            this._transport.UpdatePlayButton(this._controller.Playhead.IsPlaying);
         }
 
-        public void ZoomIn()
-        {
-            if (this._timelineState != null)
-            {
-                this._timelineState.ZoomAtPoint(this._playhead.CurrentTime, 1f);
-                this.RefreshAll();
-            }
-        }
-
-        public void ZoomOut()
-        {
-            if (this._timelineState != null)
-            {
-                this._timelineState.ZoomAtPoint(this._playhead.CurrentTime, -1f);
-                this.RefreshAll();
-            }
-        }
+        public void ZoomIn()  => this._controller?.ZoomIn();
+        public void ZoomOut() => this._controller?.ZoomOut();
 
         // ══════════════════════════════════════════════════════════════════
         // Lifecycle
         // ══════════════════════════════════════════════════════════════════
 
-        private void OnDestroy()
-        {
-            this._addedSub?.Dispose();
-            this._currentChangedSub?.Dispose();
-            this._removedSub?.Dispose();
-            this._reorderedSub?.Dispose();
-        }
-
         private void Start()
         {
-            this._shotController  = FindAnyObjectByType<ShotController>();
-            this._cameraBehaviour = FindAnyObjectByType<CameraBehaviour>();
-            this._playhead        = new Playhead(FrameRate.FPS_24);
+            this._shotController = FindAnyObjectByType<ShotController>();
 
             if (this._shotController == null)
             {
-                Debug.LogWarning("TimelineSectionView: No ShotController found.");
                 return;
             }
 
-            var uiDocument = this.GetComponent<UIDocument>();
+            this._controller = this._shotController.Controller;
 
-            if (uiDocument == null || uiDocument.rootVisualElement == null)
+            var uiDoc = this.GetComponent<UIDocument>();
+
+            if (uiDoc?.rootVisualElement == null)
             {
-                Debug.LogWarning("TimelineSectionView: UIDocument or rootVisualElement is null.");
                 return;
             }
 
-            this._root = uiDocument.rootVisualElement;
+            this._root = uiDoc.rootVisualElement;
             StyleSheetLoader.Apply(this._root);
-
             this.BuildLayout();
-            this.SubscribeToRegistry();
-            this.RebuildBlocks();
+
+            // Subscribe to rebuilds
+            this._controller.Track.ShotAdded.Subscribe(_ => this.RebuildShotBlocks());
+            this._controller.Track.ShotRemoved.Subscribe(_ => this.RebuildShotBlocks());
+            this._controller.Track.Reordered.Subscribe(_ => this.RebuildShotBlocks());
+            this._controller.Track.CurrentShotChanged.Subscribe(_ => this.UpdateActiveStates());
+
+            this.RebuildShotBlocks();
         }
 
         private void Update()
         {
-            if (this._shotController == null)
+            if (this._controller == null)
             {
                 return;
             }
 
-            this.HandlePlayback();
-            this.HandleInputSystemScroll();
-            this.UpdateShotBlockWidths();
-
-            if (this._timelineState != null)
+            // Advance playback
+            if (this._controller.Playhead.IsPlaying)
             {
-                var totalDuration = this._shotController.Registry.TotalDuration;
-                this._ruler.UpdateTicks(this._timelineState, totalDuration);
-                this._ruler.UpdatePlayhead(this._timelineState, this._playhead.CurrentTime);
-                this._ruler.UpdateOutOfRange(this._timelineState, totalDuration);
-                this.UpdateShotStripPlayhead();
-                this.UpdateTrackAreaPlayhead();
-                this._zoomBar.UpdateThumb(this._timelineState, totalDuration);
+                if (!this._controller.Advance(Time.deltaTime))
+                {
+                    this._transport.UpdatePlayButton(false);
+                }
             }
 
-            this._transport.UpdateTransport(this._playhead, this._shotController.Registry);
-            this.UpdateTotalLabel();
-            this.UpdateTooltipPosition();
-            this.UpdateBoundaryTooltipPosition();
+            // Pinch-to-zoom via Input System
+            this.HandleInputSystemScroll();
+
+            // Update all visuals from controller state
+            this.SyncVisuals();
         }
 
         // ══════════════════════════════════════════════════════════════════
@@ -272,101 +169,82 @@ namespace Fram3d.UI.Timeline
             this._section.AddToClassList("timeline-section");
             this._section.style.height = SECTION_HEIGHT;
 
-            // Transport bar
             this._transport = new TransportBarElement(this.TogglePlayback);
             this._section.Add(this._transport);
 
-            // Ruler
             this._ruler = new RulerElement();
-            this._ruler.ScrubRequested += this.ScrubToPixel;
+            this._ruler.ScrubRequested += this.OnScrub;
             this._ruler.RegisterScrubCallbacks();
             this._ruler.Content.RegisterCallback<WheelEvent>(this.OnWheel);
             this._section.Add(this._ruler);
 
-            // Shot track
-            this.BuildShotTrack();
-
-            // Track area
+            this.BuildShotStrip();
             this.BuildTrackArea();
 
-            // Zoom bar
             this._zoomBar = new ZoomBarElement();
-            this._zoomBar.PanRequested += this.OnZoomBarPan;
+            this._zoomBar.PanRequested += px => { this._controller.Pan(px); };
             this._zoomBar.RegisterDragCallbacks();
             this._section.Add(this._zoomBar);
 
-            // Tooltips
             this.BuildTooltips();
-
             this._root.Add(this._section);
 
-            // Initialize timeline state after strip has geometry
             this._shotStrip.RegisterCallback<GeometryChangedEvent>(_ =>
             {
-                var stripWidth = this._shotStrip.resolvedStyle.width;
+                var w = this._shotStrip.resolvedStyle.width;
 
-                if (float.IsNaN(stripWidth) || stripWidth <= 0)
+                if (!float.IsNaN(w) && w > 0)
                 {
-                    return;
+                    this._controller.InitializeState(w);
+                    this.SyncVisuals();
+                    this.UpdateBottomInset();
                 }
-
-                if (this._timelineState == null)
-                {
-                    this._timelineState = new TimelineState(
-                        this._shotController.Registry.TotalDuration,
-                        stripWidth);
-                    this._shotTrack = new ShotTrack(
-                        this._shotController.Registry,
-                        this._timelineState,
-                        this._playhead.FrameRate);
-                }
-                else
-                {
-                    this._timelineState.SetStripWidth(stripWidth);
-                }
-
-                this.RefreshAll();
-                this.UpdateBottomInset();
             });
         }
 
-        private void BuildShotTrack()
+        private void BuildShotStrip()
         {
             var row = new VisualElement();
             row.AddToClassList("timeline-shot-row");
 
-            this._shotLabelColumn = new VisualElement();
-            this._shotLabelColumn.AddToClassList("timeline-label-column");
+            var labelCol = new VisualElement();
+            labelCol.AddToClassList("timeline-label-column");
 
             var titleRow = new VisualElement();
             titleRow.style.flexDirection = FlexDirection.Row;
             titleRow.style.alignItems    = Align.Center;
 
-            var shotLabel = new Label("SHOTS");
-            shotLabel.AddToClassList("timeline-label-column__title");
-            titleRow.Add(shotLabel);
+            var title = new Label("SHOTS");
+            title.AddToClassList("timeline-label-column__title");
+            titleRow.Add(title);
 
-            var addButton = new Button(this.OnAddShotClicked);
-            addButton.text = "+";
-            addButton.AddToClassList("timeline-shot__add-button");
-            titleRow.Add(addButton);
+            var addBtn = new Button(() =>
+            {
+                var cam = FindAnyObjectByType<CameraBehaviour>();
 
-            this._shotLabelColumn.Add(titleRow);
+                if (cam != null)
+                {
+                    this._controller.AddShot(cam.ShotCamera.Position, cam.ShotCamera.Rotation);
+                }
+            });
+            addBtn.text = "+";
+            addBtn.AddToClassList("timeline-shot__add-button");
+            titleRow.Add(addBtn);
+            labelCol.Add(titleRow);
 
             this._totalLabel = new Label("Total: 0.0s");
             this._totalLabel.AddToClassList("timeline-label-column__subtitle");
-            this._shotLabelColumn.Add(this._totalLabel);
-
-            row.Add(this._shotLabelColumn);
+            labelCol.Add(this._totalLabel);
+            row.Add(labelCol);
 
             this._shotStrip = new VisualElement();
             this._shotStrip.AddToClassList("timeline-shot-strip");
             row.Add(this._shotStrip);
 
             this._shotStrip.RegisterCallback<WheelEvent>(this.OnWheel);
-            this._shotStrip.RegisterCallback<PointerDownEvent>(this.OnShotStripPointerDown);
-            this._shotStrip.RegisterCallback<PointerMoveEvent>(this.OnShotStripPointerMove);
-            this._shotStrip.RegisterCallback<PointerUpEvent>(this.OnShotStripPointerUp);
+            this._shotStrip.RegisterCallback<PointerDownEvent>(this.OnStripDown);
+            this._shotStrip.RegisterCallback<PointerMoveEvent>(this.OnStripMove);
+            this._shotStrip.RegisterCallback<PointerUpEvent>(this.OnStripUp);
 
             this._dropIndicator = new VisualElement();
             this._dropIndicator.AddToClassList("shot-track__drop-indicator");
@@ -391,9 +269,9 @@ namespace Fram3d.UI.Timeline
             var row = new VisualElement();
             row.AddToClassList("timeline-track-row");
 
-            var trackLabels = new VisualElement();
-            trackLabels.AddToClassList("timeline-label-column");
-            row.Add(trackLabels);
+            var labels = new VisualElement();
+            labels.AddToClassList("timeline-label-column");
+            row.Add(labels);
 
             this._trackContent = new VisualElement();
             this._trackContent.AddToClassList("timeline-track-content");
@@ -410,33 +288,6 @@ namespace Fram3d.UI.Timeline
             this._trackContent.Add(this._trackOutOfRange);
 
             this._trackContent.RegisterCallback<WheelEvent>(this.OnWheel);
-            this._trackContent.RegisterCallback<PointerDownEvent>(evt =>
-            {
-                if (evt.button == 2)
-                {
-                    this._isPanning   = true;
-                    this._panStartPos = evt.localPosition;
-                    evt.StopPropagation();
-                }
-            });
-            this._trackContent.RegisterCallback<PointerMoveEvent>(evt =>
-            {
-                if (this._isPanning && this._timelineState != null)
-                {
-                    var delta = evt.localPosition.x - this._panStartPos.x;
-                    this._timelineState.Pan(-delta);
-                    this._panStartPos = evt.localPosition;
-                    this.RefreshAll();
-                }
-            });
-            this._trackContent.RegisterCallback<PointerUpEvent>(evt =>
-            {
-                if (evt.button == 2)
-                {
-                    this._isPanning = false;
-                }
-            });
-
             this._section.Add(row);
         }
 
@@ -462,60 +313,305 @@ namespace Fram3d.UI.Timeline
         }
 
         // ══════════════════════════════════════════════════════════════════
-        // Playback
+        // Visual sync (reads controller state, positions elements)
         // ══════════════════════════════════════════════════════════════════
 
-        private void HandlePlayback()
+        private void SyncVisuals()
         {
-            var totalDuration = this._shotController.Registry.TotalDuration;
-            var stillPlaying  = this._playhead.Advance(Time.deltaTime, totalDuration);
+            var state = this._controller.State;
 
-            if (!stillPlaying)
+            if (state == null)
             {
-                this._transport.UpdatePlayButton(this._playhead.IsPlaying);
                 return;
             }
 
-            this.EvaluateCameraAtPlayhead();
+            var total = this._controller.Track.TotalDuration;
+            var px    = (float)this._controller.PlayheadPixel;
+            var endPx = (float)this._controller.OutOfRangeStartPixel;
 
-            if (this._timelineState != null
-             && this._playhead.CurrentTime > this._timelineState.ViewEnd)
+            // Shot blocks
+            this.UpdateShotBlockPositions();
+
+            // Playheads
+            this.SetPlayhead(this._shotStripPlayhead, px);
+            this.SetPlayhead(this._trackPlayhead, px);
+            this._ruler.UpdatePlayhead(state, this._controller.Playhead.CurrentTime);
+
+            // Out-of-range
+            this.SetOutOfRange(this._shotStripOutOfRange, endPx);
+            this.SetOutOfRange(this._trackOutOfRange, endPx);
+            this._ruler.UpdateOutOfRange(state, total);
+
+            // Ruler + zoom + transport
+            this._ruler.UpdateTicks(state, total);
+            this._zoomBar.UpdateThumb(state, total);
+            this._transport.UpdateTransport(
+                this._controller.Playhead,
+                this._controller.Track);
+            this._totalLabel.text = $"Total: {total:F1}s";
+
+            // Drop indicator
+            if (this._controller.IsDragging)
             {
-                var duration = this._timelineState.VisibleDuration;
-                this._timelineState.SetViewRange(this._timelineState.ViewEnd, this._timelineState.ViewEnd + duration);
+                this._dropIndicator.style.display = DisplayStyle.Flex;
+                var targetPx = this.ComputeDropIndicatorPx();
+                this._dropIndicator.style.left = targetPx;
+            }
+
+            // Boundary tooltip
+            if (this._controller.IsBoundaryDragging)
+            {
+                var shiftHeld = Keyboard.current?.leftShiftKey.isPressed ?? false;
+                this._boundaryTooltipText.text = this._controller.FormatBoundaryTooltip(shiftHeld);
+                this.PositionTooltipAtMouse(this._boundaryTooltip, -30f);
+            }
+
+            // Hover tooltip
+            if (this._tooltip.style.display == DisplayStyle.Flex)
+            {
+                this.PositionTooltipAtMouse(this._tooltip, -50f);
             }
         }
 
-        private void EvaluateCameraAtPlayhead()
+        private void SetPlayhead(VisualElement el, float px)
         {
-            var result = this._playhead.ResolveShot(this._shotController.Registry);
+            el.style.display = DisplayStyle.Flex;
+            el.style.left    = px;
+        }
 
-            if (!result.HasValue)
+        private void SetOutOfRange(VisualElement el, float endPx)
+        {
+            el.style.position = Position.Absolute;
+            el.style.left     = endPx;
+            el.style.top      = 0;
+            el.style.bottom   = 0;
+            el.style.right    = 0;
+            el.style.display  = endPx >= 0 ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // Shot blocks
+        // ══════════════════════════════════════════════════════════════════
+
+        private void RebuildShotBlocks()
+        {
+            // Remove all shot block children (keep playhead, out-of-range, drop indicator)
+            for (var i = this._shotStrip.childCount - 1; i >= 0; i--)
+            {
+                var child = this._shotStrip[i];
+
+                if (child != this._dropIndicator
+                 && child != this._shotStripPlayhead
+                 && child != this._shotStripOutOfRange)
+                {
+                    child.RemoveFromHierarchy();
+                }
+            }
+
+            var shots = this._controller.Track.Shots;
+
+            for (var i = 0; i < shots.Count; i++)
+            {
+                var shot  = shots[i];
+                var block = new ShotBlockElement(shot, i);
+
+                block.RegisterCallback<PointerEnterEvent>(_ =>
+                {
+                    this._tooltipText.text      = this._controller.Track.FormatShotTooltip(shot);
+                    this._tooltip.style.display = DisplayStyle.Flex;
+                });
+                block.RegisterCallback<PointerLeaveEvent>(_ =>
+                    this._tooltip.style.display = DisplayStyle.None);
+                block.RegisterCallback<ContextualMenuPopulateEvent>(evt =>
+                {
+                    evt.menu.AppendAction("Delete Shot", _ =>
+                        this._controller.Track.RemoveShot(shot.Id));
+                });
+
+                this._shotStrip.Insert(this._shotStrip.childCount - 3, block);
+            }
+
+            this._shotStripPlayhead.BringToFront();
+            this._shotStripOutOfRange.BringToFront();
+
+            this.UpdateActiveStates();
+
+            if (this._controller.State != null)
+            {
+                this._controller.State.SetTotalDuration(this._controller.Track.TotalDuration);
+            }
+        }
+
+        private void UpdateActiveStates()
+        {
+            var current = this._controller.Track.CurrentShot;
+
+            for (var i = 0; i < this._shotStrip.childCount; i++)
+            {
+                if (this._shotStrip[i] is ShotBlockElement block)
+                {
+                    block.SetActive(block.Shot == current);
+                }
+            }
+        }
+
+        private void UpdateShotBlockPositions()
+        {
+            var state = this._controller.State;
+
+            if (state == null)
             {
                 return;
             }
 
-            var shot = result.Value.shot;
+            var runningTime = 0.0;
 
-            if (shot != this._shotController.Registry.CurrentShot)
+            for (var i = 0; i < this._shotStrip.childCount; i++)
             {
-                this._shotController.Registry.SetCurrentShot(shot.Id);
+                if (this._shotStrip[i] is not ShotBlockElement block)
+                {
+                    continue;
+                }
+
+                var startPx = state.TimeToPixel(runningTime);
+                var endPx   = state.TimeToPixel(runningTime + block.Shot.Duration);
+                var widthPx = Math.Max(endPx - startPx, 4.0);
+
+                block.style.position = Position.Absolute;
+                block.style.left     = (float)startPx;
+                block.style.width    = (float)widthPx;
+                block.style.top      = 0;
+                block.style.bottom   = 0;
+                block.Refresh();
+
+                runningTime += block.Shot.Duration;
+            }
+        }
+
+        private float ComputeDropIndicatorPx()
+        {
+            var targetIndex = this._controller.DragTargetIndex;
+            var state       = this._controller.State;
+
+            if (state == null)
+            {
+                return 0;
             }
 
-            var localTime = result.Value.localTime;
-            var position  = shot.EvaluateCameraPosition(localTime);
-            var rotation  = shot.EvaluateCameraRotation(localTime);
+            var runningTime = 0.0;
+            var shots       = this._controller.Track.Shots;
 
-            if (this._cameraBehaviour != null)
+            for (var i = 0; i < targetIndex && i < shots.Count; i++)
             {
-                this._cameraBehaviour.ShotCamera.Position = position;
-                this._cameraBehaviour.ShotCamera.Rotation = rotation;
+                runningTime += shots[i].Duration;
             }
+
+            return (float)state.TimeToPixel(runningTime);
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // Event forwarding → Controller
+        // ══════════════════════════════════════════════════════════════════
+
+        private void OnScrub(float px)
+        {
+            this._controller.BeginScrub();
+            this._controller.ScrubToPixel(px);
+        }
+
+        private void OnStripDown(PointerDownEvent evt)
+        {
+            if (evt.button == 0)
+            {
+                var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var result = this._controller.StripPointerDown(evt.localPosition.x, now);
+
+                if (result == StripInteraction.BOUNDARY_DRAG)
+                {
+                    this._boundaryTooltip.style.display = DisplayStyle.Flex;
+                    this._shotStrip.CapturePointer(evt.pointerId);
+                    evt.StopPropagation();
+                }
+            }
+            else if (evt.button == 2)
+            {
+                evt.StopPropagation();
+            }
+        }
+
+        private void OnStripMove(PointerMoveEvent evt)
+        {
+            var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var result = this._controller.StripPointerMove(evt.localPosition.x, now);
+
+            if (result == StripInteraction.NEAR_EDGE)
+            {
+                CursorManager.SetCursor(CursorType.ResizeHorizontal);
+            }
+            else if (result == StripInteraction.NONE && !this._controller.IsBoundaryDragging)
+            {
+                CursorManager.ResetCursor();
+            }
+        }
+
+        private void OnStripUp(PointerUpEvent evt)
+        {
+            if (evt.button != 0)
+            {
+                return;
+            }
+
+            var result = this._controller.StripPointerUp();
+
+            if (result == StripInteraction.BOUNDARY_COMPLETE)
+            {
+                this._boundaryTooltip.style.display = DisplayStyle.None;
+                CursorManager.ResetCursor();
+            }
+
+            if (result == StripInteraction.DRAG_COMPLETE)
+            {
+                this._dropIndicator.style.display = DisplayStyle.None;
+            }
+
+            if (this._shotStrip.HasPointerCapture(evt.pointerId))
+            {
+                this._shotStrip.ReleasePointer(evt.pointerId);
+            }
+        }
+
+        private void OnWheel(WheelEvent evt)
+        {
+            if (this._controller.State == null)
+            {
+                return;
+            }
+
+            if (evt.ctrlKey)
+            {
+                this._controller.ZoomAtPixel(evt.localMousePosition.x, -evt.delta.y);
+            }
+            else
+            {
+                var absX = Math.Abs(evt.delta.x);
+                var absY = Math.Abs(evt.delta.y);
+
+                if (absY > absX)
+                {
+                    this._controller.ZoomAtPixel(evt.localMousePosition.x, -evt.delta.y);
+                }
+                else if (absX > 0.01f)
+                {
+                    this._controller.Pan(evt.delta.x * 2.0);
+                }
+            }
+
+            evt.StopPropagation();
         }
 
         private void HandleInputSystemScroll()
         {
-            if (this._timelineState == null || !this.IsPointerOverUI || Mouse.current == null)
+            if (this._controller.State == null || !this.IsPointerOverUI || Mouse.current == null)
             {
                 return;
             }
@@ -535,226 +631,25 @@ namespace Fram3d.UI.Timeline
             var mousePos  = Mouse.current.position.ReadValue();
             var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
             var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
-            var stripX    = panelPos.x - LABEL_COLUMN_WIDTH;
-            var cursorTime = this._timelineState.PixelToTime(stripX);
-
-            this._timelineState.ZoomAtPoint(cursorTime, scroll.y);
-            this.RefreshAll();
+            this._controller.ZoomAtPixel(panelPos.x - LABEL_COL_W, scroll.y);
         }
 
         // ══════════════════════════════════════════════════════════════════
-        // Scrub
+        // Helpers
         // ══════════════════════════════════════════════════════════════════
 
-        private void ScrubToPixel(float px)
+        private void PositionTooltipAtMouse(VisualElement el, float yOffset)
         {
-            if (this._timelineState == null)
+            if (Mouse.current == null || this._root?.panel == null)
             {
                 return;
             }
 
-            var rawTime       = this._timelineState.PixelToTime(px);
-            var totalDuration = this._shotController.Registry.TotalDuration;
-            this._playhead.Scrub(rawTime, totalDuration);
-            this.EvaluateCameraAtPlayhead();
-
-            var scrollTime = Math.Clamp(rawTime, 0, totalDuration);
-            this._timelineState.EnsureVisible(scrollTime);
-            this.RefreshAll();
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // Zoom / Pan (shared wheel handler)
-        // ══════════════════════════════════════════════════════════════════
-
-        private void OnWheel(WheelEvent evt)
-        {
-            if (this._timelineState == null)
-            {
-                return;
-            }
-
-            if (evt.ctrlKey)
-            {
-                var cursorTime = this._timelineState.PixelToTime(evt.localMousePosition.x);
-                this._timelineState.ZoomAtPoint(cursorTime, -evt.delta.y);
-            }
-            else
-            {
-                var absX = Math.Abs(evt.delta.x);
-                var absY = Math.Abs(evt.delta.y);
-
-                if (absY > absX)
-                {
-                    var cursorTime = this._timelineState.PixelToTime(evt.localMousePosition.x);
-                    this._timelineState.ZoomAtPoint(cursorTime, -evt.delta.y);
-                }
-                else if (absX > 0.01f)
-                {
-                    this._timelineState.Pan(evt.delta.x * 2.0);
-                }
-            }
-
-            this.RefreshAll();
-            evt.StopPropagation();
-        }
-
-        private void OnZoomBarPan(float delta)
-        {
-            if (this._timelineState != null)
-            {
-                this._timelineState.Pan(delta);
-                this.RefreshAll();
-            }
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // Registry subscriptions
-        // ══════════════════════════════════════════════════════════════════
-
-        private void SubscribeToRegistry()
-        {
-            var reg = this._shotController.Registry;
-            this._addedSub          = reg.ShotAdded.Subscribe(_ => this.RebuildBlocks());
-            this._currentChangedSub = reg.CurrentShotChanged.Subscribe(_ => this.UpdateActiveStates());
-            this._removedSub        = reg.ShotRemoved.Subscribe(_ => this.RebuildBlocks());
-            this._reorderedSub      = reg.Reordered.Subscribe(_ => this.RebuildBlocks());
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // Shot blocks
-        // ══════════════════════════════════════════════════════════════════
-
-        private void RebuildBlocks()
-        {
-            foreach (var block in this._blocks)
-            {
-                block.RemoveFromHierarchy();
-            }
-
-            this._blocks.Clear();
-
-            var reg = this._shotController.Registry;
-
-            for (var i = 0; i < reg.Shots.Count; i++)
-            {
-                var shot  = reg.Shots[i];
-                var block = new ShotBlockElement(shot, i);
-
-                block.RegisterCallback<PointerEnterEvent>(_ => this.ShowTooltip(block));
-                block.RegisterCallback<PointerLeaveEvent>(_ => this.HideTooltip());
-                block.RegisterCallback<ContextualMenuPopulateEvent>(evt =>
-                {
-                    evt.menu.AppendAction("Delete Shot", _ => this.RequestDeleteShot(block));
-                    evt.menu.AppendAction("Edit Duration", _ => this.BeginDurationEdit(block));
-                });
-                block.DurationClicked += this.BeginDurationEdit;
-
-                this._shotStrip.Insert(this._shotStrip.childCount - 1, block);
-                this._blocks.Add(block);
-            }
-
-            this._shotStripPlayhead.BringToFront();
-            this._shotStripOutOfRange.BringToFront();
-
-            this.UpdateActiveStates();
-            this.UpdateShotBlockWidths();
-            this.UpdateTotalLabel();
-
-            if (this._timelineState != null)
-            {
-                this._timelineState.SetTotalDuration(this._shotController.Registry.TotalDuration);
-            }
-        }
-
-        private void UpdateActiveStates()
-        {
-            var current = this._shotController.Registry.CurrentShot;
-
-            foreach (var block in this._blocks)
-            {
-                block.SetActive(block.Shot == current);
-            }
-        }
-
-        private void UpdateShotBlockWidths()
-        {
-            if (this._timelineState == null || this._blocks.Count == 0)
-            {
-                return;
-            }
-
-            var runningTime = 0.0;
-
-            for (var i = 0; i < this._blocks.Count; i++)
-            {
-                var block   = this._blocks[i];
-                var shot    = block.Shot;
-                var startPx = this._timelineState.TimeToPixel(runningTime);
-                var endPx   = this._timelineState.TimeToPixel(runningTime + shot.Duration);
-                var widthPx = Math.Max(endPx - startPx, 4.0);
-
-                block.style.position = Position.Absolute;
-                block.style.left     = (float)startPx;
-                block.style.width    = (float)widthPx;
-                block.style.top      = 0;
-                block.style.bottom   = 0;
-
-                block.Refresh();
-                runningTime += shot.Duration;
-            }
-        }
-
-        private void UpdateShotStripPlayhead()
-        {
-            if (this._timelineState == null)
-            {
-                return;
-            }
-
-            var px = (float)this._timelineState.TimeToPixel(this._playhead.CurrentTime);
-            this._shotStripPlayhead.style.display = DisplayStyle.Flex;
-            this._shotStripPlayhead.style.left    = px;
-
-            var totalDuration = this._shotController.Registry.TotalDuration;
-            var endPx         = (float)this._timelineState.TimeToPixel(totalDuration);
-            this._shotStripOutOfRange.style.position = Position.Absolute;
-            this._shotStripOutOfRange.style.left     = endPx;
-            this._shotStripOutOfRange.style.top      = 0;
-            this._shotStripOutOfRange.style.bottom   = 0;
-            this._shotStripOutOfRange.style.right    = 0;
-            this._shotStripOutOfRange.style.display  = endPx >= 0 ? DisplayStyle.Flex : DisplayStyle.None;
-        }
-
-        private void UpdateTrackAreaPlayhead()
-        {
-            if (this._timelineState == null)
-            {
-                return;
-            }
-
-            var px = (float)this._timelineState.TimeToPixel(this._playhead.CurrentTime);
-            this._trackPlayhead.style.display = DisplayStyle.Flex;
-            this._trackPlayhead.style.left    = px;
-
-            var totalDuration = this._shotController.Registry.TotalDuration;
-            var endPx         = (float)this._timelineState.TimeToPixel(totalDuration);
-            this._trackOutOfRange.style.position = Position.Absolute;
-            this._trackOutOfRange.style.left     = endPx;
-            this._trackOutOfRange.style.top      = 0;
-            this._trackOutOfRange.style.bottom   = 0;
-            this._trackOutOfRange.style.right    = 0;
-            this._trackOutOfRange.style.display  = endPx >= 0 ? DisplayStyle.Flex : DisplayStyle.None;
-        }
-
-        private void UpdateTotalLabel()
-        {
-            if (this._shotController == null)
-            {
-                return;
-            }
-
-            this._totalLabel.text = $"Total: {this._shotController.Registry.TotalDuration:F1}s";
+            var mousePos  = Mouse.current.position.ReadValue();
+            var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
+            var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
+            el.style.left = panelPos.x + 12f;
+            el.style.top  = panelPos.y + yOffset;
         }
 
         private void UpdateBottomInset()
@@ -773,459 +668,6 @@ namespace Fram3d.UI.Timeline
             }
 
             this._shotController.SetBottomInset(SECTION_HEIGHT * scale);
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // Add / Delete / Duration
-        // ══════════════════════════════════════════════════════════════════
-
-        private void OnAddShotClicked()
-        {
-            this._shotController.AddShot();
-
-            if (this._timelineState != null)
-            {
-                this._timelineState.SetTotalDuration(this._shotController.Registry.TotalDuration);
-                this._timelineState.FitAll(this._shotController.Registry.TotalDuration);
-                this.RefreshAll();
-            }
-        }
-
-        private void RequestDeleteShot(ShotBlockElement block)
-        {
-            var skipConfirmation = PlayerPrefs.GetInt("Fram3d_SkipDeleteConfirmation", 0) == 1;
-
-            if (skipConfirmation)
-            {
-                this._shotController.Registry.RemoveShot(block.Shot.Id);
-                return;
-            }
-
-            var overlay = new VisualElement();
-            overlay.AddToClassList("confirmation-overlay");
-
-            var dialog = new VisualElement();
-            dialog.AddToClassList("confirmation-dialog");
-
-            var message = new Label($"Delete {block.Shot.Name}? This cannot be undone.");
-            message.AddToClassList("confirmation-dialog__message");
-            dialog.Add(message);
-
-            var checkbox = new Toggle("Don't show this again");
-            checkbox.AddToClassList("confirmation-dialog__checkbox");
-            dialog.Add(checkbox);
-
-            var buttons = new VisualElement();
-            buttons.AddToClassList("confirmation-dialog__buttons");
-
-            var cancelBtn = new Button(() => overlay.RemoveFromHierarchy());
-            cancelBtn.text = "Cancel";
-            cancelBtn.AddToClassList("confirmation-dialog__button");
-            cancelBtn.AddToClassList("confirmation-dialog__button--cancel");
-            buttons.Add(cancelBtn);
-
-            var confirmBtn = new Button(() =>
-            {
-                if (checkbox.value)
-                {
-                    PlayerPrefs.SetInt("Fram3d_SkipDeleteConfirmation", 1);
-                    PlayerPrefs.Save();
-                }
-
-                overlay.RemoveFromHierarchy();
-                this._shotController.Registry.RemoveShot(block.Shot.Id);
-            });
-            confirmBtn.text = "Delete";
-            confirmBtn.AddToClassList("confirmation-dialog__button");
-            confirmBtn.AddToClassList("confirmation-dialog__button--confirm");
-            buttons.Add(confirmBtn);
-
-            dialog.Add(buttons);
-            overlay.Add(dialog);
-            this._root.Add(overlay);
-        }
-
-        private void BeginDurationEdit(ShotBlockElement block)
-        {
-            block.BeginDurationEdit(text =>
-            {
-                if (double.TryParse(text.TrimEnd('s', 'S'), out var value))
-                {
-                    block.Shot.Duration = value;
-                }
-
-                block.Refresh();
-                this.UpdateShotBlockWidths();
-                this.UpdateTotalLabel();
-
-                if (this._timelineState != null)
-                {
-                    this._timelineState.FitAll(this._shotController.Registry.TotalDuration);
-                }
-            });
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // Shot selection & double-click
-        // ══════════════════════════════════════════════════════════════════
-
-        private void SelectShot(ShotBlockElement block)
-        {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-            if (this._lastClickShotId == block.Shot.Id
-             && now - this._lastClickTime < DOUBLE_CLICK_MS)
-            {
-                this.OnDoubleClick(block);
-                this._lastClickShotId = null;
-                return;
-            }
-
-            this._lastClickTime   = now;
-            this._lastClickShotId = block.Shot.Id;
-            this._shotController.Registry.SetCurrentShot(block.Shot.Id);
-        }
-
-        private void OnDoubleClick(ShotBlockElement block)
-        {
-            this._shotController.Registry.SetCurrentShot(block.Shot.Id);
-
-            if (this._shotTrack != null)
-            {
-                this._shotTrack.FitToShot(block.Shot.Id);
-                this.RefreshAll();
-            }
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // Shot strip pointer events
-        // ══════════════════════════════════════════════════════════════════
-
-        private void OnShotStripPointerDown(PointerDownEvent evt)
-        {
-            if (evt.button == 0)
-            {
-                var edgeIndex = this.FindShotEdgeAt(evt.localPosition.x);
-
-                if (edgeIndex >= 0)
-                {
-                    this._isBoundaryDragging            = true;
-                    this._boundaryLeftIndex              = edgeIndex;
-                    this._boundaryTooltip.style.display  = DisplayStyle.Flex;
-                    this._shotStrip.CapturePointer(evt.pointerId);
-                    evt.StopPropagation();
-                    return;
-                }
-
-                this._pointerDownTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                this._pointerDownPos  = evt.localPosition;
-                this._pointerIsDown   = true;
-
-                var block = this.FindBlockAt(evt.localPosition);
-
-                if (block != null)
-                {
-                    this._dragBlock         = block;
-                    this._dragOriginalIndex = this._blocks.IndexOf(block);
-                }
-            }
-            else if (evt.button == 2)
-            {
-                this._isPanning   = true;
-                this._panStartPos = evt.localPosition;
-                evt.StopPropagation();
-            }
-        }
-
-        private void OnShotStripPointerMove(PointerMoveEvent evt)
-        {
-            if (this._isPanning && this._timelineState != null)
-            {
-                var delta = evt.localPosition.x - this._panStartPos.x;
-                this._timelineState.Pan(-delta);
-                this._panStartPos = evt.localPosition;
-                this.RefreshAll();
-                return;
-            }
-
-            if (this._pointerIsDown && this._dragBlock != null && !this._isDragging)
-            {
-                var elapsed = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - this._pointerDownTime;
-                var dist    = Vector2.Distance(evt.localPosition, this._pointerDownPos);
-
-                if (elapsed >= HOLD_THRESHOLD_MS || dist > 5f)
-                {
-                    this._isDragging = true;
-                    this._dragBlock.style.opacity = 0.6f;
-                    this._dropIndicator.style.display = DisplayStyle.Flex;
-                }
-            }
-
-            if (this._isDragging)
-            {
-                this.UpdateDropIndicator(evt.localPosition);
-                return;
-            }
-
-            if (this._isBoundaryDragging)
-            {
-                this.UpdateBoundaryDrag(evt.localPosition);
-                return;
-            }
-
-            // Resize cursor near shot edges
-            if (!this._pointerIsDown)
-            {
-                var edgeIndex = this.FindShotEdgeAt(evt.localPosition.x);
-
-                if (edgeIndex >= 0)
-                {
-                    CursorManager.SetCursor(CursorType.ResizeHorizontal);
-                }
-                else
-                {
-                    CursorManager.ResetCursor();
-                }
-            }
-        }
-
-        private void OnShotStripPointerUp(PointerUpEvent evt)
-        {
-            if (evt.button == 2)
-            {
-                this._isPanning = false;
-                return;
-            }
-
-            if (evt.button != 0)
-            {
-                return;
-            }
-
-            if (this._isDragging)
-            {
-                this.CompleteDrag();
-            }
-            else if (this._isBoundaryDragging)
-            {
-                this._isBoundaryDragging            = false;
-                this._boundaryTooltip.style.display = DisplayStyle.None;
-                CursorManager.ResetCursor();
-            }
-            else if (this._dragBlock != null)
-            {
-                this.SelectShot(this._dragBlock);
-            }
-
-            this.ResetDragState();
-        }
-
-        private void ResetDragState()
-        {
-            if (this._dragBlock != null)
-            {
-                this._dragBlock.style.opacity = new StyleFloat(StyleKeyword.Null);
-            }
-
-            this._isDragging                    = false;
-            this._isBoundaryDragging            = false;
-            this._dragBlock                     = null;
-            this._pointerIsDown                 = false;
-            this._dropIndicator.style.display   = DisplayStyle.None;
-            this._boundaryTooltip.style.display = DisplayStyle.None;
-
-            if (this._shotStrip.HasPointerCapture(0))
-            {
-                this._shotStrip.ReleasePointer(0);
-            }
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // Drag reorder
-        // ══════════════════════════════════════════════════════════════════
-
-        private void UpdateDropIndicator(Vector2 localPos)
-        {
-            var targetIndex = this.FindInsertionIndex(localPos.x);
-            this._dragTargetIndex = targetIndex;
-
-            if (targetIndex >= 0 && targetIndex <= this._blocks.Count)
-            {
-                float indicatorX;
-
-                if (targetIndex < this._blocks.Count)
-                {
-                    indicatorX = this._blocks[targetIndex].resolvedStyle.left;
-                }
-                else if (this._blocks.Count > 0)
-                {
-                    var last = this._blocks[this._blocks.Count - 1];
-                    indicatorX = last.resolvedStyle.left + last.resolvedStyle.width;
-                }
-                else
-                {
-                    indicatorX = 0;
-                }
-
-                this._dropIndicator.style.left = indicatorX - 1f;
-            }
-        }
-
-        private int FindInsertionIndex(float x)
-        {
-            for (var i = 0; i < this._blocks.Count; i++)
-            {
-                var block  = this._blocks[i];
-                var left   = block.resolvedStyle.left;
-                var center = left + block.resolvedStyle.width / 2f;
-
-                if (x < center)
-                {
-                    return i;
-                }
-            }
-
-            return this._blocks.Count;
-        }
-
-        private void CompleteDrag()
-        {
-            if (this._dragBlock == null)
-            {
-                return;
-            }
-
-            var fromIndex = this._dragOriginalIndex;
-            var toIndex   = this._dragTargetIndex;
-
-            if (toIndex > fromIndex)
-            {
-                toIndex--;
-            }
-
-            if (fromIndex != toIndex && toIndex >= 0 && toIndex < this._shotController.Registry.Count)
-            {
-                this._shotController.Registry.Reorder(this._dragBlock.Shot.Id, toIndex);
-            }
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // Boundary drag
-        // ══════════════════════════════════════════════════════════════════
-
-        private void UpdateBoundaryDrag(Vector2 localPos)
-        {
-            if (this._shotTrack == null || this._timelineState == null)
-            {
-                return;
-            }
-
-            var cursorTime = this._timelineState.PixelToTime(localPos.x);
-            this._shotTrack.ResizeShotAtEdge(this._boundaryLeftIndex, cursorTime);
-
-            this.UpdateShotBlockWidths();
-            this.UpdateTotalLabel();
-
-            var shiftHeld = Keyboard.current != null && Keyboard.current.leftShiftKey.isPressed;
-            this._boundaryTooltipText.text = this._shotTrack.FormatResizeTooltip(this._boundaryLeftIndex, shiftHeld);
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // Tooltips
-        // ══════════════════════════════════════════════════════════════════
-
-        private void ShowTooltip(ShotBlockElement block)
-        {
-            this._hoveredBlock = block;
-
-            if (this._shotTrack != null)
-            {
-                this._tooltipText.text = this._shotTrack.FormatShotTooltip(block.Shot);
-            }
-
-            this._tooltip.style.display = DisplayStyle.Flex;
-        }
-
-        private void HideTooltip()
-        {
-            this._hoveredBlock          = null;
-            this._tooltip.style.display = DisplayStyle.None;
-        }
-
-        private void UpdateTooltipPosition()
-        {
-            if (this._hoveredBlock == null || this._tooltip.style.display == DisplayStyle.None)
-            {
-                return;
-            }
-
-            if (Mouse.current == null || this._root?.panel == null)
-            {
-                return;
-            }
-
-            var mousePos  = Mouse.current.position.ReadValue();
-            var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
-            var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
-            this._tooltip.style.left = panelPos.x + 12f;
-            this._tooltip.style.top  = panelPos.y - 50f;
-        }
-
-        private void UpdateBoundaryTooltipPosition()
-        {
-            if (!this._isBoundaryDragging || this._boundaryTooltip.style.display == DisplayStyle.None)
-            {
-                return;
-            }
-
-            if (Mouse.current == null || this._root?.panel == null)
-            {
-                return;
-            }
-
-            var mousePos  = Mouse.current.position.ReadValue();
-            var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
-            var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
-            this._boundaryTooltip.style.left = panelPos.x + 12f;
-            this._boundaryTooltip.style.top  = panelPos.y - 30f;
-        }
-
-        // ══════════════════════════════════════════════════════════════════
-        // Helpers
-        // ══════════════════════════════════════════════════════════════════
-
-        private void RefreshAll()
-        {
-            this.UpdateShotBlockWidths();
-        }
-
-        private int FindShotEdgeAt(float x)
-        {
-            if (this._shotTrack == null || this._timelineState == null)
-            {
-                return -1;
-            }
-
-            var time      = this._timelineState.PixelToTime(x);
-            var tolerance = this._shotTrack.PixelToleranceToTime(EDGE_HIT_PX);
-            return this._shotTrack.FindEdgeAtTime(time, tolerance);
-        }
-
-        private ShotBlockElement FindBlockAt(Vector2 localPos)
-        {
-            foreach (var block in this._blocks)
-            {
-                var left  = block.resolvedStyle.left;
-                var width = block.resolvedStyle.width;
-
-                if (!float.IsNaN(left) && !float.IsNaN(width)
-                 && localPos.x >= left && localPos.x <= left + width)
-                {
-                    return block;
-                }
-            }
-
-            return null;
         }
     }
 }

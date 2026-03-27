@@ -1,5 +1,4 @@
 using System;
-using Fram3d.Core.Shots;
 using Fram3d.Core.Timeline;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Timeline
@@ -57,9 +56,9 @@ namespace Fram3d.UI.Timeline
             }
         }
 
-        public void UpdateTransport(Playhead playhead, ShotRegistry registry)
+        public void UpdateTransport(Playhead playhead, ShotTrack track)
         {
-            var current = registry.CurrentShot;
+            var current = track.CurrentShot;
 
             if (current == null)
             {
@@ -69,7 +68,7 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            var startTime = registry.GetGlobalStartTime(current.Id).Seconds;
+            var startTime = track.GetGlobalStartTime(current.Id).Seconds;
             var localTime = Math.Max(0, playhead.CurrentTime - startTime);
             localTime     = Math.Min(localTime, current.Duration);
 

@@ -82,9 +82,12 @@ namespace Fram3d.Tests.UI
             Assert.IsNotNull(root);
             Assert.Greater(root.childCount, 0, "Container should be added to root");
 
-            // 4 thirds lines + 2 cross lines + 2 safe zones = 8 elements
+            // 3 guide groups: ThirdsGuide (4 lines), CenterCrossGuide (2 lines), SafeZoneGuide (2 zones)
             var container = root[0];
-            Assert.AreEqual(8, container.childCount, "Container should have 8 guide elements");
+            Assert.AreEqual(3, container.childCount, "Container should have 3 guide groups");
+            Assert.AreEqual(4, container[0].childCount, "ThirdsGuide should have 4 lines");
+            Assert.AreEqual(2, container[1].childCount, "CenterCrossGuide should have 2 lines");
+            Assert.AreEqual(2, container[2].childCount, "SafeZoneGuide should have 2 zones");
         }
 
         [TearDown]
@@ -108,8 +111,14 @@ namespace Fram3d.Tests.UI
 
             var container = this._uiDocument.rootVisualElement[0];
 
-            for (var i = 0; i < container.childCount; i++)
-                Assert.AreEqual(DisplayStyle.None, container[i].style.display.value, $"Element {i} should be hidden after ToggleAll");
+            for (var g = 0; g < container.childCount; g++)
+            {
+                for (var i = 0; i < container[g].childCount; i++)
+                {
+                    Assert.AreEqual(DisplayStyle.None, container[g][i].style.display.value,
+                        $"Group {g} element {i} should be hidden after ToggleAll");
+                }
+            }
         }
 
         // --- ToggleAll ---
@@ -124,8 +133,14 @@ namespace Fram3d.Tests.UI
 
             var container = this._uiDocument.rootVisualElement[0];
 
-            for (var i = 0; i < container.childCount; i++)
-                Assert.AreEqual(DisplayStyle.Flex, container[i].style.display.value, $"Element {i} should be visible after ToggleAll");
+            for (var g = 0; g < container.childCount; g++)
+            {
+                for (var i = 0; i < container[g].childCount; i++)
+                {
+                    Assert.AreEqual(DisplayStyle.Flex, container[g][i].style.display.value,
+                        $"Group {g} element {i} should be visible after ToggleAll");
+                }
+            }
         }
 
         // --- Toggle center cross ---
@@ -138,11 +153,10 @@ namespace Fram3d.Tests.UI
             this._guideView.Settings.ToggleCenterCross();
             yield return null;
 
-            var container = this._uiDocument.rootVisualElement[0];
+            var cross = this._uiDocument.rootVisualElement[0][1]; // CenterCrossGuide
 
-            // Elements 4-5 are cross
-            Assert.AreEqual(DisplayStyle.Flex, container[4].style.display.value, "Cross H should be visible");
-            Assert.AreEqual(DisplayStyle.Flex, container[5].style.display.value, "Cross V should be visible");
+            Assert.AreEqual(DisplayStyle.Flex, cross[0].style.display.value, "Cross H should be visible");
+            Assert.AreEqual(DisplayStyle.Flex, cross[1].style.display.value, "Cross V should be visible");
         }
 
         // --- Toggle safe zones ---
@@ -155,11 +169,10 @@ namespace Fram3d.Tests.UI
             this._guideView.Settings.ToggleSafeZones();
             yield return null;
 
-            var container = this._uiDocument.rootVisualElement[0];
+            var safeZones = this._uiDocument.rootVisualElement[0][2]; // SafeZoneGuide
 
-            // Elements 6-7 are safe zones
-            Assert.AreEqual(DisplayStyle.Flex, container[6].style.display.value, "Title safe should be visible");
-            Assert.AreEqual(DisplayStyle.Flex, container[7].style.display.value, "Action safe should be visible");
+            Assert.AreEqual(DisplayStyle.Flex, safeZones[0].style.display.value, "Title safe should be visible");
+            Assert.AreEqual(DisplayStyle.Flex, safeZones[1].style.display.value, "Action safe should be visible");
         }
 
         [UnityTest]
@@ -170,13 +183,13 @@ namespace Fram3d.Tests.UI
             this._guideView.Settings.ToggleThirds();
             yield return null;
 
-            var container = this._uiDocument.rootVisualElement[0];
+            var cross     = this._uiDocument.rootVisualElement[0][1]; // CenterCrossGuide
+            var safeZones = this._uiDocument.rootVisualElement[0][2]; // SafeZoneGuide
 
-            // Elements 4-5 are cross, 6-7 are safe zones
-            Assert.AreEqual(DisplayStyle.None, container[4].style.display.value, "Cross H should be hidden");
-            Assert.AreEqual(DisplayStyle.None, container[5].style.display.value, "Cross V should be hidden");
-            Assert.AreEqual(DisplayStyle.None, container[6].style.display.value, "Title safe should be hidden");
-            Assert.AreEqual(DisplayStyle.None, container[7].style.display.value, "Action safe should be hidden");
+            Assert.AreEqual(DisplayStyle.None, cross[0].style.display.value, "Cross H should be hidden");
+            Assert.AreEqual(DisplayStyle.None, cross[1].style.display.value, "Cross V should be hidden");
+            Assert.AreEqual(DisplayStyle.None, safeZones[0].style.display.value, "Title safe should be hidden");
+            Assert.AreEqual(DisplayStyle.None, safeZones[1].style.display.value, "Action safe should be hidden");
         }
 
         // --- Toggle thirds ---
@@ -189,11 +202,12 @@ namespace Fram3d.Tests.UI
             this._guideView.Settings.ToggleThirds();
             yield return null;
 
-            var container = this._uiDocument.rootVisualElement[0];
+            var thirds = this._uiDocument.rootVisualElement[0][0]; // ThirdsGuide
 
-            // First 4 elements are thirds lines
             for (var i = 0; i < 4; i++)
-                Assert.AreEqual(DisplayStyle.Flex, container[i].style.display.value, $"Thirds line {i} should be visible");
+            {
+                Assert.AreEqual(DisplayStyle.Flex, thirds[i].style.display.value, $"Thirds line {i} should be visible");
+            }
         }
     }
 }

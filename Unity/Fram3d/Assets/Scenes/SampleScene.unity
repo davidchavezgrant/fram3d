@@ -362,9 +362,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30804377d0404103914806ae2e261f1f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Fram3d.UI::Fram3d.UI.Input.SelectionInputHandler
-  gizmoController: {fileID: 1029984955}
-  raycaster: {fileID: 1029984957}
-  selectionHighlighter: {fileID: 1029984956}
+  gizmoBehaviour: {fileID: 1029984955}
+  elementPicker: {fileID: 1029984957}
+  selectionDisplay: {fileID: 1029984956}
   viewCameraManager: {fileID: 1029984953}
 --- !u!114 &1029984955
 MonoBehaviour:
@@ -377,8 +377,8 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 242b13f963d245d4a3d18a385070d00e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Fram3d.Engine::Fram3d.Engine.Integration.GizmoController
-  selectionHighlighter: {fileID: 1029984956}
+  m_EditorClassIdentifier: Fram3d.Engine::Fram3d.Engine.Integration.GizmoBehaviour
+  selectionDisplay: {fileID: 1029984956}
   targetCamera: {fileID: 1029984960}
 --- !u!114 &1029984956
 MonoBehaviour:
@@ -391,7 +391,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4eacbea1533d44fa86c3f8f35c1d1221, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Fram3d.Engine::Fram3d.Engine.Integration.SelectionHighlighter
+  m_EditorClassIdentifier: Fram3d.Engine::Fram3d.Engine.Integration.SelectionDisplay
 --- !u!114 &1029984957
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -403,7 +403,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a6f6fe2af596a4c0da55780c043ee0e1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Fram3d.Engine::Fram3d.Engine.Integration.SelectionRaycaster
+  m_EditorClassIdentifier: Fram3d.Engine::Fram3d.Engine.Integration.ElementPicker
   targetCamera: {fileID: 1029984960}
 --- !u!114 &1029984958
 MonoBehaviour:
@@ -420,7 +420,7 @@ MonoBehaviour:
   cameraBehaviour: {fileID: 1029984959}
   compositionGuides: {fileID: 1489056033}
   viewCameraManager: {fileID: 1029984953}
-  gizmoController: {fileID: 1029984955}
+  gizmoBehaviour: {fileID: 1029984955}
   propertiesPanel: {fileID: 1848666155}
   viewLayoutView: {fileID: 0}
 --- !u!114 &1029984959
@@ -513,7 +513,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d634fdc998e44969b5137b243fd53d0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Fram3d.Engine::Fram3d.Engine.Integration.ShotController
+  m_EditorClassIdentifier: Fram3d.Engine::Fram3d.Engine.Integration.ShotEvaluator
 --- !u!21 &1037406818
 Material:
   serializedVersion: 8

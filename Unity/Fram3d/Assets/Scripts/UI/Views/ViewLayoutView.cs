@@ -56,17 +56,46 @@ namespace Fram3d.UI.Views
             }
         }
 
-        private void Start()
+        private void BuildHeaders()
         {
-            this._viewCameraManager = FindAnyObjectByType<ViewCameraManager>();
+            this._headerContainer.Clear();
+            var model = this._viewCameraManager.ViewSlotModel;
+            var count = model.ActiveSlotCount;
 
-            if (this._viewCameraManager == null)
+            this._viewHeaders = new ViewHeader[count];
+
+            for (var i = 0; i < count; i++)
             {
-                Debug.LogWarning("ViewLayoutView: No ViewCameraManager found.");
-                return;
+                var header = new ViewHeader(i, model.GetSlotType(i), this._viewCameraManager);
+                this._headerContainer.Add(header.Root);
+                this._viewHeaders[i] = header;
+            }
+        }
+
+        private void BuildLayoutChooser()
+        {
+            this._layoutChooser = new VisualElement();
+            this._layoutChooser.AddToClassList("layout-chooser");
+            var model = this._viewCameraManager.ViewSlotModel;
+
+            this._layoutChooser.Add(this.CreateLayoutButton("\u25fb", ViewLayout.SINGLE,     model.Layout));
+            this._layoutChooser.Add(this.CreateLayoutButton("\u25eb", ViewLayout.HORIZONTAL, model.Layout));
+            this._layoutChooser.Add(this.CreateLayoutButton("\u229f", ViewLayout.VERTICAL,   model.Layout));
+            this._root.Add(this._layoutChooser);
+        }
+
+        private Button CreateLayoutButton(string label, ViewLayout layout, ViewLayout currentLayout)
+        {
+            var btn = new Button(() => this._viewCameraManager.ViewSlotModel.SetLayout(layout));
+            btn.text = label;
+            btn.AddToClassList("layout-chooser__button");
+
+            if (layout == currentLayout)
+            {
+                btn.AddToClassList("layout-chooser__button--active");
             }
 
-            this.InitializeUI();
+            return btn;
         }
 
         private void InitializeUI()
@@ -121,88 +150,11 @@ namespace Fram3d.UI.Views
             this._viewCameraManager.ViewSlotModel.Changed += this.Rebuild;
         }
 
-        private void Update()
-        {
-            if (this._viewCameraManager == null)
-            {
-                return;
-            }
-
-            // Retry UI init if rootVisualElement wasn't ready in Start
-            if (this._root == null)
-            {
-                this.InitializeUI();
-                return;
-            }
-
-            this.PositionHeaders();
-            this.PositionActiveOutline();
-            this.PositionLayoutChooser();
-        }
-
         private void OnDestroy()
         {
             if (this._viewCameraManager != null)
             {
                 this._viewCameraManager.ViewSlotModel.Changed -= this.Rebuild;
-            }
-        }
-
-        private void Rebuild()
-        {
-            this.BuildHeaders();
-
-            if (this._layoutChooser != null)
-            {
-                this._layoutChooser.RemoveFromHierarchy();
-            }
-
-            this.BuildLayoutChooser();
-        }
-
-        // ── Layout chooser ─────────────────────────────────────────────
-
-        private void BuildLayoutChooser()
-        {
-            this._layoutChooser = new VisualElement();
-            this._layoutChooser.AddToClassList("layout-chooser");
-            var model = this._viewCameraManager.ViewSlotModel;
-
-            this._layoutChooser.Add(this.CreateLayoutButton("\u25fb", ViewLayout.SINGLE,     model.Layout));
-            this._layoutChooser.Add(this.CreateLayoutButton("\u25eb", ViewLayout.HORIZONTAL, model.Layout));
-            this._layoutChooser.Add(this.CreateLayoutButton("\u229f", ViewLayout.VERTICAL,   model.Layout));
-            this._root.Add(this._layoutChooser);
-        }
-
-        private Button CreateLayoutButton(string label, ViewLayout layout, ViewLayout currentLayout)
-        {
-            var btn = new Button(() => this._viewCameraManager.ViewSlotModel.SetLayout(layout));
-            btn.text = label;
-            btn.AddToClassList("layout-chooser__button");
-
-            if (layout == currentLayout)
-            {
-                btn.AddToClassList("layout-chooser__button--active");
-            }
-
-            return btn;
-        }
-
-        // ── Per-viewport headers ────────────────────────────────────────
-
-        private void BuildHeaders()
-        {
-            this._headerContainer.Clear();
-            var model = this._viewCameraManager.ViewSlotModel;
-            var count = model.ActiveSlotCount;
-
-            this._viewHeaders = new ViewHeader[count];
-
-            for (var i = 0; i < count; i++)
-            {
-                var header = new ViewHeader(i, model.GetSlotType(i), this._viewCameraManager);
-                this._headerContainer.Add(header.Root);
-                this._viewHeaders[i] = header;
             }
         }
 
@@ -224,58 +176,17 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            var activeSlot = this._viewCameraManager.ActiveSlot;
-            var vpRect     = this._viewCameraManager.GetViewportRect(activeSlot);
+            var activeSlot    = this._viewCameraManager.ActiveSlot;
+            var vpRect        = this._viewCameraManager.GetViewportRect(activeSlot);
+            var bottomInsetPx = this._viewCameraManager.CameraBehaviour.BottomInsetPixels;
 
-            // Account for the bottom inset (timeline section) when converting
-            // Camera.rect (normalized) to CSS pixels. Camera.rect.y starts at
-            // bottomNorm, so the available viewport height in CSS is rootH minus
-            // the bottom inset.
-            var bottomInset = this._viewCameraManager.CameraBehaviour.BottomInsetPixels;
-            var scale       = rootW > 0 ? Screen.width / rootW : 1f;
-            var bottomCss   = bottomInset / scale;
-            var availableCss = rootH - bottomCss;
-            var bottomNorm   = Screen.height > 0 ? bottomInset / Screen.height : 0f;
-            var normRange    = 1f - bottomNorm;
+            ViewportScope.ViewportRectToCss(this._root, vpRect, bottomInsetPx,
+                out var left, out var top, out var width, out var height);
 
-            if (normRange <= 0)
-            {
-                normRange = 1f;
-            }
-
-            this._activeOutline.style.left   = vpRect.x * rootW;
-            this._activeOutline.style.top    = (1f - vpRect.y - vpRect.height) / normRange * availableCss;
-            this._activeOutline.style.width  = vpRect.width * rootW;
-            this._activeOutline.style.height = vpRect.height / normRange * availableCss;
-        }
-
-        private void PositionLayoutChooser()
-        {
-            if (this._layoutChooser == null)
-            {
-                return;
-            }
-
-            var rootW = this._root.resolvedStyle.width;
-            var rootH = this._root.resolvedStyle.height;
-
-            if (float.IsNaN(rootW) || float.IsNaN(rootH))
-            {
-                return;
-            }
-
-            var rightInset  = this._viewCameraManager.CameraBehaviour.RightInsetPixels;
-            var bottomInset = this._viewCameraManager.CameraBehaviour.BottomInsetPixels;
-            var scale       = Screen.width > 0 ? rootW / Screen.width : 1f;
-            var rightCss    = rightInset * scale;
-            var bottomCss   = bottomInset / (Screen.width > 0 ? Screen.width / rootW : 1f);
-
-            // Position at bottom-right of the 3D view area
-            this._layoutChooser.style.position = Position.Absolute;
-            this._layoutChooser.style.bottom   = bottomCss + 12f;
-            this._layoutChooser.style.right    = rightCss + 12f;
-            this._layoutChooser.style.left     = StyleKeyword.Null;
-            this._layoutChooser.style.top      = StyleKeyword.Null;
+            this._activeOutline.style.left   = left;
+            this._activeOutline.style.top    = top;
+            this._activeOutline.style.width  = width;
+            this._activeOutline.style.height = height;
         }
 
         private void PositionHeaders()
@@ -295,37 +206,100 @@ namespace Fram3d.UI.Views
             {
                 if (this._viewHeaders.Length > 0)
                 {
-                    var insetPixels = this._viewCameraManager.CameraBehaviour.RightInsetPixels;
-                    var scale       = Screen.width > 0 ? rootW / Screen.width : 1f;
+                    var rightCss = ViewportScope.ScreenToCss(this._root,
+                        this._viewCameraManager.CameraBehaviour.RightInsetPixels);
 
                     this._viewHeaders[0].Root.style.left  = 0;
                     this._viewHeaders[0].Root.style.top   = 0;
-                    this._viewHeaders[0].Root.style.width = rootW - insetPixels * scale;
+                    this._viewHeaders[0].Root.style.width = rootW - rightCss;
                 }
 
                 return;
             }
 
             var bottomInsetPx = this._viewCameraManager.CameraBehaviour.BottomInsetPixels;
-            var screenScale   = Screen.width > 0 ? rootW / Screen.width : 1f;
-            var bottomCss     = bottomInsetPx * screenScale;
-            var availCss      = rootH - bottomCss;
-            var bNorm         = Screen.height > 0 ? bottomInsetPx / Screen.height : 0f;
-            var nRange        = 1f - bNorm;
-
-            if (nRange <= 0)
-            {
-                nRange = 1f;
-            }
 
             for (var i = 0; i < this._viewHeaders.Length && i < count; i++)
             {
                 var vpRect = this._viewCameraManager.GetViewportRect(i);
 
-                this._viewHeaders[i].Root.style.left  = vpRect.x * rootW;
-                this._viewHeaders[i].Root.style.top   = (1f - vpRect.y - vpRect.height) / nRange * availCss;
-                this._viewHeaders[i].Root.style.width = vpRect.width * rootW;
+                ViewportScope.ViewportRectToCss(this._root, vpRect, bottomInsetPx,
+                    out var left, out var top, out var width, out var _);
+
+                this._viewHeaders[i].Root.style.left  = left;
+                this._viewHeaders[i].Root.style.top   = top;
+                this._viewHeaders[i].Root.style.width = width;
             }
+        }
+
+        private void PositionLayoutChooser()
+        {
+            if (this._layoutChooser == null)
+            {
+                return;
+            }
+
+            var rootW = this._root.resolvedStyle.width;
+
+            if (float.IsNaN(rootW))
+            {
+                return;
+            }
+
+            var rightInset  = this._viewCameraManager.CameraBehaviour.RightInsetPixels;
+            var bottomInset = this._viewCameraManager.CameraBehaviour.BottomInsetPixels;
+            var rightCss    = ViewportScope.ScreenToCss(this._root, rightInset);
+            var bottomCss   = ViewportScope.ScreenToCss(this._root, bottomInset);
+
+            this._layoutChooser.style.position = Position.Absolute;
+            this._layoutChooser.style.bottom   = bottomCss + 12f;
+            this._layoutChooser.style.right    = rightCss + 12f;
+            this._layoutChooser.style.left     = StyleKeyword.Null;
+            this._layoutChooser.style.top      = StyleKeyword.Null;
+        }
+
+        private void Rebuild()
+        {
+            this.BuildHeaders();
+
+            if (this._layoutChooser != null)
+            {
+                this._layoutChooser.RemoveFromHierarchy();
+            }
+
+            this.BuildLayoutChooser();
+        }
+
+        private void Start()
+        {
+            this._viewCameraManager = FindAnyObjectByType<ViewCameraManager>();
+
+            if (this._viewCameraManager == null)
+            {
+                Debug.LogWarning("ViewLayoutView: No ViewCameraManager found.");
+                return;
+            }
+
+            this.InitializeUI();
+        }
+
+        private void Update()
+        {
+            if (this._viewCameraManager == null)
+            {
+                return;
+            }
+
+            // Retry UI init if rootVisualElement wasn't ready in Start
+            if (this._root == null)
+            {
+                this.InitializeUI();
+                return;
+            }
+
+            this.PositionHeaders();
+            this.PositionActiveOutline();
+            this.PositionLayoutChooser();
         }
 
         // ── ViewHeader ──────────────────────────────────────────────────

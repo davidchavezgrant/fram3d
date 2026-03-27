@@ -11,7 +11,7 @@ namespace Fram3d.Engine.Integration
     /// element's position. During drag, writes directly to Element properties
     /// (no command dispatch). Renders always-on-top via GizmoHandle shader.
     /// </summary>
-    public sealed class GizmoController: MonoBehaviour
+    public sealed class GizmoBehaviour: MonoBehaviour
     {
         public const     int              GIZMO_LAYER_INDEX = 6;
         private readonly GizmoState       _gizmoState       = new();
@@ -24,7 +24,7 @@ namespace Fram3d.Engine.Integration
         private          GameObject       _translateGroup;
 
         [SerializeField]
-        private SelectionHighlighter selectionHighlighter;
+        private SelectionDisplay selectionDisplay;
 
         [SerializeField]
         private Camera targetCamera;
@@ -252,9 +252,9 @@ namespace Fram3d.Engine.Integration
 
         private void Start()
         {
-            if (this.selectionHighlighter != null)
+            if (this.selectionDisplay != null)
             {
-                this._selection = this.selectionHighlighter.Selection;
+                this._selection = this.selectionDisplay.Selection;
             }
         }
 

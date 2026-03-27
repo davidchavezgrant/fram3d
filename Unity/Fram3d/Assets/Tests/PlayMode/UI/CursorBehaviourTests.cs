@@ -12,8 +12,8 @@ namespace Fram3d.Tests.UI
 {
     /// <summary>
     /// Tests that the cursor management pipeline (SelectionInputHandler →
-    /// CursorManager → ICursorService) calls the right service methods at the
-    /// right time. Uses a RecordingCursorService injected via CursorManager.SetService()
+    /// CursorService → ICursorService) calls the right service methods at the
+    /// right time. Uses a RecordingCursorService injected via CursorService.SetService()
     /// to observe calls without touching platform-specific cursor code.
     ///
     /// Does NOT test the native macOS cursor implementation (EditorCursorService,
@@ -26,7 +26,7 @@ namespace Fram3d.Tests.UI
         private GameObject             _cube;
         private RecordingCursorService _cursorService;
         private SelectionInputHandler  _handler;
-        private SelectionHighlighter   _highlighter;
+        private SelectionDisplay   _highlighter;
         private Mouse                  _mouse;
         private ICursorService         _originalService;
 
@@ -52,18 +52,18 @@ namespace Fram3d.Tests.UI
         [Test]
         public void ResetCursor__DelegatesToService__When__ServiceIsSet()
         {
-            CursorManager.SetCursor(CursorType.Link);
+            CursorService.SetCursor(CursorType.Link);
             this._cursorService.ResetCounts();
-            CursorManager.ResetCursor();
+            CursorService.ResetCursor();
             Assert.IsTrue(this._cursorService.ResetCallCount > 0);
         }
 
-        // --- CursorManager facade routing ---
+        // --- CursorService facade routing ---
 
         [Test]
         public void SetCursor__DelegatesToService__When__ServiceIsSet()
         {
-            var result = CursorManager.SetCursor(CursorType.Link);
+            var result = CursorService.SetCursor(CursorType.Link);
             Assert.IsTrue(result);
             Assert.AreEqual(CursorType.Link, this._cursorService.LastCursor);
         }
@@ -71,12 +71,12 @@ namespace Fram3d.Tests.UI
         [Test]
         public void SetCursor__ReturnsFalse__When__NoServiceSet()
         {
-            CursorManager.SetService(null);
-            var result = CursorManager.SetCursor(CursorType.Link);
+            CursorService.SetService(null);
+            var result = CursorService.SetCursor(CursorType.Link);
             Assert.IsFalse(result);
 
             // Restore for subsequent tests
-            CursorManager.SetService(this._cursorService);
+            CursorService.SetService(this._cursorService);
             this._cursorService.ResetCounts();
         }
 
@@ -89,12 +89,12 @@ namespace Fram3d.Tests.UI
             var camera = this._cameraGo.AddComponent<Camera>();
             this._cameraGo.transform.position = Vector3.zero;
             this._cameraGo.transform.rotation = Quaternion.identity;
-            var raycaster = this._cameraGo.AddComponent<SelectionRaycaster>();
+            var raycaster = this._cameraGo.AddComponent<ElementPicker>();
             SetField(raycaster, "targetCamera", camera);
-            this._highlighter = this._cameraGo.AddComponent<SelectionHighlighter>();
+            this._highlighter = this._cameraGo.AddComponent<SelectionDisplay>();
             this._handler     = this._cameraGo.AddComponent<SelectionInputHandler>();
-            SetField(this._handler, "selectionHighlighter", this._highlighter);
-            SetField(this._handler, "raycaster",            raycaster);
+            SetField(this._handler, "selectionDisplay", this._highlighter);
+            SetField(this._handler, "elementPicker",            raycaster);
             this._cube                    = GameObject.CreatePrimitive(PrimitiveType.Cube);
             this._cube.name               = "TestCube";
             this._cube.transform.position = new Vector3(0f, 0f, 5f);
@@ -102,9 +102,9 @@ namespace Fram3d.Tests.UI
             this._mouse = InputSystem.AddDevice<Mouse>();
 
             // Inject recording cursor service, save original for restore
-            this._originalService = GetStaticField<ICursorService>(typeof(CursorManager), "_service");
+            this._originalService = GetStaticField<ICursorService>(typeof(CursorService), "_service");
             this._cursorService   = new RecordingCursorService();
-            CursorManager.SetService(this._cursorService);
+            CursorService.SetService(this._cursorService);
             this._cursorService.ResetCounts();
         }
 
@@ -114,7 +114,7 @@ namespace Fram3d.Tests.UI
             // Restore original cursor service before cleanup
             if (this._originalService != null)
             {
-                CursorManager.SetService(this._originalService);
+                CursorService.SetService(this._originalService);
             }
 
             InputSystem.QueueStateEvent(this._mouse, new MouseState());
@@ -287,13 +287,13 @@ namespace Fram3d.Tests.UI
             yield return null;
             yield return new WaitForFixedUpdate();
 
-            // Set up a GizmoController so gizmo drag cursor logic activates.
+            // Set up a GizmoBehaviour so gizmo drag cursor logic activates.
             // We simulate the drag state via reflection since setting up actual
             // gizmo handle raycasts is prohibitively complex.
-            var gizmoController = this._cameraGo.AddComponent<GizmoController>();
-            SetField(gizmoController, "selectionHighlighter", this._highlighter);
+            var gizmoController = this._cameraGo.AddComponent<GizmoBehaviour>();
+            SetField(gizmoController, "selectionDisplay", this._highlighter);
             SetField(gizmoController, "targetCamera", this._cameraGo.GetComponent<Camera>());
-            SetField(this._handler, "gizmoController", gizmoController);
+            SetField(this._handler, "gizmoBehaviour", gizmoController);
 
             // Select the cube
             var element = this._cube.GetComponent<ElementBehaviour>().Element;
@@ -390,7 +390,7 @@ namespace Fram3d.Tests.UI
 
         /// <summary>
         /// Test double that records all calls to ICursorService methods.
-        /// Injected via CursorManager.SetService() to observe cursor changes
+        /// Injected via CursorService.SetService() to observe cursor changes
         /// without touching platform-specific native code.
         /// </summary>
         private sealed class RecordingCursorService: ICursorService

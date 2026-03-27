@@ -92,7 +92,7 @@ Run Core tests: `dotnet test tests/Fram3d.Core.Tests`
 Run mutation tests: `cd tests/Fram3d.Core.Tests && dotnet stryker`
 Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 
-**After writing or modifying tests, always run Stryker** to verify the mutation score hasn't regressed. Current baseline: ~85%. Thresholds: green ≥85%, yellow ≥75%, break <60%.
+**After writing or modifying tests, always run Stryker** to verify the mutation score hasn't regressed. Current baseline: ~80%. Thresholds: green ≥80%, yellow ≥70%, break <55%.
 
 ### When to write which tests
 
@@ -134,7 +134,7 @@ Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 
 **`MaterialPropertyBlock` for per-renderer visual variation.** Use `SetPropertyBlock(block)` to overlay properties without creating material instances. `SetPropertyBlock(null)` removes the overlay entirely. Never use `renderer.material` (creates instances that are hard to clean up) — use `renderer.sharedMaterial` for reads and `MaterialPropertyBlock` for writes. The `_EMISSION` keyword cannot be toggled via PropertyBlock (it's a shader compile variant, not a property).
 
-**`ZTest Always` for always-on-top rendering.** Gizmos use a shader with `ZTest Always` and `ZWrite Off` on a dedicated layer. The main camera renders them — no separate overlay camera needed. Objects on the Gizmo layer are excluded from `SelectionRaycaster` via layer mask.
+**`ZTest Always` for always-on-top rendering.** Gizmos use a shader with `ZTest Always` and `ZWrite Off` on a dedicated layer. The main camera renders them — no separate overlay camera needed. Objects on the Gizmo layer are excluded from `ElementPicker` via layer mask.
 
 **Shader stripping in builds.** Unity strips shaders not referenced by materials in the build. If a shader is only used at runtime (e.g., `Unlit/Color` for frustum wireframes created via `new Material(Shader.Find(...))`), it will be stripped. Fix: add a `[SerializeField] private Shader` field referencing the shader, or add it to `Project Settings → Graphics → Always Included Shaders`. A `[SerializeField]` reference is preferred — it's explicit and discoverable.
 

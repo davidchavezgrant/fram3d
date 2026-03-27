@@ -6,7 +6,7 @@ namespace Fram3d.UI.Timeline
     /// <summary>
     /// Zoom bar with a draggable thumb representing the visible time range.
     /// </summary>
-    public sealed class ZoomBarElement : VisualElement
+    public sealed class ZoomBar : VisualElement
     {
         private const float HEIGHT = 18f;
 
@@ -17,7 +17,7 @@ namespace Fram3d.UI.Timeline
         private bool  _isDragging;
         private float _dragStartX;
 
-        public ZoomBarElement()
+        public ZoomBar()
         {
             this.AddToClassList("timeline-zoom-row");
             this.style.height = HEIGHT;

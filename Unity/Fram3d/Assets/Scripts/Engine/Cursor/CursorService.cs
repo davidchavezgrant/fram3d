@@ -1,6 +1,6 @@
 namespace Fram3d.Engine.Cursor
 {
-    public static class CursorManager
+    public static class CursorService
     {
         private static ICursorService _service;
 

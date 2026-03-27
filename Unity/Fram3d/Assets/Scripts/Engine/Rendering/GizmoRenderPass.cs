@@ -28,7 +28,7 @@ namespace Fram3d.Engine.Rendering
         {
             this.renderPassEvent      = RenderPassEvent.AfterRenderingTransparents;
             this._filteringSettings   = new FilteringSettings(RenderQueueRange.all,
-                                                              1 << GizmoController.GIZMO_LAYER_INDEX);
+                                                              1 << GizmoBehaviour.GIZMO_LAYER_INDEX);
         }
 
         [System.Obsolete]

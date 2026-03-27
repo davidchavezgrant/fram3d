@@ -5,7 +5,7 @@ namespace Fram3d.Engine.Integration
     /// <summary>
     /// Builds the gizmo handle GameObject tree — translate arrows, rotate
     /// rings, and scale diamond — parented under a single root. Runs once
-    /// during <see cref="GizmoController"/> Awake.
+    /// during <see cref="GizmoBehaviour"/> Awake.
     /// </summary>
     internal static class GizmoHandleFactory
     {
@@ -48,7 +48,7 @@ namespace Fram3d.Engine.Integration
         {
             var root = new GameObject("GizmoRoot");
             root.transform.SetParent(parent, false);
-            SetLayerRecursive(root, GizmoController.GIZMO_LAYER_INDEX);
+            SetLayerRecursive(root, GizmoBehaviour.GIZMO_LAYER_INDEX);
             return root;
         }
 
@@ -153,7 +153,7 @@ namespace Fram3d.Engine.Integration
             var go = new GameObject(handleName);
             go.transform.SetParent(parent.transform, false);
             go.transform.localRotation = rotation;
-            go.layer                   = GizmoController.GIZMO_LAYER_INDEX;
+            go.layer                   = GizmoBehaviour.GIZMO_LAYER_INDEX;
             var mf = go.AddComponent<MeshFilter>();
             mf.sharedMesh = mesh;
             var mr  = go.AddComponent<MeshRenderer>();

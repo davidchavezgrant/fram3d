@@ -8,7 +8,7 @@ namespace Fram3d.UI.Timeline
     /// Time ruler with adaptive tick marks, frame dividers, playhead,
     /// out-of-range darkening, and click/drag scrub handling.
     /// </summary>
-    public sealed class RulerElement : VisualElement
+    public sealed class Ruler : VisualElement
     {
         private const float  HEIGHT         = 22f;
         private const double FRAME_DURATION = 1.0 / 24.0;
@@ -19,7 +19,7 @@ namespace Fram3d.UI.Timeline
 
         private bool _isScrubbing;
 
-        public RulerElement()
+        public Ruler()
         {
             this.AddToClassList("timeline-ruler-row");
             this.style.height = HEIGHT;

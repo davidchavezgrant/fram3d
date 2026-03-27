@@ -15,12 +15,12 @@ namespace Fram3d.UI.Input
     {
         private CameraBehaviour      _cameraBehaviour;
         private CompositionGuideView _compositionGuides;
-        private GizmoController      _gizmoController;
+        private GizmoBehaviour      _gizmoController;
         private TimelineSectionView  _timelineSection;
 
         public void Configure(CameraBehaviour      cameraBehaviour,
                               CompositionGuideView compositionGuides,
-                              GizmoController      gizmoController,
+                              GizmoBehaviour      gizmoController,
                               TimelineSectionView  timelineSection)
         {
             this._cameraBehaviour  = cameraBehaviour;

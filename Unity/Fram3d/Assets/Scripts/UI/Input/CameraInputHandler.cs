@@ -45,7 +45,7 @@ namespace Fram3d.UI.Input
         private ViewCameraManager viewCameraManager;
 
         [SerializeField]
-        private GizmoController gizmoController;
+        private GizmoBehaviour gizmoBehaviour;
 
         [SerializeField]
         private PropertiesPanelView propertiesPanel;
@@ -403,7 +403,7 @@ namespace Fram3d.UI.Input
 
             this._keyboardRouter.Configure(this.cameraBehaviour,
                                             this.compositionGuides,
-                                            this.gizmoController,
+                                            this.gizmoBehaviour,
                                             this._timelineSection);
         }
 

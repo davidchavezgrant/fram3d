@@ -81,5 +81,125 @@ namespace Fram3d.Core.Tests.Timelines
             playhead.CurrentTime.Should().Be(0);
             playhead.IsPlaying.Should().BeFalse();
         }
+
+        [Fact]
+        public void Advance__ReturnsFalse__When__NotPlaying()
+        {
+            var playhead = new Playhead(FPS_24);
+
+            playhead.Advance(1.0, 10.0).Should().BeFalse();
+            playhead.CurrentTime.Should().Be(0);
+        }
+
+        [Fact]
+        public void TogglePlayback__StartsPlaying__When__MidTimeline()
+        {
+            var playhead = new Playhead(FPS_24);
+            playhead.Scrub(5.0, 10.0);
+
+            playhead.TogglePlayback(10.0).Should().BeTrue();
+
+            playhead.IsPlaying.Should().BeTrue();
+            playhead.CurrentTime.Should().BeApproximately(5.0, 0.1);
+        }
+
+        [Fact]
+        public void TogglePlayback__StopsPlaying__When__AlreadyPlaying()
+        {
+            var playhead = new Playhead(FPS_24);
+            playhead.TogglePlayback(10.0);
+
+            playhead.TogglePlayback(10.0).Should().BeFalse();
+
+            playhead.IsPlaying.Should().BeFalse();
+        }
+
+        [Fact]
+        public void TimeChanged__Fires__When__Scrubbed()
+        {
+            var playhead = new Playhead(FPS_24);
+            var fired    = false;
+            playhead.TimeChanged.Subscribe(_ => fired = true);
+
+            playhead.Scrub(3.0, 10.0);
+
+            fired.Should().BeTrue();
+        }
+
+        [Fact]
+        public void TimeChanged__Fires__When__Advanced()
+        {
+            var playhead = new Playhead(FPS_24);
+            playhead.TogglePlayback(10.0);
+            var fired = false;
+            playhead.TimeChanged.Subscribe(_ => fired = true);
+
+            playhead.Advance(1.0, 10.0);
+
+            fired.Should().BeTrue();
+        }
+
+        [Fact]
+        public void TimeChanged__DoesNotFire__When__ScrubToSameTime()
+        {
+            var playhead = new Playhead(FPS_24);
+            playhead.Scrub(0, 10.0);
+            var fireCount = 0;
+            playhead.TimeChanged.Subscribe(_ => fireCount++);
+
+            playhead.Scrub(0, 10.0);
+
+            fireCount.Should().Be(0);
+        }
+
+        [Fact]
+        public void Advance__StopsAtExactEnd__When__DeltaReachesExactlyTotalDuration()
+        {
+            var playhead = new Playhead(FPS_24);
+            playhead.TogglePlayback(5.0);
+
+            // Advance exactly to totalDuration (not past it)
+            playhead.Advance(5.0, 5.0).Should().BeFalse();
+            playhead.CurrentTime.Should().Be(5.0);
+            playhead.IsPlaying.Should().BeFalse();
+        }
+
+        [Fact]
+        public void Advance__SetsTimeToTotalDuration__When__Overshooting()
+        {
+            var playhead = new Playhead(FPS_24);
+            playhead.TogglePlayback(5.0);
+
+            playhead.Advance(10.0, 5.0);
+
+            playhead.CurrentTime.Should().Be(5.0);
+        }
+
+        [Fact]
+        public void TogglePlayback__ResetsToZero__When__OneFrameBeforeEnd()
+        {
+            var playhead     = new Playhead(FPS_24);
+            var lastFrameTime = 10.0 - FPS_24.FrameDuration;
+            playhead.Scrub(lastFrameTime, 10.0);
+
+            playhead.TogglePlayback(10.0);
+
+            // Should detect "at end" and reset
+            playhead.CurrentTime.Should().Be(0);
+            playhead.IsPlaying.Should().BeTrue();
+        }
+
+        [Fact]
+        public void Reset__FiresTimeChanged__When__NotAtZero()
+        {
+            var playhead = new Playhead(FPS_24);
+            playhead.Scrub(5.0, 10.0);
+            var fired = false;
+            playhead.TimeChanged.Subscribe(_ => fired = true);
+
+            playhead.Reset();
+
+            fired.Should().BeTrue();
+        }
     }
 }

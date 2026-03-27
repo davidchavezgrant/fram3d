@@ -1,3 +1,4 @@
+using System.Linq;
 using FluentAssertions;
 using Fram3d.Core.Common;
 using Fram3d.Core.Shots;
@@ -291,6 +292,686 @@ namespace Fram3d.Core.Tests.Timelines
             var t = Create();
 
             t.FormatResizeTooltip(0, false).Should().Contain("[ripple]");
+        }
+
+        [Fact]
+        public void FormatResizeTooltip__ShowsShotsOnly__When__ShiftHeld()
+        {
+            var t = Create();
+
+            t.FormatResizeTooltip(0, true).Should().Contain("[shots only]");
+        }
+
+        // --- Interaction state machine ---
+
+        [Fact]
+        public void ShotTrackPointerMove__ReturnsNearEdge__When__CursorNearShotBoundary()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            // Shot_01 ends at 5.0s. Find that pixel position.
+            var edgePx = t.TimeToPixel(5.0);
+
+            var result = t.ShotTrackPointerMove(edgePx, 0);
+
+            result.Should().Be(ShotTrackAction.NEAR_EDGE);
+        }
+
+        [Fact]
+        public void ShotTrackPointerMove__ReturnsNone__When__CursorFarFromEdge()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            // Middle of shot 1 — far from any edge
+            var midPx = t.TimeToPixel(2.5);
+
+            var result = t.ShotTrackPointerMove(midPx, 0);
+
+            result.Should().Be(ShotTrackAction.NONE);
+        }
+
+        [Fact]
+        public void ShotTrackPointerUp__ReturnsBoundaryComplete__When__BoundaryDragging()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            var edgePx = t.TimeToPixel(5.0);
+
+            // Start boundary drag
+            t.ShotTrackPointerDown(edgePx, 0).Should().Be(ShotTrackAction.BOUNDARY_DRAG);
+            t.IsBoundaryDragging.Should().BeTrue();
+
+            // Release
+            var result = t.ShotTrackPointerUp();
+
+            result.Should().Be(ShotTrackAction.BOUNDARY_COMPLETE);
+            t.IsBoundaryDragging.Should().BeFalse();
+        }
+
+        [Fact]
+        public void ShotTrackPointerUp__ReturnsNone__When__NoShotCaptured()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            // Click in empty space past all shots
+            var emptyPx = t.TimeToPixel(999.0);
+            t.ShotTrackPointerDown(emptyPx, 0);
+
+            var result = t.ShotTrackPointerUp();
+
+            result.Should().Be(ShotTrackAction.NONE);
+        }
+
+        [Fact]
+        public void ShotTrackPointerMove__ReturnsDragStart__When__HeldLongEnough()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            var midPx = t.TimeToPixel(2.5);
+
+            t.ShotTrackPointerDown(midPx, 0);
+            // Move after hold threshold (200ms)
+            var result = t.ShotTrackPointerMove(midPx, 201);
+
+            result.Should().Be(ShotTrackAction.DRAG_START);
+            t.IsDragging.Should().BeTrue();
+        }
+
+        [Fact]
+        public void ShotTrackPointerMove__ReturnsDragMove__When__AlreadyDragging()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            var midPx = t.TimeToPixel(2.5);
+
+            t.ShotTrackPointerDown(midPx, 0);
+            t.ShotTrackPointerMove(midPx, 201); // DRAG_START
+            var result = t.ShotTrackPointerMove(midPx + 50, 300);
+
+            result.Should().Be(ShotTrackAction.DRAG_MOVE);
+        }
+
+        [Fact]
+        public void ShotTrackPointerUp__ReturnsDragComplete__When__Dragging()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            var midPx = t.TimeToPixel(2.5);
+
+            t.ShotTrackPointerDown(midPx, 0);
+            t.ShotTrackPointerMove(midPx, 201); // DRAG_START
+
+            var result = t.ShotTrackPointerUp();
+
+            result.Should().Be(ShotTrackAction.DRAG_COMPLETE);
+            t.IsDragging.Should().BeFalse();
+        }
+
+        [Fact]
+        public void CompleteDrag__ReordersShotForward__When__DraggedPastNextShot()
+        {
+            var t = Create(); // Shot_01 (5s), Shot_02 (5s)
+            t.InitializeViewRange(500);
+            var shot1 = t.Shots[0];
+            var shot2 = t.Shots[1];
+
+            // Start drag on Shot_01 (at 2.5s)
+            var startPx = t.TimeToPixel(2.5);
+            t.ShotTrackPointerDown(startPx, 0);
+            t.ShotTrackPointerMove(startPx, 201); // DRAG_START
+
+            // Move past Shot_02's midpoint (7.5s) → insertion index = 2
+            var endPx = t.TimeToPixel(7.5);
+            t.ShotTrackPointerMove(endPx, 300); // DRAG_MOVE
+
+            t.ShotTrackPointerUp(); // DRAG_COMPLETE
+
+            // Shot_01 should now be at index 1
+            t.Shots[0].Should().Be(shot2);
+            t.Shots[1].Should().Be(shot1);
+        }
+
+        [Fact]
+        public void CompleteDrag__ReordersShotBackward__When__DraggedBeforePreviousShot()
+        {
+            var t = Create(); // Shot_01, Shot_02
+            t.InitializeViewRange(500);
+            var shot1 = t.Shots[0];
+            var shot2 = t.Shots[1];
+
+            // Start drag on Shot_02 (at 7.5s — middle of second shot)
+            var startPx = t.TimeToPixel(7.5);
+            t.ShotTrackPointerDown(startPx, 0);
+            t.ShotTrackPointerMove(startPx, 201); // DRAG_START
+
+            // Move before Shot_01's midpoint (2.5s) → insertion index = 0
+            var endPx = t.TimeToPixel(1.0);
+            t.ShotTrackPointerMove(endPx, 300); // DRAG_MOVE
+
+            t.ShotTrackPointerUp(); // DRAG_COMPLETE
+
+            // Shot_02 should now be at index 0
+            t.Shots[0].Should().Be(shot2);
+            t.Shots[1].Should().Be(shot1);
+        }
+
+        // --- FormatBoundaryTooltip ---
+
+        [Fact]
+        public void FormatBoundaryTooltip__ReturnsEmpty__When__NoBoundaryDrag()
+        {
+            var t = Create();
+
+            t.FormatBoundaryTooltip(false).Should().BeEmpty();
+        }
+
+        [Fact]
+        public void FormatBoundaryTooltip__ReturnsTooltip__When__BoundaryDragging()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            var edgePx = t.TimeToPixel(5.0);
+
+            t.ShotTrackPointerDown(edgePx, 0); // starts boundary drag
+
+            t.FormatBoundaryTooltip(false).Should().Contain("[ripple]");
+        }
+
+        // --- Advance viewport auto-pan ---
+
+        [Fact]
+        public void Advance__PansViewForward__When__PlayheadExceedsViewEnd()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            // Zoom in so view shows only 2s (from 0 to 2)
+            t.SetViewRange(0, 2.0);
+            t.TogglePlayback();
+
+            // Advance past viewEnd (2.0s)
+            t.Advance(2.5);
+
+            // View should have shifted forward
+            t.ViewStart.Should().BeGreaterThan(0);
+        }
+
+        // --- EnsureVisible ---
+
+        [Fact]
+        public void EnsureVisible__ShiftsViewRight__When__TimePastViewEnd()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            t.SetViewRange(0, 3.0);
+            var oldStart = t.ViewStart;
+
+            t.EnsureVisible(5.0);
+
+            t.ViewStart.Should().BeGreaterThan(oldStart);
+            t.ViewEnd.Should().BeGreaterThanOrEqualTo(5.0);
+        }
+
+        [Fact]
+        public void EnsureVisible__ShiftsViewLeft__When__TimeBeforeViewStart()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            t.SetViewRange(3.0, 6.0);
+
+            t.EnsureVisible(1.0);
+
+            t.ViewStart.Should().BeLessOrEqualTo(1.0);
+        }
+
+        // --- FindInsertionIndex ---
+
+        [Fact]
+        public void FindInsertionIndex__ReturnsEnd__When__TimeAfterAllShots()
+        {
+            var t = Create();
+
+            t.FindInsertionIndex(999.0).Should().Be(t.Count);
+        }
+
+        [Fact]
+        public void FindInsertionIndex__ReturnsZero__When__TimeBeforeFirstMidpoint()
+        {
+            var t = Create();
+
+            t.FindInsertionIndex(0.5).Should().Be(0);
+        }
+
+        // --- Scrub state ---
+
+        [Fact]
+        public void IsScrubbing__ReturnsFalse__When__NotScrubbing()
+        {
+            var t = Create();
+
+            t.IsScrubbing.Should().BeFalse();
+        }
+
+        [Fact]
+        public void BeginScrub__SetsScrubbingTrue__When__Called()
+        {
+            var t = Create();
+            t.BeginScrub();
+
+            t.IsScrubbing.Should().BeTrue();
+        }
+
+        [Fact]
+        public void EndScrub__SetsScrubbingFalse__When__Called()
+        {
+            var t = Create();
+            t.BeginScrub();
+            t.EndScrub();
+
+            t.IsScrubbing.Should().BeFalse();
+        }
+
+        // --- ResolveShot ---
+
+        [Fact]
+        public void ResolveShot__ReturnsFirstShot__When__PlayheadAtZero()
+        {
+            var t      = Create();
+            var result = t.ResolveShot();
+
+            result.Should().NotBeNull();
+            result.Value.shot.Should().Be(t.Shots[0]);
+            result.Value.localTime.Seconds.Should().Be(0);
+        }
+
+        // --- Observable emissions ---
+
+        [Fact]
+        public void RemoveShot__FiresShotRemoved__When__ShotRemoved()
+        {
+            var t    = Create();
+            var shot = t.Shots[0];
+            Shot removed = null;
+            t.ShotRemoved.Subscribe(s => removed = s);
+
+            t.RemoveShot(shot.Id);
+
+            removed.Should().Be(shot);
+        }
+
+        [Fact]
+        public void RemoveShot__FiresCurrentShotChanged__When__CurrentShotRemoved()
+        {
+            var t = Create();
+            var currentBefore = t.CurrentShot;
+            Shot newCurrent = null;
+            t.CurrentShotChanged.Subscribe(s => newCurrent = s);
+
+            t.RemoveShot(currentBefore.Id);
+
+            // Should have selected a new current
+            newCurrent.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void RemoveShot__SelectsLastShot__When__LastShotRemovedByIndex()
+        {
+            var t = Create(); // Shot_01, Shot_02
+            // Make Shot_02 current
+            t.SetCurrentShot(t.Shots[1].Id);
+            var shot2 = t.Shots[1];
+
+            // Remove Shot_02 (index 1, which equals count after removal)
+            t.RemoveShot(shot2.Id);
+
+            t.CurrentShot.Should().Be(t.Shots[0]);
+        }
+
+        [Fact]
+        public void Reorder__FiresReordered__When__ShotMoved()
+        {
+            var t    = Create();
+            var fired = false;
+            t.Reordered.Subscribe(_ => fired = true);
+
+            t.Reorder(t.Shots[0].Id, 1);
+
+            fired.Should().BeTrue();
+        }
+
+        [Fact]
+        public void Reorder__NoOp__When__SameIndex()
+        {
+            var t       = Create();
+            var ordered = t.Shots.ToList();
+            var fired   = false;
+            t.Reordered.Subscribe(_ => fired = true);
+
+            t.Reorder(t.Shots[0].Id, 0);
+
+            fired.Should().BeFalse();
+            t.Shots[0].Should().Be(ordered[0]);
+        }
+
+        // --- FitToShot ---
+
+        [Fact]
+        public void FitToShot__PinsToStart__When__FirstShot()
+        {
+            var t = Create(); // 2 shots
+            t.AddShot(Vector3.Zero, Quaternion.Identity); // 3rd shot
+            t.InitializeViewRange(500);
+
+            t.FitToShot(t.Shots[0].Id);
+
+            t.ViewStart.Should().Be(0);
+        }
+
+        [Fact]
+        public void FitToShot__PinsToEnd__When__LastShot()
+        {
+            var t = Create();
+            t.AddShot(Vector3.Zero, Quaternion.Identity); // 3rd shot
+            t.InitializeViewRange(500);
+            var lastShot = t.Shots[t.Count - 1];
+
+            t.FitToShot(lastShot.Id);
+
+            t.ViewEnd.Should().BeApproximately(t.TotalDuration, 0.01);
+        }
+
+        // --- ViewRange through Timeline ---
+
+        [Fact]
+        public void ZoomAtPoint__NarrowsVisibleDuration__When__PositiveScroll()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            var before = t.VisibleDuration;
+
+            t.ZoomAtPoint(5.0, 1f);
+
+            t.VisibleDuration.Should().BeLessThan(before);
+        }
+
+        [Fact]
+        public void ZoomAtPoint__WidensVisibleDuration__When__NegativeScroll()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            t.ZoomAtPoint(5.0, 1f); // zoom in first
+            var before = t.VisibleDuration;
+
+            t.ZoomAtPoint(5.0, -1f);
+
+            t.VisibleDuration.Should().BeGreaterThan(before);
+        }
+
+        [Fact]
+        public void Pan__ShiftsViewRange__When__PositiveDelta()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            t.ZoomAtPoint(5.0, 1f); // zoom in so there's room to pan
+            var startBefore = t.ViewStart;
+
+            t.Pan(50);
+
+            t.ViewStart.Should().BeGreaterThan(startBefore);
+        }
+
+        [Fact]
+        public void Pan__ClampsAtZero__When__PanningLeft()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+
+            t.Pan(-9999);
+
+            t.ViewStart.Should().BeGreaterThanOrEqualTo(0);
+        }
+
+        [Fact]
+        public void ScrubToPixel__FiresCameraEvaluation__When__ShotExists()
+        {
+            var t    = Create();
+            t.InitializeViewRange(500);
+            var fired = false;
+            t.CameraEvaluationRequested.Subscribe(_ => fired = true);
+
+            t.ScrubToPixel(100);
+
+            fired.Should().BeTrue();
+        }
+
+        // --- TogglePlayback at end ---
+
+        [Fact]
+        public void TogglePlayback__ResetsViewToStart__When__AtEnd()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            t.SetViewRange(0, 3.0);
+            // Move playhead to end
+            t.TogglePlayback();
+            t.Advance(999);
+
+            // Toggle again — should restart from 0
+            t.TogglePlayback();
+
+            t.Playhead.CurrentTime.Should().Be(0);
+            t.ViewStart.Should().Be(0);
+        }
+
+        // --- FindEdgeAtTime boundary ---
+
+        [Fact]
+        public void FindEdgeAtTime__ReturnsNegative__When__TimeBeforeAllShots()
+        {
+            var t = Create();
+
+            t.FindEdgeAtTime(-5.0, 0.1).Should().BeLessThan(0);
+        }
+
+        [Fact]
+        public void FindEdgeAtTime__ReturnsNegative__When__TimeFarFromEdge()
+        {
+            var t = Create();
+
+            t.FindEdgeAtTime(2.5, 0.1).Should().BeLessThan(0);
+        }
+
+        [Fact]
+        public void FindEdgeAtTime__ReturnsIndex__When__ExactlyOnEdge()
+        {
+            var t = Create();
+
+            t.FindEdgeAtTime(5.0, 0.0).Should().Be(0);
+        }
+
+        // --- ViewRange precise assertions ---
+
+        [Fact]
+        public void ZoomAtPoint__PreservesAnchorPosition__When__ZoomingIn()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            var anchorTime = 5.0;
+            var pxBefore   = t.TimeToPixel(anchorTime);
+
+            t.ZoomAtPoint(anchorTime, 1f);
+
+            // The anchor point should stay at roughly the same pixel position
+            var pxAfter = t.TimeToPixel(anchorTime);
+            pxAfter.Should().BeApproximately(pxBefore, 2.0);
+        }
+
+        [Fact]
+        public void Pan__MovesViewByCorrectAmount__When__Called()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            t.SetViewRange(0, 5.0); // 5s visible in 500px = 100px/s
+            var startBefore = t.ViewStart;
+
+            t.Pan(100); // 100px = 1s at 100px/s
+
+            (t.ViewStart - startBefore).Should().BeApproximately(1.0, 0.1);
+        }
+
+        [Fact]
+        public void TimeToPixel__RoundTrips__When__ConvertingBackAndForth()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            var originalTime = 3.0;
+
+            var px    = t.TimeToPixel(originalTime);
+            var back  = t.PixelToTime(px);
+
+            back.Should().BeApproximately(originalTime, 0.001);
+        }
+
+        [Fact]
+        public void EnsureVisible__DoesNotMove__When__TimeAlreadyVisible()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            var startBefore = t.ViewStart;
+            var endBefore   = t.ViewEnd;
+
+            t.EnsureVisible(5.0); // middle of the visible range
+
+            t.ViewStart.Should().Be(startBefore);
+            t.ViewEnd.Should().Be(endBefore);
+        }
+
+        [Fact]
+        public void SetViewRange__ClampsEnd__When__PastTotalDuration()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+
+            t.SetViewRange(5, 999);
+
+            t.ViewEnd.Should().BeLessOrEqualTo(t.TotalDuration);
+        }
+
+        [Fact]
+        public void SetViewRange__ClampsStart__When__Negative()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+
+            t.SetViewRange(-10, 5);
+
+            t.ViewStart.Should().BeGreaterThanOrEqualTo(0);
+        }
+
+        // --- Observables ---
+
+        [Fact]
+        public void ViewChanged__Fires__When__ZoomApplied()
+        {
+            var t    = Create();
+            t.InitializeViewRange(500);
+            var fired = false;
+            t.ViewChanged.Subscribe(_ => fired = true);
+
+            t.ZoomAtPoint(5.0, 1f);
+
+            fired.Should().BeTrue();
+        }
+
+        [Fact]
+        public void ViewChanged__Fires__When__Panned()
+        {
+            var t = Create();
+            t.InitializeViewRange(500);
+            t.ZoomAtPoint(5.0, 1f); // zoom in first
+            var fired = false;
+            t.ViewChanged.Subscribe(_ => fired = true);
+
+            t.Pan(50);
+
+            fired.Should().BeTrue();
+        }
+
+        [Fact]
+        public void ShotAdded__Fires__When__ShotAdded()
+        {
+            var t    = Create();
+            Shot added = null;
+            t.ShotAdded.Subscribe(s => added = s);
+
+            var shot = t.AddShot(Vector3.Zero, Quaternion.Identity);
+
+            added.Should().Be(shot);
+        }
+
+        // --- ShotTrack GetShotAtGlobalTime ---
+
+        [Fact]
+        public void GetShotAtGlobalTime__ReturnsNull__When__TimePastAllShots()
+        {
+            var t = Create();
+
+            var result = t.GetShotAtGlobalTime(new TimePosition(999.0));
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public void GetShotAtGlobalTime__ReturnsLastShot__When__ExactlyAtEnd()
+        {
+            var t = Create();
+
+            var result = t.GetShotAtGlobalTime(new TimePosition(t.TotalDuration));
+
+            result.Should().NotBeNull();
+            result.Value.shot.Should().Be(t.Shots[t.Count - 1]);
+        }
+
+        [Fact]
+        public void GetShotAtGlobalTime__ReturnsSecondShot__When__TimeInSecondShot()
+        {
+            var t = Create(); // Shot_01 (5s), Shot_02 (5s)
+
+            var result = t.GetShotAtGlobalTime(new TimePosition(7.0));
+
+            result.Should().NotBeNull();
+            result.Value.shot.Should().Be(t.Shots[1]);
+            result.Value.localTime.Seconds.Should().BeApproximately(2.0, 0.001);
+        }
+
+        // --- ResizeShotAtEdge ---
+
+        [Fact]
+        public void ResizeShotAtEdge__EnforcesMinDuration__When__ResizedToZero()
+        {
+            var t = Create();
+
+            var snapped = t.ResizeShotAtEdge(0, 0.0);
+
+            snapped.Should().BeGreaterThan(0);
+        }
+
+        // --- Advance stops correctly ---
+
+        [Fact]
+        public void Advance__ReturnsFalse__When__NotPlaying()
+        {
+            var t = Create();
+
+            t.Advance(1.0).Should().BeFalse();
+        }
+
+        [Fact]
+        public void Advance__ReturnsTrue__When__StillPlaying()
+        {
+            var t = Create();
+            t.TogglePlayback();
+
+            t.Advance(0.1).Should().BeTrue();
         }
     }
 }

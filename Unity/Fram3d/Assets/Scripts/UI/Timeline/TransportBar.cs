@@ -6,7 +6,7 @@ namespace Fram3d.UI.Timeline
     /// <summary>
     /// Transport bar: play/stop button, timecode display, shot name.
     /// </summary>
-    public sealed class TransportBarElement : VisualElement
+    public sealed class TransportBar : VisualElement
     {
         private const float HEIGHT = 28f;
 
@@ -15,7 +15,7 @@ namespace Fram3d.UI.Timeline
         private readonly Label  _shotLabel;
         private readonly Label  _timeLabel;
 
-        public TransportBarElement(Action onPlayClicked)
+        public TransportBar(Action onPlayClicked)
         {
             this.AddToClassList("timeline-transport");
             this.style.height = HEIGHT;

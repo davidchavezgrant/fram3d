@@ -6,7 +6,7 @@ namespace Fram3d.Engine.Integration
     /// The plane uses an analytical grid shader — no tiling textures.
     /// A flat BoxCollider enables selection raycasts: clicking the ground
     /// plane hits the collider but finds no ElementBehaviour, so the
-    /// existing SelectionRaycaster returns null and triggers deselect.
+    /// existing ElementPicker returns null and triggers deselect.
     /// </summary>
     public sealed class GroundPlane: MonoBehaviour
     {

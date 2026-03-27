@@ -29,7 +29,7 @@ namespace Fram3d.Tests.UI
     {
         private CameraBehaviour      _behaviour;
         private CameraElement        _cam;
-        private GizmoController      _gizmoController;
+        private GizmoBehaviour      _gizmoController;
         private GameObject           _go;
         private GameObject           _guideGo;
         private CompositionGuideView _guideView;
@@ -769,12 +769,12 @@ namespace Fram3d.Tests.UI
             this._guideView = this._guideGo.AddComponent<CompositionGuideView>();
             SetField(this._handler, "compositionGuides", this._guideView);
 
-            // Wire GizmoController for Q/W/E/R tests
-            var highlighter = this._go.AddComponent<SelectionHighlighter>();
-            this._gizmoController = this._go.AddComponent<GizmoController>();
-            SetField(this._gizmoController, "selectionHighlighter", highlighter);
+            // Wire GizmoBehaviour for Q/W/E/R tests
+            var highlighter = this._go.AddComponent<SelectionDisplay>();
+            this._gizmoController = this._go.AddComponent<GizmoBehaviour>();
+            SetField(this._gizmoController, "selectionDisplay", highlighter);
             SetField(this._gizmoController, "targetCamera",         this._go.GetComponent<Camera>());
-            SetField(this._handler,         "gizmoController",      this._gizmoController);
+            SetField(this._handler,         "gizmoBehaviour",      this._gizmoController);
         }
 
         [UnityTest]

@@ -11,7 +11,7 @@ namespace Fram3d.Engine.Integration
     /// instead of the material's own values. Clearing the block restores
     /// the original appearance.
     /// </summary>
-    public sealed class SelectionHighlighter: MonoBehaviour
+    public sealed class SelectionDisplay: MonoBehaviour
     {
         private static readonly int BASE_COLOR   = Shader.PropertyToID("_BaseColor");
         private static readonly int UNLIT_COLOR = Shader.PropertyToID("_Color");

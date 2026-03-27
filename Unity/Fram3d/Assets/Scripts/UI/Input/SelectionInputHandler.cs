@@ -29,20 +29,20 @@ namespace Fram3d.UI.Input
         private          ViewLayoutView _viewLayoutView;
 
         [SerializeField]
-        private GizmoController gizmoController;
+        private GizmoBehaviour gizmoBehaviour;
 
         [SerializeField]
-        private SelectionRaycaster raycaster;
+        private ElementPicker elementPicker;
 
         [SerializeField]
-        private SelectionHighlighter selectionHighlighter;
+        private SelectionDisplay selectionDisplay;
 
         [SerializeField]
         private ViewCameraManager viewCameraManager;
 
         public void Tick(Mouse mouse, Keyboard keyboard)
         {
-            if (this._selection == null || this.raycaster == null)
+            if (this._selection == null || this.elementPicker == null)
             {
                 return;
             }
@@ -64,7 +64,7 @@ namespace Fram3d.UI.Input
             if (this.IsPointerOverBlockingUI())
             {
                 this._selection?.ClearHover();
-                this.gizmoController?.ClearHover();
+                this.gizmoBehaviour?.ClearHover();
 
                 if (this._propertiesPanel != null && this._propertiesPanel.OwnsCustomCursor)
                 {
@@ -108,7 +108,7 @@ namespace Fram3d.UI.Input
         private void ClearInteractiveHover()
         {
             this._selection?.ClearHover();
-            this.gizmoController?.ClearHover();
+            this.gizmoBehaviour?.ClearHover();
             this.ResetCustomCursor();
         }
 
@@ -147,21 +147,21 @@ namespace Fram3d.UI.Input
                 return;
             }
 
-            CursorManager.ResetCursor();
+            CursorService.ResetCursor();
             this._cursorIsClosedHand = false;
             this._cursorIsPointer = false;
         }
 
         private void SetClosedHandCursor()
         {
-            CursorManager.SetCursor(CursorType.ClosedHand);
+            CursorService.SetCursor(CursorType.ClosedHand);
             this._cursorIsClosedHand = true;
             this._cursorIsPointer    = false;
         }
 
         private void SetPointerCursor()
         {
-            CursorManager.SetCursor(CursorType.Link);
+            CursorService.SetCursor(CursorType.Link);
             this._cursorIsClosedHand = false;
             this._cursorIsPointer    = true;
         }
@@ -170,9 +170,9 @@ namespace Fram3d.UI.Input
         {
             var overElement = this._selection?.HoveredId != null;
 
-            var overGizmo = this.gizmoController            != null
-                         && this.gizmoController.ActiveTool != ActiveTool.SELECT
-                         && this.gizmoController.IsHoveringHandle;
+            var overGizmo = this.gizmoBehaviour            != null
+                         && this.gizmoBehaviour.ActiveTool != ActiveTool.SELECT
+                         && this.gizmoBehaviour.IsHoveringHandle;
 
             var hasInteractiveHover = overElement || overGizmo;
 
@@ -212,27 +212,27 @@ namespace Fram3d.UI.Input
                     this.SetClosedHandCursor();
                 }
 
-                this.gizmoController.UpdateDrag(mousePosition);
+                this.gizmoBehaviour.UpdateDrag(mousePosition);
                 return;
             }
 
             // Mouse released — end drag
-            this.gizmoController.EndDrag();
+            this.gizmoBehaviour.EndDrag();
             this._isGizmoDragging = false;
             this.ResetCustomCursor();
         }
 
         private void UpdateGizmoHover(Vector2 mousePosition)
         {
-            if (this.gizmoController != null)
+            if (this.gizmoBehaviour != null)
             {
-                this.gizmoController.UpdateHover(mousePosition);
+                this.gizmoBehaviour.UpdateHover(mousePosition);
             }
         }
 
         private void UpdateHover(Vector2 mousePosition)
         {
-            var element = this.raycaster.Raycast(mousePosition);
+            var element = this.elementPicker.Raycast(mousePosition);
 
             if (element != null)
             {
@@ -272,7 +272,7 @@ namespace Fram3d.UI.Input
             // Gizmo handles take priority — check on press frame
             if (mouse.leftButton.wasPressedThisFrame && !cameraModifier)
             {
-                if (this.gizmoController != null && this.gizmoController.TryBeginDrag(mousePosition))
+                if (this.gizmoBehaviour != null && this.gizmoBehaviour.TryBeginDrag(mousePosition))
                 {
                     this._isGizmoDragging = true;
                     this.SetClosedHandCursor();
@@ -283,7 +283,7 @@ namespace Fram3d.UI.Input
 
             if (result.Kind == ClickResultKind.CLICK)
             {
-                var element = this.raycaster.Raycast(mousePosition);
+                var element = this.elementPicker.Raycast(mousePosition);
 
                 if (element != null)
                 {
@@ -298,9 +298,9 @@ namespace Fram3d.UI.Input
 
         private void Start()
         {
-            if (this.selectionHighlighter != null)
+            if (this.selectionDisplay != null)
             {
-                this._selection = this.selectionHighlighter.Selection;
+                this._selection = this.selectionDisplay.Selection;
             }
 
             this._propertiesPanel ??= FindAnyObjectByType<PropertiesPanelView>();
@@ -315,8 +315,8 @@ namespace Fram3d.UI.Input
             {
                 var mousePos = Mouse.current.position.ReadValue();
                 var cam      = this.viewCameraManager.GetUnityCameraAtPosition(mousePos);
-                this.raycaster?.SetCamera(cam);
-                this.gizmoController?.SetCamera(cam);
+                this.elementPicker?.SetCamera(cam);
+                this.gizmoBehaviour?.SetCamera(cam);
 
                 // Clicking an element activates that viewport
                 if (Mouse.current.leftButton.wasPressedThisFrame && !isPointerOverBlockingUI)

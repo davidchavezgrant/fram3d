@@ -25,7 +25,7 @@ namespace Fram3d.Engine.Integration
         private       DepthOfField     _dof;
         private       FrustumWireframe _frustumWireframe;
         private       float            _rightInsetPixels;
-        private       ShotController   _shotController;
+        private       ShotEvaluator   _shotController;
         private       Camera           _unityCamera;
         private       ViewMode         _viewMode = ViewMode.CAMERA;
 
@@ -246,7 +246,7 @@ namespace Fram3d.Engine.Integration
 
         private void Awake()
         {
-            this._shotController                    = FindAnyObjectByType<ShotController>();
+            this._shotController                    = FindAnyObjectByType<ShotEvaluator>();
             this._unityCamera                       = this.GetComponent<Camera>();
             this._cameraElement                     = new CameraElement(new ElementId(System.Guid.NewGuid()), "Main Camera");
             this._directorCamera                    = new CameraElement(new ElementId(System.Guid.NewGuid()), "Director Camera");

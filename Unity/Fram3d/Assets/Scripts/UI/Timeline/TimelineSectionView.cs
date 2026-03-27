@@ -1,9 +1,9 @@
 using System;
 using Fram3d.Core.Common;
 using Fram3d.Core.Timelines;
-using Fram3d.Engine.Cursor;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
+using Fram3d.UI.Views;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -16,40 +16,33 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class TimelineSectionView : MonoBehaviour
     {
-        private const float EDGE_HIT_PX    = 6f;
         private const float LABEL_COL_W    = 140f;
         private const float SECTION_HEIGHT = 320f;
 
         // ── References ──
         private Fram3d.Core.Timelines.Timeline _controller;
-        private ShotController     _shotController;
+        private ShotEvaluator                  _shotController;
 
         // ── UI root ──
         private VisualElement _root;
         private VisualElement _section;
 
         // ── Child components ──
-        private TransportBarElement _transport;
-        private RulerElement        _ruler;
-        private ZoomBarElement      _zoomBar;
-
-        // ── Shot strip elements ──
-        private VisualElement _shotTrackArea;
-        private VisualElement _shotTrackAreaPlayhead;
-        private VisualElement _shotTrackAreaOutOfRange;
-        private VisualElement _dropIndicator;
-        private Label         _totalLabel;
+        private Ruler          _ruler;
+        private ShotTrackStrip _shotTrackStrip;
+        private TransportBar   _transport;
+        private ZoomBar        _zoomBar;
 
         // ── Track area ──
         private VisualElement _trackContent;
-        private VisualElement _trackPlayhead;
         private VisualElement _trackOutOfRange;
+        private VisualElement _trackPlayhead;
 
         // ── Tooltips ──
-        private VisualElement _tooltip;
-        private Label         _tooltipText;
         private VisualElement _boundaryTooltip;
         private Label         _boundaryTooltipText;
+        private VisualElement _tooltip;
+        private Label         _tooltipText;
 
         // ── Visibility ──
         private bool _visible = true;
@@ -107,7 +100,7 @@ namespace Fram3d.UI.Timeline
 
         private void Start()
         {
-            this._shotController = FindAnyObjectByType<ShotController>();
+            this._shotController = FindAnyObjectByType<ShotEvaluator>();
 
             if (this._shotController == null)
             {
@@ -128,12 +121,12 @@ namespace Fram3d.UI.Timeline
             this.BuildLayout();
 
             // Subscribe to rebuilds
-            this._controller.ShotAdded.Subscribe(_ => this.RebuildShotBlocks());
-            this._controller.ShotRemoved.Subscribe(_ => this.RebuildShotBlocks());
-            this._controller.Reordered.Subscribe(_ => this.RebuildShotBlocks());
-            this._controller.CurrentShotChanged.Subscribe(_ => this.UpdateActiveStates());
+            this._controller.ShotAdded.Subscribe(_ => this._shotTrackStrip.RebuildBlocks());
+            this._controller.ShotRemoved.Subscribe(_ => this._shotTrackStrip.RebuildBlocks());
+            this._controller.Reordered.Subscribe(_ => this._shotTrackStrip.RebuildBlocks());
+            this._controller.CurrentShotChanged.Subscribe(_ => this._shotTrackStrip.UpdateActiveStates());
 
-            this.RebuildShotBlocks();
+            this._shotTrackStrip.RebuildBlocks();
         }
 
         private void Update()
@@ -169,99 +162,68 @@ namespace Fram3d.UI.Timeline
             this._section.AddToClassList("timeline-section");
             this._section.style.height = SECTION_HEIGHT;
 
-            this._transport = new TransportBarElement(this.TogglePlayback);
+            this._transport = new TransportBar(this.TogglePlayback);
             this._section.Add(this._transport);
 
-            this._ruler = new RulerElement();
+            this._ruler = new Ruler();
             this._ruler.ScrubRequested += this.OnScrub;
             this._ruler.RegisterScrubCallbacks();
             this._ruler.Content.RegisterCallback<WheelEvent>(this.OnWheel);
             this._section.Add(this._ruler);
 
-            this.BuildShotTrack();
+            this._shotTrackStrip = new ShotTrackStrip();
+            this._shotTrackStrip.AddShotRequested += this.OnAddShot;
+            this._shotTrackStrip.BoundaryDragEnded += () =>
+                this._boundaryTooltip.style.display = DisplayStyle.None;
+            this._shotTrackStrip.BoundaryDragStarted += () =>
+                this._boundaryTooltip.style.display = DisplayStyle.Flex;
+            this._shotTrackStrip.ShotHoverEnded += () =>
+                this._tooltip.style.display = DisplayStyle.None;
+            this._shotTrackStrip.ShotHoverStarted += shot =>
+            {
+                this._tooltipText.text      = this._controller.FormatShotTooltip(shot);
+                this._tooltip.style.display = DisplayStyle.Flex;
+            };
+            this._shotTrackStrip.TrackAreaResized += w =>
+            {
+                this._controller.InitializeViewRange(w);
+                this.SyncVisuals();
+                this.UpdateBottomInset();
+            };
+            this._shotTrackStrip.TrackArea.RegisterCallback<WheelEvent>(this.OnWheel);
+            this._shotTrackStrip.Bind(this._controller);
+            this._section.Add(this._shotTrackStrip);
+
             this.BuildTrackArea();
 
-            this._zoomBar = new ZoomBarElement();
+            this._zoomBar = new ZoomBar();
             this._zoomBar.PanRequested += px => { this._controller.Pan(px); };
             this._zoomBar.RegisterDragCallbacks();
             this._section.Add(this._zoomBar);
 
             this.BuildTooltips();
             this._root.Add(this._section);
-
-            this._shotTrackArea.RegisterCallback<GeometryChangedEvent>(_ =>
-            {
-                var w = this._shotTrackArea.resolvedStyle.width;
-
-                if (!float.IsNaN(w) && w > 0)
-                {
-                    this._controller.InitializeViewRange(w);
-                    this.SyncVisuals();
-                    this.UpdateBottomInset();
-                }
-            });
         }
 
-        private void BuildShotTrack()
+        private void BuildTooltips()
         {
-            var row = new VisualElement();
-            row.AddToClassList("timeline-shot-row");
+            this._tooltip = new VisualElement();
+            this._tooltip.AddToClassList("shot-tooltip");
+            this._tooltip.style.display = DisplayStyle.None;
+            this._tooltip.pickingMode   = PickingMode.Ignore;
+            this._tooltipText           = new Label();
+            this._tooltipText.AddToClassList("shot-tooltip__text");
+            this._tooltip.Add(this._tooltipText);
+            this._root.Add(this._tooltip);
 
-            var labelCol = new VisualElement();
-            labelCol.AddToClassList("timeline-label-column");
-
-            var titleRow = new VisualElement();
-            titleRow.style.flexDirection = FlexDirection.Row;
-            titleRow.style.alignItems    = Align.Center;
-
-            var title = new Label("SHOTS");
-            title.AddToClassList("timeline-label-column__title");
-            titleRow.Add(title);
-
-            var addBtn = new Button(() =>
-            {
-                var cam = FindAnyObjectByType<CameraBehaviour>();
-
-                if (cam != null)
-                {
-                    this._controller.AddShot(cam.ShotCamera.Position, cam.ShotCamera.Rotation);
-                }
-            });
-            addBtn.text = "+";
-            addBtn.AddToClassList("timeline-shot__add-button");
-            titleRow.Add(addBtn);
-            labelCol.Add(titleRow);
-
-            this._totalLabel = new Label("Total: 0.0s");
-            this._totalLabel.AddToClassList("timeline-label-column__subtitle");
-            labelCol.Add(this._totalLabel);
-            row.Add(labelCol);
-
-            this._shotTrackArea = new VisualElement();
-            this._shotTrackArea.AddToClassList("timeline-shot-strip");
-            row.Add(this._shotTrackArea);
-
-            this._shotTrackArea.RegisterCallback<WheelEvent>(this.OnWheel);
-            this._shotTrackArea.RegisterCallback<PointerDownEvent>(this.OnStripDown);
-            this._shotTrackArea.RegisterCallback<PointerMoveEvent>(this.OnStripMove);
-            this._shotTrackArea.RegisterCallback<PointerUpEvent>(this.OnStripUp);
-
-            this._dropIndicator = new VisualElement();
-            this._dropIndicator.AddToClassList("shot-track__drop-indicator");
-            this._dropIndicator.style.display = DisplayStyle.None;
-            this._shotTrackArea.Add(this._dropIndicator);
-
-            this._shotTrackAreaPlayhead = new VisualElement();
-            this._shotTrackAreaPlayhead.AddToClassList("timeline-playhead");
-            this._shotTrackAreaPlayhead.style.display = DisplayStyle.None;
-            this._shotTrackArea.Add(this._shotTrackAreaPlayhead);
-
-            this._shotTrackAreaOutOfRange = new VisualElement();
-            this._shotTrackAreaOutOfRange.AddToClassList("timeline-out-of-range");
-            this._shotTrackAreaOutOfRange.pickingMode = PickingMode.Ignore;
-            this._shotTrackArea.Add(this._shotTrackAreaOutOfRange);
-
-            this._section.Add(row);
+            this._boundaryTooltip = new VisualElement();
+            this._boundaryTooltip.AddToClassList("boundary-tooltip");
+            this._boundaryTooltip.style.display = DisplayStyle.None;
+            this._boundaryTooltip.pickingMode   = PickingMode.Ignore;
+            this._boundaryTooltipText           = new Label();
+            this._boundaryTooltipText.AddToClassList("boundary-tooltip__text");
+            this._boundaryTooltip.Add(this._boundaryTooltipText);
+            this._root.Add(this._boundaryTooltip);
         }
 
         private void BuildTrackArea()
@@ -291,36 +253,13 @@ namespace Fram3d.UI.Timeline
             this._section.Add(row);
         }
 
-        private void BuildTooltips()
-        {
-            this._tooltip = new VisualElement();
-            this._tooltip.AddToClassList("shot-tooltip");
-            this._tooltip.style.display = DisplayStyle.None;
-            this._tooltip.pickingMode   = PickingMode.Ignore;
-            this._tooltipText           = new Label();
-            this._tooltipText.AddToClassList("shot-tooltip__text");
-            this._tooltip.Add(this._tooltipText);
-            this._root.Add(this._tooltip);
-
-            this._boundaryTooltip = new VisualElement();
-            this._boundaryTooltip.AddToClassList("boundary-tooltip");
-            this._boundaryTooltip.style.display = DisplayStyle.None;
-            this._boundaryTooltip.pickingMode   = PickingMode.Ignore;
-            this._boundaryTooltipText           = new Label();
-            this._boundaryTooltipText.AddToClassList("boundary-tooltip__text");
-            this._boundaryTooltip.Add(this._boundaryTooltipText);
-            this._root.Add(this._boundaryTooltip);
-        }
-
         // ══════════════════════════════════════════════════════════════════
         // Visual sync (reads controller state, positions elements)
         // ══════════════════════════════════════════════════════════════════
 
         private void SyncVisuals()
         {
-            var state = this._controller;
-
-            if (state == null)
+            if (this._controller == null)
             {
                 return;
             }
@@ -329,34 +268,21 @@ namespace Fram3d.UI.Timeline
             var px    = (float)this._controller.PlayheadPixel;
             var endPx = (float)this._controller.OutOfRangeStartPixel;
 
-            // Shot blocks
-            this.UpdateShotBlockPositions();
+            // Shot track strip (blocks, playhead, out-of-range, total, drop indicator)
+            this._shotTrackStrip.SyncVisuals();
 
-            // Playheads
-            this.SetPlayhead(this._shotTrackAreaPlayhead, px);
+            // Track area
             this.SetPlayhead(this._trackPlayhead, px);
-            this._ruler.UpdatePlayhead(state, this._controller.Playhead.CurrentTime);
-
-            // Out-of-range
-            this.SetOutOfRange(this._shotTrackAreaOutOfRange, endPx);
             this.SetOutOfRange(this._trackOutOfRange, endPx);
-            this._ruler.UpdateOutOfRange(state, total);
 
             // Ruler + zoom + transport
-            this._ruler.UpdateTicks(state, total);
-            this._zoomBar.UpdateThumb(state, total);
+            this._ruler.UpdatePlayhead(this._controller, this._controller.Playhead.CurrentTime);
+            this._ruler.UpdateOutOfRange(this._controller, total);
+            this._ruler.UpdateTicks(this._controller, total);
+            this._zoomBar.UpdateThumb(this._controller, total);
             this._transport.UpdateTransport(
                 this._controller.Playhead,
                 this._controller);
-            this._totalLabel.text = $"Total: {total:F1}s";
-
-            // Drop indicator
-            if (this._controller.IsDragging)
-            {
-                this._dropIndicator.style.display = DisplayStyle.Flex;
-                var targetPx = this.ComputeDropIndicatorPx();
-                this._dropIndicator.style.left = targetPx;
-            }
 
             // Boundary tooltip
             if (this._controller.IsBoundaryDragging)
@@ -373,12 +299,6 @@ namespace Fram3d.UI.Timeline
             }
         }
 
-        private void SetPlayhead(VisualElement el, float px)
-        {
-            el.style.display = DisplayStyle.Flex;
-            el.style.left    = px;
-        }
-
         private void SetOutOfRange(VisualElement el, float endPx)
         {
             el.style.position = Position.Absolute;
@@ -389,190 +309,30 @@ namespace Fram3d.UI.Timeline
             el.style.display  = endPx >= 0 ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
-        // ══════════════════════════════════════════════════════════════════
-        // Shot blocks
-        // ══════════════════════════════════════════════════════════════════
-
-        private void RebuildShotBlocks()
+        private void SetPlayhead(VisualElement el, float px)
         {
-            // Remove all shot block children (keep playhead, out-of-range, drop indicator)
-            for (var i = this._shotTrackArea.childCount - 1; i >= 0; i--)
-            {
-                var child = this._shotTrackArea[i];
-
-                if (child != this._dropIndicator
-                 && child != this._shotTrackAreaPlayhead
-                 && child != this._shotTrackAreaOutOfRange)
-                {
-                    child.RemoveFromHierarchy();
-                }
-            }
-
-            var shots = this._controller.Shots;
-
-            for (var i = 0; i < shots.Count; i++)
-            {
-                var shot  = shots[i];
-                var block = new ShotBlockElement(shot, i);
-
-                block.RegisterCallback<PointerEnterEvent>(_ =>
-                {
-                    this._tooltipText.text      = this._controller.FormatShotTooltip(shot);
-                    this._tooltip.style.display = DisplayStyle.Flex;
-                });
-                block.RegisterCallback<PointerLeaveEvent>(_ =>
-                    this._tooltip.style.display = DisplayStyle.None);
-                block.RegisterCallback<ContextualMenuPopulateEvent>(evt =>
-                {
-                    evt.menu.AppendAction("Delete Shot", _ =>
-                        this._controller.RemoveShot(shot.Id));
-                });
-
-                this._shotTrackArea.Insert(this._shotTrackArea.childCount - 3, block);
-            }
-
-            this._shotTrackAreaPlayhead.BringToFront();
-            this._shotTrackAreaOutOfRange.BringToFront();
-
-            this.UpdateActiveStates();
-        }
-
-        private void UpdateActiveStates()
-        {
-            var current = this._controller.CurrentShot;
-
-            for (var i = 0; i < this._shotTrackArea.childCount; i++)
-            {
-                if (this._shotTrackArea[i] is ShotBlockElement block)
-                {
-                    block.SetActive(block.Shot == current);
-                }
-            }
-        }
-
-        private void UpdateShotBlockPositions()
-        {
-            var state = this._controller;
-
-            if (state == null)
-            {
-                return;
-            }
-
-            var runningTime = 0.0;
-
-            for (var i = 0; i < this._shotTrackArea.childCount; i++)
-            {
-                if (this._shotTrackArea[i] is not ShotBlockElement block)
-                {
-                    continue;
-                }
-
-                var startPx = state.TimeToPixel(runningTime);
-                var endPx   = state.TimeToPixel(runningTime + block.Shot.Duration);
-                var widthPx = Math.Max(endPx - startPx, 4.0);
-
-                block.style.position = Position.Absolute;
-                block.style.left     = (float)startPx;
-                block.style.width    = (float)widthPx;
-                block.style.top      = 0;
-                block.style.bottom   = 0;
-                block.Refresh();
-
-                runningTime += block.Shot.Duration;
-            }
-        }
-
-        private float ComputeDropIndicatorPx()
-        {
-            var targetIndex = this._controller.DragTargetIndex;
-            var state       = this._controller;
-
-            if (state == null)
-            {
-                return 0;
-            }
-
-            var runningTime = 0.0;
-            var shots       = this._controller.Shots;
-
-            for (var i = 0; i < targetIndex && i < shots.Count; i++)
-            {
-                runningTime += shots[i].Duration;
-            }
-
-            return (float)state.TimeToPixel(runningTime);
+            el.style.display = DisplayStyle.Flex;
+            el.style.left    = px;
         }
 
         // ══════════════════════════════════════════════════════════════════
         // Event forwarding → Controller
         // ══════════════════════════════════════════════════════════════════
 
+        private void OnAddShot()
+        {
+            var cam = FindAnyObjectByType<CameraBehaviour>();
+
+            if (cam != null)
+            {
+                this._controller.AddShot(cam.ShotCamera.Position, cam.ShotCamera.Rotation);
+            }
+        }
+
         private void OnScrub(float px)
         {
             this._controller.BeginScrub();
             this._controller.ScrubToPixel(px);
-        }
-
-        private void OnStripDown(PointerDownEvent evt)
-        {
-            if (evt.button == 0)
-            {
-                var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var result = this._controller.ShotTrackPointerDown(evt.localPosition.x, now);
-
-                if (result == ShotTrackAction.BOUNDARY_DRAG)
-                {
-                    this._boundaryTooltip.style.display = DisplayStyle.Flex;
-                    this._shotTrackArea.CapturePointer(evt.pointerId);
-                    evt.StopPropagation();
-                }
-            }
-            else if (evt.button == 2)
-            {
-                evt.StopPropagation();
-            }
-        }
-
-        private void OnStripMove(PointerMoveEvent evt)
-        {
-            var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var result = this._controller.ShotTrackPointerMove(evt.localPosition.x, now);
-
-            if (result == ShotTrackAction.NEAR_EDGE)
-            {
-                CursorManager.SetCursor(CursorType.ResizeHorizontal);
-            }
-            else if (result == ShotTrackAction.NONE && !this._controller.IsBoundaryDragging)
-            {
-                CursorManager.ResetCursor();
-            }
-        }
-
-        private void OnStripUp(PointerUpEvent evt)
-        {
-            if (evt.button != 0)
-            {
-                return;
-            }
-
-            var result = this._controller.ShotTrackPointerUp();
-
-            if (result == ShotTrackAction.BOUNDARY_COMPLETE)
-            {
-                this._boundaryTooltip.style.display = DisplayStyle.None;
-                CursorManager.ResetCursor();
-            }
-
-            if (result == ShotTrackAction.DRAG_COMPLETE)
-            {
-                this._dropIndicator.style.display = DisplayStyle.None;
-            }
-
-            if (this._shotTrackArea.HasPointerCapture(evt.pointerId))
-            {
-                this._shotTrackArea.ReleasePointer(evt.pointerId);
-            }
         }
 
         private void OnWheel(WheelEvent evt)
@@ -649,20 +409,12 @@ namespace Fram3d.UI.Timeline
 
         private void UpdateBottomInset()
         {
-            if (this._shotController == null)
+            if (this._shotController == null || this._root == null)
             {
                 return;
             }
 
-            var rootW = this._root?.resolvedStyle.width ?? 0f;
-            var scale = 1f;
-
-            if (rootW > 0)
-            {
-                scale = Screen.width / rootW;
-            }
-
-            this._shotController.SetBottomInset(SECTION_HEIGHT * scale);
+            this._shotController.SetBottomInset(ViewportScope.CssToScreen(this._root, SECTION_HEIGHT));
         }
     }
 }

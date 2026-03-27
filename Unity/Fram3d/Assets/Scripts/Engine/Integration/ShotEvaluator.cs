@@ -10,7 +10,7 @@ namespace Fram3d.Engine.Integration
     /// Bridges the Timeline to the Unity scene. Creates a default
     /// shot on start. Routes camera evaluation requests to CameraBehaviour.
     /// </summary>
-    public sealed class ShotController : MonoBehaviour
+    public sealed class ShotEvaluator : MonoBehaviour
     {
         private float           _bottomInsetPixels;
         private CameraBehaviour _cameraBehaviour;
@@ -66,7 +66,7 @@ namespace Fram3d.Engine.Integration
 
             if (this._cameraBehaviour == null)
             {
-                Debug.LogWarning("ShotController: No CameraBehaviour found.");
+                Debug.LogWarning("ShotEvaluator: No CameraBehaviour found.");
                 return;
             }
 

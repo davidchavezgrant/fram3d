@@ -20,7 +20,7 @@ namespace Fram3d.Engine.Cursor
         private static void Setup()
         {
             var service = new UnityCursorService();
-            CursorManager.SetService(service);
+            CursorService.SetService(service);
         }
 
         public bool SetCursor(CursorType cursor)

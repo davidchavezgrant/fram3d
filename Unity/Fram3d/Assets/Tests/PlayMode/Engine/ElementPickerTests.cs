@@ -7,24 +7,24 @@ using UnityEngine.TestTools;
 namespace Fram3d.Tests.Engine
 {
     /// <summary>
-    /// Play Mode tests for SelectionRaycaster. Verifies physics raycasting
+    /// Play Mode tests for ElementPicker. Verifies physics raycasting
     /// resolves to the correct Element, including compound element detection
     /// via GetComponentInParent.
     /// </summary>
-    public sealed class SelectionRaycasterTests
+    public sealed class ElementPickerTests
     {
         private Camera             _camera;
         private GameObject         _cameraGo;
         private GameObject         _cube;
         private List<GameObject>   _extras;
-        private SelectionRaycaster _raycaster;
+        private ElementPicker _raycaster;
 
         [UnityTest]
         public IEnumerator Raycast__IgnoresGizmoLayer__When__ObjectOnGizmoLayer()
         {
             var gizmoObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
             gizmoObj.name               = "GizmoHandle";
-            gizmoObj.layer              = GizmoController.GIZMO_LAYER_INDEX;
+            gizmoObj.layer              = GizmoBehaviour.GIZMO_LAYER_INDEX;
             gizmoObj.transform.position = new Vector3(0f, 0f, 3f);
             gizmoObj.AddComponent<ElementBehaviour>();
             this._extras.Add(gizmoObj);
@@ -35,7 +35,7 @@ namespace Fram3d.Tests.Engine
 
             var screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
             var element      = this._raycaster.Raycast(screenCenter);
-            Assert.IsNull(element, "Objects on the Gizmo layer should be ignored by SelectionRaycaster");
+            Assert.IsNull(element, "Objects on the Gizmo layer should be ignored by ElementPicker");
         }
 
         [UnityTest]
@@ -104,9 +104,9 @@ namespace Fram3d.Tests.Engine
             this._camera                      = this._cameraGo.AddComponent<Camera>();
             this._cameraGo.transform.position = new Vector3(0f, 0f, 0f);
             this._cameraGo.transform.rotation = Quaternion.identity;
-            this._raycaster                   = this._cameraGo.AddComponent<SelectionRaycaster>();
+            this._raycaster                   = this._cameraGo.AddComponent<ElementPicker>();
 
-            var field = typeof(SelectionRaycaster).GetField("targetCamera",
+            var field = typeof(ElementPicker).GetField("targetCamera",
                                                             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             field.SetValue(this._raycaster, this._camera);

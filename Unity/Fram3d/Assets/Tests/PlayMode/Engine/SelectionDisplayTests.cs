@@ -7,17 +7,17 @@ using UnityEngine.TestTools;
 namespace Fram3d.Tests.Engine
 {
     /// <summary>
-    /// Play Mode tests for SelectionHighlighter. Verifies that
+    /// Play Mode tests for SelectionDisplay. Verifies that
     /// MaterialPropertyBlock color overrides are applied and removed
     /// correctly on renderers — does NOT re-test Selection domain
     /// logic (covered by xUnit).
     /// </summary>
-    public sealed class SelectionHighlighterTests
+    public sealed class SelectionDisplayTests
     {
         private static readonly int                  BASE_COLOR = Shader.PropertyToID("_BaseColor");
         private                 GameObject           _cube;
         private                 List<GameObject>     _extras;
-        private                 SelectionHighlighter _highlighter;
+        private                 SelectionDisplay _highlighter;
         private                 GameObject           _highlighterGo;
 
         [UnityTest]
@@ -215,7 +215,7 @@ namespace Fram3d.Tests.Engine
             this._cube.name = "TestCube";
             this._cube.AddComponent<ElementBehaviour>();
             this._highlighterGo = new GameObject("Highlighter");
-            this._highlighter   = this._highlighterGo.AddComponent<SelectionHighlighter>();
+            this._highlighter   = this._highlighterGo.AddComponent<SelectionDisplay>();
         }
 
         [TearDown]

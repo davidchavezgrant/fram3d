@@ -28,7 +28,7 @@ namespace Fram3d.Tests.UI
         private GameObject            _cameraGo;
         private GameObject            _cube;
         private SelectionInputHandler _handler;
-        private SelectionHighlighter  _highlighter;
+        private SelectionDisplay  _highlighter;
         private Keyboard              _keyboard;
         private Mouse                 _mouse;
 
@@ -458,12 +458,12 @@ namespace Fram3d.Tests.UI
             var camera = this._cameraGo.AddComponent<Camera>();
             this._cameraGo.transform.position = Vector3.zero;
             this._cameraGo.transform.rotation = Quaternion.identity;
-            var raycaster = this._cameraGo.AddComponent<SelectionRaycaster>();
+            var raycaster = this._cameraGo.AddComponent<ElementPicker>();
             SetField(raycaster, "targetCamera", camera);
-            this._highlighter = this._cameraGo.AddComponent<SelectionHighlighter>();
+            this._highlighter = this._cameraGo.AddComponent<SelectionDisplay>();
             this._handler     = this._cameraGo.AddComponent<SelectionInputHandler>();
-            SetField(this._handler, "selectionHighlighter", this._highlighter);
-            SetField(this._handler, "raycaster",            raycaster);
+            SetField(this._handler, "selectionDisplay", this._highlighter);
+            SetField(this._handler, "elementPicker",            raycaster);
             this._cube                    = GameObject.CreatePrimitive(PrimitiveType.Cube);
             this._cube.name               = "TestCube";
             this._cube.transform.position = new Vector3(0f, 0f, 5f);

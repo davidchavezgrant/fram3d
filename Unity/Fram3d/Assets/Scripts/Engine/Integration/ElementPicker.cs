@@ -8,7 +8,7 @@ namespace Fram3d.Engine.Integration
     /// are resolved by walking up the transform hierarchy to find the
     /// nearest ElementBehaviour.
     /// </summary>
-    public sealed class SelectionRaycaster: MonoBehaviour
+    public sealed class ElementPicker: MonoBehaviour
     {
         private const float MAX_RAYCAST_DISTANCE = 1000f;
 

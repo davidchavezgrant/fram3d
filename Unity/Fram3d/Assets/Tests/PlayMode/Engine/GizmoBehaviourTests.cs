@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 namespace Fram3d.Tests.Engine
 {
     /// <summary>
-    /// Play Mode tests for GizmoController. Verifies tool switching,
+    /// Play Mode tests for GizmoBehaviour. Verifies tool switching,
     /// show/hide based on selection, and drag guard conditions.
     ///
     /// Important lifecycle detail: LateUpdate resets the tool to TRANSLATE
@@ -18,13 +18,13 @@ namespace Fram3d.Tests.Engine
     /// 2. THEN set the desired tool
     /// 3. Call the method under test WITHOUT yielding again
     /// </summary>
-    public sealed class GizmoControllerTests
+    public sealed class GizmoBehaviourTests
     {
         private GameObject           _cameraGo;
-        private GizmoController      _controller;
+        private GizmoBehaviour      _controller;
         private GameObject           _cube;
         private List<GameObject>     _extras;
-        private SelectionHighlighter _highlighter;
+        private SelectionDisplay _highlighter;
 
         [UnityTest]
         public IEnumerator LateUpdate__HidesGizmo__When__NothingSelected()
@@ -99,9 +99,9 @@ namespace Fram3d.Tests.Engine
             this._extras   = new List<GameObject>();
             this._cameraGo = new GameObject("TestCamera");
             this._cameraGo.AddComponent<Camera>();
-            this._highlighter = this._cameraGo.AddComponent<SelectionHighlighter>();
-            this._controller  = this._cameraGo.AddComponent<GizmoController>();
-            SetField(this._controller, "selectionHighlighter", this._highlighter);
+            this._highlighter = this._cameraGo.AddComponent<SelectionDisplay>();
+            this._controller  = this._cameraGo.AddComponent<GizmoBehaviour>();
+            SetField(this._controller, "selectionDisplay", this._highlighter);
             SetField(this._controller, "targetCamera",         this._cameraGo.GetComponent<Camera>());
             this._cube                    = GameObject.CreatePrimitive(PrimitiveType.Cube);
             this._cube.name               = "TestCube";

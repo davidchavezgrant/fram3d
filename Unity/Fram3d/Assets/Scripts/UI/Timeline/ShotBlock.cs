@@ -7,14 +7,14 @@ namespace Fram3d.UI.Timeline
     /// VisualElement representing a single shot block in the shot track strip.
     /// Displays the shot name and duration. Colored based on palette index.
     /// </summary>
-    public sealed class ShotBlockElement : VisualElement
+    public sealed class ShotBlock : VisualElement
     {
         private readonly Color _baseColor;
         private readonly Label _durationLabel;
         private          bool  _isEditing;
         private readonly Label _nameLabel;
 
-        public ShotBlockElement(Shot shot, int colorIndex)
+        public ShotBlock(Shot shot, int colorIndex)
         {
             this.Shot       = shot;
             this._baseColor = ShotColorPalette.GetColor(colorIndex);
@@ -39,7 +39,7 @@ namespace Fram3d.UI.Timeline
         /// <summary>
         /// Fired when the duration label is clicked (to trigger inline editing).
         /// </summary>
-        public event System.Action<ShotBlockElement> DurationClicked;
+        public event System.Action<ShotBlock> DurationClicked;
 
         public bool IsEditing => this._isEditing;
 

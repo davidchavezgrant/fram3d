@@ -179,12 +179,22 @@ namespace Fram3d.UI.Timeline
             return (float)this._controller.TimeToPixel(runningTime);
         }
 
+        /// <summary>
+        /// Converts panel-space position to track-area-local x. This is
+        /// critical: evt.localPosition is relative to the event TARGET
+        /// (e.g. a ShotBlock child), not the element the callback is on.
+        /// Using WorldToLocal guarantees correct coordinates regardless
+        /// of which child element was the original target.
+        /// </summary>
+        private float TrackLocalX(IPointerEvent evt) =>
+            this._trackArea.WorldToLocal(evt.position).x;
+
         private void OnPointerDown(PointerDownEvent evt)
         {
             if (evt.button == 0)
             {
                 var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var result = this._controller.ShotTrackPointerDown(evt.localPosition.x, now);
+                var result = this._controller.ShotTrackPointerDown(this.TrackLocalX(evt), now);
 
                 // Capture pointer for all left-button interactions so drag
                 // continues when the pointer moves outside the strip vertically.
@@ -206,7 +216,7 @@ namespace Fram3d.UI.Timeline
         private void OnPointerMove(PointerMoveEvent evt)
         {
             var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var result = this._controller.ShotTrackPointerMove(evt.localPosition.x, now);
+            var result = this._controller.ShotTrackPointerMove(this.TrackLocalX(evt), now);
 
             if (result == ShotTrackAction.NEAR_EDGE)
             {

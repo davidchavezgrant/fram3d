@@ -6,14 +6,17 @@ namespace Fram3d.UI.Views
 {
     /// <summary>
     /// Sequence-global timecode overlay. Large, white, centered at the bottom
-    /// of the view area (above the timeline). Always visible when shots exist.
-    /// Updates every frame during playback and on scrub.
+    /// of the view area. Uses ViewportScope to stay within the 3D view panel
+    /// regardless of split layout or properties panel width.
     /// </summary>
     public sealed class SequenceTimecodeOverlay: MonoBehaviour
     {
+        private CameraBehaviour _cameraBehaviour;
+        private VisualElement   _container;
         private Fram3d.Core.Timelines.Timeline _controller;
         private Label                          _label;
-        private ShotEvaluator                  _shotEvaluator;
+        private VisualElement                  _root;
+        private ViewCameraManager              _viewCameraManager;
 
         public static string FormatTimecode(double seconds, int fps)
         {
@@ -29,14 +32,17 @@ namespace Fram3d.UI.Views
 
         private void Start()
         {
-            this._shotEvaluator = FindAnyObjectByType<ShotEvaluator>();
+            var shotEvaluator = FindAnyObjectByType<ShotEvaluator>();
 
-            if (this._shotEvaluator == null)
+            if (shotEvaluator == null)
             {
                 return;
             }
 
-            this._controller = this._shotEvaluator.Controller;
+            this._controller       = shotEvaluator.Controller;
+            this._cameraBehaviour  = FindAnyObjectByType<CameraBehaviour>();
+            this._viewCameraManager = FindAnyObjectByType<ViewCameraManager>();
+
             var uiDoc = this.GetComponent<UIDocument>();
 
             if (uiDoc?.rootVisualElement == null)
@@ -44,30 +50,30 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            var root = uiDoc.rootVisualElement;
-            root.pickingMode           = PickingMode.Ignore;
-            root.style.position        = Position.Absolute;
-            root.style.left            = 0;
-            root.style.right           = 0;
-            root.style.top             = 0;
-            root.style.bottom          = 0;
+            this._root = uiDoc.rootVisualElement;
+            this._root.pickingMode = PickingMode.Ignore;
+
+            this._container             = new VisualElement();
+            this._container.pickingMode = PickingMode.Ignore;
+            this._container.style.position       = Position.Absolute;
+            this._container.style.justifyContent = Justify.FlexEnd;
+            this._container.style.alignItems     = Align.Center;
+            this._root.Add(this._container);
 
             this._label                               = new Label();
             this._label.pickingMode                   = PickingMode.Ignore;
-            this._label.style.position                = Position.Absolute;
-            this._label.style.left                    = 0;
-            this._label.style.right                   = 0;
             this._label.style.color                   = Color.white;
             this._label.style.fontSize                = 16;
             this._label.style.unityFontStyleAndWeight = FontStyle.Bold;
-            this._label.style.unityTextAlign          = TextAnchor.LowerCenter;
+            this._label.style.unityTextAlign          = TextAnchor.MiddleCenter;
+            this._label.style.marginBottom            = 8;
             this._label.style.textShadow              = new TextShadow
             {
                 offset     = new Vector2(1, 1),
                 blurRadius = 3,
                 color      = new Color(0, 0, 0, 0.9f)
             };
-            root.Add(this._label);
+            this._container.Add(this._label);
         }
 
         private void Update()
@@ -79,21 +85,16 @@ namespace Fram3d.UI.Views
 
             if (this._controller.Count == 0)
             {
-                this._label.style.display = DisplayStyle.None;
+                this._container.style.display = DisplayStyle.None;
                 return;
             }
 
-            // Convert screen-pixel inset to CSS pixels for UI Toolkit positioning
-            var root         = this._label.panel?.visualTree;
-            var cssScale     = root != null && root.resolvedStyle.width > 0
-                ? Screen.width / root.resolvedStyle.width
-                : 1f;
-            var bottomCss    = this._shotEvaluator.BottomInsetPixels / cssScale;
-            this._label.style.bottom = bottomCss + 8;
+            this._container.style.display = DisplayStyle.Flex;
+            var rightInset = this._cameraBehaviour != null ? this._cameraBehaviour.RightInsetPixels : 0f;
+            ViewportScope.Apply(this._container, this._root, this._viewCameraManager, rightInset);
 
             var fps = (int)this._controller.FrameRate.Fps;
-            this._label.text          = FormatTimecode(this._controller.Playhead.CurrentTime, fps);
-            this._label.style.display = DisplayStyle.Flex;
+            this._label.text = FormatTimecode(this._controller.Playhead.CurrentTime, fps);
         }
     }
 }

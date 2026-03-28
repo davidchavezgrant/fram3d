@@ -39,8 +39,8 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            this._controller       = shotEvaluator.Controller;
-            this._cameraBehaviour  = FindAnyObjectByType<CameraBehaviour>();
+            this._controller        = shotEvaluator.Controller;
+            this._cameraBehaviour   = FindAnyObjectByType<CameraBehaviour>();
             this._viewCameraManager = FindAnyObjectByType<ViewCameraManager>();
 
             var uiDoc = this.GetComponent<UIDocument>();
@@ -50,29 +50,17 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            this._root = uiDoc.rootVisualElement;
+            this._root             = uiDoc.rootVisualElement;
             this._root.pickingMode = PickingMode.Ignore;
 
             this._container             = new VisualElement();
             this._container.pickingMode = PickingMode.Ignore;
-            this._container.style.position       = Position.Absolute;
-            this._container.style.justifyContent = Justify.FlexEnd;
-            this._container.style.alignItems     = Align.Center;
+            this._container.AddToClassList("sequence-timecode-container");
             this._root.Add(this._container);
 
-            this._label                               = new Label();
-            this._label.pickingMode                   = PickingMode.Ignore;
-            this._label.style.color                   = Color.white;
-            this._label.style.fontSize                = 16;
-            this._label.style.unityFontStyleAndWeight = FontStyle.Bold;
-            this._label.style.unityTextAlign          = TextAnchor.MiddleCenter;
-            this._label.style.marginBottom            = 8;
-            this._label.style.textShadow              = new TextShadow
-            {
-                offset     = new Vector2(1, 1),
-                blurRadius = 3,
-                color      = new Color(0, 0, 0, 0.9f)
-            };
+            this._label             = new Label();
+            this._label.pickingMode = PickingMode.Ignore;
+            this._label.AddToClassList("sequence-timecode-label");
             this._container.Add(this._label);
         }
 

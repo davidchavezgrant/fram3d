@@ -16,8 +16,6 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class ShotTrackStrip : VisualElement
     {
-        private const float BOUNDARY_HANDLE_WIDTH = 20f;
-
         private readonly List<VisualElement> _boundaryHandles = new();
         private readonly VisualElement _dropIndicator;
         private readonly VisualElement _outOfRange;
@@ -35,8 +33,7 @@ namespace Fram3d.UI.Timeline
             labelCol.AddToClassList("timeline-label-column");
 
             var titleRow = new VisualElement();
-            titleRow.style.flexDirection = FlexDirection.Row;
-            titleRow.style.alignItems    = Align.Center;
+            titleRow.AddToClassList("timeline-label-column__title-row");
 
             var title = new Label("SHOTS");
             title.AddToClassList("timeline-label-column__title");
@@ -438,13 +435,8 @@ namespace Fram3d.UI.Timeline
             {
                 var handle = new VisualElement();
                 handle.AddToClassList("shot-track__boundary");
-                handle.userData                  = i;
-                handle.style.position            = Position.Absolute;
-                handle.style.width               = BOUNDARY_HANDLE_WIDTH;
-                handle.style.top                 = 0;
-                handle.style.bottom              = 0;
-                handle.style.backgroundColor     = new StyleColor(Color.clear);
-                handle.focusable                 = false;
+                handle.userData  = i;
+                handle.focusable = false;
                 handle.RegisterCallback<PointerDownEvent>(this.OnBoundaryPointerDown);
                 handle.RegisterCallback<PointerEnterEvent>(this.OnBoundaryPointerEnter);
                 handle.RegisterCallback<PointerLeaveEvent>(this.OnBoundaryPointerLeave);
@@ -464,7 +456,7 @@ namespace Fram3d.UI.Timeline
             {
                 runningTime += this._controller.Shots[i].Duration;
                 var centerPx = (float)this._controller.TimeToPixel(runningTime);
-                this._boundaryHandles[i].style.left = centerPx - BOUNDARY_HANDLE_WIDTH / 2f;
+                this._boundaryHandles[i].style.left = centerPx;
             }
         }
 

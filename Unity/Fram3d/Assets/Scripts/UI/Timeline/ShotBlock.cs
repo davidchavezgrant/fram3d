@@ -11,9 +11,6 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class ShotBlock : VisualElement
     {
-        private static readonly Color EDIT_BG  = new(0f, 0f, 0f, 0.35f);
-        private static readonly Color HOVER_BG = new(1f, 1f, 1f, 0.12f);
-
         private readonly Color _baseColor;
         private readonly Label _durationLabel;
         private readonly Label _nameLabel;
@@ -26,7 +23,6 @@ namespace Fram3d.UI.Timeline
 
             this.AddToClassList("shot-block");
             this.style.backgroundColor = this._baseColor;
-            this.style.alignItems      = Align.FlexStart;
 
             this._nameLabel = new Label(shot.Name);
             this._nameLabel.AddToClassList("shot-block__name");
@@ -34,7 +30,22 @@ namespace Fram3d.UI.Timeline
 
             this._durationLabel = new Label(FormatDuration(shot.Duration));
             this._durationLabel.AddToClassList("shot-block__duration");
-            this.StyleDurationLabel(this._durationLabel);
+            this._durationLabel.RegisterCallback<PointerEnterEvent>(_ =>
+            {
+                CursorService.SetCursor(CursorType.IBeam);
+                this.DurationHoverStarted?.Invoke();
+            });
+            this._durationLabel.RegisterCallback<PointerLeaveEvent>(_ =>
+            {
+                CursorService.ResetCursor();
+                this.DurationHoverEnded?.Invoke();
+            });
+            this._durationLabel.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
+            this._durationLabel.RegisterCallback<ClickEvent>(evt =>
+            {
+                this.DurationClicked?.Invoke(this);
+                evt.StopPropagation();
+            });
             this.Add(this._durationLabel);
         }
 
@@ -69,7 +80,6 @@ namespace Fram3d.UI.Timeline
                     return -1;
                 }
 
-                // Bare number: <=99 → frames, >=100 → treat as SSF pattern (e.g. 500 → 5s 00f)
                 if (num < 100)
                 {
                     return (double)num / fps;
@@ -82,7 +92,6 @@ namespace Fram3d.UI.Timeline
 
             if (parts.Length == 2)
             {
-                // SS;FF
                 if (!int.TryParse(parts[0], out var ss) || !int.TryParse(parts[1], out var ff))
                 {
                     return -1;
@@ -93,7 +102,6 @@ namespace Fram3d.UI.Timeline
 
             if (parts.Length == 3)
             {
-                // MM;SS;FF
                 if (!int.TryParse(parts[0], out var mm) || !int.TryParse(parts[1], out var ss) || !int.TryParse(parts[2], out var ff))
                 {
                     return -1;
@@ -119,43 +127,9 @@ namespace Fram3d.UI.Timeline
             var field           = new TextField();
             field.value            = initialTimecode;
             field.selectAllOnFocus = true;
-
-            // Style the field to match the hover pill — no default TextField chrome
-            StylePill(field);
-            field.style.backgroundColor = EDIT_BG;
-            field.style.marginTop       = 0;
-            field.style.marginBottom    = 0;
-            field.style.marginLeft      = 0;
-            field.style.marginRight     = 0;
-            field.style.borderTopWidth    = 0;
-            field.style.borderBottomWidth = 0;
-            field.style.borderLeftWidth   = 0;
-            field.style.borderRightWidth  = 0;
-
-            // Style the inner TextInput to remove default chrome
-            var textInput = field.Q("unity-text-input");
-
-            if (textInput != null)
-            {
-                textInput.style.backgroundColor = Color.clear;
-                textInput.style.borderTopWidth    = 0;
-                textInput.style.borderBottomWidth = 0;
-                textInput.style.borderLeftWidth   = 0;
-                textInput.style.borderRightWidth  = 0;
-                textInput.style.paddingTop        = 0;
-                textInput.style.paddingBottom     = 0;
-                textInput.style.paddingLeft       = 0;
-                textInput.style.paddingRight      = 0;
-                textInput.style.marginTop         = 0;
-                textInput.style.marginBottom      = 0;
-                textInput.style.marginLeft        = 0;
-                textInput.style.marginRight       = 0;
-                textInput.style.color             = Color.white;
-                textInput.style.fontSize          = 9;
-                textInput.AddToClassList("shot-block__edit-input");
-            }
-
+            field.AddToClassList("shot-block__duration-edit");
             this.Add(field);
+
             field.schedule.Execute(() => field.Focus()).StartingIn(0);
 
             field.RegisterCallback<KeyDownEvent>(evt =>
@@ -231,21 +205,6 @@ namespace Fram3d.UI.Timeline
             return $"{s};{f:D2}";
         }
 
-        private static void StylePill(VisualElement el)
-        {
-            el.style.borderTopLeftRadius     = 3;
-            el.style.borderTopRightRadius    = 3;
-            el.style.borderBottomLeftRadius  = 3;
-            el.style.borderBottomRightRadius = 3;
-            el.style.color                   = Color.white;
-            el.style.fontSize                = 9;
-            el.style.paddingLeft             = 4;
-            el.style.paddingRight            = 8;
-            el.style.overflow                = Overflow.Visible;
-            el.style.alignSelf               = Align.FlexStart;
-            el.style.unityTextAlign          = TextAnchor.MiddleLeft;
-        }
-
         private void CancelEdit(TextField field)
         {
             if (!this._isEditing)
@@ -270,34 +229,6 @@ namespace Fram3d.UI.Timeline
             var value = field.value;
             field.RemoveFromHierarchy();
             onCommit?.Invoke(value);
-        }
-
-        private void StyleDurationLabel(Label label)
-        {
-            StylePill(label);
-            label.style.backgroundColor = Color.clear;
-
-            label.RegisterCallback<PointerEnterEvent>(_ =>
-            {
-                label.style.backgroundColor = HOVER_BG;
-                CursorService.SetCursor(CursorType.IBeam);
-                this.DurationHoverStarted?.Invoke();
-            });
-
-            label.RegisterCallback<PointerLeaveEvent>(_ =>
-            {
-                label.style.backgroundColor = Color.clear;
-                CursorService.ResetCursor();
-                this.DurationHoverEnded?.Invoke();
-            });
-
-            label.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
-
-            label.RegisterCallback<ClickEvent>(evt =>
-            {
-                this.DurationClicked?.Invoke(this);
-                evt.StopPropagation();
-            });
         }
     }
 }

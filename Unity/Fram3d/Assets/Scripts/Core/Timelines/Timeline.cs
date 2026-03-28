@@ -27,6 +27,7 @@ namespace Fram3d.Core.Timelines
         private bool   _isBoundaryDragging;
         private bool   _isDragging;
         private bool   _isScrubbing;
+        private int    _lastHoveredEdgeIndex = -1;
         private ShotId _lastClickShotId;
         private long   _lastClickTime;
         private long   _pointerDownTime;
@@ -220,8 +221,15 @@ namespace Fram3d.Core.Timelines
         public ShotTrackAction ShotTrackPointerDown(double px, long timestampMs)
         {
             var time      = this.PixelToTime(px);
-            var tolerance = this.PixelsPerSecond > 0? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
+            var tolerance = this.PixelsPerSecond > 0 ? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
             var edgeIndex = this.Track.FindEdgeAtTime(time, tolerance);
+
+            // Fall back to the last hovered edge if the click just barely missed
+            if (edgeIndex < 0 && this._lastHoveredEdgeIndex >= 0)
+            {
+                edgeIndex                  = this._lastHoveredEdgeIndex;
+                this._lastHoveredEdgeIndex = -1;
+            }
 
             if (edgeIndex >= 0)
             {
@@ -270,12 +278,16 @@ namespace Fram3d.Core.Timelines
             if (!this._pointerIsDown)
             {
                 var time      = this.PixelToTime(px);
-                var tolerance = this.PixelsPerSecond > 0? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
+                var tolerance = this.PixelsPerSecond > 0 ? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
+                var hoveredEdge = this.Track.FindEdgeAtTime(time, tolerance);
 
-                if (this.Track.FindEdgeAtTime(time, tolerance) >= 0)
+                if (hoveredEdge >= 0)
                 {
+                    this._lastHoveredEdgeIndex = hoveredEdge;
                     return ShotTrackAction.NEAR_EDGE;
                 }
+
+                this._lastHoveredEdgeIndex = -1;
             }
 
             return ShotTrackAction.NONE;

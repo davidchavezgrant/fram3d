@@ -943,6 +943,44 @@ namespace Fram3d.Core.Tests.Timelines
             result.Value.localTime.Seconds.Should().BeApproximately(2.0, 0.001);
         }
 
+        // --- Element evaluation ---
+
+        [Fact]
+        public void Advance__FiresElementEvaluation__When__Playing()
+        {
+            var t    = Create();
+            TimePosition globalTime = null;
+            t.ElementEvaluationRequested.Subscribe(eval => globalTime = eval.GlobalTime);
+            t.TogglePlayback();
+
+            t.Advance(0.1);
+
+            globalTime.Should().NotBeNull();
+            globalTime.Seconds.Should().BeApproximately(0.1, 0.01);
+        }
+
+        [Fact]
+        public void ScrubToPixel__FiresElementEvaluation__When__Called()
+        {
+            var t    = Create();
+            t.InitializeViewRange(500);
+            var fired = false;
+            t.ElementEvaluationRequested.Subscribe(_ => fired = true);
+
+            t.ScrubToPixel(100);
+
+            fired.Should().BeTrue();
+        }
+
+        [Fact]
+        public void Elements__IsAccessible__When__TimelineCreated()
+        {
+            var t = Create();
+
+            t.Elements.Should().NotBeNull();
+            t.Elements.TrackCount.Should().Be(0);
+        }
+
         // --- ResizeShotAtEdge ---
 
         [Fact]

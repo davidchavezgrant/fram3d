@@ -10,23 +10,16 @@ namespace Fram3d.Engine.Integration
     /// Bridges the Timeline to the Unity scene. Creates a default
     /// shot on start. Routes camera evaluation requests to CameraBehaviour.
     /// </summary>
-    public sealed class ShotEvaluator : MonoBehaviour
+    public sealed class ShotEvaluator: MonoBehaviour
     {
         private float           _bottomInsetPixels;
         private CameraBehaviour _cameraBehaviour;
         private IDisposable     _cameraEvalSub;
         private IDisposable     _currentShotSub;
-
-        public float BottomInsetPixels => this._bottomInsetPixels;
-
-        public Timeline Controller { get; private set; }
-
-        public void SetBottomInset(float pixels) => this._bottomInsetPixels = pixels;
-
-        private void Awake()
-        {
-            this.Controller = new Timeline(FrameRate.FPS_24);
-        }
+        private IDisposable     _elementEvalSub;
+        public  float           BottomInsetPixels            => this._bottomInsetPixels;
+        public  Timeline        Controller                   { get; private set; }
+        public  void            SetBottomInset(float pixels) => this._bottomInsetPixels = pixels;
 
         private void OnCameraEvaluationRequested(CameraEvaluation eval)
         {
@@ -54,10 +47,34 @@ namespace Fram3d.Engine.Integration
             this._cameraBehaviour.ShotCamera.Rotation = rotation;
         }
 
-        private void OnDestroy()
+        private void OnElementEvaluationRequested(ElementEvaluation eval)
         {
-            this._cameraEvalSub?.Dispose();
-            this._currentShotSub?.Dispose();
+            var elements = FindObjectsByType<ElementBehaviour>(FindObjectsSortMode.None);
+
+            foreach (var elementBehaviour in elements)
+            {
+                var element = elementBehaviour.Element;
+
+                if (element == null)
+                {
+                    continue;
+                }
+
+                var track = this.Controller.Elements.GetTrack(element.Id);
+
+                if (track == null || !track.HasKeyframes)
+                {
+                    continue;
+                }
+
+                element.Position = track.EvaluatePosition(eval.GlobalTime);
+                element.Rotation = track.EvaluateRotation(eval.GlobalTime);
+            }
+        }
+
+        private void Awake()
+        {
+            this.Controller = new Timeline(FrameRate.FPS_24);
         }
 
         private void Start()
@@ -70,14 +87,18 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
-            this._currentShotSub = this.Controller.CurrentShotChanged
-                .Subscribe(this.OnCurrentShotChanged);
-
-            this._cameraEvalSub = this.Controller.CameraEvaluationRequested
-                .Subscribe(this.OnCameraEvaluationRequested);
-
+            this._currentShotSub = this.Controller.CurrentShotChanged.Subscribe(this.OnCurrentShotChanged);
+            this._cameraEvalSub  = this.Controller.CameraEvaluationRequested.Subscribe(this.OnCameraEvaluationRequested);
+            this._elementEvalSub = this.Controller.ElementEvaluationRequested.Subscribe(this.OnElementEvaluationRequested);
             var cam = this._cameraBehaviour.ShotCamera;
             this.Controller.AddShot(cam.Position, cam.Rotation);
+        }
+
+        private void OnDestroy()
+        {
+            this._cameraEvalSub?.Dispose();
+            this._currentShotSub?.Dispose();
+            this._elementEvalSub?.Dispose();
         }
     }
 }

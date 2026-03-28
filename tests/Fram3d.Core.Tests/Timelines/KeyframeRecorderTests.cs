@@ -1,0 +1,304 @@
+using System;
+using System.Numerics;
+using FluentAssertions;
+using Fram3d.Core.Common;
+using Fram3d.Core.Shots;
+using Fram3d.Core.Timelines;
+using Xunit;
+
+namespace Fram3d.Core.Tests.Timelines
+{
+    public sealed class KeyframeRecorderTests
+    {
+        private static Shot MakeShot() =>
+            new(new ShotId(Guid.NewGuid()), "Test", Vector3.Zero, Quaternion.Identity);
+
+        private static ElementTrack MakeTrack() =>
+            new(new ElementId(Guid.NewGuid()));
+
+        [Fact]
+        public void RecordCamera__CreatesPositionKeyframe__When__StopwatchOnAndPositionChanged()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time     = new TimePosition(1.0);
+            var previous = new CameraSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity };
+            var current  = new CameraSnapshot { Position = new Vector3(1f, 0f, 0f), Rotation = Quaternion.Identity };
+
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time, current, previous);
+
+            // Shot starts with 1 position keyframe at t=0, so now should have 2
+            shot.CameraPositionKeyframes.Count.Should().Be(2);
+            shot.CameraPositionKeyframes.Keyframes[1].Value.Should().Be(new Vector3(1f, 0f, 0f));
+            shot.CameraPositionKeyframes.Keyframes[1].Time.Should().Be(time);
+        }
+
+        [Fact]
+        public void RecordCamera__CreatesRotationKeyframe__When__StopwatchOnAndRotationChanged()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time     = new TimePosition(1.0);
+            var rotated  = Quaternion.CreateFromAxisAngle(Vector3.UnitY, 0.5f);
+            var previous = new CameraSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity };
+            var current  = new CameraSnapshot { Position = Vector3.Zero, Rotation = rotated };
+
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time, current, previous);
+
+            // Shot starts with 1 rotation keyframe at t=0, so now should have 2
+            shot.CameraRotationKeyframes.Count.Should().Be(2);
+            shot.CameraRotationKeyframes.Keyframes[1].Value.Should().Be(rotated);
+        }
+
+        [Fact]
+        public void RecordCamera__DoesNotRecord__When__StopwatchOff()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            // all off by default
+            var time     = new TimePosition(1.0);
+            var previous = new CameraSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity };
+            var current  = new CameraSnapshot { Position = new Vector3(5f, 5f, 5f), Rotation = Quaternion.Identity };
+
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time, current, previous);
+
+            // Should still have only the initial mandatory keyframes
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
+            shot.CameraRotationKeyframes.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void RecordCamera__DoesNotRecord__When__ChangeBelowThreshold()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time = new TimePosition(1.0);
+            // Position change below threshold (0.001)
+            var previous = new CameraSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity };
+            var current  = new CameraSnapshot { Position = new Vector3(0.0005f, 0f, 0f), Rotation = Quaternion.Identity };
+
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time, current, previous);
+
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void RecordCamera__UpdatesExisting__When__WithinMergeWindow()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+
+            // First record at t=1.0
+            var time1    = new TimePosition(1.0);
+            var previous = new CameraSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity };
+            var current1 = new CameraSnapshot { Position = new Vector3(1f, 0f, 0f), Rotation = Quaternion.Identity };
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time1, current1, previous);
+
+            // Second record within merge window (0.1s) of first
+            var time2    = new TimePosition(1.05);
+            var current2 = new CameraSnapshot { Position = new Vector3(2f, 0f, 0f), Rotation = Quaternion.Identity };
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time2, current2, previous);
+
+            // Should merge — still 2 keyframes (initial + 1), not 3
+            shot.CameraPositionKeyframes.Count.Should().Be(2);
+            // The merged keyframe should have the updated value
+            shot.CameraPositionKeyframes.Keyframes[1].Value.Should().Be(new Vector3(2f, 0f, 0f));
+        }
+
+        [Fact]
+        public void RecordCamera__CreatesNew__When__OutsideMergeWindow()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+
+            // First record at t=1.0
+            var time1    = new TimePosition(1.0);
+            var previous = new CameraSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity };
+            var current1 = new CameraSnapshot { Position = new Vector3(1f, 0f, 0f), Rotation = Quaternion.Identity };
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time1, current1, previous);
+
+            // Second record outside merge window (>0.1s away)
+            var time2    = new TimePosition(2.0);
+            var current2 = new CameraSnapshot { Position = new Vector3(2f, 0f, 0f), Rotation = Quaternion.Identity };
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time2, current2, previous);
+
+            // Should have 3 keyframes: initial + 2 new
+            shot.CameraPositionKeyframes.Count.Should().Be(3);
+        }
+
+        [Fact]
+        public void RecordCamera__RecordsOnlyRotation__When__OnlyRotationChanged()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time     = new TimePosition(1.0);
+            var rotated  = Quaternion.CreateFromAxisAngle(Vector3.UnitY, 0.5f);
+            var previous = new CameraSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity };
+            var current  = new CameraSnapshot { Position = Vector3.Zero, Rotation = rotated };
+
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time, current, previous);
+
+            // Position unchanged — should still be just the initial keyframe
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
+            // Rotation changed — should have 2
+            shot.CameraRotationKeyframes.Count.Should().Be(2);
+            // Focal, focus, aperture unchanged — all 0
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
+            shot.CameraFocusDistanceKeyframes.Count.Should().Be(0);
+            shot.CameraApertureKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void RecordCamera__RecordsBothPositionAndFocal__When__DollyZoomChanges()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time     = new TimePosition(1.0);
+            var previous = new CameraSnapshot
+            {
+                Position    = Vector3.Zero,
+                Rotation    = Quaternion.Identity,
+                FocalLength = 50f
+            };
+            var current = new CameraSnapshot
+            {
+                Position    = new Vector3(0f, 0f, 1f),
+                Rotation    = Quaternion.Identity,
+                FocalLength = 35f
+            };
+
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time, current, previous);
+
+            shot.CameraPositionKeyframes.Count.Should().Be(2);
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(1);
+            shot.CameraFocalLengthKeyframes.Keyframes[0].Value.Should().Be(35f);
+        }
+
+        [Fact]
+        public void RecordCamera__SkipsProperty__When__PropertyStopwatchOff()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            // Only enable position, leave rotation off
+            stopwatch.Set(CameraProperty.POSITION.Index, true);
+            var time     = new TimePosition(1.0);
+            var rotated  = Quaternion.CreateFromAxisAngle(Vector3.UnitY, 0.5f);
+            var previous = new CameraSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity };
+            var current  = new CameraSnapshot { Position = new Vector3(1f, 0f, 0f), Rotation = rotated };
+
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time, current, previous);
+
+            // Position should be recorded
+            shot.CameraPositionKeyframes.Count.Should().Be(2);
+            // Rotation stopwatch is off — should not record
+            shot.CameraRotationKeyframes.Count.Should().Be(1);
+        }
+
+        // --- RecordElement tests ---
+
+        [Fact]
+        public void RecordElement__CreatesPositionKeyframe__When__PositionChanged()
+        {
+            var track     = MakeTrack();
+            var stopwatch = new StopwatchState(ElementProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time     = new TimePosition(1.0);
+            var previous = new ElementSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity, Scale = 1f };
+            var current  = new ElementSnapshot { Position = new Vector3(2f, 0f, 0f), Rotation = Quaternion.Identity, Scale = 1f };
+
+            KeyframeRecorder.RecordElement(track, stopwatch, time, current, previous);
+
+            track.PositionKeyframes.Count.Should().Be(1);
+            track.PositionKeyframes.Keyframes[0].Value.Should().Be(new Vector3(2f, 0f, 0f));
+        }
+
+        [Fact]
+        public void RecordElement__DoesNotRecord__When__StopwatchOff()
+        {
+            var track     = MakeTrack();
+            var stopwatch = new StopwatchState(ElementProperty.COUNT);
+            // all off by default
+            var time     = new TimePosition(1.0);
+            var previous = new ElementSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity, Scale = 1f };
+            var current  = new ElementSnapshot { Position = new Vector3(5f, 5f, 5f), Rotation = Quaternion.Identity, Scale = 2f };
+
+            KeyframeRecorder.RecordElement(track, stopwatch, time, current, previous);
+
+            track.PositionKeyframes.Count.Should().Be(0);
+            track.RotationKeyframes.Count.Should().Be(0);
+            track.ScaleKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void RecordElement__UpdatesExisting__When__WithinMergeWindow()
+        {
+            var track     = MakeTrack();
+            var stopwatch = new StopwatchState(ElementProperty.COUNT);
+            stopwatch.SetAll(true);
+
+            var time1    = new TimePosition(1.0);
+            var previous = new ElementSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity, Scale = 1f };
+            var current1 = new ElementSnapshot { Position = new Vector3(1f, 0f, 0f), Rotation = Quaternion.Identity, Scale = 1f };
+            KeyframeRecorder.RecordElement(track, stopwatch, time1, current1, previous);
+
+            var time2    = new TimePosition(1.05);
+            var current2 = new ElementSnapshot { Position = new Vector3(3f, 0f, 0f), Rotation = Quaternion.Identity, Scale = 1f };
+            KeyframeRecorder.RecordElement(track, stopwatch, time2, current2, previous);
+
+            // Should merge — still 1 keyframe, not 2
+            track.PositionKeyframes.Count.Should().Be(1);
+            track.PositionKeyframes.Keyframes[0].Value.Should().Be(new Vector3(3f, 0f, 0f));
+        }
+
+        // --- ForceRecord tests ---
+
+        [Fact]
+        public void ForceRecordCamera__RecordsAll__When__Called()
+        {
+            var shot = MakeShot();
+            var time = new TimePosition(1.0);
+            var snap = new CameraSnapshot
+            {
+                Position     = new Vector3(1f, 2f, 3f),
+                Rotation     = Quaternion.Identity,
+                FocalLength  = 50f,
+                FocusDistance = 5f,
+                Aperture     = 2.8f
+            };
+
+            KeyframeRecorder.ForceRecordCamera(shot, time, snap);
+
+            shot.CameraPositionKeyframes.Count.Should().Be(2);
+            shot.CameraRotationKeyframes.Count.Should().Be(2);
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(1);
+            shot.CameraFocusDistanceKeyframes.Count.Should().Be(1);
+            shot.CameraApertureKeyframes.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void ForceRecordElement__RecordsAll__When__Called()
+        {
+            var track = MakeTrack();
+            var time  = new TimePosition(1.0);
+            var snap  = new ElementSnapshot
+            {
+                Position = new Vector3(1f, 2f, 3f),
+                Rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, 0.5f),
+                Scale    = 2f
+            };
+
+            KeyframeRecorder.ForceRecordElement(track, time, snap);
+
+            track.PositionKeyframes.Count.Should().Be(1);
+            track.RotationKeyframes.Count.Should().Be(1);
+            track.ScaleKeyframes.Count.Should().Be(1);
+        }
+    }
+}

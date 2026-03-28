@@ -122,12 +122,13 @@ namespace Fram3d.UI.Timeline
             field.style.width    = 1;
             field.style.height   = 1;
             field.style.overflow = Overflow.Hidden;
-            field.value          = "";
+            var initialTimecode = FormatDurationTimecode(this.Shot.Duration);
+            field.value            = initialTimecode;
             field.selectAllOnFocus = true;
             this.Add(field);
 
             // Visible pill — same size/style as hover state
-            var pill = new Label("");
+            var pill = new Label(initialTimecode);
             StylePill(pill);
             pill.style.backgroundColor = EDIT_BG;
             pill.pickingMode           = PickingMode.Ignore;
@@ -205,6 +206,14 @@ namespace Fram3d.UI.Timeline
 
         private static string FormatDuration(double seconds) => $"{seconds:F1}s";
 
+        private static string FormatDurationTimecode(double seconds, int fps = 24)
+        {
+            var totalFrames = (int)(seconds * fps);
+            var s           = totalFrames   / fps;
+            var f           = totalFrames   % fps;
+            return $"{s};{f:D2}";
+        }
+
         private static void StylePill(VisualElement el)
         {
             el.style.borderTopLeftRadius     = 3;
@@ -215,6 +224,8 @@ namespace Fram3d.UI.Timeline
             el.style.paddingLeft             = 4;
             el.style.paddingRight            = 8;
             el.style.overflow                = Overflow.Visible;
+            el.style.alignSelf               = Align.FlexStart;
+            el.style.unityTextAlign          = TextAnchor.MiddleLeft;
         }
 
         private void CancelEdit(TextField field, Label pill)

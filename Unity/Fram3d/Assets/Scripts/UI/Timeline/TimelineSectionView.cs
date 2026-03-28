@@ -40,7 +40,6 @@ namespace Fram3d.UI.Timeline
         private readonly List<TrackRow> _trackRows = new();
         private TrackRow                _cameraTrackRow;
         private VisualElement           _trackContainer;
-        private VisualElement           _trackContent;
         private VisualElement           _trackOutOfRange;
         private VisualElement           _trackPlayhead;
 
@@ -277,26 +276,21 @@ namespace Fram3d.UI.Timeline
             this._trackContainer = new VisualElement();
             this._trackContainer.AddToClassList("timeline-track-area");
 
-            var trackScroll = new VisualElement();
-            trackScroll.AddToClassList("timeline-track-row");
-
-            this._trackContent = new VisualElement();
-            this._trackContent.AddToClassList("timeline-track-content");
-            trackScroll.Add(this._trackContent);
-
             this._trackPlayhead = new VisualElement();
             this._trackPlayhead.AddToClassList("timeline-playhead");
-            this._trackPlayhead.style.display = DisplayStyle.None;
+            this._trackPlayhead.AddToClassList("timeline-playhead--tracks");
+            this._trackPlayhead.style.display  = DisplayStyle.None;
+            this._trackPlayhead.pickingMode    = PickingMode.Ignore;
 
             this._trackOutOfRange = new VisualElement();
             this._trackOutOfRange.AddToClassList("timeline-out-of-range");
+            this._trackOutOfRange.AddToClassList("timeline-out-of-range--tracks");
             this._trackOutOfRange.pickingMode = PickingMode.Ignore;
 
-            this._trackContainer.Add(trackScroll);
-            this._trackContent.RegisterCallback<WheelEvent>(this.OnWheel);
-            this._trackContent.RegisterCallback<ClickEvent>(evt =>
+            this._trackContainer.RegisterCallback<WheelEvent>(this.OnWheel);
+            this._trackContainer.RegisterCallback<ClickEvent>(evt =>
             {
-                if (evt.target == this._trackContent)
+                if (evt.target == this._trackContainer)
                 {
                     this._controller.Selection.Clear();
                 }
@@ -356,7 +350,7 @@ namespace Fram3d.UI.Timeline
         private void SetOutOfRange(VisualElement el, float endPx)
         {
             el.style.position = Position.Absolute;
-            el.style.left     = endPx;
+            el.style.left     = endPx + LABEL_COL_W;
             el.style.top      = 0;
             el.style.bottom   = 0;
             el.style.right    = 0;
@@ -366,7 +360,7 @@ namespace Fram3d.UI.Timeline
         private void SetPlayhead(VisualElement el, float px)
         {
             el.style.display = DisplayStyle.Flex;
-            el.style.left    = px;
+            el.style.left    = px + LABEL_COL_W;
         }
 
         // ══════════════════════════════════════════════════════════════════
@@ -578,9 +572,9 @@ namespace Fram3d.UI.Timeline
                 this._trackContainer.Insert(this._trackRows.Count - 1, elemRow);
             }
 
-            // Re-add playhead and out-of-range on top
-            this._trackContent.Add(this._trackPlayhead);
-            this._trackContent.Add(this._trackOutOfRange);
+            // Re-add playhead and out-of-range as overlays spanning all tracks
+            this._trackContainer.Add(this._trackPlayhead);
+            this._trackContainer.Add(this._trackOutOfRange);
         }
 
         private void SyncCameraSubTrackValues(Shot shot)

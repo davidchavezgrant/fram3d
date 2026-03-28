@@ -918,6 +918,22 @@
 .timeline-track-area {
     flex-grow: 1;
     overflow: hidden;
+    position: relative;
+}
+
+.timeline-playhead--tracks {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: rgb(255, 68, 102);
+}
+
+.timeline-out-of-range--tracks {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.3);
 }
 
 .track-row {

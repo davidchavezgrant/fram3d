@@ -10,10 +10,13 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class ShotBlock : VisualElement
     {
+        private static readonly Color HOVER_BG = new(1f, 1f, 1f, 0.12f);
+        private static readonly Color EDIT_BG  = new(0f, 0f, 0f, 0.35f);
+
         private readonly Color _baseColor;
         private readonly Label _durationLabel;
-        private          bool  _isEditing;
         private readonly Label _nameLabel;
+        private          bool  _isEditing;
 
         public ShotBlock(Shot shot, int colorIndex)
         {
@@ -29,31 +32,7 @@ namespace Fram3d.UI.Timeline
 
             this._durationLabel = new Label(FormatDuration(shot.Duration));
             this._durationLabel.AddToClassList("shot-block__duration");
-            this._durationLabel.style.borderBottomWidth = 1;
-            this._durationLabel.style.borderBottomColor = Color.clear;
-            this._durationLabel.style.paddingLeft       = 4;
-            this._durationLabel.style.paddingRight      = 8;
-            this._durationLabel.style.overflow          = Overflow.Visible;
-            this._durationLabel.RegisterCallback<PointerEnterEvent>(_ =>
-            {
-                this._durationLabel.style.borderBottomColor = new Color(1f, 1f, 1f, 0.5f);
-                this._durationLabel.style.backgroundColor   = new Color(1f, 1f, 1f, 0.1f);
-                CursorService.SetCursor(CursorType.IBeam);
-                this.DurationHoverStarted?.Invoke();
-            });
-            this._durationLabel.RegisterCallback<PointerLeaveEvent>(_ =>
-            {
-                this._durationLabel.style.borderBottomColor = Color.clear;
-                this._durationLabel.style.backgroundColor   = Color.clear;
-                CursorService.ResetCursor();
-                this.DurationHoverEnded?.Invoke();
-            });
-            this._durationLabel.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
-            this._durationLabel.RegisterCallback<ClickEvent>(evt =>
-            {
-                this.DurationClicked?.Invoke(this);
-                evt.StopPropagation();
-            });
+            this.StyleDurationLabel(this._durationLabel);
             this.Add(this._durationLabel);
         }
 
@@ -78,14 +57,34 @@ namespace Fram3d.UI.Timeline
             this._isEditing = true;
             this._durationLabel.style.display = DisplayStyle.None;
 
+            // Invisible TextField for input capture — never visually shown
             var field = new TextField();
-            field.AddToClassList("shot-block__duration-field");
-            field.value = this.Shot.Duration.ToString("F1");
+            field.style.position = Position.Absolute;
+            field.style.opacity  = 0;
+            field.style.width    = 0;
+            field.style.height   = 0;
+            field.value          = this.Shot.Duration.ToString("F1");
             field.selectAllOnFocus = true;
             this.Add(field);
 
-            // Focus the field next frame (UI Toolkit needs a frame to lay out)
+            // Visible pill that mirrors the hover style
+            var pill = new Label(field.value);
+            pill.style.borderTopLeftRadius     = 3;
+            pill.style.borderTopRightRadius    = 3;
+            pill.style.borderBottomLeftRadius  = 3;
+            pill.style.borderBottomRightRadius = 3;
+            pill.style.backgroundColor         = EDIT_BG;
+            pill.style.color                   = Color.white;
+            pill.style.paddingLeft             = 4;
+            pill.style.paddingRight            = 8;
+            pill.style.overflow                = Overflow.Visible;
+            pill.pickingMode                   = PickingMode.Ignore;
+            this.Add(pill);
+
             field.schedule.Execute(() => field.Focus()).StartingIn(0);
+
+            // Sync visible pill text as user types
+            field.RegisterValueChangedCallback(evt => pill.text = evt.newValue);
 
             var committed = false;
 
@@ -96,10 +95,11 @@ namespace Fram3d.UI.Timeline
                     return;
                 }
 
-                committed         = true;
-                this._isEditing   = false;
+                committed       = true;
+                this._isEditing = false;
                 this._durationLabel.style.display = DisplayStyle.Flex;
                 field.RemoveFromHierarchy();
+                pill.RemoveFromHierarchy();
                 onCommit?.Invoke(field.value);
             }
 
@@ -112,9 +112,10 @@ namespace Fram3d.UI.Timeline
                 }
                 else if (evt.keyCode == KeyCode.Escape)
                 {
-                    this._isEditing   = false;
+                    this._isEditing = false;
                     this._durationLabel.style.display = DisplayStyle.Flex;
                     field.RemoveFromHierarchy();
+                    pill.RemoveFromHierarchy();
                     committed = true;
                 }
             });
@@ -141,5 +142,39 @@ namespace Fram3d.UI.Timeline
         }
 
         private static string FormatDuration(double seconds) => $"{seconds:F1}s";
+
+        private void StyleDurationLabel(Label label)
+        {
+            label.style.borderTopLeftRadius     = 3;
+            label.style.borderTopRightRadius    = 3;
+            label.style.borderBottomLeftRadius  = 3;
+            label.style.borderBottomRightRadius = 3;
+            label.style.backgroundColor         = Color.clear;
+            label.style.paddingLeft             = 4;
+            label.style.paddingRight            = 8;
+            label.style.overflow                = Overflow.Visible;
+
+            label.RegisterCallback<PointerEnterEvent>(_ =>
+            {
+                label.style.backgroundColor = HOVER_BG;
+                CursorService.SetCursor(CursorType.IBeam);
+                this.DurationHoverStarted?.Invoke();
+            });
+
+            label.RegisterCallback<PointerLeaveEvent>(_ =>
+            {
+                label.style.backgroundColor = Color.clear;
+                CursorService.ResetCursor();
+                this.DurationHoverEnded?.Invoke();
+            });
+
+            label.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
+
+            label.RegisterCallback<ClickEvent>(evt =>
+            {
+                this.DurationClicked?.Invoke(this);
+                evt.StopPropagation();
+            });
+        }
     }
 }

@@ -238,11 +238,12 @@ namespace Fram3d.UI.Timeline
                 this._isResizing        = true;
                 this._resizeStartY      = evt.position.y;
                 this._resizeStartHeight = this._sectionHeight;
-                handle.CapturePointer(evt.pointerId);
+                this._root.CapturePointer(evt.pointerId);
                 evt.StopPropagation();
             });
 
-            handle.RegisterCallback<PointerMoveEvent>(evt =>
+            // Move/up on root so drag continues when pointer leaves the 5px handle
+            this._root.RegisterCallback<PointerMoveEvent>(evt =>
             {
                 if (!this._isResizing)
                 {
@@ -251,12 +252,12 @@ namespace Fram3d.UI.Timeline
 
                 var delta     = this._resizeStartY - evt.position.y;
                 var maxHeight = Mathf.Min(MAX_SECTION_HEIGHT, Screen.height * 0.8f);
-                this._sectionHeight         = Mathf.Clamp(this._resizeStartHeight + delta, MIN_SECTION_HEIGHT, maxHeight);
-                this._section.style.height  = this._sectionHeight;
+                this._sectionHeight        = Mathf.Clamp(this._resizeStartHeight + delta, MIN_SECTION_HEIGHT, maxHeight);
+                this._section.style.height = this._sectionHeight;
                 this.UpdateBottomInset();
             });
 
-            handle.RegisterCallback<PointerUpEvent>(evt =>
+            this._root.RegisterCallback<PointerUpEvent>(evt =>
             {
                 if (!this._isResizing)
                 {
@@ -264,7 +265,7 @@ namespace Fram3d.UI.Timeline
                 }
 
                 this._isResizing = false;
-                handle.ReleasePointer(evt.pointerId);
+                this._root.ReleasePointer(evt.pointerId);
             });
 
             this._root.Add(handle);

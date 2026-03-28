@@ -1,6 +1,5 @@
 using System;
 using Fram3d.Core.Common;
-using Fram3d.Core.Shots;
 using Fram3d.Core.Timelines;
 using Fram3d.Engine.Integration;
 using UnityEngine;
@@ -9,8 +8,7 @@ namespace Fram3d.UI.Views
 {
     /// <summary>
     /// Top-left overlay on the Camera View showing shot number, camera letter,
-    /// name, and duration. Example: "Shot 1A: OTS DET→WIT (3.5s)".
-    /// Updates on shot change and during playback.
+    /// name, and duration. Example: "Shot 2A: Shot_02 (5.0s)".
     /// </summary>
     public sealed class ShotLabelOverlay: MonoBehaviour
     {
@@ -40,9 +38,20 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            this._label             = new Label();
-            this._label.pickingMode = PickingMode.Ignore;
-            this._label.AddToClassList("shot-label-overlay");
+            this._label                       = new Label();
+            this._label.pickingMode           = PickingMode.Ignore;
+            this._label.style.position        = Position.Absolute;
+            this._label.style.left            = 8;
+            this._label.style.top             = 24;
+            this._label.style.color           = Color.white;
+            this._label.style.fontSize        = 12;
+            this._label.style.unityFontStyleAndWeight = FontStyle.Bold;
+            this._label.style.textShadow      = new TextShadow
+            {
+                offset  = new Vector2(1, 1),
+                blurRadius = 2,
+                color      = new Color(0, 0, 0, 0.8f)
+            };
             uiDoc.rootVisualElement.Add(this._label);
             this._shotChangedSub = this._controller.CurrentShotChanged.Subscribe(_ => this.UpdateLabel());
             this.UpdateLabel();

@@ -161,7 +161,7 @@ namespace Fram3d.Editor
                 uiDoc.panelSettings = GetOrCreatePanelSettings();
             }
 
-            uiDoc.sortingOrder = 4;
+            uiDoc.sortingOrder = 11;
 
             if (overlayGo.GetComponent<ShotLabelOverlay>() == null)
             {

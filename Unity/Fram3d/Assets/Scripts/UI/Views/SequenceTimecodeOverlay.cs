@@ -1,4 +1,3 @@
-using System;
 using Fram3d.Core.Timelines;
 using Fram3d.Engine.Integration;
 using UnityEngine;
@@ -6,13 +5,15 @@ using UnityEngine.UIElements;
 namespace Fram3d.UI.Views
 {
     /// <summary>
-    /// Bottom-center overlay on the Camera View showing the sequence-global
-    /// timecode (HH;MM;SS;FF). Updates every frame during playback and on scrub.
+    /// Sequence-global timecode overlay. Large, white, centered at the bottom
+    /// of the view area (above the timeline). Always visible when shots exist.
+    /// Updates every frame during playback and on scrub.
     /// </summary>
     public sealed class SequenceTimecodeOverlay: MonoBehaviour
     {
         private Fram3d.Core.Timelines.Timeline _controller;
         private Label                          _label;
+        private ShotEvaluator                  _shotEvaluator;
 
         public static string FormatTimecode(double seconds, int fps)
         {
@@ -28,14 +29,14 @@ namespace Fram3d.UI.Views
 
         private void Start()
         {
-            var shotEvaluator = FindAnyObjectByType<ShotEvaluator>();
+            this._shotEvaluator = FindAnyObjectByType<ShotEvaluator>();
 
-            if (shotEvaluator == null)
+            if (this._shotEvaluator == null)
             {
                 return;
             }
 
-            this._controller = shotEvaluator.Controller;
+            this._controller = this._shotEvaluator.Controller;
             var uiDoc = this.GetComponent<UIDocument>();
 
             if (uiDoc?.rootVisualElement == null)
@@ -43,10 +44,26 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            this._label             = new Label();
-            this._label.pickingMode = PickingMode.Ignore;
-            this._label.AddToClassList("sequence-timecode-overlay");
-            uiDoc.rootVisualElement.Add(this._label);
+            var root = uiDoc.rootVisualElement;
+            root.pickingMode = PickingMode.Ignore;
+
+            this._label                               = new Label();
+            this._label.pickingMode                   = PickingMode.Ignore;
+            this._label.style.position                = Position.Absolute;
+            this._label.style.left                    = 0;
+            this._label.style.right                   = 0;
+            this._label.style.bottom                  = this._shotEvaluator.BottomInsetPixels + 8;
+            this._label.style.color                   = Color.white;
+            this._label.style.fontSize                = 16;
+            this._label.style.unityFontStyleAndWeight = FontStyle.Bold;
+            this._label.style.unityTextAlign          = TextAnchor.LowerCenter;
+            this._label.style.textShadow              = new TextShadow
+            {
+                offset     = new Vector2(1, 1),
+                blurRadius = 3,
+                color      = new Color(0, 0, 0, 0.9f)
+            };
+            root.Add(this._label);
         }
 
         private void Update()
@@ -61,6 +78,9 @@ namespace Fram3d.UI.Views
                 this._label.style.display = DisplayStyle.None;
                 return;
             }
+
+            // Keep bottom offset in sync with timeline height
+            this._label.style.bottom = this._shotEvaluator.BottomInsetPixels + 8;
 
             var fps = (int)this._controller.FrameRate.Fps;
             this._label.text          = FormatTimecode(this._controller.Playhead.CurrentTime, fps);

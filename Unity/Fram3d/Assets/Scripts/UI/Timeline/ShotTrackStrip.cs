@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Fram3d.Core.Shots;
 using Fram3d.Core.Timelines;
 using Fram3d.Engine.Cursor;
+using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Timeline
 {
@@ -191,14 +193,26 @@ namespace Fram3d.UI.Timeline
             handle.userData is int edgeIndex ? edgeIndex : -1;
 
         /// <summary>
-        /// Converts panel-space position to track-area-local x. This is
-        /// critical: evt.localPosition is relative to the event TARGET
-        /// (e.g. a ShotBlock child), not the element the callback is on.
-        /// Using WorldToLocal guarantees correct coordinates regardless
-        /// of which child element was the original target.
+        /// Returns the current mouse x in track-area-local pixels.
+        /// Uses the Input System's screen position with explicit
+        /// screen → panel → element conversion — the same pipeline
+        /// used by TimelineSectionView.HandleInputSystemScroll().
+        /// This bypasses evt.position/localPosition entirely, avoiding
+        /// coordinate space ambiguity during pointer capture and event
+        /// bubbling from child elements.
         /// </summary>
-        private float TrackLocalX(IPointerEvent evt) =>
-            this._trackArea.WorldToLocal(evt.position).x;
+        private float TrackLocalX()
+        {
+            if (Mouse.current == null || this._trackArea.panel == null)
+            {
+                return 0;
+            }
+
+            var mousePos  = Mouse.current.position.ReadValue();
+            var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
+            var panelPos  = RuntimePanelUtils.ScreenToPanel(this._trackArea.panel, screenPos);
+            return this._trackArea.WorldToLocal(panelPos).x;
+        }
 
         private void OnBoundaryPointerDown(PointerDownEvent evt)
         {
@@ -242,7 +256,7 @@ namespace Fram3d.UI.Timeline
             }
 
             var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            this._controller.ShotTrackPointerMove(this.TrackLocalX(evt), now);
+            this._controller.ShotTrackPointerMove(this.TrackLocalX(), now);
             evt.StopPropagation();
         }
 
@@ -276,7 +290,7 @@ namespace Fram3d.UI.Timeline
             if (evt.button == 0)
             {
                 var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var result = this._controller.ShotTrackPointerDown(this.TrackLocalX(evt), now);
+                var result = this._controller.ShotTrackPointerDown(this.TrackLocalX(), now);
 
                 // Capture pointer for all left-button interactions so drag
                 // continues when the pointer moves outside the strip vertically.
@@ -298,7 +312,7 @@ namespace Fram3d.UI.Timeline
         private void OnPointerMove(PointerMoveEvent evt)
         {
             var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var result = this._controller.ShotTrackPointerMove(this.TrackLocalX(evt), now);
+            var result = this._controller.ShotTrackPointerMove(this.TrackLocalX(), now);
 
             if (result == ShotTrackAction.NEAR_EDGE)
             {
@@ -382,7 +396,8 @@ namespace Fram3d.UI.Timeline
                 handle.style.width               = BOUNDARY_HANDLE_WIDTH;
                 handle.style.top                 = 0;
                 handle.style.bottom              = 0;
-                handle.style.backgroundColor     = new StyleColor(UnityEngine.Color.clear);
+                handle.style.backgroundColor     = new StyleColor(Color.clear);
+                handle.focusable                 = false;
                 handle.RegisterCallback<PointerDownEvent>(this.OnBoundaryPointerDown);
                 handle.RegisterCallback<PointerEnterEvent>(this.OnBoundaryPointerEnter);
                 handle.RegisterCallback<PointerLeaveEvent>(this.OnBoundaryPointerLeave);

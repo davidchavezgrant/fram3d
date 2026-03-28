@@ -1,3 +1,4 @@
+using System;
 using Fram3d.Core.Shots;
 using Fram3d.Engine.Cursor;
 using UnityEngine;
@@ -10,8 +11,8 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class ShotBlock : VisualElement
     {
-        private static readonly Color HOVER_BG = new(1f, 1f, 1f, 0.12f);
         private static readonly Color EDIT_BG  = new(0f, 0f, 0f, 0.35f);
+        private static readonly Color HOVER_BG = new(1f, 1f, 1f, 0.12f);
 
         private readonly Color _baseColor;
         private readonly Label _durationLabel;
@@ -36,18 +37,74 @@ namespace Fram3d.UI.Timeline
             this.Add(this._durationLabel);
         }
 
-        /// <summary>
-        /// Fired when the duration label is clicked (to trigger inline editing).
-        /// </summary>
-        public event System.Action<ShotBlock> DurationClicked;
-        public event System.Action           DurationHoverEnded;
-        public event System.Action           DurationHoverStarted;
+        public event Action<ShotBlock> DurationClicked;
+        public event Action            DurationHoverEnded;
+        public event Action            DurationHoverStarted;
 
         public bool IsEditing => this._isEditing;
 
         public Shot Shot { get; }
 
-        public void BeginDurationEdit(System.Action<string> onCommit)
+        /// <summary>
+        /// Parses flexible timecode input into seconds at 24fps.
+        /// Accepts: "5" → 5 frames, "500" → 5s 0f, "5;00" → 5s 0f,
+        /// "1;30;12" → 1m 30s 12f, bare frames up to 99.
+        /// </summary>
+        public static double ParseTimecodeInput(string input, int fps = 24)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return -1;
+            }
+
+            input = input.Trim();
+            var separator = input.Contains(";") ? ';' : ':';
+            var parts     = input.Split(separator);
+
+            if (parts.Length == 1)
+            {
+                if (!int.TryParse(parts[0], out var num))
+                {
+                    return -1;
+                }
+
+                // Bare number: <=99 → frames, >=100 → treat as SSF pattern (e.g. 500 → 5s 00f)
+                if (num < 100)
+                {
+                    return (double)num / fps;
+                }
+
+                var frames  = num % 100;
+                var seconds = num / 100;
+                return seconds + (double)frames / fps;
+            }
+
+            if (parts.Length == 2)
+            {
+                // SS;FF
+                if (!int.TryParse(parts[0], out var ss) || !int.TryParse(parts[1], out var ff))
+                {
+                    return -1;
+                }
+
+                return ss + (double)ff / fps;
+            }
+
+            if (parts.Length == 3)
+            {
+                // MM;SS;FF
+                if (!int.TryParse(parts[0], out var mm) || !int.TryParse(parts[1], out var ss) || !int.TryParse(parts[2], out var ff))
+                {
+                    return -1;
+                }
+
+                return mm * 60 + ss + (double)ff / fps;
+            }
+
+            return -1;
+        }
+
+        public void BeginDurationEdit(Action<string> onCommit)
         {
             if (this._isEditing)
             {
@@ -57,70 +114,59 @@ namespace Fram3d.UI.Timeline
             this._isEditing = true;
             this._durationLabel.style.display = DisplayStyle.None;
 
-            // Invisible TextField for input capture — never visually shown
+            // Invisible TextField captures keyboard input
             var field = new TextField();
             field.style.position = Position.Absolute;
             field.style.opacity  = 0;
-            field.style.width    = 0;
-            field.style.height   = 0;
-            field.value          = this.Shot.Duration.ToString("F1");
+            field.style.width    = 1;
+            field.style.height   = 1;
+            field.style.overflow = Overflow.Hidden;
+            field.value          = "";
             field.selectAllOnFocus = true;
             this.Add(field);
 
-            // Visible pill that mirrors the hover style
-            var pill = new Label(field.value);
-            pill.style.borderTopLeftRadius     = 3;
-            pill.style.borderTopRightRadius    = 3;
-            pill.style.borderBottomLeftRadius  = 3;
-            pill.style.borderBottomRightRadius = 3;
-            pill.style.backgroundColor         = EDIT_BG;
-            pill.style.color                   = Color.white;
-            pill.style.paddingLeft             = 4;
-            pill.style.paddingRight            = 8;
-            pill.style.overflow                = Overflow.Visible;
-            pill.pickingMode                   = PickingMode.Ignore;
+            // Visible pill — same size/style as hover state
+            var pill = new Label("");
+            StylePill(pill);
+            pill.style.backgroundColor = EDIT_BG;
+            pill.pickingMode           = PickingMode.Ignore;
             this.Add(pill);
 
             field.schedule.Execute(() => field.Focus()).StartingIn(0);
 
-            // Sync visible pill text as user types
-            field.RegisterValueChangedCallback(evt => pill.text = evt.newValue);
-
-            var committed = false;
-
-            void commit()
-            {
-                if (committed)
-                {
-                    return;
-                }
-
-                committed       = true;
-                this._isEditing = false;
-                this._durationLabel.style.display = DisplayStyle.Flex;
-                field.RemoveFromHierarchy();
-                pill.RemoveFromHierarchy();
-                onCommit?.Invoke(field.value);
-            }
-
+            // Filter: only allow digits, semicolons, colons
             field.RegisterCallback<KeyDownEvent>(evt =>
             {
                 if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
                 {
-                    commit();
+                    this.CommitEdit(field, pill, onCommit);
                     evt.StopPropagation();
+                    return;
                 }
-                else if (evt.keyCode == KeyCode.Escape)
+
+                if (evt.keyCode == KeyCode.Escape)
                 {
-                    this._isEditing = false;
-                    this._durationLabel.style.display = DisplayStyle.Flex;
-                    field.RemoveFromHierarchy();
-                    pill.RemoveFromHierarchy();
-                    committed = true;
+                    this.CancelEdit(field, pill);
+                    evt.StopPropagation();
+                    return;
                 }
             });
 
-            field.RegisterCallback<FocusOutEvent>(_ => commit());
+            // Update pill text as user types (display only, no live resize)
+            field.RegisterValueChangedCallback(evt =>
+            {
+                // Strip any characters that aren't digits, semicolons, or colons
+                var filtered = FilterTimecodeChars(evt.newValue);
+
+                if (filtered != evt.newValue)
+                {
+                    field.SetValueWithoutNotify(filtered);
+                }
+
+                pill.text = filtered;
+            });
+
+            field.RegisterCallback<FocusOutEvent>(_ => this.CommitEdit(field, pill, onCommit));
         }
 
         public void Refresh()
@@ -141,18 +187,67 @@ namespace Fram3d.UI.Timeline
             }
         }
 
+        private static string FilterTimecodeChars(string input)
+        {
+            var sb = new System.Text.StringBuilder(input.Length);
+
+            foreach (var c in input)
+            {
+                if (c >= '0' && c <= '9' || c == ';' || c == ':')
+                {
+                    sb.Append(c);
+                }
+            }
+
+            return sb.ToString();
+        }
+
         private static string FormatDuration(double seconds) => $"{seconds:F1}s";
+
+        private static void StylePill(VisualElement el)
+        {
+            el.style.borderTopLeftRadius     = 3;
+            el.style.borderTopRightRadius    = 3;
+            el.style.borderBottomLeftRadius  = 3;
+            el.style.borderBottomRightRadius = 3;
+            el.style.color                   = Color.white;
+            el.style.paddingLeft             = 4;
+            el.style.paddingRight            = 8;
+            el.style.overflow                = Overflow.Visible;
+        }
+
+        private void CancelEdit(TextField field, Label pill)
+        {
+            if (!this._isEditing)
+            {
+                return;
+            }
+
+            this._isEditing = false;
+            this._durationLabel.style.display = DisplayStyle.Flex;
+            field.RemoveFromHierarchy();
+            pill.RemoveFromHierarchy();
+        }
+
+        private void CommitEdit(TextField field, Label pill, Action<string> onCommit)
+        {
+            if (!this._isEditing)
+            {
+                return;
+            }
+
+            this._isEditing = false;
+            this._durationLabel.style.display = DisplayStyle.Flex;
+            var value = field.value;
+            field.RemoveFromHierarchy();
+            pill.RemoveFromHierarchy();
+            onCommit?.Invoke(value);
+        }
 
         private void StyleDurationLabel(Label label)
         {
-            label.style.borderTopLeftRadius     = 3;
-            label.style.borderTopRightRadius    = 3;
-            label.style.borderBottomLeftRadius  = 3;
-            label.style.borderBottomRightRadius = 3;
-            label.style.backgroundColor         = Color.clear;
-            label.style.paddingLeft             = 4;
-            label.style.paddingRight            = 8;
-            label.style.overflow                = Overflow.Visible;
+            StylePill(label);
+            label.style.backgroundColor = Color.clear;
 
             label.RegisterCallback<PointerEnterEvent>(_ =>
             {

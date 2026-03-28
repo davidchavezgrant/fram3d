@@ -130,9 +130,12 @@ namespace Fram3d.UI.Timeline
                     this.ShotHoverEnded?.Invoke());
                 block.DurationHoverStarted += () => this.ShotHoverEnded?.Invoke();
                 block.DurationHoverEnded   += () => this.ShotHoverStarted?.Invoke(shot);
-                block.DurationClicked      += b => b.BeginDurationEdit(value =>
+                block.DurationClicked += b => b.BeginDurationEdit(value =>
                 {
-                    if (double.TryParse(value, out var parsed))
+                    var fps    = (int)this._controller.FrameRate.Fps;
+                    var parsed = ShotBlock.ParseTimecodeInput(value, fps);
+
+                    if (parsed > 0)
                     {
                         shot.Duration = parsed;
                     }

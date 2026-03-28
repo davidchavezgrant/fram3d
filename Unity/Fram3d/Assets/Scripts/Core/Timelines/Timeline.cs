@@ -12,106 +12,84 @@ namespace Fram3d.Core.Timelines
     /// </summary>
     public sealed class Timeline
     {
-        private const double DOUBLE_CLICK_MS   = 350;
-        private const double EDGE_TOLERANCE_PX = 6.0;
-        private const int    HOLD_THRESHOLD_MS = 200;
-
-        private readonly Subject<CameraEvaluation> _cameraEvaluationRequested = new();
-        private readonly ViewRange _view;
+        private const    double                     DOUBLE_CLICK_MS             = 350;
+        private const    double                     EDGE_TOLERANCE_PX           = 6.0;
+        private const    int                        HOLD_THRESHOLD_MS           = 200;
+        private readonly Subject<CameraEvaluation>  _cameraEvaluationRequested  = new();
+        private readonly Subject<ElementEvaluation> _elementEvaluationRequested = new();
+        private readonly ViewRange                  _view;
 
         // ── Interaction state ──
         private int    _boundaryDragIndex = -1;
-        private ShotId _dragShotId;
         private int    _dragOriginalIndex;
+        private ShotId _dragShotId;
         private int    _dragTargetIndex;
         private bool   _isBoundaryDragging;
         private bool   _isDragging;
         private bool   _isScrubbing;
         private ShotId _lastClickShotId;
         private long   _lastClickTime;
-        private double _pointerDownX;
         private long   _pointerDownTime;
+        private double _pointerDownX;
         private bool   _pointerIsDown;
 
         public Timeline(FrameRate frameRate)
         {
+            this.Elements = new ElementTimeline();
             this.Playhead = new Playhead(frameRate);
             this.Track    = new ShotTrack(frameRate);
             this._view    = new ViewRange();
         }
 
         // ══════════════════════════════════════════════════════════════════
-        // Sub-components
+        // Shot track interaction state machine
         // ══════════════════════════════════════════════════════════════════
+        public int BoundaryDragIndex => this._boundaryDragIndex;
 
-        public Playhead Playhead { get; }
-
-        private ShotTrack Track { get; }
+        // ══════════════════════════════════════════════════════════════════
+        // Observables
+        // ══════════════════════════════════════════════════════════════════
+        public IObservable<CameraEvaluation> CameraEvaluationRequested => this._cameraEvaluationRequested;
 
         // ══════════════════════════════════════════════════════════════════
         // Delegated shot properties
         // ══════════════════════════════════════════════════════════════════
+        public int                            Count                      => this.Track.Count;
+        public Shot                           CurrentShot                => this.Track.CurrentShot;
+        public IObservable<Shot>              CurrentShotChanged         => this.Track.CurrentShotChanged;
+        public int                            DragTargetIndex            => this._dragTargetIndex;
+        public IObservable<ElementEvaluation> ElementEvaluationRequested => this._elementEvaluationRequested;
 
-        public int                  Count              => this.Track.Count;
-        public Shot                 CurrentShot        => this.Track.CurrentShot;
-        public FrameRate            FrameRate          => this.Track.FrameRate;
-        public IReadOnlyList<Shot>  Shots              => this.Track.Shots;
-        public double               TotalDuration      => this.Track.TotalDuration;
+        // ══════════════════════════════════════════════════════════════════
+        // Sub-components
+        // ══════════════════════════════════════════════════════════════════
+        public ElementTimeline Elements           { get; }
+        public FrameRate       FrameRate          => this.Track.FrameRate;
+        public bool            IsBoundaryDragging => this._isBoundaryDragging;
+        public bool            IsDragging         => this._isDragging;
 
-        public IObservable<Shot>    CurrentShotChanged => this.Track.CurrentShotChanged;
-        public IObservable<bool>    Reordered          => this.Track.Reordered;
-        public IObservable<Shot>    ShotAdded          => this.Track.ShotAdded;
-        public IObservable<Shot>    ShotRemoved        => this.Track.ShotRemoved;
-
-        public int              FindEdgeAtTime(double time, double tolerance) => this.Track.FindEdgeAtTime(time, tolerance);
-        public int              FindInsertionIndex(double time)               => this.Track.FindInsertionIndex(time);
-        public string           FormatResizeTooltip(int index, bool shift)    => this.Track.FormatResizeTooltip(index, shift);
-        public string           FormatShotTooltip(Shot shot)                  => this.Track.FormatShotTooltip(shot);
-        public Shot             GetById(ShotId id)                            => this.Track.GetById(id);
-        public TimePosition     GetGlobalEndTime(ShotId id)                   => this.Track.GetGlobalEndTime(id);
-        public TimePosition     GetGlobalStartTime(ShotId id)                 => this.Track.GetGlobalStartTime(id);
-        public (Shot shot, TimePosition localTime)? GetShotAtGlobalTime(TimePosition t) => this.Track.GetShotAtGlobalTime(t);
-        public int              IndexOf(ShotId id)                            => this.Track.IndexOf(id);
-        public bool             RemoveShot(ShotId id)                         => this.Track.RemoveShot(id);
-        public void             Reorder(ShotId id, int newIndex)              => this.Track.Reorder(id, newIndex);
-        public double           ResizeShotAtEdge(int index, double endTime)   => this.Track.ResizeShotAtEdge(index, endTime);
-        public void             SetCurrentShot(ShotId id)                     => this.Track.SetCurrentShot(id);
+        // ══════════════════════════════════════════════════════════════════
+        // Scrub
+        // ══════════════════════════════════════════════════════════════════
+        public bool                IsScrubbing          => this._isScrubbing;
+        public double              OutOfRangeStartPixel => this._view.TimeToPixel(this.TotalDuration);
+        public double              PixelsPerSecond      => this._view.PixelsPerSecond;
+        public Playhead            Playhead             { get; }
+        public double              PlayheadPixel        => this._view.TimeToPixel(this.Playhead.CurrentTime);
+        public IObservable<bool>   Reordered            => this.Track.Reordered;
+        public IObservable<Shot>   ShotAdded            => this.Track.ShotAdded;
+        public IObservable<Shot>   ShotRemoved          => this.Track.ShotRemoved;
+        public IReadOnlyList<Shot> Shots                => this.Track.Shots;
+        public double              TotalDuration        => this.Track.TotalDuration;
 
         // ══════════════════════════════════════════════════════════════════
         // Delegated view range properties
         // ══════════════════════════════════════════════════════════════════
-
-        public IObservable<bool> ViewChanged        => this._view.Changed;
-        public double            PlayheadPixel      => this._view.TimeToPixel(this.Playhead.CurrentTime);
-        public double            OutOfRangeStartPixel => this._view.TimeToPixel(this.TotalDuration);
-        public double            PixelsPerSecond    => this._view.PixelsPerSecond;
-        public double            ViewEnd            => this._view.ViewEnd;
-        public double            ViewStart          => this._view.ViewStart;
-        public double            VisibleDuration    => this._view.VisibleDuration;
-
-        public double TimeToPixel(double seconds) => this._view.TimeToPixel(seconds);
-        public double PixelToTime(double px)       => this._view.PixelToTime(px);
-
-        public void InitializeViewRange(double trackWidth) =>
-            this._view.Initialize(trackWidth, this.TotalDuration);
-
-        public void ZoomAtPoint(double anchorSeconds, float scrollDelta) =>
-            this._view.ZoomAtPoint(anchorSeconds, scrollDelta, this.TotalDuration);
-
-        public void Pan(double deltaPx) =>
-            this._view.Pan(deltaPx, this.TotalDuration);
-
-        public void FitAll() =>
-            this._view.FitAll(this.TotalDuration);
-
-        public void FitRange(double start, double end) =>
-            this._view.FitRange(start, end);
-
-        public void SetViewRange(double start, double end) =>
-            this._view.SetRange(start, end, this.TotalDuration);
-
-        public void EnsureVisible(double seconds) =>
-            this._view.EnsureVisible(seconds);
+        public  IObservable<bool> ViewChanged     => this._view.Changed;
+        public  double            ViewEnd         => this._view.ViewEnd;
+        public  double            ViewStart       => this._view.ViewStart;
+        public  double            VisibleDuration => this._view.VisibleDuration;
+        private ShotTrack         Track           { get; }
 
         // ══════════════════════════════════════════════════════════════════
         // Shot lifecycle
@@ -128,6 +106,32 @@ namespace Fram3d.Core.Timelines
 
             return shot;
         }
+
+        public bool Advance(double deltaSeconds)
+        {
+            var stillPlaying = this.Playhead.Advance(deltaSeconds, this.TotalDuration);
+
+            if (stillPlaying)
+            {
+                this.EvaluateCamera();
+
+                if (this.Playhead.CurrentTime > this._view.ViewEnd)
+                {
+                    var duration = this.VisibleDuration;
+                    this.SetViewRange(this._view.ViewEnd, this._view.ViewEnd + duration);
+                }
+            }
+
+            return stillPlaying;
+        }
+
+        public void BeginScrub()                                      => this._isScrubbing = true;
+        public void EndScrub()                                        => this._isScrubbing = false;
+        public void EnsureVisible(double      seconds)                => this._view.EnsureVisible(seconds);
+        public int  FindEdgeAtTime(double     time, double tolerance) => this.Track.FindEdgeAtTime(time, tolerance);
+        public int  FindInsertionIndex(double time)    => this.Track.FindInsertionIndex(time);
+        public void FitAll()                           => this._view.FitAll(this.TotalDuration);
+        public void FitRange(double start, double end) => this._view.FitRange(start, end);
 
         public void FitToShot(ShotId shotId)
         {
@@ -156,48 +160,37 @@ namespace Fram3d.Core.Timelines
         }
 
         // ══════════════════════════════════════════════════════════════════
-        // Playback
+        // Formatting
         // ══════════════════════════════════════════════════════════════════
 
-        public bool TogglePlayback()
+        public string FormatBoundaryTooltip(bool shiftHeld)
         {
-            var wasAtEnd     = this.Playhead.CurrentTime >= this.TotalDuration - this.FrameRate.FrameDuration;
-            var isNowPlaying = this.Playhead.TogglePlayback(this.TotalDuration);
-
-            if (isNowPlaying && wasAtEnd)
+            if (this._boundaryDragIndex < 0 || this._boundaryDragIndex >= this.Track.Count)
             {
-                this.SetViewRange(0, this.VisibleDuration);
+                return "";
             }
 
-            return isNowPlaying;
+            return this.Track.FormatResizeTooltip(this._boundaryDragIndex, shiftHeld);
         }
 
-        public bool Advance(double deltaSeconds)
-        {
-            var stillPlaying = this.Playhead.Advance(deltaSeconds, this.TotalDuration);
-
-            if (stillPlaying)
-            {
-                this.EvaluateCamera();
-
-                if (this.Playhead.CurrentTime > this._view.ViewEnd)
-                {
-                    var duration = this.VisibleDuration;
-                    this.SetViewRange(this._view.ViewEnd, this._view.ViewEnd + duration);
-                }
-            }
-
-            return stillPlaying;
-        }
+        public string                               FormatResizeTooltip(int index, bool shift) => this.Track.FormatResizeTooltip(index, shift);
+        public string                               FormatShotTooltip(Shot shot) => this.Track.FormatShotTooltip(shot);
+        public Shot                                 GetById(ShotId id) => this.Track.GetById(id);
+        public TimePosition                         GetGlobalEndTime(ShotId id) => this.Track.GetGlobalEndTime(id);
+        public TimePosition                         GetGlobalStartTime(ShotId id) => this.Track.GetGlobalStartTime(id);
+        public (Shot shot, TimePosition localTime)? GetShotAtGlobalTime(TimePosition t) => this.Track.GetShotAtGlobalTime(t);
+        public int                                  IndexOf(ShotId id) => this.Track.IndexOf(id);
+        public void                                 InitializeViewRange(double trackWidth) => this._view.Initialize(trackWidth, this.TotalDuration);
+        public void                                 Pan(double deltaPx) => this._view.Pan(deltaPx, this.TotalDuration);
+        public double                               PixelToTime(double px) => this._view.PixelToTime(px);
+        public bool                                 RemoveShot(ShotId id) => this.Track.RemoveShot(id);
+        public void                                 Reorder(ShotId id, int newIndex) => this.Track.Reorder(id, newIndex);
+        public double                               ResizeShotAtEdge(int index, double endTime) => this.Track.ResizeShotAtEdge(index, endTime);
 
         // ══════════════════════════════════════════════════════════════════
-        // Scrub
+        // Query
         // ══════════════════════════════════════════════════════════════════
-
-        public bool IsScrubbing => this._isScrubbing;
-
-        public void BeginScrub() => this._isScrubbing = true;
-        public void EndScrub()   => this._isScrubbing = false;
+        public (Shot shot, TimePosition localTime)? ResolveShot() => this.Track.GetShotAtGlobalTime(new TimePosition(this.Playhead.CurrentTime));
 
         public void ScrubToPixel(double px)
         {
@@ -207,19 +200,13 @@ namespace Fram3d.Core.Timelines
             this.EnsureVisible(Math.Clamp(rawTime, 0, this.TotalDuration));
         }
 
-        // ══════════════════════════════════════════════════════════════════
-        // Shot track interaction state machine
-        // ══════════════════════════════════════════════════════════════════
-
-        public int  BoundaryDragIndex  => this._boundaryDragIndex;
-        public int  DragTargetIndex    => this._dragTargetIndex;
-        public bool IsBoundaryDragging => this._isBoundaryDragging;
-        public bool IsDragging         => this._isDragging;
+        public void SetCurrentShot(ShotId id)                => this.Track.SetCurrentShot(id);
+        public void SetViewRange(double   start, double end) => this._view.SetRange(start, end, this.TotalDuration);
 
         public ShotTrackAction ShotTrackPointerDown(double px, long timestampMs)
         {
             var time      = this.PixelToTime(px);
-            var tolerance = this.PixelsPerSecond > 0 ? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
+            var tolerance = this.PixelsPerSecond > 0? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
             var edgeIndex = this.Track.FindEdgeAtTime(time, tolerance);
 
             if (edgeIndex >= 0)
@@ -232,7 +219,6 @@ namespace Fram3d.Core.Timelines
             this._pointerDownTime = timestampMs;
             this._pointerDownX    = px;
             this._pointerIsDown   = true;
-
             var shotIndex = this.FindShotIndexAtTime(time);
 
             if (shotIndex >= 0)
@@ -254,8 +240,7 @@ namespace Fram3d.Core.Timelines
 
             if (this._pointerIsDown && this._dragShotId != null && !this._isDragging)
             {
-                if (timestampMs - this._pointerDownTime >= HOLD_THRESHOLD_MS
-                 || Math.Abs(px - this._pointerDownX) > 5)
+                if (timestampMs - this._pointerDownTime >= HOLD_THRESHOLD_MS || Math.Abs(px - this._pointerDownX) > 5)
                 {
                     this._isDragging = true;
                     return ShotTrackAction.DRAG_START;
@@ -271,7 +256,7 @@ namespace Fram3d.Core.Timelines
             if (!this._pointerIsDown)
             {
                 var time      = this.PixelToTime(px);
-                var tolerance = this.PixelsPerSecond > 0 ? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
+                var tolerance = this.PixelsPerSecond > 0? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
 
                 if (this.Track.FindEdgeAtTime(time, tolerance) >= 0)
                 {
@@ -309,32 +294,46 @@ namespace Fram3d.Core.Timelines
             return ShotTrackAction.NONE;
         }
 
+        public double TimeToPixel(double seconds) => this._view.TimeToPixel(seconds);
+
         // ══════════════════════════════════════════════════════════════════
-        // Formatting
+        // Playback
         // ══════════════════════════════════════════════════════════════════
 
-        public string FormatBoundaryTooltip(bool shiftHeld)
+        public bool TogglePlayback()
         {
-            if (this._boundaryDragIndex < 0 || this._boundaryDragIndex >= this.Track.Count)
+            var wasAtEnd     = this.Playhead.CurrentTime >= this.TotalDuration - this.FrameRate.FrameDuration;
+            var isNowPlaying = this.Playhead.TogglePlayback(this.TotalDuration);
+
+            if (isNowPlaying && wasAtEnd)
             {
-                return "";
+                this.SetViewRange(0, this.VisibleDuration);
             }
 
-            return this.Track.FormatResizeTooltip(this._boundaryDragIndex, shiftHeld);
+            return isNowPlaying;
         }
 
-        // ══════════════════════════════════════════════════════════════════
-        // Observables
-        // ══════════════════════════════════════════════════════════════════
+        public void ZoomAtPoint(double anchorSeconds, float scrollDelta) => this._view.ZoomAtPoint(anchorSeconds, scrollDelta, this.TotalDuration);
 
-        public IObservable<CameraEvaluation> CameraEvaluationRequested => this._cameraEvaluationRequested;
+        private void CompleteDrag()
+        {
+            if (this._dragShotId == null)
+            {
+                return;
+            }
 
-        // ══════════════════════════════════════════════════════════════════
-        // Query
-        // ══════════════════════════════════════════════════════════════════
+            var toIndex = this._dragTargetIndex;
 
-        public (Shot shot, TimePosition localTime)? ResolveShot() =>
-            this.Track.GetShotAtGlobalTime(new TimePosition(this.Playhead.CurrentTime));
+            if (toIndex > this._dragOriginalIndex)
+            {
+                toIndex--;
+            }
+
+            if (this._dragOriginalIndex != toIndex && toIndex >= 0 && toIndex < this.Track.Count)
+            {
+                this.Track.Reorder(this._dragShotId, toIndex);
+            }
+        }
 
         // ══════════════════════════════════════════════════════════════════
         // Private
@@ -357,50 +356,7 @@ namespace Fram3d.Core.Timelines
             }
 
             this._cameraEvaluationRequested.OnNext(new CameraEvaluation(shot, result.Value.localTime));
-        }
-
-        private void HandleShotClick(ShotId shotId)
-        {
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-            if (this._lastClickShotId == shotId && now - this._lastClickTime < DOUBLE_CLICK_MS)
-            {
-                this.Track.SetCurrentShot(shotId);
-                this.FitToShot(shotId);
-                this._lastClickShotId = null;
-                return;
-            }
-
-            this._lastClickTime   = now;
-            this._lastClickShotId = shotId;
-            this.Track.SetCurrentShot(shotId);
-        }
-
-        private void CompleteDrag()
-        {
-            if (this._dragShotId == null)
-            {
-                return;
-            }
-
-            var toIndex = this._dragTargetIndex;
-
-            if (toIndex > this._dragOriginalIndex)
-            {
-                toIndex--;
-            }
-
-            if (this._dragOriginalIndex != toIndex && toIndex >= 0 && toIndex < this.Track.Count)
-            {
-                this.Track.Reorder(this._dragShotId, toIndex);
-            }
-        }
-
-        private void ResetPointerState()
-        {
-            this._isDragging    = false;
-            this._dragShotId    = null;
-            this._pointerIsDown = false;
+            this._elementEvaluationRequested.OnNext(new ElementEvaluation(new TimePosition(this.Playhead.CurrentTime)));
         }
 
         private int FindShotIndexAtTime(double time)
@@ -420,6 +376,30 @@ namespace Fram3d.Core.Timelines
             }
 
             return -1;
+        }
+
+        private void HandleShotClick(ShotId shotId)
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            if (this._lastClickShotId == shotId && now - this._lastClickTime < DOUBLE_CLICK_MS)
+            {
+                this.Track.SetCurrentShot(shotId);
+                this.FitToShot(shotId);
+                this._lastClickShotId = null;
+                return;
+            }
+
+            this._lastClickTime   = now;
+            this._lastClickShotId = shotId;
+            this.Track.SetCurrentShot(shotId);
+        }
+
+        private void ResetPointerState()
+        {
+            this._isDragging    = false;
+            this._dragShotId    = null;
+            this._pointerIsDown = false;
         }
     }
 }

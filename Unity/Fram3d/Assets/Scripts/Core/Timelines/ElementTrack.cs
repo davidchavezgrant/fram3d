@@ -22,6 +22,14 @@ namespace Fram3d.Core.Timelines
         public KeyframeManager<Vector3>    PositionKeyframes { get; } = new();
         public KeyframeManager<Quaternion> RotationKeyframes { get; } = new();
         public KeyframeManager<float>      ScaleKeyframes    { get; } = new();
+        public StopwatchState              Stopwatch         { get; } = new(ElementProperty.COUNT);
+
+        public void ClearAllKeyframes()
+        {
+            this.PositionKeyframes.Clear();
+            this.RotationKeyframes.Clear();
+            this.ScaleKeyframes.Clear();
+        }
 
         public Vector3    EvaluatePosition(TimePosition globalTime) => this.PositionKeyframes.Evaluate(globalTime, Vector3.Lerp);
         public Quaternion EvaluateRotation(TimePosition globalTime) => this.RotationKeyframes.Evaluate(globalTime, Quaternion.Slerp);

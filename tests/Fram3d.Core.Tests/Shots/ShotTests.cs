@@ -385,5 +385,27 @@ namespace Fram3d.Core.Tests.Shots
             var times = shot.GetAllCameraKeyframeTimes();
             times.Should().HaveCount(1);
         }
+
+        // --- ClearAllCameraKeyframes ---
+
+        [Fact]
+        public void ClearAllCameraKeyframes__ClearsAll__When__Called()
+        {
+            var shot = MakeShot();
+            shot.CameraFocalLengthKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 50f));
+            shot.CameraApertureKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 2.8f));
+            shot.CameraFocusDistanceKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 5f));
+
+            shot.ClearAllCameraKeyframes();
+
+            shot.CameraPositionKeyframes.Count.Should().Be(0);
+            shot.CameraRotationKeyframes.Count.Should().Be(0);
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
+            shot.CameraApertureKeyframes.Count.Should().Be(0);
+            shot.CameraFocusDistanceKeyframes.Count.Should().Be(0);
+        }
     }
 }

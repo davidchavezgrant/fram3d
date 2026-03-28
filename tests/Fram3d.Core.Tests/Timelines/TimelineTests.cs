@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using FluentAssertions;
 using Fram3d.Core.Common;
@@ -1133,6 +1134,148 @@ namespace Fram3d.Core.Tests.Timelines
             var kfId = tl.CurrentShot.CameraPositionKeyframes.Keyframes[0].Id;
             tl.SelectKeyframe(TrackId.Camera, kfId, new TimePosition(1.0));
             tl.Selection.TrackId.Should().Be(TrackId.Camera);
+        }
+
+        // ── Recording API ────────────────────────────────────────────────
+
+        [Fact]
+        public void RecordCameraManipulation__DoesNotRecord__When__Playing()
+        {
+            var timeline = Create();
+            var shot     = timeline.CurrentShot;
+            shot.CameraStopwatch.SetAll(true);
+            // Scrub away from t=0 so that if the guard fails, a new keyframe would be created
+            timeline.Playhead.Scrub(2.0, timeline.TotalDuration);
+            timeline.TogglePlayback();
+
+            var before = new CameraSnapshot { Position = Vector3.Zero };
+            var after  = new CameraSnapshot { Position = new Vector3(10, 0, 0) };
+
+            timeline.RecordCameraManipulation(after, before);
+
+            // Only the initial mandatory keyframe at t=0 should exist
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void RecordCameraManipulation__RecordsKeyframe__When__StopwatchOnAndChanged()
+        {
+            var timeline = Create();
+            timeline.CurrentShot.CameraStopwatch.SetAll(true);
+            // Scrub into the shot so local time > 0 (avoids merge with t=0 keyframe)
+            timeline.Playhead.Scrub(2.0, timeline.TotalDuration);
+
+            var before = new CameraSnapshot { Position = Vector3.Zero };
+            var after  = new CameraSnapshot { Position = new Vector3(10, 0, 0) };
+
+            timeline.RecordCameraManipulation(after, before);
+
+            // Should have the initial keyframe at t=0 plus a new one
+            timeline.CurrentShot.CameraPositionKeyframes.Count.Should().Be(2);
+        }
+
+        [Fact]
+        public void RecordCameraManipulation__DoesNotRecord__When__StopwatchOff()
+        {
+            var timeline = Create();
+            // Stopwatch is off by default
+            timeline.Playhead.Scrub(2.0, timeline.TotalDuration);
+
+            var before = new CameraSnapshot { Position = Vector3.Zero };
+            var after  = new CameraSnapshot { Position = new Vector3(10, 0, 0) };
+
+            timeline.RecordCameraManipulation(after, before);
+
+            // Only the initial mandatory keyframe should exist
+            timeline.CurrentShot.CameraPositionKeyframes.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void RecordElementManipulation__DoesNotRecord__When__Playing()
+        {
+            var timeline  = Create();
+            var elementId = new ElementId(Guid.NewGuid());
+            var track     = timeline.Elements.GetOrCreateTrack(elementId);
+            track.Stopwatch.SetAll(true);
+            // Scrub away from t=0 before toggling playback
+            timeline.Playhead.Scrub(2.0, timeline.TotalDuration);
+            timeline.TogglePlayback();
+
+            var before = new ElementSnapshot { Position = Vector3.Zero };
+            var after  = new ElementSnapshot { Position = new Vector3(10, 0, 0) };
+
+            timeline.RecordElementManipulation(elementId, after, before);
+
+            track.PositionKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void RecordElementManipulation__RecordsKeyframe__When__StopwatchOnAndChanged()
+        {
+            var timeline  = Create();
+            var elementId = new ElementId(Guid.NewGuid());
+            var track     = timeline.Elements.GetOrCreateTrack(elementId);
+            track.Stopwatch.SetAll(true);
+
+            var before = new ElementSnapshot { Position = Vector3.Zero };
+            var after  = new ElementSnapshot { Position = new Vector3(10, 0, 0) };
+
+            timeline.RecordElementManipulation(elementId, after, before);
+
+            track.PositionKeyframes.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void ForceRecordCamera__RecordsAll__When__NotPlaying()
+        {
+            var timeline = Create();
+            // Scrub into the shot so local time > 0 (avoids merge with t=0 keyframe)
+            timeline.Playhead.Scrub(2.0, timeline.TotalDuration);
+
+            var snap = new CameraSnapshot
+            {
+                Position      = new Vector3(1, 2, 3),
+                Rotation      = Quaternion.Identity,
+                FocalLength   = 50f,
+                FocusDistance  = 3f,
+                Aperture      = 2.8f
+            };
+
+            timeline.ForceRecordCamera(snap);
+
+            timeline.CurrentShot.CameraPositionKeyframes.Count.Should().Be(2);
+            timeline.CurrentShot.CameraRotationKeyframes.Count.Should().Be(2);
+            timeline.CurrentShot.CameraFocalLengthKeyframes.Count.Should().Be(1);
+            timeline.CurrentShot.CameraFocusDistanceKeyframes.Count.Should().Be(1);
+            timeline.CurrentShot.CameraApertureKeyframes.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void ForceRecordCamera__DoesNotRecord__When__Playing()
+        {
+            var timeline = Create();
+            var shot     = timeline.CurrentShot;
+            // Scrub away from t=0 before toggling playback
+            timeline.Playhead.Scrub(2.0, timeline.TotalDuration);
+            timeline.TogglePlayback();
+
+            var snap = new CameraSnapshot
+            {
+                Position      = new Vector3(1, 2, 3),
+                Rotation      = Quaternion.Identity,
+                FocalLength   = 50f,
+                FocusDistance  = 3f,
+                Aperture      = 2.8f
+            };
+
+            timeline.ForceRecordCamera(snap);
+
+            // No new keyframes should have been created
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
+            shot.CameraRotationKeyframes.Count.Should().Be(1);
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
+            shot.CameraFocusDistanceKeyframes.Count.Should().Be(0);
+            shot.CameraApertureKeyframes.Count.Should().Be(0);
         }
     }
 }

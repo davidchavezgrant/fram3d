@@ -221,6 +221,7 @@ namespace Fram3d.UI.Timeline
             el.style.borderBottomLeftRadius  = 3;
             el.style.borderBottomRightRadius = 3;
             el.style.color                   = Color.white;
+            el.style.fontSize                = 9;
             el.style.paddingLeft             = 4;
             el.style.paddingRight            = 8;
             el.style.overflow                = Overflow.Visible;

@@ -130,7 +130,14 @@ namespace Fram3d.UI.Timeline
             field.AddToClassList("shot-block__duration-edit");
             this.Add(field);
 
-            field.schedule.Execute(() => field.Focus()).StartingIn(0);
+            // Set cursor color inline after add — must be deferred so the
+            // internal TextInput element exists and inline beats USS specificity.
+            field.schedule.Execute(() =>
+            {
+                field.cursorColor    = Color.white;
+                field.selectionColor = new Color(0.3f, 0.5f, 0.8f, 0.5f);
+                field.Focus();
+            }).StartingIn(0);
 
             field.RegisterCallback<KeyDownEvent>(evt =>
             {

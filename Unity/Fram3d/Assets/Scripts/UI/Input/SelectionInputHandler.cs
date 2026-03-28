@@ -26,6 +26,7 @@ namespace Fram3d.UI.Input
         private          Vector2       _lastHoverHitPos;
         private          PropertiesPanelView _propertiesPanel;
         private          Selection     _selection;
+        private          Timeline.TimelineSectionView _timelineSection;
         private          ViewLayoutView _viewLayoutView;
 
         [SerializeField]
@@ -122,6 +123,7 @@ namespace Fram3d.UI.Input
         private bool IsPointerOverBlockingUI()
         {
             return (this._propertiesPanel != null && this._propertiesPanel.IsPointerOverUI)
+                || (this._timelineSection != null && this._timelineSection.IsPointerOverUI)
                 || (this._viewLayoutView != null && this._viewLayoutView.IsPointerOverUI);
         }
 
@@ -304,6 +306,7 @@ namespace Fram3d.UI.Input
             }
 
             this._propertiesPanel ??= FindAnyObjectByType<PropertiesPanelView>();
+            this._timelineSection ??= FindAnyObjectByType<Timeline.TimelineSectionView>();
             this._viewLayoutView ??= FindAnyObjectByType<ViewLayoutView>();
         }
 

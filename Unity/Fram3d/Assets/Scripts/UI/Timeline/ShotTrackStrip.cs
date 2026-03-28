@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fram3d.Core.Shots;
 using Fram3d.Core.Timelines;
 using Fram3d.Engine.Cursor;
@@ -13,6 +14,7 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class ShotTrackStrip : VisualElement
     {
+        private readonly List<VisualElement> _boundaryHandles = new();
         private readonly VisualElement _dropIndicator;
         private readonly VisualElement _outOfRange;
         private readonly VisualElement _playhead;
@@ -54,11 +56,13 @@ namespace Fram3d.UI.Timeline
             this._dropIndicator = new VisualElement();
             this._dropIndicator.AddToClassList("shot-track__drop-indicator");
             this._dropIndicator.style.display = DisplayStyle.None;
+            this._dropIndicator.pickingMode   = PickingMode.Ignore;
             this._trackArea.Add(this._dropIndicator);
 
             this._playhead = new VisualElement();
             this._playhead.AddToClassList("timeline-playhead");
             this._playhead.style.display = DisplayStyle.None;
+            this._playhead.pickingMode   = PickingMode.Ignore;
             this._trackArea.Add(this._playhead);
 
             this._outOfRange = new VisualElement();
@@ -129,6 +133,7 @@ namespace Fram3d.UI.Timeline
                 this._trackArea.Insert(this._trackArea.childCount - 3, block);
             }
 
+            this.RebuildBoundaryHandles();
             this._playhead.BringToFront();
             this._outOfRange.BringToFront();
 
@@ -146,6 +151,7 @@ namespace Fram3d.UI.Timeline
             var endPx = (float)this._controller.OutOfRangeStartPixel;
 
             this.UpdateBlockPositions();
+            this.UpdateBoundaryHandlePositions();
             this.UpdatePlayhead(px);
             this.UpdateOutOfRange(endPx);
             this.UpdateDropIndicator();
@@ -179,6 +185,9 @@ namespace Fram3d.UI.Timeline
             return (float)this._controller.TimeToPixel(runningTime);
         }
 
+        private int HandleEdgeIndex(VisualElement handle) =>
+            handle.userData is int edgeIndex ? edgeIndex : -1;
+
         /// <summary>
         /// Converts panel-space position to track-area-local x. This is
         /// critical: evt.localPosition is relative to the event TARGET
@@ -188,6 +197,77 @@ namespace Fram3d.UI.Timeline
         /// </summary>
         private float TrackLocalX(IPointerEvent evt) =>
             this._trackArea.WorldToLocal(evt.position).x;
+
+        private void OnBoundaryPointerDown(PointerDownEvent evt)
+        {
+            if (evt.button != 0)
+            {
+                return;
+            }
+
+            var handle   = (VisualElement)evt.currentTarget;
+            var edgeIndex = this.HandleEdgeIndex(handle);
+            var result   = this._controller.BeginBoundaryDrag(edgeIndex);
+
+            if (result == ShotTrackAction.BOUNDARY_DRAG)
+            {
+                handle.CapturePointer(evt.pointerId);
+                CursorService.SetCursor(CursorType.ResizeHorizontal);
+                this.BoundaryDragStarted?.Invoke();
+            }
+
+            evt.StopPropagation();
+        }
+
+        private void OnBoundaryPointerEnter(PointerEnterEvent _)
+        {
+            CursorService.SetCursor(CursorType.ResizeHorizontal);
+        }
+
+        private void OnBoundaryPointerLeave(PointerLeaveEvent _)
+        {
+            if (!this._controller.IsBoundaryDragging)
+            {
+                CursorService.ResetCursor();
+            }
+        }
+
+        private void OnBoundaryPointerMove(PointerMoveEvent evt)
+        {
+            if (!this._controller.IsBoundaryDragging)
+            {
+                return;
+            }
+
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this._controller.ShotTrackPointerMove(this.TrackLocalX(evt), now);
+            evt.StopPropagation();
+        }
+
+        private void OnBoundaryPointerUp(PointerUpEvent evt)
+        {
+            if (evt.button != 0)
+            {
+                return;
+            }
+
+            var handle = (VisualElement)evt.currentTarget;
+
+            if (handle.HasPointerCapture(evt.pointerId))
+            {
+                handle.ReleasePointer(evt.pointerId);
+            }
+
+            var result = this._controller.ShotTrackPointerUp();
+
+            if (result == ShotTrackAction.BOUNDARY_COMPLETE)
+            {
+                this.BoundaryDragEnded?.Invoke();
+                CursorService.ResetCursor();
+            }
+
+            evt.StopPropagation();
+        }
 
         private void OnPointerDown(PointerDownEvent evt)
         {
@@ -277,6 +357,42 @@ namespace Fram3d.UI.Timeline
                 block.Refresh();
 
                 runningTime += block.Shot.Duration;
+            }
+        }
+
+        private void RebuildBoundaryHandles()
+        {
+            for (var i = 0; i < this._boundaryHandles.Count; i++)
+            {
+                this._boundaryHandles[i].RemoveFromHierarchy();
+            }
+
+            this._boundaryHandles.Clear();
+
+            for (var i = 0; i < this._controller.Shots.Count; i++)
+            {
+                var handle = new VisualElement();
+                handle.AddToClassList("shot-track__boundary");
+                handle.userData = i;
+                handle.RegisterCallback<PointerDownEvent>(this.OnBoundaryPointerDown);
+                handle.RegisterCallback<PointerEnterEvent>(this.OnBoundaryPointerEnter);
+                handle.RegisterCallback<PointerLeaveEvent>(this.OnBoundaryPointerLeave);
+                handle.RegisterCallback<PointerMoveEvent>(this.OnBoundaryPointerMove);
+                handle.RegisterCallback<PointerUpEvent>(this.OnBoundaryPointerUp);
+                this._boundaryHandles.Add(handle);
+                this._trackArea.Add(handle);
+            }
+        }
+
+        private void UpdateBoundaryHandlePositions()
+        {
+            var runningTime = 0.0;
+            var shotCount   = this._controller.Shots.Count;
+
+            for (var i = 0; i < shotCount && i < this._boundaryHandles.Count; i++)
+            {
+                runningTime += this._controller.Shots[i].Duration;
+                this._boundaryHandles[i].style.left = (float)this._controller.TimeToPixel(runningTime);
             }
         }
 

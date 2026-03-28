@@ -684,10 +684,10 @@
 
 .shot-track__boundary {
     position: absolute;
-    width: 8px;
+    width: 24px;
     top: 0;
     bottom: 0;
-    margin-left: -4px;
+    margin-left: -12px;
     cursor: resize-horizontal;
 }
 

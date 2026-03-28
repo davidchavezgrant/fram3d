@@ -148,6 +148,30 @@ namespace Fram3d.Tests.UI
         }
 
         [Test]
+        public void RebuildBlocks__CreatesBoundaryHandlePerShot__When__ShotsExist()
+        {
+            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+
+            var strip = new ShotTrackStrip();
+            strip.Bind(this._controller);
+            this._uiDocument.rootVisualElement.Add(strip);
+            strip.RebuildBlocks();
+
+            var handleCount = 0;
+
+            for (var i = 0; i < strip.TrackArea.childCount; i++)
+            {
+                if (strip.TrackArea[i].ClassListContains("shot-track__boundary"))
+                {
+                    handleCount++;
+                }
+            }
+
+            Assert.AreEqual(2, handleCount, "Should create one boundary handle per shot edge");
+        }
+
+        [Test]
         public void RebuildBlocks__ClearsPreviousBlocks__When__Rebuilt()
         {
             this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);

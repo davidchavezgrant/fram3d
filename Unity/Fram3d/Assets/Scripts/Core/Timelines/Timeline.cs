@@ -197,6 +197,18 @@ namespace Fram3d.Core.Timelines
         public void                                 InitializeViewRange(double trackWidth) => this._view.Initialize(trackWidth, this.TotalDuration);
         public void                                 Pan(double deltaPx) => this._view.Pan(deltaPx, this.TotalDuration);
         public double                               PixelToTime(double px) => this._view.PixelToTime(px);
+        public ShotTrackAction                      BeginBoundaryDrag(int edgeIndex)
+        {
+            if (edgeIndex < 0 || edgeIndex >= this.Track.Count)
+            {
+                return ShotTrackAction.NONE;
+            }
+
+            this.ResetPointerState();
+            this._isBoundaryDragging = true;
+            this._boundaryDragIndex  = edgeIndex;
+            return ShotTrackAction.BOUNDARY_DRAG;
+        }
         public bool                                 RemoveShot(ShotId id) => this.Track.RemoveShot(id);
         public void                                 Reorder(ShotId id, int newIndex) => this.Track.Reorder(id, newIndex);
         public double                               ResizeShotAtEdge(int index, double endTime) => this.Track.ResizeShotAtEdge(index, endTime);
@@ -225,9 +237,7 @@ namespace Fram3d.Core.Timelines
 
             if (edgeIndex >= 0)
             {
-                this._isBoundaryDragging = true;
-                this._boundaryDragIndex  = edgeIndex;
-                return ShotTrackAction.BOUNDARY_DRAG;
+                return this.BeginBoundaryDrag(edgeIndex);
             }
 
             this._pointerDownTime = timestampMs;
@@ -288,6 +298,7 @@ namespace Fram3d.Core.Timelines
             {
                 this._isBoundaryDragging = false;
                 this._boundaryDragIndex  = -1;
+                this.ResetPointerState();
                 return ShotTrackAction.BOUNDARY_COMPLETE;
             }
 

@@ -251,6 +251,30 @@ namespace Fram3d.Core.Tests.Timelines
         }
 
         [Fact]
+        public void BeginBoundaryDrag__StartsBoundaryDrag__When__EdgeIndexValid()
+        {
+            var t = Create();
+
+            t.BeginBoundaryDrag(0).Should().Be(ShotTrackAction.BOUNDARY_DRAG);
+            t.IsBoundaryDragging.Should().BeTrue();
+            t.BoundaryDragIndex.Should().Be(0);
+        }
+
+        [Fact]
+        public void BeginBoundaryDrag__ClearsPendingShotPress__When__BoundaryDragStartsExplicitly()
+        {
+            var t     = Create();
+            var midPx = t.TimeToPixel(2.5);
+
+            t.ShotTrackPointerDown(midPx, 0).Should().Be(ShotTrackAction.POTENTIAL_CLICK);
+            t.BeginBoundaryDrag(0).Should().Be(ShotTrackAction.BOUNDARY_DRAG);
+            t.ShotTrackPointerUp().Should().Be(ShotTrackAction.BOUNDARY_COMPLETE);
+
+            t.ShotTrackPointerMove(midPx + 25, 300).Should().Be(ShotTrackAction.NONE);
+            t.IsDragging.Should().BeFalse();
+        }
+
+        [Fact]
         public void ShotTrackPointerDown__StartsPotentialClick__When__OnShot()
         {
             var t = Create();

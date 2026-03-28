@@ -28,6 +28,20 @@ namespace Fram3d.UI.Timeline
 
             this._durationLabel = new Label(FormatDuration(shot.Duration));
             this._durationLabel.AddToClassList("shot-block__duration");
+            this._durationLabel.style.borderBottomWidth = 1;
+            this._durationLabel.style.borderBottomColor = Color.clear;
+            this._durationLabel.style.paddingLeft       = 2;
+            this._durationLabel.style.paddingRight      = 2;
+            this._durationLabel.RegisterCallback<PointerEnterEvent>(_ =>
+            {
+                this._durationLabel.style.borderBottomColor = new Color(1f, 1f, 1f, 0.5f);
+                this._durationLabel.style.backgroundColor   = new Color(1f, 1f, 1f, 0.1f);
+            });
+            this._durationLabel.RegisterCallback<PointerLeaveEvent>(_ =>
+            {
+                this._durationLabel.style.borderBottomColor = Color.clear;
+                this._durationLabel.style.backgroundColor   = Color.clear;
+            });
             this._durationLabel.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
             this._durationLabel.RegisterCallback<ClickEvent>(evt =>
             {

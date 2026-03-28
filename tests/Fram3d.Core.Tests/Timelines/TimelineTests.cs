@@ -981,6 +981,54 @@ namespace Fram3d.Core.Tests.Timelines
             t.Elements.TrackCount.Should().Be(0);
         }
 
+        // --- JumpToStart / JumpToEnd ---
+
+        [Fact]
+        public void JumpToStart__MovesPlayheadToZero__When__Called()
+        {
+            var t = Create();
+            t.Playhead.Scrub(3.0, t.TotalDuration);
+
+            t.JumpToStart();
+
+            t.Playhead.CurrentTime.Should().Be(0);
+        }
+
+        [Fact]
+        public void JumpToStart__FiresCameraEvaluation__When__Called()
+        {
+            var t     = Create();
+            var fired = false;
+            t.CameraEvaluationRequested.Subscribe(_ => fired = true);
+            t.Playhead.Scrub(3.0, t.TotalDuration);
+
+            t.JumpToStart();
+
+            fired.Should().BeTrue();
+        }
+
+        [Fact]
+        public void JumpToEnd__MovesPlayheadToEnd__When__Called()
+        {
+            var t = Create();
+
+            t.JumpToEnd();
+
+            t.Playhead.CurrentTime.Should().BeApproximately(t.TotalDuration, 0.001);
+        }
+
+        [Fact]
+        public void JumpToEnd__FiresCameraEvaluation__When__Called()
+        {
+            var t     = Create();
+            var fired = false;
+            t.CameraEvaluationRequested.Subscribe(_ => fired = true);
+
+            t.JumpToEnd();
+
+            fired.Should().BeTrue();
+        }
+
         // --- ResizeShotAtEdge ---
 
         [Fact]

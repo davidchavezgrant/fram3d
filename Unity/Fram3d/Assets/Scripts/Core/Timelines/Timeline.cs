@@ -159,6 +159,20 @@ namespace Fram3d.Core.Timelines
             }
         }
 
+        public void JumpToEnd()
+        {
+            this.Playhead.Scrub(this.TotalDuration, this.TotalDuration);
+            this.EvaluateCamera();
+            this.EnsureVisible(this.TotalDuration);
+        }
+
+        public void JumpToStart()
+        {
+            this.Playhead.Scrub(0, this.TotalDuration);
+            this.EvaluateCamera();
+            this.EnsureVisible(0);
+        }
+
         // ══════════════════════════════════════════════════════════════════
         // Formatting
         // ══════════════════════════════════════════════════════════════════

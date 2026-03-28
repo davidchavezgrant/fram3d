@@ -229,6 +229,36 @@ namespace Fram3d.UI.Input
                 return true;
             }
 
+            if (keyboard.backslashKey.wasPressedThisFrame && !ctrl && !alt && !shift)
+            {
+                if (this._timelineSection != null)
+                {
+                    this._timelineSection.FitAll();
+                }
+
+                return true;
+            }
+
+            if (keyboard.homeKey.wasPressedThisFrame && !ctrl && !alt && !shift)
+            {
+                if (this._timelineSection != null)
+                {
+                    this._timelineSection.JumpToStart();
+                }
+
+                return true;
+            }
+
+            if (keyboard.endKey.wasPressedThisFrame && !ctrl && !alt && !shift)
+            {
+                if (this._timelineSection != null)
+                {
+                    this._timelineSection.JumpToEnd();
+                }
+
+                return true;
+            }
+
             return false;
         }
 

@@ -16,8 +16,11 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class TimelineSectionView : MonoBehaviour
     {
-        private const float LABEL_COL_W    = 140f;
-        private const float SECTION_HEIGHT = 320f;
+        private const float DEFAULT_SECTION_HEIGHT = 320f;
+        private const float LABEL_COL_W           = 140f;
+        private const float MAX_SECTION_HEIGHT     = 2000f;
+        private const float MIN_SECTION_HEIGHT     = 80f;
+        private const float RESIZE_HANDLE_HEIGHT   = 5f;
 
         // ── References ──
         private Fram3d.Core.Timelines.Timeline _controller;
@@ -30,6 +33,7 @@ namespace Fram3d.UI.Timeline
         // ── Child components ──
         private Ruler          _ruler;
         private ShotTrackStrip _shotTrackStrip;
+        private StatusBar      _statusBar;
         private TransportBar   _transport;
         private ZoomBar        _zoomBar;
 
@@ -43,6 +47,12 @@ namespace Fram3d.UI.Timeline
         private Label         _boundaryTooltipText;
         private VisualElement _tooltip;
         private Label         _tooltipText;
+
+        // ── Resize ──
+        private bool  _isResizing;
+        private float _resizeStartY;
+        private float _resizeStartHeight;
+        private float _sectionHeight = DEFAULT_SECTION_HEIGHT;
 
         // ── Visibility ──
         private bool _visible = true;
@@ -71,6 +81,12 @@ namespace Fram3d.UI.Timeline
 
         public bool IsVisible => this._visible;
 
+        public void FitAll() => this._controller?.FitAll();
+
+        public void JumpToEnd() => this._controller?.JumpToEnd();
+
+        public void JumpToStart() => this._controller?.JumpToStart();
+
         public void Toggle()
         {
             this._visible = !this._visible;
@@ -82,7 +98,7 @@ namespace Fram3d.UI.Timeline
                     : DisplayStyle.None;
             }
 
-            this._shotController?.SetBottomInset(this._visible ? SECTION_HEIGHT : 0f);
+            this._shotController?.SetBottomInset(this._visible ? this._sectionHeight + RESIZE_HANDLE_HEIGHT : 0f);
         }
 
         public void TogglePlayback()
@@ -158,9 +174,11 @@ namespace Fram3d.UI.Timeline
 
         private void BuildLayout()
         {
+            this.BuildResizeHandle();
+
             this._section = new VisualElement();
             this._section.AddToClassList("timeline-section");
-            this._section.style.height = SECTION_HEIGHT;
+            this._section.style.height = this._sectionHeight;
 
             this._transport = new TransportBar(this.TogglePlayback);
             this._section.Add(this._transport);
@@ -201,8 +219,60 @@ namespace Fram3d.UI.Timeline
             this._zoomBar.RegisterDragCallbacks();
             this._section.Add(this._zoomBar);
 
+            this._statusBar = new StatusBar();
+            this._section.Add(this._statusBar);
+
             this.BuildTooltips();
             this._root.Add(this._section);
+        }
+
+        private void BuildResizeHandle()
+        {
+            var handle = new VisualElement();
+            handle.AddToClassList("timeline-resize-handle");
+            handle.style.height = RESIZE_HANDLE_HEIGHT;
+            handle.style.cursor = new Cursor { defaultCursorId = (int)CursorType.ResizeVertical };
+
+            handle.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                if (evt.button != 0)
+                {
+                    return;
+                }
+
+                this._isResizing        = true;
+                this._resizeStartY      = evt.position.y;
+                this._resizeStartHeight = this._sectionHeight;
+                handle.CapturePointer(evt.pointerId);
+                evt.StopPropagation();
+            });
+
+            handle.RegisterCallback<PointerMoveEvent>(evt =>
+            {
+                if (!this._isResizing)
+                {
+                    return;
+                }
+
+                var delta     = this._resizeStartY - evt.position.y;
+                var maxHeight = Mathf.Min(MAX_SECTION_HEIGHT, Screen.height * 0.8f);
+                this._sectionHeight         = Mathf.Clamp(this._resizeStartHeight + delta, MIN_SECTION_HEIGHT, maxHeight);
+                this._section.style.height  = this._sectionHeight;
+                this.UpdateBottomInset();
+            });
+
+            handle.RegisterCallback<PointerUpEvent>(evt =>
+            {
+                if (!this._isResizing)
+                {
+                    return;
+                }
+
+                this._isResizing = false;
+                handle.ReleasePointer(evt.pointerId);
+            });
+
+            this._root.Add(handle);
         }
 
         private void BuildTooltips()
@@ -342,7 +412,11 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            if (evt.ctrlKey)
+            if (evt.shiftKey)
+            {
+                this._controller.Pan(evt.delta.y * 2.0);
+            }
+            else if (evt.ctrlKey)
             {
                 this._controller.ZoomAtPoint(this._controller.PixelToTime(evt.localMousePosition.x), -evt.delta.y);
             }
@@ -414,7 +488,7 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            this._shotController.SetBottomInset(ViewportScope.CssToScreen(this._root, SECTION_HEIGHT));
+            this._shotController.SetBottomInset(ViewportScope.CssToScreen(this._root, this._sectionHeight + RESIZE_HANDLE_HEIGHT));
         }
     }
 }

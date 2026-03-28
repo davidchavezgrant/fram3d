@@ -1301,6 +1301,38 @@ namespace Fram3d.Core.Tests.Camera
 		}
 
 		[Fact]
+		public void Aperture__SnapsToNearestStop__When__SetToArbitraryValue()
+		{
+			var cam = CreateCamera();
+			cam.Aperture = 3.0f; // Between 2.8 and 4.0 — should snap to 2.8
+			cam.Aperture.Should().Be(2.8f);
+		}
+
+		[Fact]
+		public void Aperture__SnapsToExactStop__When__SetToExactValue()
+		{
+			var cam = CreateCamera();
+			cam.Aperture = 5.6f;
+			cam.Aperture.Should().Be(5.6f);
+		}
+
+		[Fact]
+		public void Aperture__SnapsToWidest__When__SetBelowMinimum()
+		{
+			var cam = CreateCamera();
+			cam.Aperture = 0.5f;
+			cam.Aperture.Should().Be(1.4f);
+		}
+
+		[Fact]
+		public void Aperture__SnapsToNarrowest__When__SetAboveMaximum()
+		{
+			var cam = CreateCamera();
+			cam.Aperture = 100f;
+			cam.Aperture.Should().Be(22f);
+		}
+
+		[Fact]
 		public void StepApertureWider__DecreasesFNumber__When__NotAtWidest()
 		{
 			var cam = CreateCamera();

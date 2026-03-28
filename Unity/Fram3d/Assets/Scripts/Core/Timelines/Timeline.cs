@@ -64,6 +64,7 @@ namespace Fram3d.Core.Timelines
         // Sub-components
         // ══════════════════════════════════════════════════════════════════
         public ElementTimeline Elements           { get; }
+        public TrackExpansion  Expansion          { get; } = new();
         public FrameRate       FrameRate          => this.Track.FrameRate;
         public bool            IsBoundaryDragging => this._isBoundaryDragging;
         public bool            IsDragging         => this._isDragging;
@@ -77,6 +78,7 @@ namespace Fram3d.Core.Timelines
         public Playhead            Playhead             { get; }
         public double              PlayheadPixel        => this._view.TimeToPixel(this.Playhead.CurrentTime);
         public IObservable<bool>   Reordered            => this.Track.Reordered;
+        public KeyframeSelection   Selection            { get; } = new();
         public IObservable<Shot>   ShotAdded            => this.Track.ShotAdded;
         public IObservable<Shot>   ShotRemoved          => this.Track.ShotRemoved;
         public IReadOnlyList<Shot> Shots                => this.Track.Shots;
@@ -224,6 +226,13 @@ namespace Fram3d.Core.Timelines
             this.Playhead.Scrub(rawTime, this.TotalDuration);
             this.EvaluateCamera();
             this.EnsureVisible(Math.Clamp(rawTime, 0, this.TotalDuration));
+        }
+
+        public void SelectKeyframe(TrackId trackId, KeyframeId keyframeId, TimePosition time)
+        {
+            this.Selection.Select(trackId, keyframeId, time);
+            this.Playhead.Scrub(time.Seconds, this.TotalDuration);
+            this.EvaluateCamera();
         }
 
         public void SetCurrentShot(ShotId id)                => this.Track.SetCurrentShot(id);

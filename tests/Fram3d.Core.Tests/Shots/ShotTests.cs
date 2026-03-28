@@ -260,5 +260,130 @@ namespace Fram3d.Core.Tests.Shots
             );
             shot.TotalCameraKeyframeCount.Should().Be(3); // 2 position + 1 rotation
         }
+
+        [Fact]
+        public void TotalCameraKeyframeCount__IncludesAllManagers__When__FloatKeyframesAdded()
+        {
+            var shot = MakeShot();
+            shot.CameraFocalLengthKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 50f));
+            shot.CameraApertureKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 2.8f));
+            shot.CameraFocusDistanceKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 5f));
+            shot.TotalCameraKeyframeCount.Should().Be(5); // 1 pos + 1 rot + 3 float
+        }
+
+        // --- Focal Length Keyframes ---
+
+        [Fact]
+        public void CameraFocalLengthKeyframes__IsEmpty__When__Created()
+        {
+            var shot = MakeShot();
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void EvaluateCameraFocalLength__ReturnsDefault__When__NoKeyframes()
+        {
+            var shot = MakeShot();
+            shot.EvaluateCameraFocalLength(TimePosition.ZERO).Should().Be(0f);
+        }
+
+        [Fact]
+        public void EvaluateCameraFocalLength__ReturnsValue__When__SingleKeyframe()
+        {
+            var shot = MakeShot();
+            shot.CameraFocalLengthKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 50f));
+            shot.EvaluateCameraFocalLength(TimePosition.ZERO).Should().Be(50f);
+        }
+
+        [Fact]
+        public void EvaluateCameraFocalLength__Interpolates__When__BetweenKeyframes()
+        {
+            var shot = MakeShot();
+            shot.CameraFocalLengthKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 24f));
+            shot.CameraFocalLengthKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), new TimePosition(2.0), 100f));
+            shot.EvaluateCameraFocalLength(new TimePosition(1.0)).Should().BeApproximately(62f, 0.1f);
+        }
+
+        // --- Aperture Keyframes ---
+
+        [Fact]
+        public void CameraApertureKeyframes__IsEmpty__When__Created()
+        {
+            var shot = MakeShot();
+            shot.CameraApertureKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void EvaluateCameraAperture__Interpolates__When__BetweenKeyframes()
+        {
+            var shot = MakeShot();
+            shot.CameraApertureKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 2.8f));
+            shot.CameraApertureKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), new TimePosition(2.0), 5.6f));
+            shot.EvaluateCameraAperture(new TimePosition(1.0)).Should().BeApproximately(4.2f, 0.1f);
+        }
+
+        // --- Focus Distance Keyframes ---
+
+        [Fact]
+        public void CameraFocusDistanceKeyframes__IsEmpty__When__Created()
+        {
+            var shot = MakeShot();
+            shot.CameraFocusDistanceKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void EvaluateCameraFocusDistance__Interpolates__When__BetweenKeyframes()
+        {
+            var shot = MakeShot();
+            shot.CameraFocusDistanceKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 1.5f));
+            shot.CameraFocusDistanceKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), new TimePosition(2.0), 10f));
+            shot.EvaluateCameraFocusDistance(new TimePosition(1.0)).Should().BeApproximately(5.75f, 0.1f);
+        }
+
+        // --- GetAllCameraKeyframeTimes ---
+
+        [Fact]
+        public void GetAllCameraKeyframeTimes__ReturnsInitialTime__When__OnlyDefaultKeyframes()
+        {
+            var shot = MakeShot();
+            var times = shot.GetAllCameraKeyframeTimes();
+            times.Should().HaveCount(1);
+            times[0].Should().Be(TimePosition.ZERO);
+        }
+
+        [Fact]
+        public void GetAllCameraKeyframeTimes__MergesDistinctTimes__When__MultipleManagers()
+        {
+            var shot = MakeShot();
+            // Position has t=0 (default). Add rotation at t=1 and focal length at t=2.
+            shot.CameraRotationKeyframes.Add(
+                new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), new TimePosition(1.0), Quaternion.Identity));
+            shot.CameraFocalLengthKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), new TimePosition(2.0), 50f));
+            var times = shot.GetAllCameraKeyframeTimes();
+            times.Should().HaveCount(3);
+            times[0].Seconds.Should().Be(0.0);
+            times[1].Seconds.Should().Be(1.0);
+            times[2].Seconds.Should().Be(2.0);
+        }
+
+        [Fact]
+        public void GetAllCameraKeyframeTimes__DeduplicatesSharedTimes__When__MultipleManagersSameTime()
+        {
+            var shot = MakeShot();
+            // Both position and rotation have t=0 by default.
+            var times = shot.GetAllCameraKeyframeTimes();
+            times.Should().HaveCount(1);
+        }
     }
 }

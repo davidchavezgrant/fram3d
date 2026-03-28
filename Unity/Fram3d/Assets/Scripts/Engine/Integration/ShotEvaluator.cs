@@ -1,4 +1,5 @@
 using System;
+using Fram3d.Core.Cameras;
 using Fram3d.Core.Common;
 using Fram3d.Core.Shots;
 using Fram3d.Core.Timelines;
@@ -21,6 +22,25 @@ namespace Fram3d.Engine.Integration
         public  Timeline        Controller                   { get; private set; }
         public  void            SetBottomInset(float pixels) => this._bottomInsetPixels = pixels;
 
+        private void ApplyCameraProperties(Shot shot, TimePosition time, CameraElement cam)
+        {
+            if (shot.CameraFocalLengthKeyframes.Count > 0)
+            {
+                cam.FocalLength     = shot.EvaluateCameraFocalLength(time);
+                cam.SnapFocalLength = true;
+            }
+
+            if (shot.CameraApertureKeyframes.Count > 0)
+            {
+                cam.Aperture = shot.EvaluateCameraAperture(time);
+            }
+
+            if (shot.CameraFocusDistanceKeyframes.Count > 0)
+            {
+                cam.FocusDistance = shot.EvaluateCameraFocusDistance(time);
+            }
+        }
+
         private void OnCameraEvaluationRequested(CameraEvaluation eval)
         {
             if (this._cameraBehaviour == null)
@@ -28,10 +48,12 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
+            var cam      = this._cameraBehaviour.ShotCamera;
             var position = eval.Shot.EvaluateCameraPosition(eval.LocalTime);
             var rotation = eval.Shot.EvaluateCameraRotation(eval.LocalTime);
-            this._cameraBehaviour.ShotCamera.Position = position;
-            this._cameraBehaviour.ShotCamera.Rotation = rotation;
+            cam.Position = position;
+            cam.Rotation = rotation;
+            this.ApplyCameraProperties(eval.Shot, eval.LocalTime, cam);
         }
 
         private void OnCurrentShotChanged(Shot shot)
@@ -41,10 +63,12 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
+            var cam      = this._cameraBehaviour.ShotCamera;
             var position = shot.EvaluateCameraPosition(TimePosition.ZERO);
             var rotation = shot.EvaluateCameraRotation(TimePosition.ZERO);
-            this._cameraBehaviour.ShotCamera.Position = position;
-            this._cameraBehaviour.ShotCamera.Rotation = rotation;
+            cam.Position = position;
+            cam.Rotation = rotation;
+            this.ApplyCameraProperties(shot, TimePosition.ZERO, cam);
         }
 
         private void OnElementEvaluationRequested(ElementEvaluation eval)
@@ -69,6 +93,11 @@ namespace Fram3d.Engine.Integration
 
                 element.Position = track.EvaluatePosition(eval.GlobalTime);
                 element.Rotation = track.EvaluateRotation(eval.GlobalTime);
+
+                if (track.ScaleKeyframes.Count > 0)
+                {
+                    element.Scale = track.EvaluateScale(eval.GlobalTime);
+                }
             }
         }
 

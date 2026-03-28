@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using Fram3d.Core.Cameras;
 using Fram3d.Core.Common;
+using Fram3d.Core.Shots;
 using Fram3d.Core.Timelines;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
@@ -34,9 +37,11 @@ namespace Fram3d.UI.Timeline
         private ZoomBar        _zoomBar;
 
         // ── Track area ──
-        private VisualElement _trackContent;
-        private VisualElement _trackOutOfRange;
-        private VisualElement _trackPlayhead;
+        private readonly List<TrackRow> _trackRows = new();
+        private TrackRow                _cameraTrackRow;
+        private VisualElement           _trackContainer;
+        private VisualElement           _trackOutOfRange;
+        private VisualElement           _trackPlayhead;
 
         // ── Tooltips ──
         private VisualElement _boundaryTooltip;
@@ -131,6 +136,8 @@ namespace Fram3d.UI.Timeline
             this._controller.ShotRemoved.Subscribe(_ => this._shotTrackStrip.RebuildBlocks());
             this._controller.Reordered.Subscribe(_ => this._shotTrackStrip.RebuildBlocks());
             this._controller.CurrentShotChanged.Subscribe(_ => this._shotTrackStrip.UpdateActiveStates());
+            this._controller.CurrentShotChanged.Subscribe(_ => this.RebuildTracks());
+            this._controller.Selection.Changed.Subscribe(_ => this.SyncTrackVisuals());
 
             this._shotTrackStrip.RebuildBlocks();
         }
@@ -232,31 +239,65 @@ namespace Fram3d.UI.Timeline
             this._root.Add(this._boundaryTooltip);
         }
 
+        private void BuildCameraSubTracks(TrackRow row)
+        {
+            row.AddSubTrack("Position X");
+            row.AddSubTrack("Position Y");
+            row.AddSubTrack("Position Z");
+            row.AddSubTrack("Pan");
+            row.AddSubTrack("Tilt");
+            row.AddSubTrack("Roll");
+
+            var cam = this.GetShotCamera();
+
+            if (cam != null && cam.CanDollyZoom)
+            {
+                row.AddSubTrack("Focal Length");
+            }
+
+            row.AddSubTrack("Focus Distance");
+            row.AddSubTrack("Aperture");
+            row.SetExpanded(this._controller.Expansion.IsExpanded(TrackId.Camera));
+        }
+
+        private void BuildElementSubTracks(TrackRow row)
+        {
+            row.AddSubTrack("Position X");
+            row.AddSubTrack("Position Y");
+            row.AddSubTrack("Position Z");
+            row.AddSubTrack("Scale");
+            row.AddSubTrack("Rotation X");
+            row.AddSubTrack("Rotation Y");
+            row.AddSubTrack("Rotation Z");
+        }
+
         private void BuildTrackArea()
         {
-            var row = new VisualElement();
-            row.AddToClassList("timeline-track-row");
-
-            var labels = new VisualElement();
-            labels.AddToClassList("timeline-label-column");
-            row.Add(labels);
-
-            this._trackContent = new VisualElement();
-            this._trackContent.AddToClassList("timeline-track-content");
-            row.Add(this._trackContent);
+            this._trackContainer = new VisualElement();
+            this._trackContainer.AddToClassList("timeline-track-area");
 
             this._trackPlayhead = new VisualElement();
             this._trackPlayhead.AddToClassList("timeline-playhead");
-            this._trackPlayhead.style.display = DisplayStyle.None;
-            this._trackContent.Add(this._trackPlayhead);
+            this._trackPlayhead.AddToClassList("timeline-playhead--tracks");
+            this._trackPlayhead.style.display  = DisplayStyle.None;
+            this._trackPlayhead.pickingMode    = PickingMode.Ignore;
 
             this._trackOutOfRange = new VisualElement();
             this._trackOutOfRange.AddToClassList("timeline-out-of-range");
+            this._trackOutOfRange.AddToClassList("timeline-out-of-range--tracks");
             this._trackOutOfRange.pickingMode = PickingMode.Ignore;
-            this._trackContent.Add(this._trackOutOfRange);
 
-            this._trackContent.RegisterCallback<WheelEvent>(this.OnWheel);
-            this._section.Add(row);
+            this._trackContainer.RegisterCallback<WheelEvent>(this.OnWheel);
+            this._trackContainer.RegisterCallback<ClickEvent>(evt =>
+            {
+                if (evt.target == this._trackContainer)
+                {
+                    this._controller.Selection.Clear();
+                }
+            });
+            this._section.Add(this._trackContainer);
+
+            this.RebuildTracks();
         }
 
         // ══════════════════════════════════════════════════════════════════
@@ -280,6 +321,7 @@ namespace Fram3d.UI.Timeline
             // Track area
             this.SetPlayhead(this._trackPlayhead, px);
             this.SetOutOfRange(this._trackOutOfRange, endPx);
+            this.SyncTrackVisuals();
 
             // Ruler + zoom + transport
             this._ruler.UpdatePlayhead(this._controller, this._controller.Playhead.CurrentTime);
@@ -308,7 +350,7 @@ namespace Fram3d.UI.Timeline
         private void SetOutOfRange(VisualElement el, float endPx)
         {
             el.style.position = Position.Absolute;
-            el.style.left     = endPx;
+            el.style.left     = endPx + LABEL_COL_W;
             el.style.top      = 0;
             el.style.bottom   = 0;
             el.style.right    = 0;
@@ -318,7 +360,7 @@ namespace Fram3d.UI.Timeline
         private void SetPlayhead(VisualElement el, float px)
         {
             el.style.display = DisplayStyle.Flex;
-            el.style.left    = px;
+            el.style.left    = px + LABEL_COL_W;
         }
 
         // ══════════════════════════════════════════════════════════════════
@@ -397,6 +439,248 @@ namespace Fram3d.UI.Timeline
             var screenPos = new Vector2(mousePos.x, Screen.height - mousePos.y);
             var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
             this._controller.ZoomAtPoint(this._controller.PixelToTime(panelPos.x - LABEL_COL_W), scroll.y);
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // Track management
+        // ══════════════════════════════════════════════════════════════════
+
+        private string GetElementName(ElementId id)
+        {
+            var elements = FindObjectsByType<ElementBehaviour>(FindObjectsSortMode.None);
+
+            foreach (var eb in elements)
+            {
+                if (eb.Element?.Id != null && eb.Element.Id.Equals(id))
+                {
+                    return eb.Element.Name;
+                }
+            }
+
+            return "Element";
+        }
+
+        private TimePosition GetLocalPlayheadTime()
+        {
+            var result = this._controller.ResolveShot();
+
+            if (!result.HasValue)
+            {
+                return null;
+            }
+
+            return result.Value.localTime;
+        }
+
+        private CameraElement GetShotCamera()
+        {
+            var cam = FindAnyObjectByType<CameraBehaviour>();
+            return cam?.ShotCamera;
+        }
+
+        private void OnDiamondClicked(KeyframeId keyframeId, TimePosition time)
+        {
+            if (time == null)
+            {
+                return;
+            }
+
+            if (keyframeId != null)
+            {
+                this._controller.SelectKeyframe(TrackId.Camera, keyframeId, time);
+            }
+            else
+            {
+                var shot = this._controller.CurrentShot;
+
+                if (shot == null)
+                {
+                    return;
+                }
+
+                KeyframeId representative = null;
+
+                foreach (var kf in shot.CameraPositionKeyframes.Keyframes)
+                {
+                    if (kf.Time.Equals(time))
+                    {
+                        representative = kf.Id;
+
+                        break;
+                    }
+                }
+
+                if (representative == null)
+                {
+                    foreach (var kf in shot.CameraRotationKeyframes.Keyframes)
+                    {
+                        if (kf.Time.Equals(time))
+                        {
+                            representative = kf.Id;
+
+                            break;
+                        }
+                    }
+                }
+
+                if (representative != null)
+                {
+                    this._controller.SelectKeyframe(TrackId.Camera, representative, time);
+                }
+            }
+        }
+
+        private void OnTrackArrowClicked(TrackId trackId)
+        {
+            this._controller.Expansion.Toggle(trackId);
+            this.SyncTrackVisuals();
+        }
+
+        private void RebuildTracks()
+        {
+            foreach (var row in this._trackRows)
+            {
+                row.RemoveFromHierarchy();
+            }
+
+            this._trackRows.Clear();
+
+            // Camera track (always present)
+            this._cameraTrackRow = new TrackRow(TrackId.Camera, "Camera", true);
+            this._cameraTrackRow.ArrowClicked   += this.OnTrackArrowClicked;
+            this._cameraTrackRow.DiamondClicked += this.OnDiamondClicked;
+            this.BuildCameraSubTracks(this._cameraTrackRow);
+            this._trackRows.Add(this._cameraTrackRow);
+            this._trackContainer.Insert(0, this._cameraTrackRow);
+
+            // Element tracks
+            foreach (var track in this._controller.Elements.Tracks)
+            {
+                if (!track.HasKeyframes)
+                {
+                    continue;
+                }
+
+                var elemRow = new TrackRow(
+                    TrackId.ForElement(track.ElementId),
+                    this.GetElementName(track.ElementId),
+                    false);
+                elemRow.ArrowClicked   += this.OnTrackArrowClicked;
+                elemRow.DiamondClicked += this.OnDiamondClicked;
+                this.BuildElementSubTracks(elemRow);
+                this._trackRows.Add(elemRow);
+                this._trackContainer.Insert(this._trackRows.Count - 1, elemRow);
+            }
+
+            // Re-add playhead and out-of-range as overlays spanning all tracks
+            this._trackContainer.Add(this._trackPlayhead);
+            this._trackContainer.Add(this._trackOutOfRange);
+        }
+
+        private void SyncCameraSubTrackValues(Shot shot)
+        {
+            var localTime = this.GetLocalPlayheadTime();
+
+            if (localTime == null || this._cameraTrackRow.SubTracks.Count == 0)
+            {
+                return;
+            }
+
+            var pos   = shot.EvaluateCameraPosition(localTime);
+            var rot   = shot.EvaluateCameraRotation(localTime);
+            var euler = EulerAngles.FromQuaternion(rot);
+
+            var subs = this._cameraTrackRow.SubTracks;
+            var idx  = 0;
+            subs[idx++].SetValue(pos.X.ToString("F2"));
+            subs[idx++].SetValue(pos.Y.ToString("F2"));
+            subs[idx++].SetValue(pos.Z.ToString("F2"));
+            subs[idx++].SetValue(euler.Pan.ToString("F1") + "\u00B0");
+            subs[idx++].SetValue(euler.Tilt.ToString("F1") + "\u00B0");
+            subs[idx++].SetValue(euler.Roll.ToString("F1") + "\u00B0");
+
+            var cam = this.GetShotCamera();
+
+            if (cam != null && cam.CanDollyZoom && idx < subs.Count)
+            {
+                var fl = cam.FocalLength;
+
+                if (shot.CameraFocalLengthKeyframes.Count > 0)
+                {
+                    fl = shot.EvaluateCameraFocalLength(localTime);
+                }
+
+                subs[idx++].SetValue(fl.ToString("F0") + "mm");
+            }
+
+            if (idx < subs.Count)
+            {
+                var fd = cam?.FocusDistance ?? 0f;
+
+                if (shot.CameraFocusDistanceKeyframes.Count > 0)
+                {
+                    fd = shot.EvaluateCameraFocusDistance(localTime);
+                }
+
+                subs[idx++].SetValue(fd.ToString("F1") + "m");
+            }
+
+            if (idx < subs.Count)
+            {
+                var ap = cam?.Aperture ?? 0f;
+
+                if (shot.CameraApertureKeyframes.Count > 0)
+                {
+                    ap = shot.EvaluateCameraAperture(localTime);
+                }
+
+                subs[idx++].SetValue("f/" + ap.ToString("F1"));
+            }
+        }
+
+        private void SyncTrackVisuals()
+        {
+            if (this._cameraTrackRow == null || this._controller.CurrentShot == null)
+            {
+                return;
+            }
+
+            var shot                         = this._controller.CurrentShot;
+            Func<double, double> timeToPixel = this._controller.TimeToPixel;
+
+            // Camera track main diamonds
+            var cameraTimes = shot.GetAllCameraKeyframeTimes();
+            this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, timeToPixel, this._controller.Selection);
+            this._cameraTrackRow.SetExpanded(this._controller.Expansion.IsExpanded(TrackId.Camera));
+
+            // Camera sub-track live values
+            if (this._controller.Expansion.IsExpanded(TrackId.Camera))
+            {
+                this.SyncCameraSubTrackValues(shot);
+            }
+
+            // Element tracks
+            for (var i = 1; i < this._trackRows.Count; i++)
+            {
+                var row     = this._trackRows[i];
+                var trackId = row.TrackId;
+
+                if (trackId == null || !trackId.IsElement)
+                {
+                    continue;
+                }
+
+                var track = this._controller.Elements.GetTrack(trackId.ElementId);
+
+                if (track == null)
+                {
+                    continue;
+                }
+
+                var elemTimes = track.GetAllKeyframeTimes();
+                row.UpdateMainDiamonds(elemTimes, timeToPixel, this._controller.Selection);
+                row.SetExpanded(this._controller.Expansion.IsExpanded(trackId));
+            }
         }
 
         // ══════════════════════════════════════════════════════════════════

@@ -1083,5 +1083,56 @@ namespace Fram3d.Core.Tests.Timelines
 
             t.Advance(0.1).Should().BeTrue();
         }
+
+        // --- Track view state ---
+
+        [Fact]
+        public void Selection__IsExposed__When__Accessed()
+        {
+            var tl = new Timeline(FrameRate.FPS_24);
+            tl.Selection.Should().NotBeNull();
+            tl.Selection.HasSelection.Should().BeFalse();
+        }
+
+        [Fact]
+        public void Expansion__IsExposed__When__Accessed()
+        {
+            var tl = new Timeline(FrameRate.FPS_24);
+            tl.Expansion.Should().NotBeNull();
+            tl.Expansion.IsExpanded(TrackId.Camera).Should().BeFalse();
+        }
+
+        [Fact]
+        public void SelectKeyframe__MovesPlayhead__When__Called()
+        {
+            var tl = new Timeline(FrameRate.FPS_24);
+            tl.AddShot(Vector3.Zero, Quaternion.Identity);
+            var kfId = tl.CurrentShot.CameraPositionKeyframes.Keyframes[0].Id;
+            tl.SelectKeyframe(TrackId.Camera, kfId, new TimePosition(2.0));
+            tl.Playhead.CurrentTime.Should().BeApproximately(2.0, 0.05);
+            tl.Selection.IsSelected(kfId).Should().BeTrue();
+        }
+
+        [Fact]
+        public void SelectKeyframe__FiresCameraEvaluation__When__Called()
+        {
+            var tl = new Timeline(FrameRate.FPS_24);
+            tl.AddShot(Vector3.Zero, Quaternion.Identity);
+            var fired = false;
+            tl.CameraEvaluationRequested.Subscribe(_ => fired = true);
+            var kfId = tl.CurrentShot.CameraPositionKeyframes.Keyframes[0].Id;
+            tl.SelectKeyframe(TrackId.Camera, kfId, new TimePosition(1.0));
+            fired.Should().BeTrue();
+        }
+
+        [Fact]
+        public void SelectKeyframe__SetsTrackId__When__Called()
+        {
+            var tl = new Timeline(FrameRate.FPS_24);
+            tl.AddShot(Vector3.Zero, Quaternion.Identity);
+            var kfId = tl.CurrentShot.CameraPositionKeyframes.Keyframes[0].Id;
+            tl.SelectKeyframe(TrackId.Camera, kfId, new TimePosition(1.0));
+            tl.Selection.TrackId.Should().Be(TrackId.Camera);
+        }
     }
 }

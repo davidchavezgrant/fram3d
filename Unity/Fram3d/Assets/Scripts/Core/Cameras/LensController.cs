@@ -129,6 +129,13 @@ namespace Fram3d.Core.Cameras
         }
 
         /// <summary>
+        /// Sets aperture to the nearest discrete stop. Used by keyframe evaluation
+        /// to restore an exact f-stop value. Snaps to the closest entry in APERTURE_STOPS.
+        /// </summary>
+        public void SetAperture(float value) =>
+            this._apertureIndex = FindNearestIndex(APERTURE_STOPS, value);
+
+        /// <summary>
         /// Sets focal length continuously. Respects lens set constraints:
         /// - No lens set or zoom lens: clamps to the lens range (or 14–400mm global range)
         /// - Prime lens set: no-op — use Step or SetPreset instead

@@ -195,7 +195,7 @@ namespace Fram3d.UI.Timeline
             return sb.ToString();
         }
 
-        private static string FormatDuration(double seconds) => $"{seconds:F1}s";
+        private static string FormatDuration(double seconds) => FormatDurationTimecode(seconds);
 
         private static string FormatDurationTimecode(double seconds, int fps = 24)
         {

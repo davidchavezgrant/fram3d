@@ -128,7 +128,9 @@ namespace Fram3d.UI.Timeline
                     this.ShotHoverStarted?.Invoke(shot));
                 block.RegisterCallback<PointerLeaveEvent>(_ =>
                     this.ShotHoverEnded?.Invoke());
-                block.DurationClicked += b => b.BeginDurationEdit(value =>
+                block.DurationHoverStarted += () => this.ShotHoverEnded?.Invoke();
+                block.DurationHoverEnded   += () => this.ShotHoverStarted?.Invoke(shot);
+                block.DurationClicked      += b => b.BeginDurationEdit(value =>
                 {
                     if (double.TryParse(value, out var parsed))
                     {

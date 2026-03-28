@@ -1,4 +1,5 @@
 using Fram3d.Core.Shots;
+using Fram3d.Engine.Cursor;
 using UnityEngine;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Timeline
@@ -36,11 +37,15 @@ namespace Fram3d.UI.Timeline
             {
                 this._durationLabel.style.borderBottomColor = new Color(1f, 1f, 1f, 0.5f);
                 this._durationLabel.style.backgroundColor   = new Color(1f, 1f, 1f, 0.1f);
+                CursorService.SetCursor(CursorType.IBeam);
+                this.DurationHoverStarted?.Invoke();
             });
             this._durationLabel.RegisterCallback<PointerLeaveEvent>(_ =>
             {
                 this._durationLabel.style.borderBottomColor = Color.clear;
                 this._durationLabel.style.backgroundColor   = Color.clear;
+                CursorService.ResetCursor();
+                this.DurationHoverEnded?.Invoke();
             });
             this._durationLabel.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
             this._durationLabel.RegisterCallback<ClickEvent>(evt =>
@@ -55,6 +60,8 @@ namespace Fram3d.UI.Timeline
         /// Fired when the duration label is clicked (to trigger inline editing).
         /// </summary>
         public event System.Action<ShotBlock> DurationClicked;
+        public event System.Action           DurationHoverEnded;
+        public event System.Action           DurationHoverStarted;
 
         public bool IsEditing => this._isEditing;
 

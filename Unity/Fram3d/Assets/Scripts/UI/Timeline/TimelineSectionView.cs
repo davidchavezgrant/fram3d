@@ -16,11 +16,8 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class TimelineSectionView : MonoBehaviour
     {
-        private const float DEFAULT_SECTION_HEIGHT = 320f;
-        private const float LABEL_COL_W           = 140f;
-        private const float MAX_SECTION_HEIGHT     = 2000f;
-        private const float MIN_SECTION_HEIGHT     = 80f;
-        private const float RESIZE_HANDLE_HEIGHT   = 5f;
+        private const float LABEL_COL_W      = 140f;
+        private const float SECTION_HEIGHT   = 320f;
 
         // ── References ──
         private Fram3d.Core.Timelines.Timeline _controller;
@@ -46,12 +43,6 @@ namespace Fram3d.UI.Timeline
         private Label         _boundaryTooltipText;
         private VisualElement _tooltip;
         private Label         _tooltipText;
-
-        // ── Resize ──
-        private bool  _isResizing;
-        private float _resizeStartY;
-        private float _resizeStartHeight;
-        private float _sectionHeight = DEFAULT_SECTION_HEIGHT;
 
         // ── Visibility ──
         private bool _visible = true;
@@ -97,7 +88,7 @@ namespace Fram3d.UI.Timeline
                     : DisplayStyle.None;
             }
 
-            this._shotController?.SetBottomInset(this._visible ? this._sectionHeight + RESIZE_HANDLE_HEIGHT : 0f);
+            this._shotController?.SetBottomInset(this._visible ? SECTION_HEIGHT : 0f);
         }
 
         public void TogglePlayback()
@@ -173,11 +164,9 @@ namespace Fram3d.UI.Timeline
 
         private void BuildLayout()
         {
-            this.BuildResizeHandle();
-
             this._section = new VisualElement();
             this._section.AddToClassList("timeline-section");
-            this._section.style.height = this._sectionHeight;
+            this._section.style.height = SECTION_HEIGHT;
 
             this._transport = new TransportBar(this.TogglePlayback);
             this._section.Add(this._transport);
@@ -220,55 +209,6 @@ namespace Fram3d.UI.Timeline
 
             this.BuildTooltips();
             this._root.Add(this._section);
-        }
-
-        private void BuildResizeHandle()
-        {
-            var handle = new VisualElement();
-            handle.AddToClassList("timeline-resize-handle");
-            handle.style.height = RESIZE_HANDLE_HEIGHT;
-
-            handle.RegisterCallback<PointerDownEvent>(evt =>
-            {
-                if (evt.button != 0)
-                {
-                    return;
-                }
-
-                this._isResizing        = true;
-                this._resizeStartY      = evt.position.y;
-                this._resizeStartHeight = this._sectionHeight;
-                this._root.CapturePointer(evt.pointerId);
-                evt.StopPropagation();
-            });
-
-            // Move/up on root so drag continues when pointer leaves the 5px handle
-            this._root.RegisterCallback<PointerMoveEvent>(evt =>
-            {
-                if (!this._isResizing)
-                {
-                    return;
-                }
-
-                var delta     = this._resizeStartY - evt.position.y;
-                var maxHeight = Mathf.Min(MAX_SECTION_HEIGHT, Screen.height * 0.8f);
-                this._sectionHeight        = Mathf.Clamp(this._resizeStartHeight + delta, MIN_SECTION_HEIGHT, maxHeight);
-                this._section.style.height = this._sectionHeight;
-                this.UpdateBottomInset();
-            });
-
-            this._root.RegisterCallback<PointerUpEvent>(evt =>
-            {
-                if (!this._isResizing)
-                {
-                    return;
-                }
-
-                this._isResizing = false;
-                this._root.ReleasePointer(evt.pointerId);
-            });
-
-            this._root.Add(handle);
         }
 
         private void BuildTooltips()
@@ -484,7 +424,7 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            this._shotController.SetBottomInset(ViewportScope.CssToScreen(this._root, this._sectionHeight + RESIZE_HANDLE_HEIGHT));
+            this._shotController.SetBottomInset(ViewportScope.CssToScreen(this._root, SECTION_HEIGHT));
         }
     }
 }

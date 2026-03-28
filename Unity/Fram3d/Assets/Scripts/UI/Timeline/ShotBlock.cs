@@ -26,6 +26,7 @@ namespace Fram3d.UI.Timeline
 
             this.AddToClassList("shot-block");
             this.style.backgroundColor = this._baseColor;
+            this.style.alignItems      = Align.FlexStart;
 
             this._nameLabel = new Label(shot.Name);
             this._nameLabel.AddToClassList("shot-block__name");

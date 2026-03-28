@@ -186,12 +186,16 @@ namespace Fram3d.UI.Timeline
                 var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 var result = this._controller.ShotTrackPointerDown(evt.localPosition.x, now);
 
+                // Capture pointer for all left-button interactions so drag
+                // continues when the pointer moves outside the strip vertically.
+                this._trackArea.CapturePointer(evt.pointerId);
+
                 if (result == ShotTrackAction.BOUNDARY_DRAG)
                 {
                     this.BoundaryDragStarted?.Invoke();
-                    this._trackArea.CapturePointer(evt.pointerId);
-                    evt.StopPropagation();
                 }
+
+                evt.StopPropagation();
             }
             else if (evt.button == 2)
             {

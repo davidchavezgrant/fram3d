@@ -13,7 +13,7 @@ namespace Fram3d.Core.Timelines
     public sealed class Timeline
     {
         private const    double                     DOUBLE_CLICK_MS             = 350;
-        private const    double                     EDGE_TOLERANCE_PX           = 6.0;
+        private const    double                     EDGE_TOLERANCE_PX           = 12.0;
         private const    int                        HOLD_THRESHOLD_MS           = 200;
         private readonly Subject<CameraEvaluation>  _cameraEvaluationRequested  = new();
         private readonly Subject<ElementEvaluation> _elementEvaluationRequested = new();

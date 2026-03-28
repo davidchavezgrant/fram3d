@@ -294,6 +294,13 @@ namespace Fram3d.UI.Timeline
 
             this._trackContainer.Add(trackScroll);
             this._trackContent.RegisterCallback<WheelEvent>(this.OnWheel);
+            this._trackContent.RegisterCallback<ClickEvent>(evt =>
+            {
+                if (evt.target == this._trackContent)
+                {
+                    this._controller.Selection.Clear();
+                }
+            });
             this._section.Add(this._trackContainer);
 
             this.RebuildTracks();

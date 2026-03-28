@@ -669,6 +669,10 @@
     height: 14px;
 }
 
+.shot-block__edit-input {
+    -unity-cursor-color: rgb(255, 255, 255);
+}
+
 /* ── Drag indicator ──────────────────────────────────────────────── */
 
 .shot-track__drop-indicator {

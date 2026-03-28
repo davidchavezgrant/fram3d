@@ -48,7 +48,7 @@ namespace Fram3d.UI.Timeline
             titleRow.Add(addBtn);
             labelCol.Add(titleRow);
 
-            this._totalLabel = new Label("Total: 0.0s");
+            this._totalLabel = new Label("Total: 0;00;00;00");
             this._totalLabel.AddToClassList("timeline-label-column__subtitle");
             labelCol.Add(this._totalLabel);
             this.Add(labelCol);
@@ -187,7 +187,8 @@ namespace Fram3d.UI.Timeline
             this.UpdatePlayhead(px);
             this.UpdateOutOfRange(endPx);
             this.UpdateDropIndicator();
-            this._totalLabel.text = $"Total: {this._controller.TotalDuration:F1}s";
+            var fps = (int)this._controller.FrameRate.Fps;
+            this._totalLabel.text = $"Total: {FormatTimecode(this._controller.TotalDuration, fps)}";
         }
 
         public void UpdateActiveStates()
@@ -201,6 +202,24 @@ namespace Fram3d.UI.Timeline
                     block.SetActive(block.Shot == current);
                 }
             }
+        }
+
+        private static string FormatTimecode(double seconds, int fps)
+        {
+            var totalFrames = (int)(seconds * fps);
+            var h           = totalFrames / (fps * 3600);
+            var remainder   = totalFrames % (fps * 3600);
+            var m           = remainder   / (fps * 60);
+            remainder = remainder % (fps  * 60);
+            var s = remainder             / fps;
+            var f = remainder             % fps;
+
+            if (h > 0)
+            {
+                return $"{h};{m:D2};{s:D2};{f:D2}";
+            }
+
+            return $"{m};{s:D2};{f:D2}";
         }
 
         private float ComputeDropIndicatorPx()

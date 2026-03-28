@@ -152,6 +152,7 @@ namespace Fram3d.UI.Timeline
                 textInput.style.marginRight       = 0;
                 textInput.style.color             = Color.white;
                 textInput.style.fontSize          = 9;
+                textInput.AddToClassList("shot-block__edit-input");
             }
 
             this.Add(field);

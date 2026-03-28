@@ -1,5 +1,6 @@
 using Fram3d.Core.Common;
 using Fram3d.Core.Scenes;
+using Fram3d.Core.Timelines;
 using Fram3d.Engine.Conversion;
 using UnityEngine;
 using SysVector3 = System.Numerics.Vector3;
@@ -21,6 +22,7 @@ namespace Fram3d.Engine.Integration
         private          GameObject       _rotateGroup;
         private          GameObject       _scaleGroup;
         private          Selection        _selection;
+        private          Timeline         _timeline;
         private          GameObject       _translateGroup;
 
         [SerializeField]
@@ -37,6 +39,8 @@ namespace Fram3d.Engine.Integration
             }
         }
 
+        public void SetTimeline(Timeline timeline) => this._timeline = timeline;
+
         public ActiveTool ActiveTool       => this._gizmoState.ActiveTool;
         public bool       IsDragging       => this._activeDrag != null;
         public bool       IsHoveringHandle => this._highlighter != null && this._highlighter.IsHoveringHandle;
@@ -44,7 +48,19 @@ namespace Fram3d.Engine.Integration
 
         public void EndDrag()
         {
-            // Future: create ICommand with before/after state here (milestone 4.1)
+            if (this._activeDrag != null && this._timeline != null)
+            {
+                var before = new ElementSnapshot
+                {
+                    Position = this._activeDrag.StartPosition,
+                    Rotation = this._activeDrag.StartRotation,
+                    Scale    = this._activeDrag.StartScale
+                };
+                var after = ElementSnapshot.FromElement(this._activeDrag.Element);
+                this._timeline.RecordElementManipulation(
+                    this._activeDrag.Element.Id, after, before);
+            }
+
             this._highlighter.ClearDrag();
             this._activeDrag = null;
         }

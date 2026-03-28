@@ -92,6 +92,22 @@ namespace Fram3d.UI.Timeline
         public event Action<Shot>   ShotHoverStarted;
         public event Action<float>  TrackAreaResized;
 
+        public bool HasEditingBlock
+        {
+            get
+            {
+                for (var i = 0; i < this._trackArea.childCount; i++)
+                {
+                    if (this._trackArea[i] is ShotBlock block && block.IsEditing)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
         public VisualElement TrackArea => this._trackArea;
 
         public void Bind(Fram3d.Core.Timelines.Timeline controller)

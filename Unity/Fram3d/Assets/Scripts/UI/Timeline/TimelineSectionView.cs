@@ -51,7 +51,7 @@ namespace Fram3d.UI.Timeline
         // Public API (called by keyboard router)
         // ══════════════════════════════════════════════════════════════════
 
-        public bool HasFocusedTextField => false; // TODO: check inline duration edits
+        public bool HasFocusedTextField => this._shotTrackStrip != null && this._shotTrackStrip.HasEditingBlock;
 
         public bool IsPointerOverUI
         {

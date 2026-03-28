@@ -33,7 +33,6 @@ namespace Fram3d.UI.Timeline
         // ── Child components ──
         private Ruler          _ruler;
         private ShotTrackStrip _shotTrackStrip;
-        private StatusBar      _statusBar;
         private TransportBar   _transport;
         private ZoomBar        _zoomBar;
 
@@ -218,9 +217,6 @@ namespace Fram3d.UI.Timeline
             this._zoomBar.PanRequested += px => { this._controller.Pan(px); };
             this._zoomBar.RegisterDragCallbacks();
             this._section.Add(this._zoomBar);
-
-            this._statusBar = new StatusBar();
-            this._section.Add(this._statusBar);
 
             this.BuildTooltips();
             this._root.Add(this._section);

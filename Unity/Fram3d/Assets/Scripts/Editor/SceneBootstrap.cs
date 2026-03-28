@@ -26,6 +26,7 @@ namespace Fram3d.Editor
             SetupAspectRatioMask();
             SetupCompositionGuides();
             SetupPropertiesPanel();
+            SetupCameraViewOverlays();
             SetupGroundPlane();
             SetupReferenceObjects();
             Debug.Log("Fram3d scene bootstrapped.");
@@ -141,6 +142,43 @@ namespace Fram3d.Editor
             camSo.ApplyModifiedProperties();
 
             EditorUtility.SetDirty(cameraGameObject);
+        }
+
+        private static void SetupCameraViewOverlays()
+        {
+            var overlayGo = GameObject.Find("Camera View Overlays");
+
+            if (overlayGo == null)
+            {
+                overlayGo = new GameObject("Camera View Overlays");
+            }
+
+            var uiDoc = overlayGo.GetComponent<UIDocument>();
+
+            if (uiDoc == null)
+            {
+                uiDoc               = overlayGo.AddComponent<UIDocument>();
+                uiDoc.panelSettings = GetOrCreatePanelSettings();
+            }
+
+            uiDoc.sortingOrder = 4;
+
+            if (overlayGo.GetComponent<ShotLabelOverlay>() == null)
+            {
+                overlayGo.AddComponent<ShotLabelOverlay>();
+            }
+
+            if (overlayGo.GetComponent<SequenceTimecodeOverlay>() == null)
+            {
+                overlayGo.AddComponent<SequenceTimecodeOverlay>();
+            }
+
+            if (overlayGo.GetComponent<DirectorViewBadge>() == null)
+            {
+                overlayGo.AddComponent<DirectorViewBadge>();
+            }
+
+            EditorUtility.SetDirty(overlayGo);
         }
 
         private static void SetupCompositionGuides()

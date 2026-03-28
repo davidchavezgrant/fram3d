@@ -14,6 +14,8 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class ShotTrackStrip : VisualElement
     {
+        private const float BOUNDARY_HANDLE_WIDTH = 20f;
+
         private readonly List<VisualElement> _boundaryHandles = new();
         private readonly VisualElement _dropIndicator;
         private readonly VisualElement _outOfRange;
@@ -369,11 +371,18 @@ namespace Fram3d.UI.Timeline
 
             this._boundaryHandles.Clear();
 
+            // One handle per shot boundary (after each shot except possibly the last,
+            // but we create one per shot — the last handle sits at the project end).
             for (var i = 0; i < this._controller.Shots.Count; i++)
             {
                 var handle = new VisualElement();
                 handle.AddToClassList("shot-track__boundary");
-                handle.userData = i;
+                handle.userData                  = i;
+                handle.style.position            = Position.Absolute;
+                handle.style.width               = BOUNDARY_HANDLE_WIDTH;
+                handle.style.top                 = 0;
+                handle.style.bottom              = 0;
+                handle.style.backgroundColor     = new StyleColor(UnityEngine.Color.clear);
                 handle.RegisterCallback<PointerDownEvent>(this.OnBoundaryPointerDown);
                 handle.RegisterCallback<PointerEnterEvent>(this.OnBoundaryPointerEnter);
                 handle.RegisterCallback<PointerLeaveEvent>(this.OnBoundaryPointerLeave);
@@ -392,7 +401,8 @@ namespace Fram3d.UI.Timeline
             for (var i = 0; i < shotCount && i < this._boundaryHandles.Count; i++)
             {
                 runningTime += this._controller.Shots[i].Duration;
-                this._boundaryHandles[i].style.left = (float)this._controller.TimeToPixel(runningTime);
+                var centerPx = (float)this._controller.TimeToPixel(runningTime);
+                this._boundaryHandles[i].style.left = centerPx - BOUNDARY_HANDLE_WIDTH / 2f;
             }
         }
 

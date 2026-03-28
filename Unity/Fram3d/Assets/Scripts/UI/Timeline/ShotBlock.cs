@@ -115,60 +115,76 @@ namespace Fram3d.UI.Timeline
             this._isEditing = true;
             this._durationLabel.style.display = DisplayStyle.None;
 
-            // Invisible TextField captures keyboard input
-            var field = new TextField();
-            field.style.position = Position.Absolute;
-            field.style.opacity  = 0;
-            field.style.width    = 1;
-            field.style.height   = 1;
-            field.style.overflow = Overflow.Hidden;
             var initialTimecode = FormatDurationTimecode(this.Shot.Duration);
+            var field           = new TextField();
             field.value            = initialTimecode;
             field.selectAllOnFocus = true;
+
+            // Style the field to match the hover pill — no default TextField chrome
+            StylePill(field);
+            field.style.backgroundColor = EDIT_BG;
+            field.style.marginTop       = 0;
+            field.style.marginBottom    = 0;
+            field.style.marginLeft      = 0;
+            field.style.marginRight     = 0;
+            field.style.borderTopWidth    = 0;
+            field.style.borderBottomWidth = 0;
+            field.style.borderLeftWidth   = 0;
+            field.style.borderRightWidth  = 0;
+
+            // Style the inner TextInput to remove default chrome
+            var textInput = field.Q("unity-text-input");
+
+            if (textInput != null)
+            {
+                textInput.style.backgroundColor = Color.clear;
+                textInput.style.borderTopWidth    = 0;
+                textInput.style.borderBottomWidth = 0;
+                textInput.style.borderLeftWidth   = 0;
+                textInput.style.borderRightWidth  = 0;
+                textInput.style.paddingTop        = 0;
+                textInput.style.paddingBottom     = 0;
+                textInput.style.paddingLeft       = 0;
+                textInput.style.paddingRight      = 0;
+                textInput.style.marginTop         = 0;
+                textInput.style.marginBottom      = 0;
+                textInput.style.marginLeft        = 0;
+                textInput.style.marginRight       = 0;
+                textInput.style.color             = Color.white;
+                textInput.style.fontSize          = 9;
+            }
+
             this.Add(field);
-
-            // Visible pill — same size/style as hover state
-            var pill = new Label(initialTimecode);
-            StylePill(pill);
-            pill.style.backgroundColor = EDIT_BG;
-            pill.pickingMode           = PickingMode.Ignore;
-            this.Add(pill);
-
             field.schedule.Execute(() => field.Focus()).StartingIn(0);
 
-            // Filter: only allow digits, semicolons, colons
             field.RegisterCallback<KeyDownEvent>(evt =>
             {
                 if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
                 {
-                    this.CommitEdit(field, pill, onCommit);
+                    this.CommitEdit(field, onCommit);
                     evt.StopPropagation();
                     return;
                 }
 
                 if (evt.keyCode == KeyCode.Escape)
                 {
-                    this.CancelEdit(field, pill);
+                    this.CancelEdit(field);
                     evt.StopPropagation();
                     return;
                 }
             });
 
-            // Update pill text as user types (display only, no live resize)
             field.RegisterValueChangedCallback(evt =>
             {
-                // Strip any characters that aren't digits, semicolons, or colons
                 var filtered = FilterTimecodeChars(evt.newValue);
 
                 if (filtered != evt.newValue)
                 {
                     field.SetValueWithoutNotify(filtered);
                 }
-
-                pill.text = filtered;
             });
 
-            field.RegisterCallback<FocusOutEvent>(_ => this.CommitEdit(field, pill, onCommit));
+            field.RegisterCallback<FocusOutEvent>(_ => this.CommitEdit(field, onCommit));
         }
 
         public void Refresh()
@@ -229,7 +245,7 @@ namespace Fram3d.UI.Timeline
             el.style.unityTextAlign          = TextAnchor.MiddleLeft;
         }
 
-        private void CancelEdit(TextField field, Label pill)
+        private void CancelEdit(TextField field)
         {
             if (!this._isEditing)
             {
@@ -239,10 +255,9 @@ namespace Fram3d.UI.Timeline
             this._isEditing = false;
             this._durationLabel.style.display = DisplayStyle.Flex;
             field.RemoveFromHierarchy();
-            pill.RemoveFromHierarchy();
         }
 
-        private void CommitEdit(TextField field, Label pill, Action<string> onCommit)
+        private void CommitEdit(TextField field, Action<string> onCommit)
         {
             if (!this._isEditing)
             {
@@ -253,7 +268,6 @@ namespace Fram3d.UI.Timeline
             this._durationLabel.style.display = DisplayStyle.Flex;
             var value = field.value;
             field.RemoveFromHierarchy();
-            pill.RemoveFromHierarchy();
             onCommit?.Invoke(value);
         }
 

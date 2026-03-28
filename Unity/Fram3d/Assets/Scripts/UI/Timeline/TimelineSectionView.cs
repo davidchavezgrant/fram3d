@@ -231,7 +231,6 @@ namespace Fram3d.UI.Timeline
             var handle = new VisualElement();
             handle.AddToClassList("timeline-resize-handle");
             handle.style.height = RESIZE_HANDLE_HEIGHT;
-            handle.style.cursor = new Cursor { defaultCursorId = (int)CursorType.ResizeVertical };
 
             handle.RegisterCallback<PointerDownEvent>(evt =>
             {

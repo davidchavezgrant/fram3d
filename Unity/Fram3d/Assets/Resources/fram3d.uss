@@ -691,11 +691,11 @@
     -unity-text-align: middle-left;
 }
 
-.shot-block__duration-edit {
+.shot-block .shot-block__duration-edit {
     -unity-cursor-color: rgb(255, 255, 255);
 }
 
-.shot-block__duration-edit > #unity-text-input {
+.shot-block .shot-block__duration-edit > * {
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
     padding: 0;
@@ -705,14 +705,31 @@
     -unity-cursor-color: rgb(255, 255, 255);
 }
 
-.shot-block__duration-edit .unity-text-input {
+.shot-block__duration-edit #unity-text-input {
+    -unity-cursor-color: rgb(255, 255, 255);
+    color: rgb(255, 255, 255);
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
     padding: 0;
     margin: 0;
-    color: rgb(255, 255, 255);
-    font-size: 9px;
+}
+
+.shot-block__duration-edit .unity-text-field__input {
     -unity-cursor-color: rgb(255, 255, 255);
+    color: rgb(255, 255, 255);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.shot-block__duration-edit .unity-base-text-field__input {
+    -unity-cursor-color: rgb(255, 255, 255);
+    color: rgb(255, 255, 255);
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    padding: 0;
+    margin: 0;
 }
 
 /* Legacy field style (kept for compatibility) */

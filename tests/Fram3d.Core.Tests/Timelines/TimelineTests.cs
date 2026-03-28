@@ -251,6 +251,30 @@ namespace Fram3d.Core.Tests.Timelines
         }
 
         [Fact]
+        public void BeginBoundaryDrag__StartsBoundaryDrag__When__EdgeIndexValid()
+        {
+            var t = Create();
+
+            t.BeginBoundaryDrag(0).Should().Be(ShotTrackAction.BOUNDARY_DRAG);
+            t.IsBoundaryDragging.Should().BeTrue();
+            t.BoundaryDragIndex.Should().Be(0);
+        }
+
+        [Fact]
+        public void BeginBoundaryDrag__ClearsPendingShotPress__When__BoundaryDragStartsExplicitly()
+        {
+            var t     = Create();
+            var midPx = t.TimeToPixel(2.5);
+
+            t.ShotTrackPointerDown(midPx, 0).Should().Be(ShotTrackAction.POTENTIAL_CLICK);
+            t.BeginBoundaryDrag(0).Should().Be(ShotTrackAction.BOUNDARY_DRAG);
+            t.ShotTrackPointerUp().Should().Be(ShotTrackAction.BOUNDARY_COMPLETE);
+
+            t.ShotTrackPointerMove(midPx + 25, 300).Should().Be(ShotTrackAction.NONE);
+            t.IsDragging.Should().BeFalse();
+        }
+
+        [Fact]
         public void ShotTrackPointerDown__StartsPotentialClick__When__OnShot()
         {
             var t = Create();
@@ -979,6 +1003,54 @@ namespace Fram3d.Core.Tests.Timelines
 
             t.Elements.Should().NotBeNull();
             t.Elements.TrackCount.Should().Be(0);
+        }
+
+        // --- JumpToStart / JumpToEnd ---
+
+        [Fact]
+        public void JumpToStart__MovesPlayheadToZero__When__Called()
+        {
+            var t = Create();
+            t.Playhead.Scrub(3.0, t.TotalDuration);
+
+            t.JumpToStart();
+
+            t.Playhead.CurrentTime.Should().Be(0);
+        }
+
+        [Fact]
+        public void JumpToStart__FiresCameraEvaluation__When__Called()
+        {
+            var t     = Create();
+            var fired = false;
+            t.CameraEvaluationRequested.Subscribe(_ => fired = true);
+            t.Playhead.Scrub(3.0, t.TotalDuration);
+
+            t.JumpToStart();
+
+            fired.Should().BeTrue();
+        }
+
+        [Fact]
+        public void JumpToEnd__MovesPlayheadToEnd__When__Called()
+        {
+            var t = Create();
+
+            t.JumpToEnd();
+
+            t.Playhead.CurrentTime.Should().BeApproximately(t.TotalDuration, 0.001);
+        }
+
+        [Fact]
+        public void JumpToEnd__FiresCameraEvaluation__When__Called()
+        {
+            var t     = Create();
+            var fired = false;
+            t.CameraEvaluationRequested.Subscribe(_ => fired = true);
+
+            t.JumpToEnd();
+
+            fired.Should().BeTrue();
         }
 
         // --- ResizeShotAtEdge ---

@@ -16,8 +16,8 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class TimelineSectionView : MonoBehaviour
     {
-        private const float LABEL_COL_W    = 140f;
-        private const float SECTION_HEIGHT = 320f;
+        private const float LABEL_COL_W      = 140f;
+        private const float SECTION_HEIGHT   = 320f;
 
         // ── References ──
         private Fram3d.Core.Timelines.Timeline _controller;
@@ -70,6 +70,12 @@ namespace Fram3d.UI.Timeline
         }
 
         public bool IsVisible => this._visible;
+
+        public void FitAll() => this._controller?.FitAll();
+
+        public void JumpToEnd() => this._controller?.JumpToEnd();
+
+        public void JumpToStart() => this._controller?.JumpToStart();
 
         public void Toggle()
         {
@@ -342,7 +348,11 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
-            if (evt.ctrlKey)
+            if (evt.shiftKey)
+            {
+                this._controller.Pan(evt.delta.y * 2.0);
+            }
+            else if (evt.ctrlKey)
             {
                 this._controller.ZoomAtPoint(this._controller.PixelToTime(evt.localMousePosition.x), -evt.delta.y);
             }

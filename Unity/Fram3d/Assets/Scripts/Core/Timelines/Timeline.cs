@@ -13,7 +13,7 @@ namespace Fram3d.Core.Timelines
     public sealed class Timeline
     {
         private const    double                     DOUBLE_CLICK_MS             = 350;
-        private const    double                     EDGE_TOLERANCE_PX           = 6.0;
+        private const    double                     EDGE_TOLERANCE_PX           = 12.0;
         private const    int                        HOLD_THRESHOLD_MS           = 200;
         private readonly Subject<CameraEvaluation>  _cameraEvaluationRequested  = new();
         private readonly Subject<ElementEvaluation> _elementEvaluationRequested = new();
@@ -159,6 +159,20 @@ namespace Fram3d.Core.Timelines
             }
         }
 
+        public void JumpToEnd()
+        {
+            this.Playhead.Scrub(this.TotalDuration, this.TotalDuration);
+            this.EvaluateCamera();
+            this.EnsureVisible(this.TotalDuration);
+        }
+
+        public void JumpToStart()
+        {
+            this.Playhead.Scrub(0, this.TotalDuration);
+            this.EvaluateCamera();
+            this.EnsureVisible(0);
+        }
+
         // ══════════════════════════════════════════════════════════════════
         // Formatting
         // ══════════════════════════════════════════════════════════════════
@@ -183,6 +197,18 @@ namespace Fram3d.Core.Timelines
         public void                                 InitializeViewRange(double trackWidth) => this._view.Initialize(trackWidth, this.TotalDuration);
         public void                                 Pan(double deltaPx) => this._view.Pan(deltaPx, this.TotalDuration);
         public double                               PixelToTime(double px) => this._view.PixelToTime(px);
+        public ShotTrackAction                      BeginBoundaryDrag(int edgeIndex)
+        {
+            if (edgeIndex < 0 || edgeIndex >= this.Track.Count)
+            {
+                return ShotTrackAction.NONE;
+            }
+
+            this.ResetPointerState();
+            this._isBoundaryDragging = true;
+            this._boundaryDragIndex  = edgeIndex;
+            return ShotTrackAction.BOUNDARY_DRAG;
+        }
         public bool                                 RemoveShot(ShotId id) => this.Track.RemoveShot(id);
         public void                                 Reorder(ShotId id, int newIndex) => this.Track.Reorder(id, newIndex);
         public double                               ResizeShotAtEdge(int index, double endTime) => this.Track.ResizeShotAtEdge(index, endTime);
@@ -206,14 +232,12 @@ namespace Fram3d.Core.Timelines
         public ShotTrackAction ShotTrackPointerDown(double px, long timestampMs)
         {
             var time      = this.PixelToTime(px);
-            var tolerance = this.PixelsPerSecond > 0? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
+            var tolerance = this.PixelsPerSecond > 0 ? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
             var edgeIndex = this.Track.FindEdgeAtTime(time, tolerance);
 
             if (edgeIndex >= 0)
             {
-                this._isBoundaryDragging = true;
-                this._boundaryDragIndex  = edgeIndex;
-                return ShotTrackAction.BOUNDARY_DRAG;
+                return this.BeginBoundaryDrag(edgeIndex);
             }
 
             this._pointerDownTime = timestampMs;
@@ -256,9 +280,10 @@ namespace Fram3d.Core.Timelines
             if (!this._pointerIsDown)
             {
                 var time      = this.PixelToTime(px);
-                var tolerance = this.PixelsPerSecond > 0? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
+                var tolerance = this.PixelsPerSecond > 0 ? EDGE_TOLERANCE_PX / this.PixelsPerSecond : 1.0;
+                var hoveredEdge = this.Track.FindEdgeAtTime(time, tolerance);
 
-                if (this.Track.FindEdgeAtTime(time, tolerance) >= 0)
+                if (hoveredEdge >= 0)
                 {
                     return ShotTrackAction.NEAR_EDGE;
                 }
@@ -273,6 +298,7 @@ namespace Fram3d.Core.Timelines
             {
                 this._isBoundaryDragging = false;
                 this._boundaryDragIndex  = -1;
+                this.ResetPointerState();
                 return ShotTrackAction.BOUNDARY_COMPLETE;
             }
 

@@ -128,6 +128,13 @@ namespace Fram3d.UI.Timeline
                     this.ShotHoverStarted?.Invoke(shot));
                 block.RegisterCallback<PointerLeaveEvent>(_ =>
                     this.ShotHoverEnded?.Invoke());
+                block.DurationClicked += b => b.BeginDurationEdit(value =>
+                {
+                    if (double.TryParse(value, out var parsed))
+                    {
+                        shot.Duration = parsed;
+                    }
+                });
                 block.RegisterCallback<ContextualMenuPopulateEvent>(evt =>
                 {
                     evt.menu.AppendAction("Delete Shot", _ =>

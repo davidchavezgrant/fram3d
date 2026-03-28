@@ -28,6 +28,7 @@ namespace Fram3d.UI.Timeline
 
             this._durationLabel = new Label(FormatDuration(shot.Duration));
             this._durationLabel.AddToClassList("shot-block__duration");
+            this._durationLabel.RegisterCallback<PointerDownEvent>(evt => evt.StopPropagation());
             this._durationLabel.RegisterCallback<ClickEvent>(evt =>
             {
                 this.DurationClicked?.Invoke(this);

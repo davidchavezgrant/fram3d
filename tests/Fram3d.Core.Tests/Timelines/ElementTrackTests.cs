@@ -140,5 +140,64 @@ namespace Fram3d.Core.Tests.Timelines
 
             track.EvaluateRotation(new TimePosition(5.0)).Should().Be(rotation);
         }
+
+        // ── Scale keyframes ────────────────────────────────────────────────
+
+        [Fact]
+        public void ScaleKeyframes__IsEmpty__When__Created()
+        {
+            var track = new ElementTrack(new ElementId(Guid.NewGuid()));
+            track.ScaleKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void EvaluateScale__ReturnsDefault__When__NoKeyframes()
+        {
+            var track = new ElementTrack(new ElementId(Guid.NewGuid()));
+            track.EvaluateScale(TimePosition.ZERO).Should().Be(0f);
+        }
+
+        [Fact]
+        public void EvaluateScale__Interpolates__When__BetweenKeyframes()
+        {
+            var track = new ElementTrack(new ElementId(Guid.NewGuid()));
+            track.ScaleKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 1f));
+            track.ScaleKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), new TimePosition(2.0), 3f));
+            track.EvaluateScale(new TimePosition(1.0)).Should().BeApproximately(2f, 0.01f);
+        }
+
+        [Fact]
+        public void KeyframeCount__IncludesScale__When__ScaleKeyframesExist()
+        {
+            var track = new ElementTrack(new ElementId(Guid.NewGuid()));
+            track.ScaleKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 1f));
+            track.KeyframeCount.Should().Be(1);
+        }
+
+        // ── GetAllKeyframeTimes ────────────────────────────────────────────
+
+        [Fact]
+        public void GetAllKeyframeTimes__ReturnsEmpty__When__NoKeyframes()
+        {
+            var track = new ElementTrack(new ElementId(Guid.NewGuid()));
+            track.GetAllKeyframeTimes().Should().BeEmpty();
+        }
+
+        [Fact]
+        public void GetAllKeyframeTimes__MergesTimes__When__MultipleManagers()
+        {
+            var track = new ElementTrack(new ElementId(Guid.NewGuid()));
+            track.PositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Vector3.Zero));
+            track.ScaleKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), new TimePosition(1.0), 2f));
+            var times = track.GetAllKeyframeTimes();
+            times.Should().HaveCount(2);
+            times[0].Seconds.Should().Be(0.0);
+            times[1].Seconds.Should().Be(1.0);
+        }
     }
 }

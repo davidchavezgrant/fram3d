@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Fram3d.Core.Common;
 using Fram3d.Core.Timelines;
@@ -45,6 +46,21 @@ namespace Fram3d.Core.Shots
         }
 
         /// <summary>
+        /// Per-shot camera aperture keyframes (f-stop).
+        /// </summary>
+        public KeyframeManager<float> CameraApertureKeyframes { get; } = new();
+
+        /// <summary>
+        /// Per-shot camera focal length keyframes (mm).
+        /// </summary>
+        public KeyframeManager<float> CameraFocalLengthKeyframes { get; } = new();
+
+        /// <summary>
+        /// Per-shot camera focus distance keyframes (meters).
+        /// </summary>
+        public KeyframeManager<float> CameraFocusDistanceKeyframes { get; } = new();
+
+        /// <summary>
         /// Per-shot camera position keyframes.
         /// </summary>
         public KeyframeManager<Vector3> CameraPositionKeyframes { get; }
@@ -85,19 +101,90 @@ namespace Fram3d.Core.Shots
         }
 
         /// <summary>
-        /// Total number of camera keyframes (position + rotation).
+        /// Total number of camera keyframes across all property managers.
         /// </summary>
-        public int TotalCameraKeyframeCount => this.CameraPositionKeyframes.Count + this.CameraRotationKeyframes.Count;
+        public int TotalCameraKeyframeCount =>
+            this.CameraPositionKeyframes.Count
+            + this.CameraRotationKeyframes.Count
+            + this.CameraApertureKeyframes.Count
+            + this.CameraFocalLengthKeyframes.Count
+            + this.CameraFocusDistanceKeyframes.Count;
+
+        /// <summary>
+        /// Evaluates the camera aperture at a local shot time (0 to Duration).
+        /// </summary>
+        public float EvaluateCameraAperture(TimePosition localTime) =>
+            this.CameraApertureKeyframes.Evaluate(localTime, Lerp);
+
+        /// <summary>
+        /// Evaluates the camera focal length at a local shot time (0 to Duration).
+        /// </summary>
+        public float EvaluateCameraFocalLength(TimePosition localTime) =>
+            this.CameraFocalLengthKeyframes.Evaluate(localTime, Lerp);
+
+        /// <summary>
+        /// Evaluates the camera focus distance at a local shot time (0 to Duration).
+        /// </summary>
+        public float EvaluateCameraFocusDistance(TimePosition localTime) =>
+            this.CameraFocusDistanceKeyframes.Evaluate(localTime, Lerp);
 
         /// <summary>
         /// Evaluates the camera position at a local shot time (0 to Duration).
         /// </summary>
-        public Vector3 EvaluateCameraPosition(TimePosition localTime) => this.CameraPositionKeyframes.Evaluate(localTime, Vector3.Lerp);
+        public Vector3 EvaluateCameraPosition(TimePosition localTime) =>
+            this.CameraPositionKeyframes.Evaluate(localTime, Vector3.Lerp);
 
         /// <summary>
         /// Evaluates the camera rotation at a local shot time (0 to Duration).
         /// </summary>
-        public Quaternion EvaluateCameraRotation(TimePosition localTime) => this.CameraRotationKeyframes.Evaluate(localTime, Quaternion.Slerp);
+        public Quaternion EvaluateCameraRotation(TimePosition localTime) =>
+            this.CameraRotationKeyframes.Evaluate(localTime, Quaternion.Slerp);
+
+        /// <summary>
+        /// Returns the sorted, deduplicated union of all keyframe times across
+        /// every camera property manager (position, rotation, focal length,
+        /// aperture, focus distance).
+        /// </summary>
+        public IReadOnlyList<TimePosition> GetAllCameraKeyframeTimes()
+        {
+            var times = new SortedSet<double>();
+
+            foreach (var kf in this.CameraPositionKeyframes.Keyframes)
+            {
+                times.Add(kf.Time.Seconds);
+            }
+
+            foreach (var kf in this.CameraRotationKeyframes.Keyframes)
+            {
+                times.Add(kf.Time.Seconds);
+            }
+
+            foreach (var kf in this.CameraFocalLengthKeyframes.Keyframes)
+            {
+                times.Add(kf.Time.Seconds);
+            }
+
+            foreach (var kf in this.CameraApertureKeyframes.Keyframes)
+            {
+                times.Add(kf.Time.Seconds);
+            }
+
+            foreach (var kf in this.CameraFocusDistanceKeyframes.Keyframes)
+            {
+                times.Add(kf.Time.Seconds);
+            }
+
+            var result = new List<TimePosition>(times.Count);
+
+            foreach (var t in times)
+            {
+                result.Add(new TimePosition(t));
+            }
+
+            return result;
+        }
+
+        private static float Lerp(float a, float b, float t) => a + (b - a) * t;
 
         private void SetName(string value)
         {

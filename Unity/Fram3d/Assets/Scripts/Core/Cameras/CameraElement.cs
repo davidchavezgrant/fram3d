@@ -22,10 +22,16 @@ namespace Fram3d.Core.Cameras
         public AspectRatio ActiveAspectRatio => this._body.ActiveAspectRatio;
         public LensSet     ActiveLensSet     => this._lens.ActiveLensSet;
         public SensorMode  ActiveSensorMode  => this._body.ActiveSensorMode;
-        public float       Aperture          => this._lens.Aperture;
-        public CameraBody  Body              => this._body.Body;
-        public bool        CanDollyZoom      => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
-        public bool        DofEnabled        { get; set; }
+
+        public float Aperture
+        {
+            get => this._lens.Aperture;
+            set => this._lens.SetAperture(value);
+        }
+
+        public CameraBody Body         => this._body.Body;
+        public bool       CanDollyZoom => this.ActiveLensSet == null || this.ActiveLensSet.IsZoom;
+        public bool       DofEnabled   { get; set; }
 
         /// <summary>
         /// Current focal length in mm. Setting this value respects lens constraints:

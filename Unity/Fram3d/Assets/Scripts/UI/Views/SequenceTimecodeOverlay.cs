@@ -45,14 +45,18 @@ namespace Fram3d.UI.Views
             }
 
             var root = uiDoc.rootVisualElement;
-            root.pickingMode = PickingMode.Ignore;
+            root.pickingMode           = PickingMode.Ignore;
+            root.style.position        = Position.Absolute;
+            root.style.left            = 0;
+            root.style.right           = 0;
+            root.style.top             = 0;
+            root.style.bottom          = 0;
 
             this._label                               = new Label();
             this._label.pickingMode                   = PickingMode.Ignore;
             this._label.style.position                = Position.Absolute;
             this._label.style.left                    = 0;
             this._label.style.right                   = 0;
-            this._label.style.bottom                  = this._shotEvaluator.BottomInsetPixels + 8;
             this._label.style.color                   = Color.white;
             this._label.style.fontSize                = 16;
             this._label.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -79,8 +83,13 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            // Keep bottom offset in sync with timeline height
-            this._label.style.bottom = this._shotEvaluator.BottomInsetPixels + 8;
+            // Convert screen-pixel inset to CSS pixels for UI Toolkit positioning
+            var root         = this._label.panel?.visualTree;
+            var cssScale     = root != null && root.resolvedStyle.width > 0
+                ? Screen.width / root.resolvedStyle.width
+                : 1f;
+            var bottomCss    = this._shotEvaluator.BottomInsetPixels / cssScale;
+            this._label.style.bottom = bottomCss + 8;
 
             var fps = (int)this._controller.FrameRate.Fps;
             this._label.text          = FormatTimecode(this._controller.Playhead.CurrentTime, fps);

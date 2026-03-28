@@ -15,6 +15,7 @@ namespace Fram3d.UI.Timeline
         private readonly VisualElement         _content;
         private readonly List<KeyframeDiamond> _diamonds     = new();
         private readonly bool                  _isCamera;
+        private readonly VisualElement         _stopwatch;
         private readonly VisualElement         _subContainer;
         private readonly List<SubTrackRow>     _subTracks    = new();
         private readonly TrackId               _trackId;
@@ -47,6 +48,11 @@ namespace Fram3d.UI.Timeline
             this._arrow.RegisterCallback<ClickEvent>(_ => this.ArrowClicked?.Invoke(this._trackId));
             labels.Add(this._arrow);
 
+            this._stopwatch = new VisualElement();
+            this._stopwatch.AddToClassList("track-stopwatch");
+            this._stopwatch.RegisterCallback<ClickEvent>(_ => this.StopwatchClicked?.Invoke(this._trackId));
+            labels.Add(this._stopwatch);
+
             var nameLabel = new Label(name);
             nameLabel.AddToClassList("track-name");
             labels.Add(nameLabel);
@@ -68,6 +74,7 @@ namespace Fram3d.UI.Timeline
 
         public event Action<TrackId>                  ArrowClicked;
         public event Action<KeyframeId, TimePosition> DiamondClicked;
+        public event Action<TrackId>                  StopwatchClicked;
 
         public IReadOnlyList<SubTrackRow> SubTracks => this._subTracks;
         public TrackId                    TrackId   => this._trackId;
@@ -94,6 +101,12 @@ namespace Fram3d.UI.Timeline
 
             this._arrow.EnableInClassList("track-arrow--collapsed", !expanded);
             this._arrow.EnableInClassList("track-arrow--expanded", expanded);
+        }
+
+        public void SetStopwatchState(bool anyOn, bool allOn)
+        {
+            this._stopwatch.EnableInClassList("track-stopwatch--on", allOn);
+            this._stopwatch.EnableInClassList("track-stopwatch--partial", anyOn && !allOn);
         }
 
         /// <summary>

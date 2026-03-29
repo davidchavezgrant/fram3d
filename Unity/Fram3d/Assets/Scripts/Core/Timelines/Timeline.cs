@@ -218,7 +218,95 @@ namespace Fram3d.Core.Timelines
         // ══════════════════════════════════════════════════════════════════
         // Query
         // ══════════════════════════════════════════════════════════════════
+
+        public TimePosition GetLocalPlayheadTime()
+        {
+            var result = this.ResolveShot();
+
+            if (!result.HasValue)
+            {
+                return null;
+            }
+
+            return result.Value.localTime;
+        }
+
         public (Shot shot, TimePosition localTime)? ResolveShot() => this.Track.GetShotAtGlobalTime(new TimePosition(this.Playhead.CurrentTime));
+
+        // ══════════════════════════════════════════════════════════════════
+        // Recording
+        // ══════════════════════════════════════════════════════════════════
+
+        public void ForceRecordCamera(CameraSnapshot current)
+        {
+            if (this.Playhead.IsPlaying)
+            {
+                return;
+            }
+
+            if (this.CurrentShot == null)
+            {
+                return;
+            }
+
+            var localTime = this.GetLocalPlayheadTime();
+
+            if (localTime == null)
+            {
+                return;
+            }
+
+            KeyframeRecorder.ForceRecordCamera(this.CurrentShot, localTime, current);
+        }
+
+        public void ForceRecordElement(ElementId elementId, ElementSnapshot current)
+        {
+            if (this.Playhead.IsPlaying)
+            {
+                return;
+            }
+
+            var track      = this.Elements.GetOrCreateTrack(elementId);
+            var globalTime = new TimePosition(this.Playhead.CurrentTime);
+
+            KeyframeRecorder.ForceRecordElement(track, globalTime, current);
+        }
+
+        public void RecordCameraManipulation(CameraSnapshot current, CameraSnapshot previous)
+        {
+            if (this.Playhead.IsPlaying)
+            {
+                return;
+            }
+
+            if (this.CurrentShot == null)
+            {
+                return;
+            }
+
+            var localTime = this.GetLocalPlayheadTime();
+
+            if (localTime == null)
+            {
+                return;
+            }
+
+            KeyframeRecorder.RecordCamera(
+                this.CurrentShot, this.CurrentShot.CameraStopwatch, localTime, current, previous);
+        }
+
+        public void RecordElementManipulation(ElementId elementId, ElementSnapshot current, ElementSnapshot previous)
+        {
+            if (this.Playhead.IsPlaying)
+            {
+                return;
+            }
+
+            var track      = this.Elements.GetOrCreateTrack(elementId);
+            var globalTime = new TimePosition(this.Playhead.CurrentTime);
+
+            KeyframeRecorder.RecordElement(track, track.Stopwatch, globalTime, current, previous);
+        }
 
         public void ScrubToPixel(double px)
         {

@@ -71,6 +71,11 @@ namespace Fram3d.Core.Shots
         public KeyframeManager<Quaternion> CameraRotationKeyframes { get; }
 
         /// <summary>
+        /// Per-property stopwatch state for camera recording.
+        /// </summary>
+        public StopwatchState CameraStopwatch { get; } = new(CameraProperty.COUNT);
+
+        /// <summary>
         /// Shot duration in seconds. Clamped to [MIN_DURATION, MAX_DURATION].
         /// Shortening duration below existing keyframe times does NOT delete them —
         /// they are preserved but unreachable during playback. Extending again
@@ -109,6 +114,15 @@ namespace Fram3d.Core.Shots
             + this.CameraApertureKeyframes.Count
             + this.CameraFocalLengthKeyframes.Count
             + this.CameraFocusDistanceKeyframes.Count;
+
+        public void ClearAllCameraKeyframes()
+        {
+            this.CameraPositionKeyframes.Clear();
+            this.CameraRotationKeyframes.Clear();
+            this.CameraFocalLengthKeyframes.Clear();
+            this.CameraApertureKeyframes.Clear();
+            this.CameraFocusDistanceKeyframes.Clear();
+        }
 
         /// <summary>
         /// Evaluates the camera aperture at a local shot time (0 to Duration).

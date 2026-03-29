@@ -49,6 +49,9 @@ namespace Fram3d.UI.Timeline
         private VisualElement _tooltip;
         private Label         _tooltipText;
 
+        // ── Stopwatch ──
+        private bool _suppressStopwatchWarning;
+
         // ── Visibility ──
         private bool _visible = true;
 
@@ -478,6 +481,83 @@ namespace Fram3d.UI.Timeline
             return cam?.ShotCamera;
         }
 
+        private void HandleCameraStopwatchClick()
+        {
+            var shot = this._controller.CurrentShot;
+
+            if (shot == null)
+            {
+                return;
+            }
+
+            var stopwatch = shot.CameraStopwatch;
+
+            if (stopwatch.AnyRecording)
+            {
+                if (shot.TotalCameraKeyframeCount > 0 && !this._suppressStopwatchWarning)
+                {
+                    this.ShowStopwatchConfirmDialog(() =>
+                    {
+                        shot.ClearAllCameraKeyframes();
+                        stopwatch.SetAll(false);
+                        this.SyncTrackVisuals();
+                    });
+
+                    return;
+                }
+
+                stopwatch.SetAll(false);
+            }
+            else
+            {
+                stopwatch.SetAll(true);
+                var cam = this.GetShotCamera();
+
+                if (cam != null)
+                {
+                    var snap = CameraSnapshot.FromCamera(cam);
+                    this._controller.ForceRecordCamera(snap);
+                }
+            }
+
+            this.SyncTrackVisuals();
+        }
+
+        private void HandleElementStopwatchClick(ElementId elementId)
+        {
+            var track = this._controller.Elements.GetTrack(elementId);
+
+            if (track == null)
+            {
+                return;
+            }
+
+            var stopwatch = track.Stopwatch;
+
+            if (stopwatch.AnyRecording)
+            {
+                if (track.HasKeyframes && !this._suppressStopwatchWarning)
+                {
+                    this.ShowStopwatchConfirmDialog(() =>
+                    {
+                        track.ClearAllKeyframes();
+                        stopwatch.SetAll(false);
+                        this.RebuildTracks();
+                    });
+
+                    return;
+                }
+
+                stopwatch.SetAll(false);
+            }
+            else
+            {
+                stopwatch.SetAll(true);
+            }
+
+            this.SyncTrackVisuals();
+        }
+
         private void OnDiamondClicked(KeyframeId keyframeId, TimePosition time)
         {
             if (time == null)
@@ -530,6 +610,18 @@ namespace Fram3d.UI.Timeline
             }
         }
 
+        private void OnStopwatchClicked(TrackId trackId)
+        {
+            if (trackId.IsCamera)
+            {
+                this.HandleCameraStopwatchClick();
+            }
+            else if (trackId.IsElement)
+            {
+                this.HandleElementStopwatchClick(trackId.ElementId);
+            }
+        }
+
         private void OnTrackArrowClicked(TrackId trackId)
         {
             this._controller.Expansion.Toggle(trackId);
@@ -547,8 +639,9 @@ namespace Fram3d.UI.Timeline
 
             // Camera track (always present)
             this._cameraTrackRow = new TrackRow(TrackId.Camera, "Camera", true);
-            this._cameraTrackRow.ArrowClicked   += this.OnTrackArrowClicked;
-            this._cameraTrackRow.DiamondClicked += this.OnDiamondClicked;
+            this._cameraTrackRow.ArrowClicked       += this.OnTrackArrowClicked;
+            this._cameraTrackRow.DiamondClicked     += this.OnDiamondClicked;
+            this._cameraTrackRow.StopwatchClicked   += this.OnStopwatchClicked;
             this.BuildCameraSubTracks(this._cameraTrackRow);
             this._trackRows.Add(this._cameraTrackRow);
             this._trackContainer.Insert(0, this._cameraTrackRow);
@@ -565,8 +658,9 @@ namespace Fram3d.UI.Timeline
                     TrackId.ForElement(track.ElementId),
                     this.GetElementName(track.ElementId),
                     false);
-                elemRow.ArrowClicked   += this.OnTrackArrowClicked;
-                elemRow.DiamondClicked += this.OnDiamondClicked;
+                elemRow.ArrowClicked       += this.OnTrackArrowClicked;
+                elemRow.DiamondClicked     += this.OnDiamondClicked;
+                elemRow.StopwatchClicked   += this.OnStopwatchClicked;
                 this.BuildElementSubTracks(elemRow);
                 this._trackRows.Add(elemRow);
                 this._trackContainer.Insert(this._trackRows.Count - 1, elemRow);
@@ -646,12 +740,18 @@ namespace Fram3d.UI.Timeline
             }
 
             var shot                         = this._controller.CurrentShot;
+            var shotStart                    = this._controller.GetGlobalStartTime(shot.Id).Seconds;
             Func<double, double> timeToPixel = this._controller.TimeToPixel;
 
-            // Camera track main diamonds
-            var cameraTimes = shot.GetAllCameraKeyframeTimes();
-            this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, timeToPixel, this._controller.Selection);
+            // Camera track main diamonds — offset shot-local times to global
+            var cameraTimes                        = shot.GetAllCameraKeyframeTimes();
+            Func<double, double> cameraTimeToPixel = t => timeToPixel(t + shotStart);
+            this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, cameraTimeToPixel, this._controller.Selection);
             this._cameraTrackRow.SetExpanded(this._controller.Expansion.IsExpanded(TrackId.Camera));
+
+            // Camera stopwatch visual
+            var camSw = shot.CameraStopwatch;
+            this._cameraTrackRow.SetStopwatchState(camSw.AnyRecording, camSw.AllRecording);
 
             // Camera sub-track live values
             if (this._controller.Expansion.IsExpanded(TrackId.Camera))
@@ -680,6 +780,9 @@ namespace Fram3d.UI.Timeline
                 var elemTimes = track.GetAllKeyframeTimes();
                 row.UpdateMainDiamonds(elemTimes, timeToPixel, this._controller.Selection);
                 row.SetExpanded(this._controller.Expansion.IsExpanded(trackId));
+
+                var elemSw = track.Stopwatch;
+                row.SetStopwatchState(elemSw.AnyRecording, elemSw.AllRecording);
             }
         }
 
@@ -699,6 +802,21 @@ namespace Fram3d.UI.Timeline
             var panelPos  = RuntimePanelUtils.ScreenToPanel(this._root.panel, screenPos);
             el.style.left = panelPos.x + 12f;
             el.style.top  = panelPos.y + yOffset;
+        }
+
+        private void ShowStopwatchConfirmDialog(Action onConfirm)
+        {
+            StopwatchConfirmDialog dialog = null;
+            dialog = new StopwatchConfirmDialog(onConfirm, dontShowAgain =>
+            {
+                if (dontShowAgain)
+                {
+                    this._suppressStopwatchWarning = true;
+                }
+
+                dialog.RemoveFromHierarchy();
+            });
+            this._root.Add(dialog);
         }
 
         private void UpdateBottomInset()

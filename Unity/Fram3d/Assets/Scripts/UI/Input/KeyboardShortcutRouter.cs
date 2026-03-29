@@ -1,10 +1,12 @@
 using Fram3d.Core.Cameras;
 using Fram3d.Core.Scenes;
+using Fram3d.Core.Timelines;
 using Fram3d.Core.Viewports;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Timeline;
 using Fram3d.UI.Views;
 using UnityEngine.InputSystem;
+using CoreTimeline = Fram3d.Core.Timelines.Timeline;
 namespace Fram3d.UI.Input
 {
     /// <summary>
@@ -16,17 +18,23 @@ namespace Fram3d.UI.Input
         private CameraBehaviour      _cameraBehaviour;
         private CompositionGuideView _compositionGuides;
         private GizmoBehaviour      _gizmoController;
+        private CoreTimeline         _timeline;
         private TimelineSectionView  _timelineSection;
+        private ViewCameraManager    _viewCameraManager;
 
         public void Configure(CameraBehaviour      cameraBehaviour,
                               CompositionGuideView compositionGuides,
                               GizmoBehaviour      gizmoController,
-                              TimelineSectionView  timelineSection)
+                              TimelineSectionView  timelineSection,
+                              CoreTimeline         timeline,
+                              ViewCameraManager    viewCameraManager)
         {
             this._cameraBehaviour  = cameraBehaviour;
             this._compositionGuides = compositionGuides;
             this._gizmoController  = gizmoController;
+            this._timeline         = timeline;
             this._timelineSection  = timelineSection;
+            this._viewCameraManager = viewCameraManager;
         }
 
         /// <summary>
@@ -35,6 +43,8 @@ namespace Fram3d.UI.Input
         /// </summary>
         public bool Route(Keyboard keyboard, CameraElement camera)
         {
+            if (this.HandleKeyframeShortcuts(keyboard, camera)) { return true; }
+
             if (this.HandleToolSwitching(keyboard)) { return true; }
 
             if (this.HandleAspectRatio(keyboard)) { return true; }
@@ -47,6 +57,32 @@ namespace Fram3d.UI.Input
 
             this.HandleFocalLengthPresets(keyboard, camera);
             return false;
+        }
+
+        private bool CanRecord()
+        {
+            if (this._timeline == null)
+            {
+                return false;
+            }
+
+            if (this._cameraBehaviour != null && this._cameraBehaviour.IsDirectorView)
+            {
+                return false;
+            }
+
+            if (this._viewCameraManager != null && this._viewCameraManager.IsMultiView)
+            {
+                var slotType = this._viewCameraManager.ViewSlotModel.GetSlotType(
+                    this._viewCameraManager.ActiveSlot);
+
+                if (slotType == ViewMode.DIRECTOR)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private bool HandleAspectRatio(Keyboard keyboard)
@@ -100,7 +136,13 @@ namespace Fram3d.UI.Input
                     continue;
                 }
 
+                var before = CameraSnapshot.FromCamera(camera);
                 camera.SetFocalLengthPreset(presets[i]);
+                var after = CameraSnapshot.FromCamera(camera);
+                if (this.CanRecord())
+            {
+                this._timeline.RecordCameraManipulation(after, before);
+            }
                 break;
             }
         }
@@ -143,6 +185,25 @@ namespace Fram3d.UI.Input
             return false;
         }
 
+        private bool HandleKeyframeShortcuts(Keyboard keyboard, CameraElement camera)
+        {
+            if (keyboard.ctrlKey.isPressed
+             || keyboard.altKey.isPressed
+             || keyboard.shiftKey.isPressed)
+            {
+                return false;
+            }
+
+            if (keyboard.cKey.wasPressedThisFrame && this.CanRecord())
+            {
+                var snap = CameraSnapshot.FromCamera(camera);
+                this._timeline.ForceRecordCamera(snap);
+                return true;
+            }
+
+            return false;
+        }
+
         private bool HandleReset(Keyboard keyboard, CameraElement camera)
         {
             if (!keyboard.ctrlKey.isPressed || !keyboard.rKey.wasPressedThisFrame)
@@ -155,7 +216,13 @@ namespace Fram3d.UI.Input
                 return true;
             }
 
+            var before = CameraSnapshot.FromCamera(camera);
             camera.Reset();
+            var after = CameraSnapshot.FromCamera(camera);
+            if (this.CanRecord())
+            {
+                this._timeline.RecordCameraManipulation(after, before);
+            }
             return true;
         }
 
@@ -173,13 +240,25 @@ namespace Fram3d.UI.Input
 
             if (keyboard.leftBracketKey.wasPressedThisFrame)
             {
+                var before = CameraSnapshot.FromCamera(camera);
                 camera.StepApertureWider();
+                var after = CameraSnapshot.FromCamera(camera);
+                if (this.CanRecord())
+            {
+                this._timeline.RecordCameraManipulation(after, before);
+            }
                 return true;
             }
 
             if (keyboard.rightBracketKey.wasPressedThisFrame)
             {
+                var before = CameraSnapshot.FromCamera(camera);
                 camera.StepApertureNarrower();
+                var after = CameraSnapshot.FromCamera(camera);
+                if (this.CanRecord())
+            {
+                this._timeline.RecordCameraManipulation(after, before);
+            }
                 return true;
             }
 

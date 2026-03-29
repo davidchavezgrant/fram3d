@@ -199,5 +199,25 @@ namespace Fram3d.Core.Tests.Timelines
             times[0].Seconds.Should().Be(0.0);
             times[1].Seconds.Should().Be(1.0);
         }
+
+        // ── ClearAllKeyframes ─────────────────────────────────────────────
+
+        [Fact]
+        public void ClearAllKeyframes__ClearsAll__When__Called()
+        {
+            var track = Create();
+            track.PositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Vector3.One));
+            track.RotationKeyframes.Add(
+                new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Quaternion.Identity));
+            track.ScaleKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 1f));
+
+            track.ClearAllKeyframes();
+
+            track.PositionKeyframes.Count.Should().Be(0);
+            track.RotationKeyframes.Count.Should().Be(0);
+            track.ScaleKeyframes.Count.Should().Be(0);
+        }
     }
 }

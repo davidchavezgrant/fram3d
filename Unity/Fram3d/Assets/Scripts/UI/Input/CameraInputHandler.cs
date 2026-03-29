@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Fram3d.Core.Cameras;
 using Fram3d.Core.Input;
+using Fram3d.Core.Scenes;
+using Fram3d.Core.Timelines;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
 using Fram3d.UI.Views;
@@ -9,6 +11,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem.LowLevel;
+using CoreTimeline = Fram3d.Core.Timelines.Timeline;
 namespace Fram3d.UI.Input
 {
     /// <summary>
@@ -26,6 +29,8 @@ namespace Fram3d.UI.Input
         private readonly Queue<ScrollSample>      _pendingScrollSamples = new();
         private readonly ScrollRouter             _scrollRouter         = new();
         private          CameraElement            _camera;
+        private          CameraSnapshot           _cameraBeforeDrag;
+        private          bool                     _isCameraDragging;
         private          bool                     _leftAltHeld;
         private          bool                     _leftCommandHeld;
         private          bool                     _leftCtrlHeld;
@@ -34,6 +39,7 @@ namespace Fram3d.UI.Input
         private          bool                     _rightCommandHeld;
         private          bool                     _rightCtrlHeld;
         private          bool                     _rightShiftHeld;
+        private          CoreTimeline             _timeline;
 
         [SerializeField]
         private CameraBehaviour cameraBehaviour;
@@ -94,6 +100,8 @@ namespace Fram3d.UI.Input
 
         private void ApplyScrollAction(ScrollAction action)
         {
+            var before = CameraSnapshot.FromCamera(this._camera);
+
             if (action.Kind == ScrollActionKind.DOLLY_ZOOM)
             {
                 this._camera.DollyZoom(action.Y * MovementSpeeds.DOLLY_ZOOM);
@@ -126,6 +134,13 @@ namespace Fram3d.UI.Input
             else if (action.Kind == ScrollActionKind.FOCAL_LENGTH)
             {
                 this.ApplyFocalLengthScroll(action.Y);
+            }
+
+            var after = CameraSnapshot.FromCamera(this._camera);
+
+            if (!this.IsDirectorView())
+            {
+                this._timeline?.RecordCameraManipulation(after, before);
             }
         }
 
@@ -264,7 +279,24 @@ namespace Fram3d.UI.Input
 
             if (action.Kind == DragActionKind.NONE)
             {
+                if (this._isCameraDragging)
+                {
+                    this._isCameraDragging = false;
+
+                    if (!this.IsDirectorView())
+                    {
+                        var after = CameraSnapshot.FromCamera(this._camera);
+                        this._timeline?.RecordCameraManipulation(after, this._cameraBeforeDrag);
+                    }
+                }
+
                 return;
+            }
+
+            if (!this._isCameraDragging)
+            {
+                this._isCameraDragging  = true;
+                this._cameraBeforeDrag = CameraSnapshot.FromCamera(this._camera);
             }
 
             var dt       = Time.deltaTime;
@@ -361,6 +393,23 @@ namespace Fram3d.UI.Input
             }
         }
 
+        private bool IsDirectorView()
+        {
+            if (this.cameraBehaviour != null && this.cameraBehaviour.IsDirectorView)
+            {
+                return true;
+            }
+
+            if (this.viewCameraManager != null && this.viewCameraManager.IsMultiView)
+            {
+                var slotType = this.viewCameraManager.ViewSlotModel.GetSlotType(
+                    this.viewCameraManager.ActiveSlot);
+                return slotType == ViewMode.DIRECTOR;
+            }
+
+            return false;
+        }
+
         private bool IsPointerOverBlockingUI()
         {
             var overPanel    = this.propertiesPanel != null && this.propertiesPanel.IsPointerOverUI;
@@ -401,10 +450,24 @@ namespace Fram3d.UI.Input
             this.viewLayoutView  ??= FindAnyObjectByType<ViewLayoutView>();
             this._timelineSection = FindAnyObjectByType<Timeline.TimelineSectionView>();
 
+            var shotEvaluator = FindAnyObjectByType<ShotEvaluator>();
+
+            if (shotEvaluator != null)
+            {
+                this._timeline = shotEvaluator.Controller;
+            }
+
+            if (this.gizmoBehaviour != null && this._timeline != null)
+            {
+                this.gizmoBehaviour.SetTimeline(this._timeline);
+            }
+
             this._keyboardRouter.Configure(this.cameraBehaviour,
                                             this.compositionGuides,
                                             this.gizmoBehaviour,
-                                            this._timelineSection);
+                                            this._timelineSection,
+                                            this._timeline,
+                                            this.viewCameraManager);
         }
 
         private void Update()

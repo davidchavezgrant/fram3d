@@ -137,8 +137,13 @@ namespace Fram3d.UI.Input
 
             var after = CameraSnapshot.FromCamera(this._camera);
 
-            if (!this.IsDirectorView())
+            if (this.IsDirectorView())
             {
+                Debug.Log("[Stopwatch] Skipped scroll recording — Director View");
+            }
+            else
+            {
+                Debug.Log("[Stopwatch] Recording scroll action");
                 this._timeline?.RecordCameraManipulation(after, before);
             }
         }
@@ -282,8 +287,13 @@ namespace Fram3d.UI.Input
                 {
                     this._isCameraDragging = false;
 
-                    if (!this.IsDirectorView())
+                    if (this.IsDirectorView())
                     {
+                        Debug.Log("[Stopwatch] Skipped drag recording — Director View");
+                    }
+                    else
+                    {
+                        Debug.Log("[Stopwatch] Recording drag end");
                         var after = CameraSnapshot.FromCamera(this._camera);
                         this._timeline?.RecordCameraManipulation(after, this._cameraBeforeDrag);
                     }

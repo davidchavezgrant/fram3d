@@ -740,11 +740,13 @@ namespace Fram3d.UI.Timeline
             }
 
             var shot                         = this._controller.CurrentShot;
+            var shotStart                    = this._controller.GetGlobalStartTime(shot.Id).Seconds;
             Func<double, double> timeToPixel = this._controller.TimeToPixel;
 
-            // Camera track main diamonds
-            var cameraTimes = shot.GetAllCameraKeyframeTimes();
-            this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, timeToPixel, this._controller.Selection);
+            // Camera track main diamonds — offset shot-local times to global
+            var cameraTimes                        = shot.GetAllCameraKeyframeTimes();
+            Func<double, double> cameraTimeToPixel = t => timeToPixel(t + shotStart);
+            this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, cameraTimeToPixel, this._controller.Selection);
             this._cameraTrackRow.SetExpanded(this._controller.Expansion.IsExpanded(TrackId.Camera));
 
             // Camera stopwatch visual

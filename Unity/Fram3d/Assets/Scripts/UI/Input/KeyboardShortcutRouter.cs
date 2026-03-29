@@ -56,6 +56,10 @@ namespace Fram3d.UI.Input
             return false;
         }
 
+        private bool CanRecord() =>
+            this._timeline != null
+            && (this._cameraBehaviour == null || !this._cameraBehaviour.IsDirectorView);
+
         private bool HandleAspectRatio(Keyboard keyboard)
         {
             if (!keyboard.aKey.wasPressedThisFrame
@@ -110,7 +114,10 @@ namespace Fram3d.UI.Input
                 var before = CameraSnapshot.FromCamera(camera);
                 camera.SetFocalLengthPreset(presets[i]);
                 var after = CameraSnapshot.FromCamera(camera);
-                this._timeline?.RecordCameraManipulation(after, before);
+                if (this.CanRecord())
+            {
+                this._timeline.RecordCameraManipulation(after, before);
+            }
                 break;
             }
         }
@@ -162,7 +169,7 @@ namespace Fram3d.UI.Input
                 return false;
             }
 
-            if (keyboard.cKey.wasPressedThisFrame && this._timeline != null)
+            if (keyboard.cKey.wasPressedThisFrame && this.CanRecord())
             {
                 var snap = CameraSnapshot.FromCamera(camera);
                 this._timeline.ForceRecordCamera(snap);
@@ -187,7 +194,10 @@ namespace Fram3d.UI.Input
             var before = CameraSnapshot.FromCamera(camera);
             camera.Reset();
             var after = CameraSnapshot.FromCamera(camera);
-            this._timeline?.RecordCameraManipulation(after, before);
+            if (this.CanRecord())
+            {
+                this._timeline.RecordCameraManipulation(after, before);
+            }
             return true;
         }
 
@@ -208,7 +218,10 @@ namespace Fram3d.UI.Input
                 var before = CameraSnapshot.FromCamera(camera);
                 camera.StepApertureWider();
                 var after = CameraSnapshot.FromCamera(camera);
-                this._timeline?.RecordCameraManipulation(after, before);
+                if (this.CanRecord())
+            {
+                this._timeline.RecordCameraManipulation(after, before);
+            }
                 return true;
             }
 
@@ -217,7 +230,10 @@ namespace Fram3d.UI.Input
                 var before = CameraSnapshot.FromCamera(camera);
                 camera.StepApertureNarrower();
                 var after = CameraSnapshot.FromCamera(camera);
-                this._timeline?.RecordCameraManipulation(after, before);
+                if (this.CanRecord())
+            {
+                this._timeline.RecordCameraManipulation(after, before);
+            }
                 return true;
             }
 

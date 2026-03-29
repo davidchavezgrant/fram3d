@@ -136,7 +136,11 @@ namespace Fram3d.UI.Input
             }
 
             var after = CameraSnapshot.FromCamera(this._camera);
-            this._timeline?.RecordCameraManipulation(after, before);
+
+            if (!this.IsDirectorView())
+            {
+                this._timeline?.RecordCameraManipulation(after, before);
+            }
         }
 
         private void ApplyFocalLengthScroll(float scrollY)
@@ -277,8 +281,12 @@ namespace Fram3d.UI.Input
                 if (this._isCameraDragging)
                 {
                     this._isCameraDragging = false;
-                    var after = CameraSnapshot.FromCamera(this._camera);
-                    this._timeline?.RecordCameraManipulation(after, this._cameraBeforeDrag);
+
+                    if (!this.IsDirectorView())
+                    {
+                        var after = CameraSnapshot.FromCamera(this._camera);
+                        this._timeline?.RecordCameraManipulation(after, this._cameraBeforeDrag);
+                    }
                 }
 
                 return;
@@ -383,6 +391,9 @@ namespace Fram3d.UI.Input
                 held = value >= 0.5f;
             }
         }
+
+        private bool IsDirectorView() =>
+            this.cameraBehaviour != null && this.cameraBehaviour.IsDirectorView;
 
         private bool IsPointerOverBlockingUI()
         {

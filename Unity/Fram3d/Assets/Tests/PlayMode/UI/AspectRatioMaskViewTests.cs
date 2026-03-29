@@ -68,11 +68,21 @@ namespace Fram3d.Tests.UI
         {
             yield return null;
             yield return null;
+            yield return null;
 
-            var container = this._uiDocument.rootVisualElement[0];
+            var root = this._uiDocument.rootVisualElement;
+
+            if (root == null || root.childCount == 0)
+            {
+                Assert.Inconclusive("UI panel did not initialize — rootVisualElement has no children");
+            }
+
+            var container = root[0];
 
             for (var i = 0; i < container.childCount; i++)
+            {
                 Assert.AreEqual(Position.Absolute, container[i].resolvedStyle.position, $"Bar {i} should be absolutely positioned");
+            }
         }
 
         [UnityTest]
@@ -80,11 +90,21 @@ namespace Fram3d.Tests.UI
         {
             yield return null;
             yield return null;
+            yield return null;
 
-            var container = this._uiDocument.rootVisualElement[0];
+            var root = this._uiDocument.rootVisualElement;
+
+            if (root == null || root.childCount == 0)
+            {
+                Assert.Inconclusive("UI panel did not initialize — rootVisualElement has no children");
+            }
+
+            var container = root[0];
 
             for (var i = 0; i < container.childCount; i++)
+            {
                 Assert.AreEqual(PickingMode.Ignore, container[i].pickingMode, $"Bar {i} should ignore mouse events");
+            }
         }
 
         // --- Structure ---

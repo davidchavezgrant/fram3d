@@ -78,6 +78,7 @@ namespace Fram3d.UI.Timeline
 
             this._content = new VisualElement();
             this._content.AddToClassList("track-content");
+            this.RegisterContentPointerHandlers();
             header.Add(this._content);
 
             this.Add(header);
@@ -214,71 +215,11 @@ namespace Fram3d.UI.Timeline
                 this._diamonds.RemoveAt(this._diamonds.Count - 1);
             }
 
-            // Add missing diamonds
+            // Add missing diamonds (no per-element event registration —
+            // events are handled via delegation on _content)
             while (this._diamonds.Count < times.Count)
             {
                 var diamond = new KeyframeDiamond();
-                var idx = this._diamonds.Count;
-
-                diamond.RegisterCallback<PointerDownEvent>(evt =>
-                {
-                    if (evt.button != 0 || idx >= this._currentTimes.Count)
-                    {
-                        return;
-                    }
-
-                    this._dragDiamondIdx   = idx;
-                    this._isDragging       = false;
-                    this._pendingPointerId = evt.pointerId;
-                    this._pointerDownX     = this._content.WorldToLocal(evt.position).x;
-                    diamond.CapturePointer(evt.pointerId);
-                    evt.StopPropagation();
-                });
-                diamond.RegisterCallback<PointerMoveEvent>(evt =>
-                {
-                    if (this._dragDiamondIdx != idx || this._pendingPointerId < 0)
-                    {
-                        return;
-                    }
-
-                    var localX = this._content.WorldToLocal(evt.position).x;
-
-                    if (!this._isDragging)
-                    {
-                        if (Math.Abs(localX - this._pointerDownX) < DRAG_THRESHOLD_PX)
-                        {
-                            return;
-                        }
-
-                        this._isDragging = true;
-                    }
-
-                    this.DiamondDragging?.Invoke(this._currentTimes[idx], localX);
-                });
-                diamond.RegisterCallback<PointerUpEvent>(evt =>
-                {
-                    if (this._dragDiamondIdx != idx)
-                    {
-                        return;
-                    }
-
-                    diamond.ReleasePointer(this._pendingPointerId);
-
-                    if (this._isDragging)
-                    {
-                        var localX = this._content.WorldToLocal(evt.position).x;
-                        this.DiamondDropped?.Invoke(this._currentTimes[idx], localX);
-                    }
-                    else if (idx < this._currentTimes.Count)
-                    {
-                        this.DiamondClicked?.Invoke(this._trackId, null, this._currentTimes[idx]);
-                    }
-
-                    this._dragDiamondIdx   = -1;
-                    this._isDragging       = false;
-                    this._pendingPointerId = -1;
-                    evt.StopPropagation();
-                });
                 this._diamonds.Add(diamond);
                 this._content.Add(diamond);
             }
@@ -310,6 +251,110 @@ namespace Fram3d.UI.Timeline
                     this._diamonds[i].style.opacity = 1f;
                 }
             }
+        }
+
+        /// <summary>
+        /// Registers PointerDown/Move/Up on _content once. Uses event delegation
+        /// to find which diamond was hit, avoiding per-element callback registration
+        /// that can go stale when the diamond pool is reused across frames.
+        /// </summary>
+        private void RegisterContentPointerHandlers()
+        {
+            this._content.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                if (evt.button != 0)
+                {
+                    return;
+                }
+
+                var idx = this.FindDiamondIndex(evt.target as VisualElement);
+
+                if (idx < 0 || this._currentTimes == null || idx >= this._currentTimes.Count)
+                {
+                    return;
+                }
+
+                this._dragDiamondIdx   = idx;
+                this._isDragging       = false;
+                this._pendingPointerId = evt.pointerId;
+                this._pointerDownX     = this._content.WorldToLocal(evt.position).x;
+                this._content.CapturePointer(evt.pointerId);
+                evt.StopPropagation();
+            });
+
+            this._content.RegisterCallback<PointerMoveEvent>(evt =>
+            {
+                if (this._dragDiamondIdx < 0 || this._pendingPointerId < 0)
+                {
+                    return;
+                }
+
+                var localX = this._content.WorldToLocal(evt.position).x;
+
+                if (!this._isDragging)
+                {
+                    if (Math.Abs(localX - this._pointerDownX) < DRAG_THRESHOLD_PX)
+                    {
+                        return;
+                    }
+
+                    this._isDragging = true;
+                }
+
+                if (this._dragDiamondIdx < this._currentTimes.Count)
+                {
+                    this.DiamondDragging?.Invoke(this._currentTimes[this._dragDiamondIdx], localX);
+                }
+            });
+
+            this._content.RegisterCallback<PointerUpEvent>(evt =>
+            {
+                if (this._dragDiamondIdx < 0)
+                {
+                    return;
+                }
+
+                this._content.ReleasePointer(this._pendingPointerId);
+                var idx = this._dragDiamondIdx;
+
+                if (this._isDragging)
+                {
+                    var localX = this._content.WorldToLocal(evt.position).x;
+
+                    if (idx < this._currentTimes.Count)
+                    {
+                        this.DiamondDropped?.Invoke(this._currentTimes[idx], localX);
+                    }
+                }
+                else if (idx < this._currentTimes.Count)
+                {
+                    this.DiamondClicked?.Invoke(this._trackId, null, this._currentTimes[idx]);
+                }
+
+                this._dragDiamondIdx   = -1;
+                this._isDragging       = false;
+                this._pendingPointerId = -1;
+                evt.StopPropagation();
+            });
+        }
+
+        private int FindDiamondIndex(VisualElement target)
+        {
+            if (target == null)
+            {
+                return -1;
+            }
+
+            // Target could be the diamond itself or its inner dot
+            var diamond = target as KeyframeDiamond
+                       ?? target.parent as KeyframeDiamond;
+
+            if (diamond == null)
+            {
+                return -1;
+            }
+
+            return this._diamonds.IndexOf(diamond);
         }
     }
 }

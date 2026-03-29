@@ -76,6 +76,8 @@ namespace Fram3d.Core.Shots
         /// </summary>
         public StopwatchState CameraStopwatch { get; } = new(CameraProperty.COUNT);
 
+        public int ColorIndex { get; set; }
+
         /// <summary>
         /// Shot duration in seconds. Clamped to [MIN_DURATION, MAX_DURATION].
         /// Shortening duration below existing keyframe times does NOT delete them —

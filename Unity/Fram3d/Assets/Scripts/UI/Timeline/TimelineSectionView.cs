@@ -19,7 +19,7 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class TimelineSectionView : MonoBehaviour
     {
-        private const float LABEL_COL_W      = 140f;
+        private const float LABEL_COL_W      = 180f;
         private const float SECTION_HEIGHT   = 320f;
 
         // ── References ──
@@ -672,7 +672,21 @@ namespace Fram3d.UI.Timeline
             this._cameraTrackRow.DiamondClicked     += this.OnDiamondClicked;
             this._cameraTrackRow.DiamondDragging     += this.OnDiamondDragging;
             this._cameraTrackRow.DiamondDropped      += this.OnDiamondDropped;
-            this._cameraTrackRow.StopwatchClicked   += this.OnStopwatchClicked;
+            this._cameraTrackRow.StopwatchClicked      += this.OnStopwatchClicked;
+            this._cameraTrackRow.PrevKeyframeClicked   += _ => this._controller.JumpToPreviousCameraKeyframe();
+            this._cameraTrackRow.NextKeyframeClicked   += _ => this._controller.JumpToNextCameraKeyframe();
+            this._cameraTrackRow.ToggleKeyframeClicked += _ =>
+            {
+                var cam = this.GetShotCamera();
+
+                if (cam == null)
+                {
+                    return;
+                }
+
+                var snap = CameraSnapshot.FromCamera(cam);
+                this._controller.ToggleCameraKeyframeAtPlayhead(snap);
+            };
             this.BuildCameraSubTracks(this._cameraTrackRow);
             this._trackRows.Add(this._cameraTrackRow);
             this._trackContainer.Insert(0, this._cameraTrackRow);
@@ -767,8 +781,14 @@ namespace Fram3d.UI.Timeline
 
         private void SyncTrackVisuals()
         {
-            if (this._cameraTrackRow == null || this._controller.CurrentShot == null)
+            if (this._cameraTrackRow == null)
             {
+                return;
+            }
+
+            if (this._controller.CurrentShot == null)
+            {
+                this._cameraTrackRow.UpdateKeyframeNav(false, false, false, false, Color.clear);
                 return;
             }
 
@@ -784,8 +804,7 @@ namespace Fram3d.UI.Timeline
 
             // Camera track — color matches the active shot's palette color
             this._cameraTrackRow.UpdateShotSegments(segments);
-            var shotIndex                          = this._controller.IndexOf(shot.Id);
-            var shotColor                          = ShotColorPalette.GetColor(shotIndex);
+            var shotColor                          = ShotColorPalette.GetColor(shot.ColorIndex);
             var cameraTimes                        = shot.GetAllCameraKeyframeTimes();
             Func<double, double> cameraTimeToPixel = t => timeToPixel(t + shotStartSec);
             this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, cameraTimeToPixel, this._controller.Selection, shotColor);
@@ -793,6 +812,12 @@ namespace Fram3d.UI.Timeline
 
             var camSw = shot.CameraStopwatch;
             this._cameraTrackRow.SetStopwatchState(camSw.AnyRecording, camSw.AllRecording);
+            this._cameraTrackRow.UpdateKeyframeNav(
+                cameraTimes.Count > 0,
+                this._controller.HasCameraKeyframeAtPlayhead,
+                this._controller.CanJumpToPreviousCameraKeyframe,
+                this._controller.CanJumpToNextCameraKeyframe,
+                shotColor);
 
             if (this._controller.Expansion.IsExpanded(TrackId.Camera))
             {
@@ -846,7 +871,7 @@ namespace Fram3d.UI.Timeline
                 {
                     LeftPx   = startPx,
                     WidthPx  = widthPx,
-                    Color    = ShotColorPalette.GetColor(i),
+                    Color    = ShotColorPalette.GetColor(s.ColorIndex),
                     IsActive = s == currentShot
                 };
 

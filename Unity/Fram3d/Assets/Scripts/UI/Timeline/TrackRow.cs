@@ -17,16 +17,20 @@ namespace Fram3d.UI.Timeline
         private const    float                   INACTIVE_ALPHA    = 0.08f;
         private readonly VisualElement         _arrow;
         private readonly VisualElement         _content;
-        private readonly List<KeyframeDiamond> _diamonds     = new();
+        private readonly List<KeyframeDiamond> _diamonds          = new();
         private readonly bool                  _isCamera;
-        private readonly List<VisualElement>   _segments     = new();
+        private readonly VisualElement         _keyframeNav;
+        private readonly Button                _nextKeyframeBtn;
+        private readonly Button                _prevKeyframeBtn;
+        private readonly List<VisualElement>   _segments          = new();
         private readonly VisualElement         _stopwatch;
         private readonly VisualElement         _subContainer;
-        private readonly List<SubTrackRow>     _subTracks    = new();
+        private readonly List<SubTrackRow>     _subTracks         = new();
+        private readonly Button                _toggleKeyframeBtn;
         private readonly TrackId               _trackId;
-        private          int                   _dragDiamondIdx = -1;
+        private          int                   _dragDiamondIdx    = -1;
         private          bool                  _isDragging;
-        private          int                   _pendingPointerId = -1;
+        private          int                   _pendingPointerId  = -1;
         private          float                 _pointerDownX;
 
         // Stored reference so UpdateMainDiamonds can read times during drag
@@ -65,14 +69,33 @@ namespace Fram3d.UI.Timeline
             this._stopwatch.RegisterCallback<ClickEvent>(_ => this.StopwatchClicked?.Invoke(this._trackId));
             labels.Add(this._stopwatch);
 
-            var typeDot = new VisualElement();
-            typeDot.AddToClassList("track-type-dot");
-            typeDot.AddToClassList(isCamera ? "track-type-dot--camera" : "track-type-dot--element");
-            labels.Add(typeDot);
-
             var nameLabel = new Label(name);
             nameLabel.AddToClassList("track-name");
             labels.Add(nameLabel);
+
+            // Keyframe controls: ◀ ◆ ▶ (all in one group)
+            this._keyframeNav = new VisualElement();
+            this._keyframeNav.AddToClassList("track-keyframe-nav");
+            this._keyframeNav.style.display = DisplayStyle.None;
+
+            this._prevKeyframeBtn = new Button(() => this.PrevKeyframeClicked?.Invoke(this._trackId));
+            this._prevKeyframeBtn.text = "\u25c0";
+            this._prevKeyframeBtn.AddToClassList("track-keyframe-btn");
+            this._keyframeNav.Add(this._prevKeyframeBtn);
+
+            this._toggleKeyframeBtn = new Button(() => this.ToggleKeyframeClicked?.Invoke(this._trackId));
+            this._toggleKeyframeBtn.text = "\u25c7";
+            this._toggleKeyframeBtn.AddToClassList("track-keyframe-btn");
+            this._toggleKeyframeBtn.AddToClassList("track-keyframe-toggle");
+            this._keyframeNav.Add(this._toggleKeyframeBtn);
+
+            this._nextKeyframeBtn = new Button(() => this.NextKeyframeClicked?.Invoke(this._trackId));
+            this._nextKeyframeBtn.text = "\u25c0";
+            this._nextKeyframeBtn.AddToClassList("track-keyframe-btn");
+            this._nextKeyframeBtn.AddToClassList("track-keyframe-btn--flipped");
+            this._keyframeNav.Add(this._nextKeyframeBtn);
+
+            labels.Add(this._keyframeNav);
 
             header.Add(labels);
 
@@ -103,7 +126,10 @@ namespace Fram3d.UI.Timeline
         /// </summary>
         public event Action<TimePosition, float>      DiamondDropped;
 
+        public event Action<TrackId>                  NextKeyframeClicked;
+        public event Action<TrackId>                  PrevKeyframeClicked;
         public event Action<TrackId>                  StopwatchClicked;
+        public event Action<TrackId>                  ToggleKeyframeClicked;
 
         public IReadOnlyList<SubTrackRow> SubTracks => this._subTracks;
         public TrackId                    TrackId   => this._trackId;
@@ -137,6 +163,36 @@ namespace Fram3d.UI.Timeline
         {
             this._stopwatch.EnableInClassList("track-stopwatch--on", allOn);
             this._stopwatch.EnableInClassList("track-stopwatch--partial", anyOn && !allOn);
+        }
+
+        public void UpdateKeyframeNav(
+            bool  visible,
+            bool  hasKeyframeAtPlayhead,
+            bool  canPrev,
+            bool  canNext,
+            Color toggleColor)
+        {
+            if (visible)
+            {
+                this._keyframeNav.style.display = DisplayStyle.Flex;
+            }
+            else
+            {
+                this._keyframeNav.style.display = DisplayStyle.None;
+            }
+
+            if (hasKeyframeAtPlayhead)
+            {
+                this._toggleKeyframeBtn.text = "\u25c6";
+            }
+            else
+            {
+                this._toggleKeyframeBtn.text = "\u25c7";
+            }
+
+            this._toggleKeyframeBtn.style.color = toggleColor;
+            this._prevKeyframeBtn.SetEnabled(canPrev);
+            this._nextKeyframeBtn.SetEnabled(canNext);
         }
 
         /// <summary>

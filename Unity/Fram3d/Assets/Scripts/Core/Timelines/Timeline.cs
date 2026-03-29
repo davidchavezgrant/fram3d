@@ -91,6 +91,107 @@ namespace Fram3d.Core.Timelines
         public  double            ViewEnd         => this._view.ViewEnd;
         public  double            ViewStart       => this._view.ViewStart;
         public  double            VisibleDuration => this._view.VisibleDuration;
+
+        // ══════════════════════════════════════════════════════════════════
+        // Camera keyframe queries
+        // ══════════════════════════════════════════════════════════════════
+
+        public bool CanJumpToNextCameraKeyframe
+        {
+            get
+            {
+                var shot = this.CurrentShot;
+
+                if (shot == null)
+                {
+                    return false;
+                }
+
+                var localTime = this.GetLocalPlayheadTime();
+
+                if (localTime == null)
+                {
+                    return false;
+                }
+
+                var times = shot.GetAllCameraKeyframeTimes();
+
+                foreach (var t in times)
+                {
+                    if (t > localTime)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        public bool CanJumpToPreviousCameraKeyframe
+        {
+            get
+            {
+                var shot = this.CurrentShot;
+
+                if (shot == null)
+                {
+                    return false;
+                }
+
+                var localTime = this.GetLocalPlayheadTime();
+
+                if (localTime == null)
+                {
+                    return false;
+                }
+
+                var times = shot.GetAllCameraKeyframeTimes();
+
+                foreach (var t in times)
+                {
+                    if (t < localTime)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        public bool HasCameraKeyframeAtPlayhead
+        {
+            get
+            {
+                var shot = this.CurrentShot;
+
+                if (shot == null)
+                {
+                    return false;
+                }
+
+                var localTime = this.GetLocalPlayheadTime();
+
+                if (localTime == null)
+                {
+                    return false;
+                }
+
+                var times = shot.GetAllCameraKeyframeTimes();
+
+                foreach (var t in times)
+                {
+                    if (t == localTime)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
         private ShotTrack         Track           { get; }
 
         // ══════════════════════════════════════════════════════════════════
@@ -168,6 +269,84 @@ namespace Fram3d.Core.Timelines
             this.Playhead.Scrub(this.TotalDuration, this.TotalDuration);
             this.EvaluateCamera();
             this.EnsureVisible(this.TotalDuration);
+        }
+
+        public bool JumpToNextCameraKeyframe()
+        {
+            var shot = this.CurrentShot;
+
+            if (shot == null)
+            {
+                return false;
+            }
+
+            var localTime = this.GetLocalPlayheadTime();
+
+            if (localTime == null)
+            {
+                return false;
+            }
+
+            var times     = shot.GetAllCameraKeyframeTimes();
+            var shotStart = this.Track.GetGlobalStartTime(shot.Id).Seconds;
+
+            foreach (var t in times)
+            {
+                if (t > localTime)
+                {
+                    var globalTime = t.Seconds + shotStart;
+                    this.Playhead.Scrub(globalTime, this.TotalDuration);
+                    this.EvaluateCamera();
+                    this.EnsureVisible(globalTime);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool JumpToPreviousCameraKeyframe()
+        {
+            var shot = this.CurrentShot;
+
+            if (shot == null)
+            {
+                return false;
+            }
+
+            var localTime = this.GetLocalPlayheadTime();
+
+            if (localTime == null)
+            {
+                return false;
+            }
+
+            var times     = shot.GetAllCameraKeyframeTimes();
+            var shotStart = this.Track.GetGlobalStartTime(shot.Id).Seconds;
+            TimePosition prev = null;
+
+            foreach (var t in times)
+            {
+                if (t < localTime)
+                {
+                    prev = t;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (prev == null)
+            {
+                return false;
+            }
+
+            var globalTime = prev.Seconds + shotStart;
+            this.Playhead.Scrub(globalTime, this.TotalDuration);
+            this.EvaluateCamera();
+            this.EnsureVisible(globalTime);
+            return true;
         }
 
         public void JumpToStart()
@@ -272,6 +451,32 @@ namespace Fram3d.Core.Timelines
             var globalTime = new TimePosition(this.Playhead.CurrentTime);
 
             KeyframeRecorder.ForceRecordElement(track, globalTime, current);
+        }
+
+        public void ToggleCameraKeyframeAtPlayhead(CameraSnapshot snapshot)
+        {
+            if (this.CurrentShot == null || this.Playhead.IsPlaying)
+            {
+                return;
+            }
+
+            var localTime = this.GetLocalPlayheadTime();
+
+            if (localTime == null)
+            {
+                return;
+            }
+
+            if (this.HasCameraKeyframeAtPlayhead)
+            {
+                this.CurrentShot.DeleteAllCameraKeyframesAtTime(localTime);
+                this.Selection.Clear();
+                this.EvaluateCamera();
+            }
+            else
+            {
+                this.ForceRecordCamera(snapshot);
+            }
         }
 
         public void RecordCameraManipulation(CameraSnapshot current, CameraSnapshot previous)

@@ -47,7 +47,7 @@ namespace Fram3d.Tests.UI
         public void Constructor__CreatesNameAndDurationLabels__When__Created()
         {
             var shot  = this._controller.Shots[0];
-            var block = new ShotBlock(shot, 0);
+            var block = new ShotBlock(shot);
 
             Assert.AreEqual(2, block.childCount, "ShotBlock should have 2 children (name + duration)");
             Assert.IsInstanceOf<Label>(block[0], "First child should be name label");
@@ -58,18 +58,18 @@ namespace Fram3d.Tests.UI
         public void Constructor__SetsBackgroundColor__When__Created()
         {
             var shot   = this._controller.Shots[0];
-            var block  = new ShotBlock(shot, 0);
-            var color0 = ShotColorPalette.GetColor(0);
+            var block  = new ShotBlock(shot);
+            var expected = ShotColorPalette.GetColor(shot.ColorIndex);
 
-            Assert.AreEqual(color0, block.style.backgroundColor.value,
-                "Background should match palette color for index 0");
+            Assert.AreEqual(expected, block.style.backgroundColor.value,
+                "Background should match palette color for shot's color index");
         }
 
         [Test]
         public void Constructor__DisplaysShotName__When__Created()
         {
             var shot  = this._controller.Shots[0];
-            var block = new ShotBlock(shot, 0);
+            var block = new ShotBlock(shot);
             var name  = (Label)block[0];
 
             Assert.AreEqual(shot.Name, name.text);
@@ -79,7 +79,7 @@ namespace Fram3d.Tests.UI
         public void Constructor__DisplaysFormattedDuration__When__Created()
         {
             var shot     = this._controller.Shots[0];
-            var block    = new ShotBlock(shot, 0);
+            var block    = new ShotBlock(shot);
             var duration = (Label)block[1];
             var totalFrames = (int)(shot.Duration * 24);
             var s           = totalFrames / 24;
@@ -93,7 +93,7 @@ namespace Fram3d.Tests.UI
         public void SetActive__AddsActiveClass__When__True()
         {
             var shot  = this._controller.Shots[0];
-            var block = new ShotBlock(shot, 0);
+            var block = new ShotBlock(shot);
 
             block.SetActive(true);
 
@@ -104,7 +104,7 @@ namespace Fram3d.Tests.UI
         public void SetActive__RemovesActiveClass__When__False()
         {
             var shot  = this._controller.Shots[0];
-            var block = new ShotBlock(shot, 0);
+            var block = new ShotBlock(shot);
 
             block.SetActive(true);
             block.SetActive(false);
@@ -116,7 +116,7 @@ namespace Fram3d.Tests.UI
         public void SetActive__IsIdempotent__When__CalledMultipleTimes()
         {
             var shot  = this._controller.Shots[0];
-            var block = new ShotBlock(shot, 0);
+            var block = new ShotBlock(shot);
 
             block.SetActive(true);
             block.SetActive(true);
@@ -130,7 +130,7 @@ namespace Fram3d.Tests.UI
         public void Refresh__UpdatesLabels__When__ShotMutated()
         {
             var shot  = this._controller.Shots[0];
-            var block = new ShotBlock(shot, 0);
+            var block = new ShotBlock(shot);
             var name  = (Label)block[0];
 
             // Mutate shot via Timeline
@@ -149,7 +149,7 @@ namespace Fram3d.Tests.UI
         public void Shot__ReturnsConstructorShot__When__Accessed()
         {
             var shot  = this._controller.Shots[0];
-            var block = new ShotBlock(shot, 0);
+            var block = new ShotBlock(shot);
 
             Assert.AreSame(shot, block.Shot);
         }
@@ -160,7 +160,7 @@ namespace Fram3d.Tests.UI
             yield return null;
 
             var shot  = this._controller.Shots[0];
-            var block = new ShotBlock(shot, 0);
+            var block = new ShotBlock(shot);
             this._uiDocument.rootVisualElement.Add(block);
 
             var fired = false;
@@ -181,7 +181,7 @@ namespace Fram3d.Tests.UI
         public void BeginDurationEdit__SetsIsEditing__When__Called()
         {
             var shot  = this._controller.Shots[0];
-            var block = new ShotBlock(shot, 0);
+            var block = new ShotBlock(shot);
 
             Assert.IsFalse(block.IsEditing, "Precondition: not editing");
 
@@ -194,7 +194,7 @@ namespace Fram3d.Tests.UI
         public void BeginDurationEdit__IsReentrantSafe__When__CalledTwice()
         {
             var shot  = this._controller.Shots[0];
-            var block = new ShotBlock(shot, 0);
+            var block = new ShotBlock(shot);
 
             block.BeginDurationEdit(_ => { });
             var childCountAfterFirst = block.childCount;

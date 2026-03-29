@@ -15,6 +15,7 @@ namespace Fram3d.Core.Timelines
         private readonly Subject<Shot> _added          = new();
         private readonly Subject<Shot> _currentChanged = new();
         private readonly FrameRate     _frameRate;
+        private readonly Random         _random         = new();
         private readonly Subject<Shot> _removed        = new();
         private readonly Subject<bool> _reordered      = new();
         private readonly List<Shot>    _shots          = new();
@@ -63,6 +64,7 @@ namespace Fram3d.Core.Timelines
             this._nextShotNumber++;
             var id   = new ShotId(Guid.NewGuid());
             var shot = new Shot(id, name);
+            shot.ColorIndex = this._random.Next(8);
             this._shots.Add(shot);
             this.SetCurrentShot(id);
             this._added.OnNext(shot);

@@ -133,7 +133,7 @@ namespace Fram3d.UI.Timeline
             for (var i = 0; i < shots.Count; i++)
             {
                 var shot  = shots[i];
-                var block = new ShotBlock(shot, i);
+                var block = new ShotBlock(shot);
 
                 block.RegisterCallback<PointerEnterEvent>(_ =>
                     this.ShotHoverStarted?.Invoke(shot));

@@ -17,6 +17,7 @@ namespace Fram3d.Core.Timelines
         private const    int                        HOLD_THRESHOLD_MS           = 200;
         private readonly Subject<CameraEvaluation>  _cameraEvaluationRequested  = new();
         private readonly Subject<ElementEvaluation> _elementEvaluationRequested = new();
+        private readonly Subject<ElementTrack>      _elementTrackCreated        = new();
         private readonly ViewRange                  _view;
 
         // ── Interaction state ──
@@ -59,6 +60,7 @@ namespace Fram3d.Core.Timelines
         public IObservable<Shot>              CurrentShotChanged         => this.Track.CurrentShotChanged;
         public int                            DragTargetIndex            => this._dragTargetIndex;
         public IObservable<ElementEvaluation> ElementEvaluationRequested => this._elementEvaluationRequested;
+        public IObservable<ElementTrack>      ElementTrackCreated        => this._elementTrackCreated;
 
         // ══════════════════════════════════════════════════════════════════
         // Sub-components
@@ -66,6 +68,11 @@ namespace Fram3d.Core.Timelines
         public ElementTimeline Elements           { get; }
         public TrackExpansion  Expansion          { get; } = new();
         public FrameRate       FrameRate          => this.Track.FrameRate;
+
+        // ══════════════════════════════════════════════════════════════════
+        // Track visibility
+        // ══════════════════════════════════════════════════════════════════
+        public TrackVisibility Visibility         { get; } = new();
         public bool            IsBoundaryDragging => this._isBoundaryDragging;
         public bool            IsDragging         => this._isDragging;
 
@@ -193,6 +200,25 @@ namespace Fram3d.Core.Timelines
         }
 
         private ShotTrack         Track           { get; }
+
+        // ══════════════════════════════════════════════════════════════════
+        // Element registration
+        // ══════════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Registers a scene element so it gets a track in the timeline.
+        /// No keyframes are created — the track exists but is empty.
+        /// </summary>
+        public void RegisterElement(ElementId elementId)
+        {
+            if (elementId == null || this.Elements.HasTrack(elementId))
+            {
+                return;
+            }
+
+            this.Elements.GetOrCreateTrack(elementId);
+            this._elementTrackCreated.OnNext(this.Elements.GetTrack(elementId));
+        }
 
         // ══════════════════════════════════════════════════════════════════
         // Shot lifecycle
@@ -447,10 +473,16 @@ namespace Fram3d.Core.Timelines
                 return;
             }
 
+            var isNew      = !this.Elements.HasTrack(elementId);
             var track      = this.Elements.GetOrCreateTrack(elementId);
             var globalTime = new TimePosition(this.Playhead.CurrentTime);
 
             KeyframeRecorder.ForceRecordElement(track, globalTime, current);
+
+            if (isNew)
+            {
+                this._elementTrackCreated.OnNext(track);
+            }
         }
 
         public void ToggleCameraKeyframeAtPlayhead(CameraSnapshot snapshot)

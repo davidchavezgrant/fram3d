@@ -106,6 +106,14 @@ namespace Fram3d.UI.Timeline
             this._transport.UpdatePlayButton(this._controller.Playhead.IsPlaying);
         }
 
+        public void ToggleShowHidden()
+        {
+            this._controller.Visibility.ShowHidden = !this._controller.Visibility.ShowHidden;
+            this._transport.UpdateShowHidden(this._controller.Visibility.ShowHidden);
+            this.RebuildTracks();
+            this.SyncTrackVisuals();
+        }
+
         public void ZoomIn()  => this._controller?.ZoomAtPoint(this._controller.Playhead.CurrentTime, 1f);
         public void ZoomOut() => this._controller?.ZoomAtPoint(this._controller.Playhead.CurrentTime, -1f);
 
@@ -141,6 +149,7 @@ namespace Fram3d.UI.Timeline
             this._controller.Reordered.Subscribe(_ => this._shotTrackStrip.RebuildBlocks());
             this._controller.CurrentShotChanged.Subscribe(_ => this._shotTrackStrip.UpdateActiveStates());
             this._controller.CurrentShotChanged.Subscribe(_ => this.RebuildTracks());
+            this._controller.ElementTrackCreated.Subscribe(_ => this.RebuildTracks());
             this._controller.Selection.Changed.Subscribe(_ => this.SyncTrackVisuals());
 
             this._shotTrackStrip.RebuildBlocks();
@@ -179,7 +188,7 @@ namespace Fram3d.UI.Timeline
             this._section.AddToClassList("timeline-section");
             this._section.style.height = SECTION_HEIGHT;
 
-            this._transport = new TransportBar(this.TogglePlayback);
+            this._transport = new TransportBar(this.TogglePlayback, this.ToggleShowHidden);
             this._section.Add(this._transport);
 
             this._ruler = new Ruler();
@@ -642,6 +651,13 @@ namespace Fram3d.UI.Timeline
             }
         }
 
+        private void OnHideClicked(TrackId trackId)
+        {
+            this._controller.Visibility.ToggleHidden(trackId);
+            this.RebuildTracks();
+            this.SyncTrackVisuals();
+        }
+
         private void OnStopwatchClicked(TrackId trackId)
         {
             if (trackId.IsCamera)
@@ -694,16 +710,18 @@ namespace Fram3d.UI.Timeline
             this._trackRows.Add(this._cameraTrackRow);
             this._trackScroll.Insert(0, this._cameraTrackRow);
 
-            // Element tracks
+            // Element tracks — all registered elements, filtered by visibility
             foreach (var track in this._controller.Elements.Tracks)
             {
-                if (!track.HasKeyframes)
+                var trackId = TrackId.ForElement(track.ElementId);
+
+                if (!this._controller.Visibility.IsVisible(trackId))
                 {
                     continue;
                 }
 
                 var elemRow = new TrackRow(
-                    TrackId.ForElement(track.ElementId),
+                    trackId,
                     this.GetElementName(track.ElementId),
                     false);
                 elemRow.ArrowClicked       += this.OnTrackArrowClicked;
@@ -711,6 +729,7 @@ namespace Fram3d.UI.Timeline
                 elemRow.DiamondDragging     += this.OnDiamondDragging;
                 elemRow.DiamondDropped      += this.OnDiamondDropped;
                 elemRow.StopwatchClicked   += this.OnStopwatchClicked;
+                elemRow.HideClicked        += this.OnHideClicked;
                 this.BuildElementSubTracks(elemRow);
                 this._trackRows.Add(elemRow);
                 this._trackScroll.Insert(this._trackRows.Count - 1, elemRow);
@@ -843,7 +862,7 @@ namespace Fram3d.UI.Timeline
                     continue;
                 }
 
-                row.UpdateShotSegments(segments);
+                row.SetFlatBackground(new Color(0.31f, 0.78f, 0.31f, 0.18f));
                 var elemTimes    = track.GetAllKeyframeTimes();
                 var elemColor    = new Color(0.31f, 0.78f, 0.31f);
                 row.UpdateMainDiamonds(elemTimes, timeToPixel, this._controller.Selection, elemColor, activeStart, activeEnd);

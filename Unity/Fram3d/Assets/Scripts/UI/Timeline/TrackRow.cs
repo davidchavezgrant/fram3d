@@ -69,6 +69,14 @@ namespace Fram3d.UI.Timeline
             this._stopwatch.RegisterCallback<ClickEvent>(_ => this.StopwatchClicked?.Invoke(this._trackId));
             labels.Add(this._stopwatch);
 
+            if (!isCamera)
+            {
+                var hideBtn = new VisualElement();
+                hideBtn.AddToClassList("track-hide-btn");
+                hideBtn.RegisterCallback<ClickEvent>(_ => this.HideClicked?.Invoke(this._trackId));
+                labels.Add(hideBtn);
+            }
+
             var nameLabel = new Label(name);
             nameLabel.AddToClassList("track-name");
             labels.Add(nameLabel);
@@ -115,6 +123,7 @@ namespace Fram3d.UI.Timeline
 
         public event Action<TrackId>                          ArrowClicked;
         public event Action<TrackId, KeyframeId, TimePosition> DiamondClicked;
+        public event Action<TrackId>                          HideClicked;
 
         /// <summary>
         /// Fired continuously during a diamond drag. Provides the track-content-local X pixel.
@@ -193,6 +202,22 @@ namespace Fram3d.UI.Timeline
             this._toggleKeyframeBtn.style.color = toggleColor;
             this._prevKeyframeBtn.SetEnabled(canPrev);
             this._nextKeyframeBtn.SetEnabled(canNext);
+        }
+
+        /// <summary>
+        /// Sets a flat background color spanning the full track content area.
+        /// Used for element tracks which are not scoped to shots.
+        /// </summary>
+        public void SetFlatBackground(Color color)
+        {
+            // Remove shot segments
+            foreach (var seg in this._segments)
+            {
+                this._content.Remove(seg);
+            }
+
+            this._segments.Clear();
+            this._content.style.backgroundColor = color;
         }
 
         /// <summary>

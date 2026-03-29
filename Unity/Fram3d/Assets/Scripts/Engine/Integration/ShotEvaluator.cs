@@ -119,6 +119,17 @@ namespace Fram3d.Engine.Integration
             var cam  = this._cameraBehaviour.ShotCamera;
             shot.DefaultCameraPosition = cam.Position;
             shot.DefaultCameraRotation = cam.Rotation;
+
+            // Register all scene elements so they get timeline tracks
+            var elements = FindObjectsByType<ElementBehaviour>(FindObjectsSortMode.None);
+
+            foreach (var eb in elements)
+            {
+                if (eb.Element?.Id != null)
+                {
+                    this.Controller.RegisterElement(eb.Element.Id);
+                }
+            }
         }
 
         private void OnDestroy()

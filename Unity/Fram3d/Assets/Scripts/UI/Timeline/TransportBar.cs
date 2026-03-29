@@ -12,10 +12,11 @@ namespace Fram3d.UI.Timeline
 
         private readonly Label  _durationLabel;
         private readonly Button _playButton;
+        private readonly Button _showHiddenBtn;
         private readonly Label  _shotLabel;
         private readonly Label  _timeLabel;
 
-        public TransportBar(Action onPlayClicked)
+        public TransportBar(Action onPlayClicked, Action onShowHiddenClicked)
         {
             this.AddToClassList("timeline-transport");
             this.style.height = HEIGHT;
@@ -40,6 +41,17 @@ namespace Fram3d.UI.Timeline
             this._shotLabel = new Label();
             this._shotLabel.AddToClassList("timeline-transport__shot");
             this.Add(this._shotLabel);
+
+            this._showHiddenBtn = new Button(onShowHiddenClicked);
+            this._showHiddenBtn.text = "\u25c9";
+            this._showHiddenBtn.AddToClassList("timeline-transport__show-hidden");
+            this._showHiddenBtn.tooltip = "Show hidden tracks";
+            this.Add(this._showHiddenBtn);
+        }
+
+        public void UpdateShowHidden(bool showHidden)
+        {
+            this._showHiddenBtn.EnableInClassList("timeline-transport__show-hidden--active", showHidden);
         }
 
         public void UpdatePlayButton(bool isPlaying)

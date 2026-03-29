@@ -1,3 +1,4 @@
+using Fram3d.Core.Cameras;
 using Fram3d.Core.Common;
 using Fram3d.Core.Scenes;
 using Fram3d.Core.Timelines;
@@ -50,15 +51,28 @@ namespace Fram3d.Engine.Integration
         {
             if (this._activeDrag != null && this._timeline != null)
             {
-                var before = new ElementSnapshot
+                if (this._activeDrag.Element is CameraElement)
                 {
-                    Position = this._activeDrag.StartPosition,
-                    Rotation = this._activeDrag.StartRotation,
-                    Scale    = this._activeDrag.StartScale
-                };
-                var after = ElementSnapshot.FromElement(this._activeDrag.Element);
-                this._timeline.RecordElementManipulation(
-                    this._activeDrag.Element.Id, after, before);
+                    var before = new CameraSnapshot
+                    {
+                        Position = this._activeDrag.StartPosition,
+                        Rotation = this._activeDrag.StartRotation
+                    };
+                    var after = CameraSnapshot.FromCamera((CameraElement)this._activeDrag.Element);
+                    this._timeline.RecordCameraManipulation(after, before);
+                }
+                else
+                {
+                    var before = new ElementSnapshot
+                    {
+                        Position = this._activeDrag.StartPosition,
+                        Rotation = this._activeDrag.StartRotation,
+                        Scale    = this._activeDrag.StartScale
+                    };
+                    var after = ElementSnapshot.FromElement(this._activeDrag.Element);
+                    this._timeline.RecordElementManipulation(
+                        this._activeDrag.Element.Id, after, before);
+                }
             }
 
             this._highlighter.ClearDrag();

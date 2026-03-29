@@ -797,7 +797,8 @@ namespace Fram3d.UI.Timeline
 
         private void ShowStopwatchConfirmDialog(Action onConfirm)
         {
-            var dialog = new StopwatchConfirmDialog(onConfirm, dontShowAgain =>
+            StopwatchConfirmDialog dialog = null;
+            dialog = new StopwatchConfirmDialog(onConfirm, dontShowAgain =>
             {
                 if (dontShowAgain)
                 {

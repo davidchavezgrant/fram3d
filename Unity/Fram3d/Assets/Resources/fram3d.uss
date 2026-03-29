@@ -1014,11 +1014,22 @@
 }
 
 .track-row--camera .track-content {
-    background-color: rgba(200, 180, 50, 0.06);
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .track-row--element .track-content {
-    background-color: rgba(80, 200, 80, 0.06);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.track-shot-segment {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+}
+
+.track-shot-segment--inactive {
+    border-left-width: 1px;
+    border-left-color: rgba(60, 60, 60, 0.4);
 }
 
 /* ── Sub-track rows ─────────────────────────────────────────────── */

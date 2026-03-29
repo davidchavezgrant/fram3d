@@ -810,17 +810,19 @@ namespace Fram3d.UI.Timeline
             var shotStart                    = this._controller.GetGlobalStartTime(shot.Id).Seconds;
             Func<double, double> timeToPixel = this._controller.TimeToPixel;
 
-            // Camera track main diamonds — offset shot-local times to global
+            // Build shot segments for all track rows
+            var segments    = this.BuildShotSegments(timeToPixel);
+
+            // Camera track
+            this._cameraTrackRow.UpdateShotSegments(segments);
             var cameraTimes                        = shot.GetAllCameraKeyframeTimes();
             Func<double, double> cameraTimeToPixel = t => timeToPixel(t + shotStart);
             this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, cameraTimeToPixel, this._controller.Selection);
             this._cameraTrackRow.SetExpanded(this._controller.Expansion.IsExpanded(TrackId.Camera));
 
-            // Camera stopwatch visual
             var camSw = shot.CameraStopwatch;
             this._cameraTrackRow.SetStopwatchState(camSw.AnyRecording, camSw.AllRecording);
 
-            // Camera sub-track live values
             if (this._controller.Expansion.IsExpanded(TrackId.Camera))
             {
                 this.SyncCameraSubTrackValues(shot);
@@ -844,6 +846,7 @@ namespace Fram3d.UI.Timeline
                     continue;
                 }
 
+                row.UpdateShotSegments(segments);
                 var elemTimes = track.GetAllKeyframeTimes();
                 row.UpdateMainDiamonds(elemTimes, timeToPixel, this._controller.Selection);
                 row.SetExpanded(this._controller.Expansion.IsExpanded(trackId));
@@ -851,6 +854,34 @@ namespace Fram3d.UI.Timeline
                 var elemSw = track.Stopwatch;
                 row.SetStopwatchState(elemSw.AnyRecording, elemSw.AllRecording);
             }
+        }
+
+        private ShotSegmentInfo[] BuildShotSegments(Func<double, double> timeToPixel)
+        {
+            var shots       = this._controller.Shots;
+            var currentShot = this._controller.CurrentShot;
+            var segments    = new ShotSegmentInfo[shots.Count];
+            var runningTime = 0.0;
+
+            for (var i = 0; i < shots.Count; i++)
+            {
+                var s       = shots[i];
+                var startPx = (float)timeToPixel(runningTime);
+                var endPx   = (float)timeToPixel(runningTime + s.Duration);
+                var widthPx = Math.Max(endPx - startPx, 2f);
+
+                segments[i] = new ShotSegmentInfo
+                {
+                    LeftPx   = startPx,
+                    WidthPx  = widthPx,
+                    Color    = ShotColorPalette.GetColor(i),
+                    IsActive = s == currentShot
+                };
+
+                runningTime += s.Duration;
+            }
+
+            return segments;
         }
 
         // ══════════════════════════════════════════════════════════════════

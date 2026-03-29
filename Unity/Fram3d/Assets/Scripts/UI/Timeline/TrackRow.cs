@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Fram3d.Core.Common;
 using Fram3d.Core.Timelines;
+using UnityEngine;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Timeline
 {
@@ -11,11 +12,14 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class TrackRow : VisualElement
     {
+        private const    float                   ACTIVE_ALPHA      = 0.18f;
         private const    float                   DRAG_THRESHOLD_PX = 4f;
+        private const    float                   INACTIVE_ALPHA    = 0.08f;
         private readonly VisualElement         _arrow;
         private readonly VisualElement         _content;
         private readonly List<KeyframeDiamond> _diamonds     = new();
         private readonly bool                  _isCamera;
+        private readonly List<VisualElement>   _segments     = new();
         private readonly VisualElement         _stopwatch;
         private readonly VisualElement         _subContainer;
         private readonly List<SubTrackRow>     _subTracks    = new();
@@ -127,6 +131,51 @@ namespace Fram3d.UI.Timeline
         {
             this._stopwatch.EnableInClassList("track-stopwatch--on", allOn);
             this._stopwatch.EnableInClassList("track-stopwatch--partial", anyOn && !allOn);
+        }
+
+        /// <summary>
+        /// Updates the colored background segments that indicate shot regions.
+        /// Active shot gets full brightness; inactive shots are dimmed.
+        /// For camera tracks, segments use the shot palette color.
+        /// For element tracks, segments use a neutral tint.
+        /// </summary>
+        public void UpdateShotSegments(ShotSegmentInfo[] shots)
+        {
+            // Pool: remove excess
+            while (this._segments.Count > shots.Length)
+            {
+                var last = this._segments[this._segments.Count - 1];
+                this._content.Remove(last);
+                this._segments.RemoveAt(this._segments.Count - 1);
+            }
+
+            // Pool: add missing
+            while (this._segments.Count < shots.Length)
+            {
+                var seg = new VisualElement();
+                seg.AddToClassList("track-shot-segment");
+                seg.pickingMode = PickingMode.Ignore;
+                this._segments.Add(seg);
+                this._content.Insert(this._segments.Count - 1, seg);
+            }
+
+            // Position and color each segment
+            for (var i = 0; i < shots.Length; i++)
+            {
+                var info    = shots[i];
+                var seg     = this._segments[i];
+                var alpha   = info.IsActive ? ACTIVE_ALPHA : INACTIVE_ALPHA;
+                var color   = this._isCamera ? info.Color : new Color(0.6f, 0.6f, 0.6f);
+
+                seg.style.position        = Position.Absolute;
+                seg.style.left            = info.LeftPx;
+                seg.style.width           = info.WidthPx;
+                seg.style.top             = 0;
+                seg.style.bottom          = 0;
+                seg.style.backgroundColor = new Color(color.r, color.g, color.b, alpha);
+                seg.EnableInClassList("track-shot-segment--active", info.IsActive);
+                seg.EnableInClassList("track-shot-segment--inactive", !info.IsActive);
+            }
         }
 
         /// <summary>

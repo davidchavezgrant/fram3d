@@ -99,7 +99,9 @@ namespace Fram3d.Core.Timelines
 
         public Shot AddShot()
         {
-            var shot = this.Track.AddShot();
+            var shot      = this.Track.AddShot();
+            var shotStart = this.Track.GetGlobalStartTime(shot.Id).Seconds;
+            this.Playhead.Scrub(shotStart, this.TotalDuration);
 
             if (this._view.IsInitialized)
             {

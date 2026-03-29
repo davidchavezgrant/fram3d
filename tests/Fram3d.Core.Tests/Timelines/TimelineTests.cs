@@ -600,7 +600,8 @@ namespace Fram3d.Core.Tests.Timelines
         [Fact]
         public void ResolveShot__ReturnsFirstShot__When__PlayheadAtZero()
         {
-            var t      = Create();
+            var t = Create();
+            t.Playhead.Scrub(0, t.TotalDuration);
             var result = t.ResolveShot();
 
             result.Should().NotBeNull();
@@ -973,7 +974,8 @@ namespace Fram3d.Core.Tests.Timelines
         [Fact]
         public void Advance__FiresElementEvaluation__When__Playing()
         {
-            var t    = Create();
+            var t = Create();
+            t.Playhead.Scrub(0, t.TotalDuration);
             TimePosition globalTime = null;
             t.ElementEvaluationRequested.Subscribe(eval => globalTime = eval.GlobalTime);
             t.TogglePlayback();

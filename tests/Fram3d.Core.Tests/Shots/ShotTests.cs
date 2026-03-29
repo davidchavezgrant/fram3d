@@ -549,5 +549,25 @@ namespace Fram3d.Core.Tests.Shots
             // Focal length still empty — no crash, no phantom keyframe
             shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
         }
+
+        [Fact]
+        public void MoveAllCameraKeyframesAtTime__MovesFloatManagers__When__AllManagersHaveKeyframes()
+        {
+            var shot = MakeShot();
+            var t0 = TimePosition.ZERO;
+            shot.CameraFocalLengthKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t0, 50f));
+            shot.CameraApertureKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t0, 2.8f));
+            shot.CameraFocusDistanceKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t0, 5f));
+
+            var t1 = new TimePosition(2.0);
+            shot.MoveAllCameraKeyframesAtTime(t0, t1);
+
+            shot.CameraFocalLengthKeyframes.Keyframes[0].Time.Should().Be(t1);
+            shot.CameraApertureKeyframes.Keyframes[0].Time.Should().Be(t1);
+            shot.CameraFocusDistanceKeyframes.Keyframes[0].Time.Should().Be(t1);
+        }
     }
 }

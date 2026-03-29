@@ -276,6 +276,21 @@ namespace Fram3d.Core.Tests.Timelines
         }
 
         [Fact]
+        public void MoveAllKeyframesAtTime__MovesScale__When__ScaleKeyframeExists()
+        {
+            var track = Create();
+            var t0    = TimePosition.ZERO;
+            var t1    = new TimePosition(2.0);
+            track.ScaleKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t0, 1.5f));
+
+            track.MoveAllKeyframesAtTime(t0, t1);
+
+            track.ScaleKeyframes.Keyframes[0].Time.Should().Be(t1);
+            track.ScaleKeyframes.Keyframes[0].Value.Should().Be(1.5f);
+        }
+
+        [Fact]
         public void MoveAllKeyframesAtTime__MergesSilently__When__TargetTimeExists()
         {
             var track = Create();

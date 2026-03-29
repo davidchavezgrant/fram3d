@@ -20,18 +20,21 @@ namespace Fram3d.UI.Input
         private GizmoBehaviour      _gizmoController;
         private CoreTimeline         _timeline;
         private TimelineSectionView  _timelineSection;
+        private ViewCameraManager    _viewCameraManager;
 
         public void Configure(CameraBehaviour      cameraBehaviour,
                               CompositionGuideView compositionGuides,
                               GizmoBehaviour      gizmoController,
                               TimelineSectionView  timelineSection,
-                              CoreTimeline         timeline)
+                              CoreTimeline         timeline,
+                              ViewCameraManager    viewCameraManager)
         {
             this._cameraBehaviour  = cameraBehaviour;
             this._compositionGuides = compositionGuides;
             this._gizmoController  = gizmoController;
             this._timeline         = timeline;
             this._timelineSection  = timelineSection;
+            this._viewCameraManager = viewCameraManager;
         }
 
         /// <summary>
@@ -56,9 +59,31 @@ namespace Fram3d.UI.Input
             return false;
         }
 
-        private bool CanRecord() =>
-            this._timeline != null
-            && (this._cameraBehaviour == null || !this._cameraBehaviour.IsDirectorView);
+        private bool CanRecord()
+        {
+            if (this._timeline == null)
+            {
+                return false;
+            }
+
+            if (this._cameraBehaviour != null && this._cameraBehaviour.IsDirectorView)
+            {
+                return false;
+            }
+
+            if (this._viewCameraManager != null && this._viewCameraManager.IsMultiView)
+            {
+                var slotType = this._viewCameraManager.ViewSlotModel.GetSlotType(
+                    this._viewCameraManager.ActiveSlot);
+
+                if (slotType == ViewMode.DIRECTOR)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         private bool HandleAspectRatio(Keyboard keyboard)
         {

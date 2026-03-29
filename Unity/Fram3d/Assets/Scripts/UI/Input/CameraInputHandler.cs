@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Fram3d.Core.Cameras;
 using Fram3d.Core.Input;
+using Fram3d.Core.Scenes;
 using Fram3d.Core.Timelines;
 using Fram3d.Engine.Integration;
 using Fram3d.UI.Panels;
@@ -137,13 +138,8 @@ namespace Fram3d.UI.Input
 
             var after = CameraSnapshot.FromCamera(this._camera);
 
-            if (this.IsDirectorView())
+            if (!this.IsDirectorView())
             {
-                Debug.Log("[Stopwatch] Skipped scroll recording — Director View");
-            }
-            else
-            {
-                Debug.Log("[Stopwatch] Recording scroll action");
                 this._timeline?.RecordCameraManipulation(after, before);
             }
         }
@@ -287,13 +283,8 @@ namespace Fram3d.UI.Input
                 {
                     this._isCameraDragging = false;
 
-                    if (this.IsDirectorView())
+                    if (!this.IsDirectorView())
                     {
-                        Debug.Log("[Stopwatch] Skipped drag recording — Director View");
-                    }
-                    else
-                    {
-                        Debug.Log("[Stopwatch] Recording drag end");
                         var after = CameraSnapshot.FromCamera(this._camera);
                         this._timeline?.RecordCameraManipulation(after, this._cameraBeforeDrag);
                     }
@@ -402,8 +393,22 @@ namespace Fram3d.UI.Input
             }
         }
 
-        private bool IsDirectorView() =>
-            this.cameraBehaviour != null && this.cameraBehaviour.IsDirectorView;
+        private bool IsDirectorView()
+        {
+            if (this.cameraBehaviour != null && this.cameraBehaviour.IsDirectorView)
+            {
+                return true;
+            }
+
+            if (this.viewCameraManager != null && this.viewCameraManager.IsMultiView)
+            {
+                var slotType = this.viewCameraManager.ViewSlotModel.GetSlotType(
+                    this.viewCameraManager.ActiveSlot);
+                return slotType == ViewMode.DIRECTOR;
+            }
+
+            return false;
+        }
 
         private bool IsPointerOverBlockingUI()
         {
@@ -461,7 +466,8 @@ namespace Fram3d.UI.Input
                                             this.compositionGuides,
                                             this.gizmoBehaviour,
                                             this._timelineSection,
-                                            this._timeline);
+                                            this._timeline,
+                                            this.viewCameraManager);
         }
 
         private void Update()

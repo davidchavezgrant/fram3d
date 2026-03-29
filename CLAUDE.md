@@ -130,6 +130,8 @@ Run Play Mode tests: Unity Test Runner → PlayMode tab → Run All
 
 **`GenericDropdownMenu.DropDown` overload ambiguity.** `DropDown(Rect, VisualElement)` and `DropDown(Rect, VisualElement, bool)` both exist. When passing just two args, the compiler may select the wrong overload depending on context. Always pass all 4 args explicitly to disambiguate: `menu.DropDown(rect, element, false)`.
 
+**Never move inline styles to USS without verifying every property.** Inline styles on `VisualElement` (e.g., `style.position = Position.Absolute`, `style.color`, `style.fontSize`, `style.textShadow`) are the source of truth when they exist. Extracting them to USS classes is fine, but the USS class must include EVERY property — especially `position: absolute`, which is invisible in normal flow and easy to miss. A missing `position: absolute` in USS causes the element to render in document flow at (0,0) instead of being viewport-positioned. Always diff the inline styles against the USS class line by line before deleting the inline code.
+
 ## Unity Rendering
 
 **`mesh.triangles` returns a copy.** `Mesh.triangles` (and `vertices`, `normals`, `uv`) returns a COPY of the internal array. `Array.Copy(src, mesh.triangles, n)` copies into a throwaway — the mesh never receives the data. Always create the final array first, then assign: `mesh.triangles = finalArray`.

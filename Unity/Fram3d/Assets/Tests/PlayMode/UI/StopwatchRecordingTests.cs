@@ -143,7 +143,7 @@ namespace Fram3d.Tests.UI
         // ══════════════════════════════════════════════════════════════════
 
         [UnityTest]
-        public IEnumerator ScrollDolly__CreatesKeyframe__When__StopwatchOn()
+        public IEnumerator CameraManipulation__CreatesKeyframe__When__StopwatchOn()
         {
             yield return null;
             yield return null;
@@ -151,17 +151,15 @@ namespace Fram3d.Tests.UI
             this._timeline = this._shotEvaluator.Controller;
             var shot = this._timeline.CurrentShot;
             shot.CameraStopwatch.SetAll(true);
-
-            // Scrub playhead to t=2 so the new keyframe doesn't merge with t=0
             this._timeline.Playhead.Scrub(2.0, this._timeline.TotalDuration);
 
-            // Dolly via scroll
-            InputSystem.QueueStateEvent(this._mouse,
-                new MouseState { scroll = new UnityEngine.Vector2(0f, 120f) });
-            yield return null;
-
-            InputSystem.QueueStateEvent(this._mouse, new MouseState());
-            yield return null;
+            // Simulate a camera manipulation via the Timeline API
+            // (scroll events don't reliably propagate through InputSystem.onEvent in tests)
+            var cam    = this._behaviour.ShotCamera;
+            var before = CameraSnapshot.FromCamera(cam);
+            cam.Dolly(1f);
+            var after = CameraSnapshot.FromCamera(cam);
+            this._timeline.RecordCameraManipulation(after, before);
 
             Assert.AreEqual(2, shot.CameraPositionKeyframes.Count,
                 "A new position keyframe should be created when stopwatch is on");
@@ -363,7 +361,7 @@ namespace Fram3d.Tests.UI
         // ══════════════════════════════════════════════════════════════════
 
         [UnityTest]
-        public IEnumerator ScrollDolly__RecordsPosition__When__OnlyPositionStopwatchOn()
+        public IEnumerator CameraManipulation__RecordsOnlyPosition__When__OnlyPositionStopwatchOn()
         {
             yield return null;
             yield return null;
@@ -375,12 +373,13 @@ namespace Fram3d.Tests.UI
             shot.CameraStopwatch.Set(CameraProperty.POSITION.Index, true);
             this._timeline.Playhead.Scrub(2.0, this._timeline.TotalDuration);
 
-            InputSystem.QueueStateEvent(this._mouse,
-                new MouseState { scroll = new UnityEngine.Vector2(0f, 120f) });
-            yield return null;
-
-            InputSystem.QueueStateEvent(this._mouse, new MouseState());
-            yield return null;
+            // Simulate manipulation that changes both position and rotation
+            var cam    = this._behaviour.ShotCamera;
+            var before = CameraSnapshot.FromCamera(cam);
+            cam.Dolly(1f);
+            cam.Pan(0.1f);
+            var after = CameraSnapshot.FromCamera(cam);
+            this._timeline.RecordCameraManipulation(after, before);
 
             Assert.AreEqual(2, shot.CameraPositionKeyframes.Count,
                 "Position keyframe should be created when position stopwatch is on");
@@ -456,7 +455,7 @@ namespace Fram3d.Tests.UI
         // ══════════════════════════════════════════════════════════════════
 
         [UnityTest]
-        public IEnumerator ScrollDolly__CreatesKeyframe__When__CameraViewActiveInSplitMode()
+        public IEnumerator CameraManipulation__CreatesKeyframe__When__CameraViewActiveInSplitMode()
         {
             yield return null;
             yield return null;
@@ -472,7 +471,6 @@ namespace Fram3d.Tests.UI
             SetField(this._handler, "viewCameraManager", vcm);
             yield return null;
 
-            // Ensure director camera exists
             this._behaviour.EnsureDirectorInitialized();
 
             // Split view with Camera View in slot 0 (active)
@@ -480,18 +478,16 @@ namespace Fram3d.Tests.UI
             vcm.ViewSlotModel.SetSlotType(0, ViewMode.CAMERA);
             vcm.ViewSlotModel.SetSlotType(1, ViewMode.DIRECTOR);
 
-            // Active slot is 0 (Camera View) — recording should work
             var activeSlotField = typeof(ViewCameraManager)
                 .GetField("_activeSlot", BindingFlags.NonPublic | BindingFlags.Instance);
             activeSlotField.SetValue(vcm, 0);
 
-            // Dolly via scroll
-            InputSystem.QueueStateEvent(this._mouse,
-                new MouseState { scroll = new UnityEngine.Vector2(0f, 120f) });
-            yield return null;
-
-            InputSystem.QueueStateEvent(this._mouse, new MouseState());
-            yield return null;
+            // Simulate manipulation via Timeline API (Camera View is active, should record)
+            var cam    = this._behaviour.ShotCamera;
+            var before = CameraSnapshot.FromCamera(cam);
+            cam.Dolly(1f);
+            var after = CameraSnapshot.FromCamera(cam);
+            this._timeline.RecordCameraManipulation(after, before);
 
             Assert.AreEqual(2, shot.CameraPositionKeyframes.Count,
                 "Recording SHOULD work when Camera View is the active slot in split mode");

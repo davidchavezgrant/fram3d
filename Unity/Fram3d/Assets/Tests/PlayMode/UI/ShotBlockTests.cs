@@ -81,7 +81,10 @@ namespace Fram3d.Tests.UI
             var shot     = this._controller.Shots[0];
             var block    = new ShotBlock(shot, 0);
             var duration = (Label)block[1];
-            var expected = $"{shot.Duration:F1}s";
+            var totalFrames = (int)(shot.Duration * 24);
+            var s           = totalFrames / 24;
+            var f           = totalFrames % 24;
+            var expected    = $"{s};{f:D2}";
 
             Assert.AreEqual(expected, duration.text);
         }
@@ -135,7 +138,10 @@ namespace Fram3d.Tests.UI
             block.Refresh();
 
             var duration = (Label)block[1];
-            Assert.AreEqual($"{shot.Duration:F1}s", duration.text,
+            var totalFrames = (int)(shot.Duration * 24);
+            var s           = totalFrames / 24;
+            var f           = totalFrames % 24;
+            Assert.AreEqual($"{s};{f:D2}", duration.text,
                 "Duration label should update after Refresh");
         }
 

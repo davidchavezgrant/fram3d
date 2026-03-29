@@ -274,6 +274,12 @@ namespace Fram3d.UI.Timeline
                     return;
                 }
 
+                // Select immediately on press (like AE/Premiere) — this
+                // ensures the selection matches the grabbed diamond before
+                // any drag begins, so MoveSelectedKeyframe operates on
+                // the correct keyframe.
+                this.DiamondClicked?.Invoke(this._trackId, null, this._currentTimes[idx]);
+
                 this._dragDiamondIdx   = idx;
                 this._isDragging       = false;
                 this._pendingPointerId = evt.pointerId;
@@ -301,10 +307,7 @@ namespace Fram3d.UI.Timeline
                     this._isDragging = true;
                 }
 
-                if (this._dragDiamondIdx < this._currentTimes.Count)
-                {
-                    this.DiamondDragging?.Invoke(this._currentTimes[this._dragDiamondIdx], localX);
-                }
+                this.DiamondDragging?.Invoke(this._currentTimes[this._dragDiamondIdx], localX);
             });
 
             this._content.RegisterCallback<PointerUpEvent>(evt =>
@@ -315,20 +318,11 @@ namespace Fram3d.UI.Timeline
                 }
 
                 this._content.ReleasePointer(this._pendingPointerId);
-                var idx = this._dragDiamondIdx;
 
-                if (this._isDragging)
+                if (this._isDragging && this._dragDiamondIdx < this._currentTimes.Count)
                 {
                     var localX = this._content.WorldToLocal(evt.position).x;
-
-                    if (idx < this._currentTimes.Count)
-                    {
-                        this.DiamondDropped?.Invoke(this._currentTimes[idx], localX);
-                    }
-                }
-                else if (idx < this._currentTimes.Count)
-                {
-                    this.DiamondClicked?.Invoke(this._trackId, null, this._currentTimes[idx]);
+                    this.DiamondDropped?.Invoke(this._currentTimes[this._dragDiamondIdx], localX);
                 }
 
                 this._dragDiamondIdx   = -1;

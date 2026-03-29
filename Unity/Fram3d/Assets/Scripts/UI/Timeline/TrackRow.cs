@@ -175,9 +175,20 @@ namespace Fram3d.UI.Timeline
                 seg.style.position        = Position.Absolute;
                 seg.style.left            = info.LeftPx;
                 seg.style.width           = info.WidthPx;
-                seg.style.top             = 0;
-                seg.style.bottom          = 0;
                 seg.style.backgroundColor = new Color(color.r, color.g, color.b, alpha);
+
+                if (info.IsActive)
+                {
+                    seg.style.top    = 0;
+                    seg.style.bottom = 0;
+                    seg.style.height = StyleKeyword.Auto;
+                }
+                else
+                {
+                    seg.style.top    = StyleKeyword.Auto;
+                    seg.style.bottom = 0;
+                    seg.style.height = 6;
+                }
             }
         }
 

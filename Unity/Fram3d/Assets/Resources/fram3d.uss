@@ -1010,7 +1010,7 @@
     flex-grow: 1;
     position: relative;
     height: 28px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .track-row--camera .track-content {
@@ -1099,7 +1099,7 @@
     top: 50%;
     margin-top: -11px;
     border-radius: 11px;
-    background-color: rgba(0, 0, 0, 0);
+    background-color: rgba(0, 0, 0, 0.01);
     cursor: link;
     justify-content: center;
     align-items: center;

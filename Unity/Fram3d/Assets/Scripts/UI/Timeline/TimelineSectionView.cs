@@ -291,7 +291,6 @@ namespace Fram3d.UI.Timeline
             this._trackOutOfRange.pickingMode = PickingMode.Ignore;
 
             this._trackContainer.RegisterCallback<WheelEvent>(this.OnWheel);
-            this._trackContainer.RegisterCallback<ClickEvent>(this.OnTrackAreaClick);
             this._section.Add(this._trackContainer);
 
             this.RebuildTracks();
@@ -554,35 +553,6 @@ namespace Fram3d.UI.Timeline
             this.SyncTrackVisuals();
         }
 
-        private void OnTrackAreaClick(ClickEvent evt)
-        {
-            var target = evt.target as VisualElement;
-
-            if (target == null)
-            {
-                return;
-            }
-
-            // Only scrub when clicking directly on a track-content area
-            // (the right-hand region where diamonds live). Clicks on the
-            // label column (stopwatch, arrow, name) are handled by their
-            // own handlers and should not scrub.
-            if (!target.ClassListContains("track-content"))
-            {
-                return;
-            }
-
-            if (Mouse.current == null || this._trackContainer.panel == null)
-            {
-                return;
-            }
-
-            var mousePos  = Mouse.current.position.ReadValue();
-            var screenPos = new UnityEngine.Vector2(mousePos.x, Screen.height - mousePos.y);
-            var panelPos  = RuntimePanelUtils.ScreenToPanel(this._trackContainer.panel, screenPos);
-            var localX    = target.WorldToLocal(panelPos).x;
-            this._controller.ScrubTrackArea(localX);
-        }
 
         private void OnDiamondDragging(TimePosition originalTime, float localX)
         {

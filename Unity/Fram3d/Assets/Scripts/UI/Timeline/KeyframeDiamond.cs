@@ -14,6 +14,9 @@ namespace Fram3d.UI.Timeline
         {
             this.AddToClassList("keyframe-diamond");
             this.pickingMode = PickingMode.Position;
+            // Explicit transparent background ensures hit testing works —
+            // elements with no background can be skipped by the picker.
+            this.style.backgroundColor = new Color(0, 0, 0, 0);
 
             this._dot = new VisualElement();
             this._dot.AddToClassList("keyframe-diamond__dot");

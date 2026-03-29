@@ -40,7 +40,9 @@ namespace Fram3d.UI.Timeline
             this.Add(this._content);
         }
 
-        public event Action<KeyframeId, TimePosition> DiamondClicked;
+        public event Action<TrackId, KeyframeId, TimePosition> DiamondClicked;
+
+        public TrackId OwnerTrackId { get; set; }
 
         public void SetValue(string formattedValue) =>
             this._valueLabel.text = formattedValue;
@@ -67,13 +69,15 @@ namespace Fram3d.UI.Timeline
             while (this._diamonds.Count < times.Count)
             {
                 var diamond = new KeyframeDiamond();
-                diamond.SetColor(this._isCamera);
+                diamond.SetColor(this._isCamera
+                    ? new UnityEngine.Color(0.86f, 0.78f, 0.24f)
+                    : new UnityEngine.Color(0.31f, 0.78f, 0.31f));
                 var idx = this._diamonds.Count;
                 diamond.RegisterCallback<ClickEvent>(_ =>
                 {
                     if (idx < ids.Count)
                     {
-                        this.DiamondClicked?.Invoke(ids[idx], times[idx]);
+                        this.DiamondClicked?.Invoke(this.OwnerTrackId, ids[idx], times[idx]);
                     }
                 });
                 this._diamonds.Add(diamond);
@@ -84,7 +88,7 @@ namespace Fram3d.UI.Timeline
             for (var i = 0; i < times.Count; i++)
             {
                 var px = (float)timeToPixel(times[i].Seconds);
-                this._diamonds[i].style.left = px - 5f; // center the 10px diamond
+                this._diamonds[i].style.left = px - 11f;
                 this._diamonds[i].SetSelected(selection != null && i < ids.Count && selection.IsSelected(ids[i]));
             }
         }

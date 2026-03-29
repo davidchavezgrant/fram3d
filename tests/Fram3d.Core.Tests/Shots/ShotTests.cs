@@ -10,17 +10,25 @@ namespace Fram3d.Core.Tests.Shots
 {
     public class ShotTests
     {
-        private static Shot MakeShot(
-            string name = "Shot_01",
+        private static Shot MakeShot(string name = "Shot_01") =>
+            new(new ShotId(Guid.NewGuid()), name);
+
+        /// <summary>
+        /// Creates a shot with position and rotation keyframes at t=0
+        /// for tests that need initial keyframe data.
+        /// </summary>
+        private static Shot MakeShotWithKeyframes(
             Vector3? position = null,
             Quaternion? rotation = null)
         {
-            return new Shot(
-                new ShotId(Guid.NewGuid()),
-                name,
-                position ?? Vector3.Zero,
-                rotation ?? Quaternion.Identity
-            );
+            var shot = MakeShot();
+            var pos  = position ?? Vector3.Zero;
+            var rot  = rotation ?? Quaternion.Identity;
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, pos));
+            shot.CameraRotationKeyframes.Add(
+                new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, rot));
+            return shot;
         }
 
         // --- Constructor ---
@@ -28,7 +36,7 @@ namespace Fram3d.Core.Tests.Shots
         [Fact]
         public void Constructor__ThrowsArgumentNull__When__IdIsNull()
         {
-            Action act = () => new Shot(null, "Shot_01", Vector3.Zero, Quaternion.Identity);
+            Action act = () => new Shot(null, "Shot_01");
             act.Should().Throw<ArgumentNullException>();
         }
 
@@ -54,23 +62,11 @@ namespace Fram3d.Core.Tests.Shots
         }
 
         [Fact]
-        public void Constructor__CreatesInitialPositionKeyframe__When__Created()
+        public void Constructor__StartsWithNoKeyframes__When__Created()
         {
-            var position = new Vector3(1, 2, 3);
-            var shot = MakeShot(position: position);
-            shot.CameraPositionKeyframes.Count.Should().Be(1);
-            shot.CameraPositionKeyframes.Keyframes[0].Time.Should().Be(TimePosition.ZERO);
-            shot.CameraPositionKeyframes.Keyframes[0].Value.Should().Be(position);
-        }
-
-        [Fact]
-        public void Constructor__CreatesInitialRotationKeyframe__When__Created()
-        {
-            var rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI / 4);
-            var shot = MakeShot(rotation: rotation);
-            shot.CameraRotationKeyframes.Count.Should().Be(1);
-            shot.CameraRotationKeyframes.Keyframes[0].Time.Should().Be(TimePosition.ZERO);
-            shot.CameraRotationKeyframes.Keyframes[0].Value.Should().Be(rotation);
+            var shot = MakeShot();
+            shot.CameraPositionKeyframes.Count.Should().Be(0);
+            shot.CameraRotationKeyframes.Count.Should().Be(0);
         }
 
         [Fact]
@@ -173,11 +169,11 @@ namespace Fram3d.Core.Tests.Shots
                     new Vector3(5, 5, 5)
                 )
             );
-            shot.CameraPositionKeyframes.Count.Should().Be(2);
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
 
             // Shorten duration to 5 — keyframe at t=8 still exists
             shot.Duration = 5.0;
-            shot.CameraPositionKeyframes.Count.Should().Be(2);
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
         }
 
         [Fact]
@@ -195,8 +191,8 @@ namespace Fram3d.Core.Tests.Shots
             shot.Duration = 3.0;
             shot.Duration = 10.0;
             // Keyframe at t=8 is still there
-            shot.CameraPositionKeyframes.Count.Should().Be(2);
-            shot.CameraPositionKeyframes.Keyframes[1].Time.Seconds.Should().Be(8.0);
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
+            shot.CameraPositionKeyframes.Keyframes[0].Time.Seconds.Should().Be(8.0);
         }
 
         // --- EvaluateCameraPosition ---
@@ -205,14 +201,14 @@ namespace Fram3d.Core.Tests.Shots
         public void EvaluateCameraPosition__ReturnsInitialPosition__When__AtTimeZero()
         {
             var position = new Vector3(1, 2, 3);
-            var shot = MakeShot(position: position);
+            var shot = MakeShotWithKeyframes(position: position);
             shot.EvaluateCameraPosition(TimePosition.ZERO).Should().Be(position);
         }
 
         [Fact]
         public void EvaluateCameraPosition__Interpolates__When__BetweenKeyframes()
         {
-            var shot = MakeShot(position: new Vector3(0, 0, 0));
+            var shot = MakeShotWithKeyframes(position: new Vector3(0, 0, 0));
             shot.CameraPositionKeyframes.Add(
                 new Keyframe<Vector3>(
                     new KeyframeId(Guid.NewGuid()),
@@ -230,7 +226,7 @@ namespace Fram3d.Core.Tests.Shots
         public void EvaluateCameraRotation__ReturnsInitialRotation__When__AtTimeZero()
         {
             var rotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI / 4);
-            var shot = MakeShot(rotation: rotation);
+            var shot = MakeShotWithKeyframes(rotation: rotation);
             var result = shot.EvaluateCameraRotation(TimePosition.ZERO);
             result.X.Should().BeApproximately(rotation.X, 0.001f);
             result.Y.Should().BeApproximately(rotation.Y, 0.001f);
@@ -241,16 +237,16 @@ namespace Fram3d.Core.Tests.Shots
         // --- TotalCameraKeyframeCount ---
 
         [Fact]
-        public void TotalCameraKeyframeCount__ReturnsTwo__When__JustCreated()
+        public void TotalCameraKeyframeCount__ReturnsZero__When__JustCreated()
         {
             var shot = MakeShot();
-            shot.TotalCameraKeyframeCount.Should().Be(2); // 1 position + 1 rotation
+            shot.TotalCameraKeyframeCount.Should().Be(0);
         }
 
         [Fact]
         public void TotalCameraKeyframeCount__IncludesBoth__When__KeyframesAdded()
         {
-            var shot = MakeShot();
+            var shot = MakeShotWithKeyframes();
             shot.CameraPositionKeyframes.Add(
                 new Keyframe<Vector3>(
                     new KeyframeId(Guid.NewGuid()),
@@ -264,7 +260,7 @@ namespace Fram3d.Core.Tests.Shots
         [Fact]
         public void TotalCameraKeyframeCount__IncludesAllManagers__When__FloatKeyframesAdded()
         {
-            var shot = MakeShot();
+            var shot = MakeShotWithKeyframes();
             shot.CameraFocalLengthKeyframes.Add(
                 new Keyframe<float>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, 50f));
             shot.CameraApertureKeyframes.Add(
@@ -353,35 +349,33 @@ namespace Fram3d.Core.Tests.Shots
         // --- GetAllCameraKeyframeTimes ---
 
         [Fact]
-        public void GetAllCameraKeyframeTimes__ReturnsInitialTime__When__OnlyDefaultKeyframes()
+        public void GetAllCameraKeyframeTimes__ReturnsEmpty__When__NoKeyframes()
         {
             var shot = MakeShot();
             var times = shot.GetAllCameraKeyframeTimes();
-            times.Should().HaveCount(1);
-            times[0].Should().Be(TimePosition.ZERO);
+            times.Should().BeEmpty();
         }
 
         [Fact]
         public void GetAllCameraKeyframeTimes__MergesDistinctTimes__When__MultipleManagers()
         {
             var shot = MakeShot();
-            // Position has t=0 (default). Add rotation at t=1 and focal length at t=2.
+            // Add rotation at t=1 and focal length at t=2.
             shot.CameraRotationKeyframes.Add(
                 new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), new TimePosition(1.0), Quaternion.Identity));
             shot.CameraFocalLengthKeyframes.Add(
                 new Keyframe<float>(new KeyframeId(Guid.NewGuid()), new TimePosition(2.0), 50f));
             var times = shot.GetAllCameraKeyframeTimes();
-            times.Should().HaveCount(3);
-            times[0].Seconds.Should().Be(0.0);
-            times[1].Seconds.Should().Be(1.0);
-            times[2].Seconds.Should().Be(2.0);
+            times.Should().HaveCount(2);
+            times[0].Seconds.Should().Be(1.0);
+            times[1].Seconds.Should().Be(2.0);
         }
 
         [Fact]
         public void GetAllCameraKeyframeTimes__DeduplicatesSharedTimes__When__MultipleManagersSameTime()
         {
-            var shot = MakeShot();
-            // Both position and rotation have t=0 by default.
+            var shot = MakeShotWithKeyframes();
+            // Both position and rotation have t=0.
             var times = shot.GetAllCameraKeyframeTimes();
             times.Should().HaveCount(1);
         }
@@ -411,8 +405,8 @@ namespace Fram3d.Core.Tests.Shots
         [Fact]
         public void GetAllCameraKeyframeTimes__ReturnsAllDistinctTimes__When__AllFiveManagersHaveKeyframes()
         {
-            var shot = MakeShot();
-            // Position and rotation already have t=0
+            var shot = MakeShotWithKeyframes();
+            // Position and rotation have t=0
             // Add focal length at t=1
             shot.CameraFocalLengthKeyframes.Add(
                 new Keyframe<float>(new KeyframeId(Guid.NewGuid()), new TimePosition(1.0), 50f));
@@ -437,6 +431,111 @@ namespace Fram3d.Core.Tests.Shots
             var shot = MakeShot();
             shot.ClearAllCameraKeyframes();
             shot.GetAllCameraKeyframeTimes().Should().BeEmpty();
+        }
+
+        // --- DeleteAllCameraKeyframesAtTime ---
+
+        [Fact]
+        public void DeleteAllCameraKeyframesAtTime__RemovesKeyframes__When__MultipleTimesExist()
+        {
+            var shot = MakeShotWithKeyframes();
+            var t1 = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            shot.CameraRotationKeyframes.Add(
+                new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), t1, Quaternion.Identity));
+
+            shot.DeleteAllCameraKeyframesAtTime(t1);
+
+            shot.CameraPositionKeyframes.Count.Should().Be(1); // only t=0 remains
+            shot.CameraRotationKeyframes.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void DeleteAllCameraKeyframesAtTime__DeletesAcrossAllManagers__When__FloatKeyframesExist()
+        {
+            var shot = MakeShotWithKeyframes();
+            var t1 = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            shot.CameraFocalLengthKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t1, 50f));
+            shot.CameraApertureKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t1, 2.8f));
+            shot.CameraFocusDistanceKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t1, 5f));
+
+            shot.DeleteAllCameraKeyframesAtTime(t1);
+
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
+            shot.CameraApertureKeyframes.Count.Should().Be(0);
+            shot.CameraFocusDistanceKeyframes.Count.Should().Be(0);
+        }
+
+        // --- MoveAllCameraKeyframesAtTime ---
+
+        [Fact]
+        public void MoveAllCameraKeyframesAtTime__MovesKeyframes__When__Called()
+        {
+            var shot = MakeShotWithKeyframes();
+            var from = TimePosition.ZERO;
+            var to   = new TimePosition(2.0);
+
+            shot.MoveAllCameraKeyframesAtTime(from, to);
+
+            shot.CameraPositionKeyframes.Keyframes[0].Time.Should().Be(to);
+            shot.CameraRotationKeyframes.Keyframes[0].Time.Should().Be(to);
+        }
+
+        [Fact]
+        public void MoveAllCameraKeyframesAtTime__MergesSilently__When__TargetTimeHasKeyframes()
+        {
+            var shot = MakeShotWithKeyframes();
+            var t1 = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, new Vector3(5, 5, 5)));
+
+            // Move t=0 onto t=1 — should merge (overwrite)
+            shot.MoveAllCameraKeyframesAtTime(TimePosition.ZERO, t1);
+
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
+            shot.CameraPositionKeyframes.Keyframes[0].Time.Should().Be(t1);
+            // The arriving value (from t=0) overwrites
+            shot.CameraPositionKeyframes.Keyframes[0].Value.Should().Be(Vector3.Zero);
+        }
+
+        [Fact]
+        public void MoveAllCameraKeyframesAtTime__PreservesUnaffectedManagers__When__ManagerHasNoKeyframeAtTime()
+        {
+            var shot = MakeShotWithKeyframes();
+            var t1 = new TimePosition(1.0);
+            // Only position has t=0, focal length has nothing
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
+
+            shot.MoveAllCameraKeyframesAtTime(TimePosition.ZERO, t1);
+
+            // Focal length still empty — no crash, no phantom keyframe
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void MoveAllCameraKeyframesAtTime__MovesFloatManagers__When__AllManagersHaveKeyframes()
+        {
+            var shot = MakeShotWithKeyframes();
+            var t0 = TimePosition.ZERO;
+            shot.CameraFocalLengthKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t0, 50f));
+            shot.CameraApertureKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t0, 2.8f));
+            shot.CameraFocusDistanceKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t0, 5f));
+
+            var t1 = new TimePosition(2.0);
+            shot.MoveAllCameraKeyframesAtTime(t0, t1);
+
+            shot.CameraFocalLengthKeyframes.Keyframes[0].Time.Should().Be(t1);
+            shot.CameraApertureKeyframes.Keyframes[0].Time.Should().Be(t1);
+            shot.CameraFocusDistanceKeyframes.Keyframes[0].Time.Should().Be(t1);
         }
     }
 }

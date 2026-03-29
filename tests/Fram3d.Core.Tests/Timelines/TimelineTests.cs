@@ -16,7 +16,7 @@ namespace Fram3d.Core.Tests.Timelines
 
             for (var i = 0; i < shotCount; i++)
             {
-                timeline.AddShot(Vector3.Zero, Quaternion.Identity);
+                timeline.AddShot();
             }
 
             timeline.InitializeViewRange(1000);
@@ -600,7 +600,8 @@ namespace Fram3d.Core.Tests.Timelines
         [Fact]
         public void ResolveShot__ReturnsFirstShot__When__PlayheadAtZero()
         {
-            var t      = Create();
+            var t = Create();
+            t.Playhead.Scrub(0, t.TotalDuration);
             var result = t.ResolveShot();
 
             result.Should().NotBeNull();
@@ -683,7 +684,7 @@ namespace Fram3d.Core.Tests.Timelines
         public void FitToShot__PinsToStart__When__FirstShot()
         {
             var t = Create(); // 2 shots
-            t.AddShot(Vector3.Zero, Quaternion.Identity); // 3rd shot
+            t.AddShot(); // 3rd shot
             t.InitializeViewRange(500);
 
             t.FitToShot(t.Shots[0].Id);
@@ -695,7 +696,7 @@ namespace Fram3d.Core.Tests.Timelines
         public void FitToShot__PinsToEnd__When__LastShot()
         {
             var t = Create();
-            t.AddShot(Vector3.Zero, Quaternion.Identity); // 3rd shot
+            t.AddShot(); // 3rd shot
             t.InitializeViewRange(500);
             var lastShot = t.Shots[t.Count - 1];
 
@@ -928,7 +929,7 @@ namespace Fram3d.Core.Tests.Timelines
             Shot added = null;
             t.ShotAdded.Subscribe(s => added = s);
 
-            var shot = t.AddShot(Vector3.Zero, Quaternion.Identity);
+            var shot = t.AddShot();
 
             added.Should().Be(shot);
         }
@@ -973,7 +974,8 @@ namespace Fram3d.Core.Tests.Timelines
         [Fact]
         public void Advance__FiresElementEvaluation__When__Playing()
         {
-            var t    = Create();
+            var t = Create();
+            t.Playhead.Scrub(0, t.TotalDuration);
             TimePosition globalTime = null;
             t.ElementEvaluationRequested.Subscribe(eval => globalTime = eval.GlobalTime);
             t.TogglePlayback();
@@ -1104,33 +1106,26 @@ namespace Fram3d.Core.Tests.Timelines
         }
 
         [Fact]
-        public void SelectKeyframe__MovesPlayhead__When__Called()
+        public void SelectKeyframe__DoesNotMovePlayhead__When__Called()
         {
             var tl = new Timeline(FrameRate.FPS_24);
-            tl.AddShot(Vector3.Zero, Quaternion.Identity);
+            tl.AddShot();
+            tl.Playhead.Scrub(0, tl.TotalDuration);
+            tl.CurrentShot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Vector3.Zero));
             var kfId = tl.CurrentShot.CameraPositionKeyframes.Keyframes[0].Id;
             tl.SelectKeyframe(TrackId.Camera, kfId, new TimePosition(2.0));
-            tl.Playhead.CurrentTime.Should().BeApproximately(2.0, 0.05);
+            tl.Playhead.CurrentTime.Should().BeApproximately(0.0, 0.05);
             tl.Selection.IsSelected(kfId).Should().BeTrue();
-        }
-
-        [Fact]
-        public void SelectKeyframe__FiresCameraEvaluation__When__Called()
-        {
-            var tl = new Timeline(FrameRate.FPS_24);
-            tl.AddShot(Vector3.Zero, Quaternion.Identity);
-            var fired = false;
-            tl.CameraEvaluationRequested.Subscribe(_ => fired = true);
-            var kfId = tl.CurrentShot.CameraPositionKeyframes.Keyframes[0].Id;
-            tl.SelectKeyframe(TrackId.Camera, kfId, new TimePosition(1.0));
-            fired.Should().BeTrue();
         }
 
         [Fact]
         public void SelectKeyframe__SetsTrackId__When__Called()
         {
             var tl = new Timeline(FrameRate.FPS_24);
-            tl.AddShot(Vector3.Zero, Quaternion.Identity);
+            tl.AddShot();
+            tl.CurrentShot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Vector3.Zero));
             var kfId = tl.CurrentShot.CameraPositionKeyframes.Keyframes[0].Id;
             tl.SelectKeyframe(TrackId.Camera, kfId, new TimePosition(1.0));
             tl.Selection.TrackId.Should().Be(TrackId.Camera);
@@ -1153,8 +1148,8 @@ namespace Fram3d.Core.Tests.Timelines
 
             timeline.RecordCameraManipulation(after, before);
 
-            // Only the initial mandatory keyframe at t=0 should exist
-            shot.CameraPositionKeyframes.Count.Should().Be(1);
+            // No keyframes should have been created (playing guard)
+            shot.CameraPositionKeyframes.Count.Should().Be(0);
         }
 
         [Fact]
@@ -1162,7 +1157,7 @@ namespace Fram3d.Core.Tests.Timelines
         {
             var timeline = Create();
             timeline.CurrentShot.CameraStopwatch.SetAll(true);
-            // Scrub into the shot so local time > 0 (avoids merge with t=0 keyframe)
+            // Scrub into the shot so local time > 0
             timeline.Playhead.Scrub(2.0, timeline.TotalDuration);
 
             var before = new CameraSnapshot { Position = Vector3.Zero };
@@ -1170,8 +1165,8 @@ namespace Fram3d.Core.Tests.Timelines
 
             timeline.RecordCameraManipulation(after, before);
 
-            // Should have the initial keyframe at t=0 plus a new one
-            timeline.CurrentShot.CameraPositionKeyframes.Count.Should().Be(2);
+            // Should have a new keyframe
+            timeline.CurrentShot.CameraPositionKeyframes.Count.Should().Be(1);
         }
 
         [Fact]
@@ -1186,8 +1181,8 @@ namespace Fram3d.Core.Tests.Timelines
 
             timeline.RecordCameraManipulation(after, before);
 
-            // Only the initial mandatory keyframe should exist
-            timeline.CurrentShot.CameraPositionKeyframes.Count.Should().Be(1);
+            // No keyframes — stopwatch is off
+            timeline.CurrentShot.CameraPositionKeyframes.Count.Should().Be(0);
         }
 
         [Fact]
@@ -1243,8 +1238,8 @@ namespace Fram3d.Core.Tests.Timelines
 
             timeline.ForceRecordCamera(snap);
 
-            timeline.CurrentShot.CameraPositionKeyframes.Count.Should().Be(2);
-            timeline.CurrentShot.CameraRotationKeyframes.Count.Should().Be(2);
+            timeline.CurrentShot.CameraPositionKeyframes.Count.Should().Be(1);
+            timeline.CurrentShot.CameraRotationKeyframes.Count.Should().Be(1);
             timeline.CurrentShot.CameraFocalLengthKeyframes.Count.Should().Be(1);
             timeline.CurrentShot.CameraFocusDistanceKeyframes.Count.Should().Be(1);
             timeline.CurrentShot.CameraApertureKeyframes.Count.Should().Be(1);
@@ -1271,8 +1266,8 @@ namespace Fram3d.Core.Tests.Timelines
             timeline.ForceRecordCamera(snap);
 
             // No new keyframes should have been created
-            shot.CameraPositionKeyframes.Count.Should().Be(1);
-            shot.CameraRotationKeyframes.Count.Should().Be(1);
+            shot.CameraPositionKeyframes.Count.Should().Be(0);
+            shot.CameraRotationKeyframes.Count.Should().Be(0);
             shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
             shot.CameraFocusDistanceKeyframes.Count.Should().Be(0);
             shot.CameraApertureKeyframes.Count.Should().Be(0);
@@ -1280,7 +1275,7 @@ namespace Fram3d.Core.Tests.Timelines
         // --- Integration: auto-record on stopwatch enable ---
 
         [Fact]
-        public void ForceRecordCamera__MergesAtTimeZero__When__EnabledImmediately()
+        public void ForceRecordCamera__CreatesKeyframeAtZero__When__EnabledImmediately()
         {
             var timeline = Create();
             var shot     = timeline.CurrentShot;
@@ -1298,7 +1293,6 @@ namespace Fram3d.Core.Tests.Timelines
 
             timeline.ForceRecordCamera(snap);
 
-            // Should merge with initial keyframes at t=0, not duplicate
             shot.CameraPositionKeyframes.Count.Should().Be(1);
             shot.CameraPositionKeyframes.Keyframes[0].Value.Should().Be(new Vector3(5f, 2f, -3f));
             shot.CameraFocalLengthKeyframes.Count.Should().Be(1);
@@ -1323,9 +1317,9 @@ namespace Fram3d.Core.Tests.Timelines
 
             timeline.ForceRecordCamera(snap);
 
-            // Initial at t=0 + new at t=2.5
-            shot.CameraPositionKeyframes.Count.Should().Be(2);
-            shot.CameraRotationKeyframes.Count.Should().Be(2);
+            // New at t=2.5
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
+            shot.CameraRotationKeyframes.Count.Should().Be(1);
         }
 
         // --- Integration: stopwatch off clears keyframes but preserves state ---
@@ -1342,7 +1336,7 @@ namespace Fram3d.Core.Tests.Timelines
             var before = new CameraSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity };
             var after  = new CameraSnapshot { Position = new Vector3(5f, 0f, 0f), Rotation = Quaternion.Identity };
             timeline.RecordCameraManipulation(after, before);
-            shot.CameraPositionKeyframes.Count.Should().Be(2);
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
 
             // Simulate turn-off: clear keyframes then disable stopwatch
             shot.ClearAllCameraKeyframes();
@@ -1362,7 +1356,12 @@ namespace Fram3d.Core.Tests.Timelines
             var shot     = timeline.CurrentShot;
             shot.CameraStopwatch.SetAll(true);
 
-            // Add a second keyframe at t=3 with different position
+            // Add keyframes so interpolation produces a mid-value
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(
+                    new KeyframeId(Guid.NewGuid()),
+                    TimePosition.ZERO,
+                    Vector3.Zero));
             shot.CameraPositionKeyframes.Add(
                 new Keyframe<Vector3>(
                     new KeyframeId(Guid.NewGuid()),
@@ -1401,9 +1400,9 @@ namespace Fram3d.Core.Tests.Timelines
             var after2 = new CameraSnapshot { Position = new Vector3(3f, 0f, 0f), Rotation = Quaternion.Identity };
             timeline.RecordCameraManipulation(after2, before);
 
-            // Should still be initial + 1 merged, not initial + 2
-            shot.CameraPositionKeyframes.Count.Should().Be(2);
-            shot.CameraPositionKeyframes.Keyframes[1].Value.X.Should().Be(3f);
+            // Should still be 1 merged, not 2
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
+            shot.CameraPositionKeyframes.Keyframes[0].Value.X.Should().Be(3f);
         }
 
         // --- Integration: element recording creates track ---
@@ -1455,6 +1454,150 @@ namespace Fram3d.Core.Tests.Timelines
             timeline.ForceRecordElement(elementId, snap);
 
             track.PositionKeyframes.Count.Should().Be(0);
+        }
+
+        // ── DeleteSelectedKeyframe ─────────────────────────────────────
+
+        [Fact]
+        public void DeleteSelectedKeyframe__ReturnsFalse__When__NoSelection()
+        {
+            var t = Create();
+
+            t.DeleteSelectedKeyframe().Should().BeFalse();
+        }
+
+        [Fact]
+        public void DeleteSelectedKeyframe__DeletesCameraKeyframe__When__MultipleExist()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            // Add initial keyframes at t=0
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Vector3.Zero));
+            shot.CameraRotationKeyframes.Add(
+                new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Quaternion.Identity));
+            // Add keyframes at t=1
+            var t1 = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            shot.CameraRotationKeyframes.Add(
+                new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), t1, Quaternion.Identity));
+
+            var kfId = shot.CameraPositionKeyframes.Keyframes[1].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            t.DeleteSelectedKeyframe().Should().BeTrue();
+
+            shot.CameraPositionKeyframes.Count.Should().Be(1); // only t=0 remains
+            shot.CameraRotationKeyframes.Count.Should().Be(1);
+            t.Selection.HasSelection.Should().BeFalse();
+        }
+
+        [Fact]
+        public void DeleteSelectedKeyframe__DeletesElementKeyframe__When__Selected()
+        {
+            var t         = Create(1);
+            var elementId = new ElementId(Guid.NewGuid());
+            var track     = t.Elements.GetOrCreateTrack(elementId);
+            var t0        = TimePosition.ZERO;
+            track.PositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t0, Vector3.One));
+            var kfId    = track.PositionKeyframes.Keyframes[0].Id;
+            var trackId = TrackId.ForElement(elementId);
+            t.SelectKeyframe(trackId, kfId, t0);
+
+            t.DeleteSelectedKeyframe().Should().BeTrue();
+
+            track.PositionKeyframes.Count.Should().Be(0);
+        }
+
+        // ── MoveSelectedKeyframe ───────────────────────────────────────
+
+        [Fact]
+        public void MoveSelectedKeyframe__ReturnsFalse__When__NoSelection()
+        {
+            var t = Create();
+
+            t.MoveSelectedKeyframe(1.0).Should().BeFalse();
+        }
+
+        [Fact]
+        public void MoveSelectedKeyframe__SnapsTo01Grid__When__Called()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var t1   = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            var kfId = shot.CameraPositionKeyframes.Keyframes[0].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            t.MoveSelectedKeyframe(2.37).Should().BeTrue();
+
+            shot.CameraPositionKeyframes.Keyframes[0].Time.Seconds.Should().BeApproximately(2.4, 0.001);
+        }
+
+        [Fact]
+        public void MoveSelectedKeyframe__ClampsToZero__When__NegativeTime()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var t1   = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            var kfId = shot.CameraPositionKeyframes.Keyframes[0].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            t.MoveSelectedKeyframe(-5.0).Should().BeTrue();
+
+            shot.CameraPositionKeyframes.Keyframes[0].Time.Seconds.Should().Be(0.0);
+        }
+
+        [Fact]
+        public void MoveSelectedKeyframe__ClampsToDuration__When__BeyondShotEnd()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var t1   = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            var kfId = shot.CameraPositionKeyframes.Keyframes[0].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            t.MoveSelectedKeyframe(999.0).Should().BeTrue();
+
+            shot.CameraPositionKeyframes.Keyframes[0].Time.Seconds.Should().Be(shot.Duration);
+        }
+
+        [Fact]
+        public void MoveSelectedKeyframe__UpdatesSelection__When__Moved()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var t1   = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            var kfId = shot.CameraPositionKeyframes.Keyframes[0].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            t.MoveSelectedKeyframe(3.0);
+
+            t.Selection.Time.Seconds.Should().BeApproximately(3.0, 0.001);
+        }
+
+        [Fact]
+        public void MoveSelectedKeyframe__ReturnsFalse__When__SameTimeAfterSnap()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var t1   = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            var kfId = shot.CameraPositionKeyframes.Keyframes[0].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            // 1.04 snaps to 1.0 — same as current
+            t.MoveSelectedKeyframe(1.04).Should().BeFalse();
         }
     }
 }

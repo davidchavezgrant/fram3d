@@ -80,15 +80,12 @@ namespace Fram3d.Core.Shots
         /// Adds a new shot at the end of the sequence, capturing the given camera state.
         /// Auto-generates a name. Returns the new shot.
         /// </summary>
-        public Shot AddShot(Vector3 cameraPosition, Quaternion cameraRotation)
+        public Shot AddShot()
         {
             var name = this.GenerateName();
             var id   = new ShotId(Guid.NewGuid());
 
-            var shot = new Shot(id,
-                                name,
-                                cameraPosition,
-                                cameraRotation);
+            var shot = new Shot(id, name);
 
             this._shots.Add(shot);
             this.CurrentShot = shot;

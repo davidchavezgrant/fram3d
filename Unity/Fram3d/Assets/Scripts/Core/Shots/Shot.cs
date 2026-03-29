@@ -25,25 +25,26 @@ namespace Fram3d.Core.Shots
         private       double _duration;
         private       string _name;
 
-        public Shot(ShotId     id,
-                    string     name,
-                    Vector3    cameraPosition,
-                    Quaternion cameraRotation)
+        public Shot(ShotId id, string name)
         {
             this.Id = id ?? throw new ArgumentNullException(nameof(id));
             this.SetName(name);
             this._duration               = DEFAULT_DURATION;
             this.CameraPositionKeyframes = new KeyframeManager<Vector3>();
             this.CameraRotationKeyframes = new KeyframeManager<Quaternion>();
-
-            // Create the mandatory initial keyframes at t=0
-            var positionId = new KeyframeId(Guid.NewGuid());
-            var rotationId = new KeyframeId(Guid.NewGuid());
-            var positionKf = new Keyframe<Vector3>(positionId, TimePosition.ZERO, cameraPosition);
-            var rotationKf = new Keyframe<Quaternion>(rotationId, TimePosition.ZERO, cameraRotation);
-            this.CameraPositionKeyframes.Add(positionKf);
-            this.CameraRotationKeyframes.Add(rotationKf);
         }
+
+        /// <summary>
+        /// The camera position used when no position keyframes exist.
+        /// Set by the engine whenever the camera is moved while recording is off.
+        /// </summary>
+        public Vector3 DefaultCameraPosition { get; set; }
+
+        /// <summary>
+        /// The camera rotation used when no rotation keyframes exist.
+        /// Set by the engine whenever the camera is moved while recording is off.
+        /// </summary>
+        public Quaternion DefaultCameraRotation { get; set; } = Quaternion.Identity;
 
         /// <summary>
         /// Per-shot camera aperture keyframes (f-stop).
@@ -74,6 +75,8 @@ namespace Fram3d.Core.Shots
         /// Per-property stopwatch state for camera recording.
         /// </summary>
         public StopwatchState CameraStopwatch { get; } = new(CameraProperty.COUNT);
+
+        public int ColorIndex { get; set; }
 
         /// <summary>
         /// Shot duration in seconds. Clamped to [MIN_DURATION, MAX_DURATION].
@@ -125,6 +128,28 @@ namespace Fram3d.Core.Shots
         }
 
         /// <summary>
+        /// Deletes all camera property keyframes at the given time.
+        /// </summary>
+        public void DeleteAllCameraKeyframesAtTime(TimePosition time)
+        {
+            removeAtTime(this.CameraPositionKeyframes, time);
+            removeAtTime(this.CameraRotationKeyframes, time);
+            removeAtTime(this.CameraFocalLengthKeyframes, time);
+            removeAtTime(this.CameraApertureKeyframes, time);
+            removeAtTime(this.CameraFocusDistanceKeyframes, time);
+
+            static void removeAtTime<T>(KeyframeManager<T> mgr, TimePosition t)
+            {
+                var kf = mgr.GetAtTime(t);
+
+                if (kf != null)
+                {
+                    mgr.RemoveById(kf.Id);
+                }
+            }
+        }
+
+        /// <summary>
         /// Evaluates the camera aperture at a local shot time (0 to Duration).
         /// </summary>
         public float EvaluateCameraAperture(TimePosition localTime) =>
@@ -144,15 +169,45 @@ namespace Fram3d.Core.Shots
 
         /// <summary>
         /// Evaluates the camera position at a local shot time (0 to Duration).
+        /// Returns DefaultCameraPosition if no keyframes exist.
         /// </summary>
         public Vector3 EvaluateCameraPosition(TimePosition localTime) =>
-            this.CameraPositionKeyframes.Evaluate(localTime, Vector3.Lerp);
+            this.CameraPositionKeyframes.Count > 0
+                ? this.CameraPositionKeyframes.Evaluate(localTime, Vector3.Lerp)
+                : this.DefaultCameraPosition;
 
         /// <summary>
         /// Evaluates the camera rotation at a local shot time (0 to Duration).
+        /// Returns DefaultCameraRotation if no keyframes exist.
         /// </summary>
         public Quaternion EvaluateCameraRotation(TimePosition localTime) =>
-            this.CameraRotationKeyframes.Evaluate(localTime, Quaternion.Slerp);
+            this.CameraRotationKeyframes.Count > 0
+                ? this.CameraRotationKeyframes.Evaluate(localTime, Quaternion.Slerp)
+                : this.DefaultCameraRotation;
+
+        /// <summary>
+        /// Moves all camera property keyframes at one time to another time.
+        /// Uses SetOrMerge so that if keyframes already exist at the target time,
+        /// arriving values overwrite (silent merge per spec 3.2.4).
+        /// </summary>
+        public void MoveAllCameraKeyframesAtTime(TimePosition from, TimePosition to)
+        {
+            moveAtTime(this.CameraPositionKeyframes, from, to);
+            moveAtTime(this.CameraRotationKeyframes, from, to);
+            moveAtTime(this.CameraFocalLengthKeyframes, from, to);
+            moveAtTime(this.CameraApertureKeyframes, from, to);
+            moveAtTime(this.CameraFocusDistanceKeyframes, from, to);
+
+            static void moveAtTime<T>(KeyframeManager<T> mgr, TimePosition f, TimePosition t)
+            {
+                var kf = mgr.GetAtTime(f);
+
+                if (kf != null)
+                {
+                    mgr.SetOrMerge(kf.WithTime(t));
+                }
+            }
+        }
 
         /// <summary>
         /// Returns the sorted, deduplicated union of all keyframe times across

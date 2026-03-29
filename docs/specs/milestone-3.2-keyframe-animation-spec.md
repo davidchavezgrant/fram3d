@@ -537,14 +537,14 @@
     ***Click to select, drag to reposition in time, click the timeline to scrub. Parent/child keyframe rules govern how main and property keyframes move, merge, and delete. Minimum one camera keyframe enforced.***
 
     **Functional requirements:**
-    - Clicking a keyframe marker selects it
-    - Clicking empty space within the track area (not on a keyframe) scrubs the playhead to that time
+    - Clicking a keyframe marker selects it (the playhead does not move)
+    - Scrubbing the playhead is done exclusively via the ruler — clicking empty space in the track area does nothing
     - Dragging a selected keyframe repositions it in time along its track
     - Dragged keyframes snap to 0.1-second intervals
     - A keyframe cannot be dragged before time 0.0 or beyond the shot duration
     - Rotation keyframes include a **revolutions field** (After Effects model) to distinguish 0° from 360° and specify multi-revolution animation. The field stores the number of full revolutions (0, 1, 2, etc.) plus the remaining degrees. This enables smooth 360° spins and long-path rotation without requiring intermediate keyframes.
     - The selected keyframe can be deleted using the Delete key
-    - The last remaining camera keyframe cannot be deleted — every shot must have at least one camera keyframe
+    - All keyframes on a track can be deleted — shots hold a default camera state when no keyframes exist
     - The user can manually add a camera keyframe at the current playhead time using a keyboard shortcut (C key)
     - The user can manually add an element keyframe for the selected element at the current playhead time using a keyboard shortcut (V key)
     - When a keyframe is dragged, the timeline updates the keyframe's time position in real time during the drag
@@ -565,12 +565,7 @@
       # click to select
       .if the user clicks a main keyframe marker >>
           <== the keyframe becomes selected (highlighted cyan)
-          <== the playhead moves to that keyframe's time
-
-      # click to scrub
-      .if the user clicks empty space within the track area at the 1.5 second mark >>
-          <== the playhead moves to time 1.5
-          <== the view shows the interpolated state at time 1.5
+          !== the playhead moves
           !== any keyframe becomes selected
 
       # drag main keyframe — children follow
@@ -580,7 +575,7 @@
           <== the main keyframe moves to time 2.5
           <== ALL child property keyframes move to time 2.5
           <== the interpolation updates to reflect the new keyframe position
-          <== the playhead follows the keyframe during the drag
+          !== the playhead moves — it stays at its original position
 
       # drag property keyframe — detach from parent
       .if the camera track is expanded
@@ -643,18 +638,12 @@
       ||> .if no children remain at time 2.0 >>
           <== the main keyframe at time 2.0 is automatically deleted
 
-      # minimum camera keyframe enforcement
+      # deleting all keyframes — shot holds default camera state
       .if the camera track has exactly one main keyframe
-      .if the user attempts to delete it >>
-          <== the keyframe is not deleted
-          !== the camera track becomes empty
-
-      # minimum camera keyframe — cannot delete last via property deletion
-      .if the camera track has exactly one main keyframe at time 0.0
-      .if the track is expanded
-      .if the user tries to delete all property keyframes at time 0.0 one by one >>
-          <== the last property keyframe cannot be deleted
-          !== the main keyframe is destroyed by losing all children
+      .if the user deletes it >>
+          <== the keyframe is deleted
+          <== the camera track becomes empty
+          <== the camera holds its default position and rotation (whatever the user last set while recording was off)
 
       # manual camera keyframe creation
       .if the playhead is at time 1.0

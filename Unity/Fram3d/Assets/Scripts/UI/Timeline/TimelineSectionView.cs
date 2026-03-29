@@ -19,7 +19,7 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class TimelineSectionView : MonoBehaviour
     {
-        private const float LABEL_COL_W      = 140f;
+        private const float LABEL_COL_W      = 180f;
         private const float SECTION_HEIGHT   = 320f;
 
         // ── References ──
@@ -42,6 +42,7 @@ namespace Fram3d.UI.Timeline
         private VisualElement           _trackContainer;
         private VisualElement           _trackOutOfRange;
         private VisualElement           _trackPlayhead;
+        private ScrollView              _trackScroll;
 
         // ── Tooltips ──
         private VisualElement _boundaryTooltip;
@@ -189,10 +190,6 @@ namespace Fram3d.UI.Timeline
 
             this._shotTrackStrip = new ShotTrackStrip();
             this._shotTrackStrip.AddShotRequested += this.OnAddShot;
-            this._shotTrackStrip.BoundaryDragEnded += () =>
-                this._boundaryTooltip.style.display = DisplayStyle.None;
-            this._shotTrackStrip.BoundaryDragStarted += () =>
-                this._boundaryTooltip.style.display = DisplayStyle.Flex;
             this._shotTrackStrip.ShotHoverEnded += () =>
                 this._tooltip.style.display = DisplayStyle.None;
             this._shotTrackStrip.ShotHoverStarted += shot =>
@@ -244,9 +241,7 @@ namespace Fram3d.UI.Timeline
 
         private void BuildCameraSubTracks(TrackRow row)
         {
-            row.AddSubTrack("Position X");
-            row.AddSubTrack("Position Y");
-            row.AddSubTrack("Position Z");
+            row.AddSubTrack("Position");
             row.AddSubTrack("Pan");
             row.AddSubTrack("Tilt");
             row.AddSubTrack("Roll");
@@ -265,19 +260,20 @@ namespace Fram3d.UI.Timeline
 
         private void BuildElementSubTracks(TrackRow row)
         {
-            row.AddSubTrack("Position X");
-            row.AddSubTrack("Position Y");
-            row.AddSubTrack("Position Z");
+            row.AddSubTrack("Position");
             row.AddSubTrack("Scale");
-            row.AddSubTrack("Rotation X");
-            row.AddSubTrack("Rotation Y");
-            row.AddSubTrack("Rotation Z");
+            row.AddSubTrack("Rotation");
         }
 
         private void BuildTrackArea()
         {
             this._trackContainer = new VisualElement();
             this._trackContainer.AddToClassList("timeline-track-area");
+
+            this._trackScroll = new ScrollView(ScrollViewMode.Vertical);
+            this._trackScroll.style.flexGrow = 1;
+            this._trackScroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            this._trackContainer.Add(this._trackScroll);
 
             this._trackPlayhead = new VisualElement();
             this._trackPlayhead.AddToClassList("timeline-playhead");
@@ -290,14 +286,7 @@ namespace Fram3d.UI.Timeline
             this._trackOutOfRange.AddToClassList("timeline-out-of-range--tracks");
             this._trackOutOfRange.pickingMode = PickingMode.Ignore;
 
-            this._trackContainer.RegisterCallback<WheelEvent>(this.OnWheel);
-            this._trackContainer.RegisterCallback<ClickEvent>(evt =>
-            {
-                if (evt.target == this._trackContainer)
-                {
-                    this._controller.Selection.Clear();
-                }
-            });
+            this._trackContainer.RegisterCallback<WheelEvent>(this.OnWheel, TrickleDown.TrickleDown);
             this._section.Add(this._trackContainer);
 
             this.RebuildTracks();
@@ -362,6 +351,12 @@ namespace Fram3d.UI.Timeline
 
         private void SetPlayhead(VisualElement el, float px)
         {
+            if (px < 0)
+            {
+                el.style.display = DisplayStyle.None;
+                return;
+            }
+
             el.style.display = DisplayStyle.Flex;
             el.style.left    = px + LABEL_COL_W;
         }
@@ -372,11 +367,13 @@ namespace Fram3d.UI.Timeline
 
         private void OnAddShot()
         {
-            var cam = FindAnyObjectByType<CameraBehaviour>();
+            var shot = this._controller.AddShot();
+            var cam  = this.GetShotCamera();
 
             if (cam != null)
             {
-                this._controller.AddShot(cam.ShotCamera.Position, cam.ShotCamera.Rotation);
+                shot.DefaultCameraPosition = cam.Position;
+                shot.DefaultCameraRotation = cam.Rotation;
             }
         }
 
@@ -396,27 +393,24 @@ namespace Fram3d.UI.Timeline
             if (evt.shiftKey)
             {
                 this._controller.Pan(evt.delta.y * 2.0);
+                evt.StopPropagation();
             }
             else if (evt.ctrlKey)
             {
                 this._controller.ZoomAtPoint(this._controller.PixelToTime(evt.localMousePosition.x), -evt.delta.y);
+                evt.StopPropagation();
             }
             else
             {
                 var absX = Math.Abs(evt.delta.x);
-                var absY = Math.Abs(evt.delta.y);
 
-                if (absY > absX)
-                {
-                    this._controller.ZoomAtPoint(this._controller.PixelToTime(evt.localMousePosition.x), -evt.delta.y);
-                }
-                else if (absX > 0.01f)
+                if (absX > 0.01f)
                 {
                     this._controller.Pan(evt.delta.x * 2.0);
+                    evt.StopPropagation();
                 }
+                // Unmodified scroll Y falls through to the scroll view
             }
-
-            evt.StopPropagation();
         }
 
         private void HandleInputSystemScroll()
@@ -558,18 +552,64 @@ namespace Fram3d.UI.Timeline
             this.SyncTrackVisuals();
         }
 
-        private void OnDiamondClicked(KeyframeId keyframeId, TimePosition time)
+
+        private void OnDiamondDragging(TimePosition originalTime, float localX)
+        {
+            var newTime = this.PixelToTrackTime(localX);
+            this._controller.MoveSelectedKeyframe(newTime);
+        }
+
+        private void OnDiamondDropped(TimePosition originalTime, float localX)
+        {
+            var newTime = this.PixelToTrackTime(localX);
+            this._controller.MoveSelectedKeyframe(newTime);
+        }
+
+        /// <summary>
+        /// Converts a track-content pixel position to the correct time for the
+        /// selected track. Camera tracks use shot-local time; element tracks use
+        /// global time.
+        /// </summary>
+        private double PixelToTrackTime(float localX)
+        {
+            var globalTime = this._controller.PixelToTime(localX);
+            var sel        = this._controller.Selection;
+
+            if (sel.HasSelection && sel.TrackId == TrackId.Camera && this._controller.CurrentShot != null)
+            {
+                var shotStart = this._controller.GetGlobalStartTime(this._controller.CurrentShot.Id).Seconds;
+                return globalTime - shotStart;
+            }
+
+            return globalTime;
+        }
+
+        private void OnDiamondClicked(TrackId trackId, KeyframeId keyframeId, TimePosition time)
         {
             if (time == null)
             {
                 return;
             }
 
+            // Camera keyframe times are shot-local — convert to global for scrub
+            var globalTime = time;
+
+            if (trackId == TrackId.Camera && this._controller.CurrentShot != null)
+            {
+                var shotStart = this._controller.GetGlobalStartTime(this._controller.CurrentShot.Id).Seconds;
+                globalTime = new TimePosition(time.Seconds + shotStart);
+            }
+
             if (keyframeId != null)
             {
-                this._controller.SelectKeyframe(TrackId.Camera, keyframeId, time);
+                this._controller.SelectKeyframe(trackId, keyframeId, globalTime);
+                return;
             }
-            else
+
+            // Main diamond clicked — find a representative keyframe ID at this time
+            KeyframeId representative = null;
+
+            if (trackId == TrackId.Camera)
             {
                 var shot = this._controller.CurrentShot;
 
@@ -578,35 +618,27 @@ namespace Fram3d.UI.Timeline
                     return;
                 }
 
-                KeyframeId representative = null;
+                // Lookup uses shot-local time (what the keyframe manager stores)
+                representative = shot.CameraPositionKeyframes.GetAtTime(time)?.Id
+                              ?? shot.CameraRotationKeyframes.GetAtTime(time)?.Id;
+            }
+            else if (trackId.IsElement)
+            {
+                var track = this._controller.Elements.GetTrack(trackId.ElementId);
 
-                foreach (var kf in shot.CameraPositionKeyframes.Keyframes)
+                if (track == null)
                 {
-                    if (kf.Time.Equals(time))
-                    {
-                        representative = kf.Id;
-
-                        break;
-                    }
+                    return;
                 }
 
-                if (representative == null)
-                {
-                    foreach (var kf in shot.CameraRotationKeyframes.Keyframes)
-                    {
-                        if (kf.Time.Equals(time))
-                        {
-                            representative = kf.Id;
+                representative = track.PositionKeyframes.GetAtTime(time)?.Id
+                              ?? track.RotationKeyframes.GetAtTime(time)?.Id
+                              ?? track.ScaleKeyframes.GetAtTime(time)?.Id;
+            }
 
-                            break;
-                        }
-                    }
-                }
-
-                if (representative != null)
-                {
-                    this._controller.SelectKeyframe(TrackId.Camera, representative, time);
-                }
+            if (representative != null)
+            {
+                this._controller.SelectKeyframe(trackId, representative, globalTime);
             }
         }
 
@@ -641,10 +673,26 @@ namespace Fram3d.UI.Timeline
             this._cameraTrackRow = new TrackRow(TrackId.Camera, "Camera", true);
             this._cameraTrackRow.ArrowClicked       += this.OnTrackArrowClicked;
             this._cameraTrackRow.DiamondClicked     += this.OnDiamondClicked;
-            this._cameraTrackRow.StopwatchClicked   += this.OnStopwatchClicked;
+            this._cameraTrackRow.DiamondDragging     += this.OnDiamondDragging;
+            this._cameraTrackRow.DiamondDropped      += this.OnDiamondDropped;
+            this._cameraTrackRow.StopwatchClicked      += this.OnStopwatchClicked;
+            this._cameraTrackRow.PrevKeyframeClicked   += _ => this._controller.JumpToPreviousCameraKeyframe();
+            this._cameraTrackRow.NextKeyframeClicked   += _ => this._controller.JumpToNextCameraKeyframe();
+            this._cameraTrackRow.ToggleKeyframeClicked += _ =>
+            {
+                var cam = this.GetShotCamera();
+
+                if (cam == null)
+                {
+                    return;
+                }
+
+                var snap = CameraSnapshot.FromCamera(cam);
+                this._controller.ToggleCameraKeyframeAtPlayhead(snap);
+            };
             this.BuildCameraSubTracks(this._cameraTrackRow);
             this._trackRows.Add(this._cameraTrackRow);
-            this._trackContainer.Insert(0, this._cameraTrackRow);
+            this._trackScroll.Insert(0, this._cameraTrackRow);
 
             // Element tracks
             foreach (var track in this._controller.Elements.Tracks)
@@ -660,10 +708,12 @@ namespace Fram3d.UI.Timeline
                     false);
                 elemRow.ArrowClicked       += this.OnTrackArrowClicked;
                 elemRow.DiamondClicked     += this.OnDiamondClicked;
+                elemRow.DiamondDragging     += this.OnDiamondDragging;
+                elemRow.DiamondDropped      += this.OnDiamondDropped;
                 elemRow.StopwatchClicked   += this.OnStopwatchClicked;
                 this.BuildElementSubTracks(elemRow);
                 this._trackRows.Add(elemRow);
-                this._trackContainer.Insert(this._trackRows.Count - 1, elemRow);
+                this._trackScroll.Insert(this._trackRows.Count - 1, elemRow);
             }
 
             // Re-add playhead and out-of-range as overlays spanning all tracks
@@ -686,9 +736,7 @@ namespace Fram3d.UI.Timeline
 
             var subs = this._cameraTrackRow.SubTracks;
             var idx  = 0;
-            subs[idx++].SetValue(pos.X.ToString("F2"));
-            subs[idx++].SetValue(pos.Y.ToString("F2"));
-            subs[idx++].SetValue(pos.Z.ToString("F2"));
+            subs[idx++].SetValue($"{pos.X:F2}, {pos.Y:F2}, {pos.Z:F2}");
             subs[idx++].SetValue(euler.Pan.ToString("F1") + "\u00B0");
             subs[idx++].SetValue(euler.Tilt.ToString("F1") + "\u00B0");
             subs[idx++].SetValue(euler.Roll.ToString("F1") + "\u00B0");
@@ -734,32 +782,50 @@ namespace Fram3d.UI.Timeline
 
         private void SyncTrackVisuals()
         {
-            if (this._cameraTrackRow == null || this._controller.CurrentShot == null)
+            if (this._cameraTrackRow == null)
             {
                 return;
             }
 
+            if (this._controller.CurrentShot == null)
+            {
+                this._cameraTrackRow.UpdateKeyframeNav(false, false, false, false, Color.clear);
+                return;
+            }
+
             var shot                         = this._controller.CurrentShot;
-            var shotStart                    = this._controller.GetGlobalStartTime(shot.Id).Seconds;
+            var shotStartSec                 = this._controller.GetGlobalStartTime(shot.Id).Seconds;
+            var shotEndSec                   = this._controller.GetGlobalEndTime(shot.Id).Seconds;
+            var activeStart                  = new TimePosition(shotStartSec);
+            var activeEnd                    = new TimePosition(shotEndSec);
             Func<double, double> timeToPixel = this._controller.TimeToPixel;
 
-            // Camera track main diamonds — offset shot-local times to global
+            // Build shot segments for all track rows
+            var segments = this.BuildShotSegments(timeToPixel);
+
+            // Camera track — color matches the active shot's palette color
+            this._cameraTrackRow.UpdateShotSegments(segments);
+            var shotColor                          = ShotColorPalette.GetColor(shot.ColorIndex);
             var cameraTimes                        = shot.GetAllCameraKeyframeTimes();
-            Func<double, double> cameraTimeToPixel = t => timeToPixel(t + shotStart);
-            this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, cameraTimeToPixel, this._controller.Selection);
+            Func<double, double> cameraTimeToPixel = t => timeToPixel(t + shotStartSec);
+            this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, cameraTimeToPixel, this._controller.Selection, shotColor);
             this._cameraTrackRow.SetExpanded(this._controller.Expansion.IsExpanded(TrackId.Camera));
 
-            // Camera stopwatch visual
             var camSw = shot.CameraStopwatch;
             this._cameraTrackRow.SetStopwatchState(camSw.AnyRecording, camSw.AllRecording);
+            this._cameraTrackRow.UpdateKeyframeNav(
+                cameraTimes.Count > 0,
+                this._controller.HasCameraKeyframeAtPlayhead,
+                this._controller.CanJumpToPreviousCameraKeyframe,
+                this._controller.CanJumpToNextCameraKeyframe,
+                shotColor);
 
-            // Camera sub-track live values
             if (this._controller.Expansion.IsExpanded(TrackId.Camera))
             {
                 this.SyncCameraSubTrackValues(shot);
             }
 
-            // Element tracks
+            // Element tracks — dim diamonds outside the active shot
             for (var i = 1; i < this._trackRows.Count; i++)
             {
                 var row     = this._trackRows[i];
@@ -777,13 +843,43 @@ namespace Fram3d.UI.Timeline
                     continue;
                 }
 
-                var elemTimes = track.GetAllKeyframeTimes();
-                row.UpdateMainDiamonds(elemTimes, timeToPixel, this._controller.Selection);
+                row.UpdateShotSegments(segments);
+                var elemTimes    = track.GetAllKeyframeTimes();
+                var elemColor    = new Color(0.31f, 0.78f, 0.31f);
+                row.UpdateMainDiamonds(elemTimes, timeToPixel, this._controller.Selection, elemColor, activeStart, activeEnd);
                 row.SetExpanded(this._controller.Expansion.IsExpanded(trackId));
 
                 var elemSw = track.Stopwatch;
                 row.SetStopwatchState(elemSw.AnyRecording, elemSw.AllRecording);
             }
+        }
+
+        private ShotSegmentInfo[] BuildShotSegments(Func<double, double> timeToPixel)
+        {
+            var shots       = this._controller.Shots;
+            var currentShot = this._controller.CurrentShot;
+            var segments    = new ShotSegmentInfo[shots.Count];
+            var runningTime = 0.0;
+
+            for (var i = 0; i < shots.Count; i++)
+            {
+                var s       = shots[i];
+                var startPx = (float)timeToPixel(runningTime);
+                var endPx   = (float)timeToPixel(runningTime + s.Duration);
+                var widthPx = Math.Max(endPx - startPx, 2f);
+
+                segments[i] = new ShotSegmentInfo
+                {
+                    LeftPx   = startPx,
+                    WidthPx  = widthPx,
+                    Color    = ShotColorPalette.GetColor(s.ColorIndex),
+                    IsActive = s == currentShot
+                };
+
+                runningTime += s.Duration;
+            }
+
+            return segments;
         }
 
         // ══════════════════════════════════════════════════════════════════

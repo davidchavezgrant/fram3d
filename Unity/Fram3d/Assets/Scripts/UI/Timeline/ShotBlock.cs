@@ -16,10 +16,10 @@ namespace Fram3d.UI.Timeline
         private readonly Label _nameLabel;
         private          bool  _isEditing;
 
-        public ShotBlock(Shot shot, int colorIndex)
+        public ShotBlock(Shot shot)
         {
             this.Shot       = shot;
-            this._baseColor = ShotColorPalette.GetColor(colorIndex);
+            this._baseColor = ShotColorPalette.GetColor(shot.ColorIndex);
 
             this.AddToClassList("shot-block");
             this.style.backgroundColor = this._baseColor;

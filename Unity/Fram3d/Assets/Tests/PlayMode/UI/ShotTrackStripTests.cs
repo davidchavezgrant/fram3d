@@ -125,9 +125,9 @@ namespace Fram3d.Tests.UI
         [Test]
         public void RebuildBlocks__CreatesBlockPerShot__When__ShotsExist()
         {
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+            this._controller.AddShot();
+            this._controller.AddShot();
+            this._controller.AddShot();
 
             var strip = new ShotTrackStrip();
             strip.Bind(this._controller);
@@ -150,8 +150,8 @@ namespace Fram3d.Tests.UI
         [Test]
         public void RebuildBlocks__CreatesBoundaryHandlePerShot__When__ShotsExist()
         {
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+            this._controller.AddShot();
+            this._controller.AddShot();
 
             var strip = new ShotTrackStrip();
             strip.Bind(this._controller);
@@ -174,7 +174,7 @@ namespace Fram3d.Tests.UI
         [Test]
         public void RebuildBlocks__ClearsPreviousBlocks__When__Rebuilt()
         {
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+            this._controller.AddShot();
 
             var strip = new ShotTrackStrip();
             strip.Bind(this._controller);
@@ -182,7 +182,7 @@ namespace Fram3d.Tests.UI
             strip.RebuildBlocks();
 
             // Add another shot and rebuild
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+            this._controller.AddShot();
             strip.RebuildBlocks();
 
             var blockCount = 0;
@@ -201,7 +201,7 @@ namespace Fram3d.Tests.UI
         [Test]
         public void RebuildBlocks__PreservesInfrastructureElements__When__Rebuilt()
         {
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+            this._controller.AddShot();
 
             var strip = new ShotTrackStrip();
             strip.Bind(this._controller);
@@ -241,8 +241,8 @@ namespace Fram3d.Tests.UI
         [Test]
         public void UpdateActiveStates__MarksCurrentShot__When__ShotIsCurrent()
         {
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+            this._controller.AddShot();
+            this._controller.AddShot();
 
             var strip = new ShotTrackStrip();
             strip.Bind(this._controller);

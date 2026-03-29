@@ -102,7 +102,7 @@ namespace Fram3d.Tests.UI
         [Test]
         public void UpdateTransport__ShowsShotName__When__ShotExists()
         {
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+            this._controller.AddShot();
             this._controller.InitializeViewRange(800);
 
             var bar = new TransportBar(() => { });
@@ -130,7 +130,7 @@ namespace Fram3d.Tests.UI
         [Test]
         public void UpdateTransport__ShowsNonZeroTimecode__When__PlayheadAdvanced()
         {
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+            this._controller.AddShot();
             this._controller.InitializeViewRange(800);
 
             // Move playhead forward

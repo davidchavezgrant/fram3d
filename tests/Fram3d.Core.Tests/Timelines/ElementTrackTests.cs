@@ -219,5 +219,92 @@ namespace Fram3d.Core.Tests.Timelines
             track.RotationKeyframes.Count.Should().Be(0);
             track.ScaleKeyframes.Count.Should().Be(0);
         }
+
+        // --- DeleteAllKeyframesAtTime ---
+
+        [Fact]
+        public void DeleteAllKeyframesAtTime__RemovesAllPropertiesAtTime__When__Called()
+        {
+            var track = Create();
+            var t0    = TimePosition.ZERO;
+            track.PositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t0, Vector3.One));
+            track.RotationKeyframes.Add(
+                new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), t0, Quaternion.Identity));
+            track.ScaleKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t0, 1f));
+
+            track.DeleteAllKeyframesAtTime(t0);
+
+            track.PositionKeyframes.Count.Should().Be(0);
+            track.RotationKeyframes.Count.Should().Be(0);
+            track.ScaleKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void DeleteAllKeyframesAtTime__LeavesOtherTimes__When__MultipleTimesExist()
+        {
+            var track = Create();
+            track.PositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Vector3.Zero));
+            track.PositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), new TimePosition(1.0), Vector3.One));
+
+            track.DeleteAllKeyframesAtTime(TimePosition.ZERO);
+
+            track.PositionKeyframes.Count.Should().Be(1);
+            track.PositionKeyframes.Keyframes[0].Time.Seconds.Should().Be(1.0);
+        }
+
+        // --- MoveAllKeyframesAtTime ---
+
+        [Fact]
+        public void MoveAllKeyframesAtTime__MovesAllProperties__When__Called()
+        {
+            var track = Create();
+            var t0    = TimePosition.ZERO;
+            var t1    = new TimePosition(2.0);
+            track.PositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t0, Vector3.One));
+            track.RotationKeyframes.Add(
+                new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), t0, Quaternion.Identity));
+
+            track.MoveAllKeyframesAtTime(t0, t1);
+
+            track.PositionKeyframes.Keyframes[0].Time.Should().Be(t1);
+            track.RotationKeyframes.Keyframes[0].Time.Should().Be(t1);
+        }
+
+        [Fact]
+        public void MoveAllKeyframesAtTime__MovesScale__When__ScaleKeyframeExists()
+        {
+            var track = Create();
+            var t0    = TimePosition.ZERO;
+            var t1    = new TimePosition(2.0);
+            track.ScaleKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t0, 1.5f));
+
+            track.MoveAllKeyframesAtTime(t0, t1);
+
+            track.ScaleKeyframes.Keyframes[0].Time.Should().Be(t1);
+            track.ScaleKeyframes.Keyframes[0].Value.Should().Be(1.5f);
+        }
+
+        [Fact]
+        public void MoveAllKeyframesAtTime__MergesSilently__When__TargetTimeExists()
+        {
+            var track = Create();
+            var t0    = TimePosition.ZERO;
+            var t1    = new TimePosition(1.0);
+            track.PositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t0, Vector3.Zero));
+            track.PositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+
+            track.MoveAllKeyframesAtTime(t0, t1);
+
+            track.PositionKeyframes.Count.Should().Be(1);
+            track.PositionKeyframes.Keyframes[0].Value.Should().Be(Vector3.Zero); // arriving value wins
+        }
     }
 }

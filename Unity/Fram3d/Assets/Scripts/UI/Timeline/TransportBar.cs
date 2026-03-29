@@ -10,8 +10,8 @@ namespace Fram3d.UI.Timeline
     {
         private const float HEIGHT = 28f;
 
-        private readonly Button _playButton;
         private readonly Label  _durationLabel;
+        private readonly Button _playButton;
         private readonly Label  _shotLabel;
         private readonly Label  _timeLabel;
 

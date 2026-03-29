@@ -24,6 +24,47 @@ namespace Fram3d.Core.Timelines
         public KeyframeManager<float>      ScaleKeyframes    { get; } = new();
         public StopwatchState              Stopwatch         { get; } = new(ElementProperty.COUNT);
 
+        /// <summary>
+        /// Deletes all property keyframes at the given time.
+        /// </summary>
+        public void DeleteAllKeyframesAtTime(TimePosition time)
+        {
+            removeAtTime(this.PositionKeyframes, time);
+            removeAtTime(this.RotationKeyframes, time);
+            removeAtTime(this.ScaleKeyframes, time);
+
+            static void removeAtTime<T>(KeyframeManager<T> mgr, TimePosition t)
+            {
+                var kf = mgr.GetAtTime(t);
+
+                if (kf != null)
+                {
+                    mgr.RemoveById(kf.Id);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Moves all property keyframes at one time to another time.
+        /// Uses SetOrMerge for silent merge behavior.
+        /// </summary>
+        public void MoveAllKeyframesAtTime(TimePosition from, TimePosition to)
+        {
+            moveAtTime(this.PositionKeyframes, from, to);
+            moveAtTime(this.RotationKeyframes, from, to);
+            moveAtTime(this.ScaleKeyframes, from, to);
+
+            static void moveAtTime<T>(KeyframeManager<T> mgr, TimePosition f, TimePosition t)
+            {
+                var kf = mgr.GetAtTime(f);
+
+                if (kf != null)
+                {
+                    mgr.SetOrMerge(kf.WithTime(t));
+                }
+            }
+        }
+
         public void ClearAllKeyframes()
         {
             this.PositionKeyframes.Clear();

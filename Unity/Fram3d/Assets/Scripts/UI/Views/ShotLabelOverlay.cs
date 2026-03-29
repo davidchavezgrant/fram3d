@@ -38,9 +38,20 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            this._label             = new Label();
-            this._label.pickingMode = PickingMode.Ignore;
-            this._label.AddToClassList("shot-label-overlay");
+            this._label                               = new Label();
+            this._label.pickingMode                   = PickingMode.Ignore;
+            this._label.style.position                = Position.Absolute;
+            this._label.style.left                    = 8;
+            this._label.style.top                     = 24;
+            this._label.style.color                   = Color.white;
+            this._label.style.fontSize                = 12;
+            this._label.style.unityFontStyleAndWeight = FontStyle.Bold;
+            this._label.style.textShadow              = new TextShadow
+            {
+                offset     = new Vector2(1, 1),
+                blurRadius = 2,
+                color      = new Color(0, 0, 0, 0.8f)
+            };
             uiDoc.rootVisualElement.Add(this._label);
             this._shotChangedSub = this._controller.CurrentShotChanged.Subscribe(_ => this.UpdateLabel());
             this.UpdateLabel();
@@ -66,8 +77,11 @@ namespace Fram3d.UI.Views
                 return;
             }
 
-            var index = this._controller.IndexOf(shot.Id) + 1;
-            this._label.text          = $"Shot {index}A: {shot.Name} ({shot.Duration:F1}s)";
+            var index       = this._controller.IndexOf(shot.Id) + 1;
+            var totalFrames = (int)(shot.Duration * 24);
+            var s           = totalFrames / 24;
+            var f           = totalFrames % 24;
+            this._label.text = $"Shot {index}A: {shot.Name} ({s};{f:D2})";
             this._label.style.display = DisplayStyle.Flex;
         }
     }

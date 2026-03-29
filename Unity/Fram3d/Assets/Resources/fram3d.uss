@@ -443,8 +443,8 @@
 /* ── Shared label column ─────────────────────────────────────────── */
 
 .timeline-label-column {
-    width: 140px;
-    min-width: 140px;
+    width: 180px;
+    min-width: 180px;
     flex-shrink: 0;
     background-color: rgb(30, 30, 30);
     border-right-width: 1px;
@@ -949,49 +949,43 @@
 }
 
 .track-label-column {
-    width: 140px;
+    width: 180px;
     flex-shrink: 0;
     flex-direction: row;
     align-items: center;
-    padding-left: 4px;
+    padding-left: 8px;
     overflow: hidden;
+    background-color: rgb(30, 30, 30);
 }
 
 .track-arrow {
-    width: 14px;
-    height: 14px;
-    margin-right: 4px;
-    background-color: rgba(180, 180, 180, 0.6);
-    -unity-slice-left: 0;
-    -unity-slice-right: 0;
+    margin-right: 20px;
     cursor: link;
 }
 
 .track-arrow--collapsed {
-    rotate: 0deg;
-    border-left-width: 5px;
-    border-right-width: 5px;
-    border-top-width: 5px;
-    border-bottom-width: 5px;
-    border-left-color: transparent;
-    border-right-color: transparent;
-    border-top-color: rgba(180, 180, 180, 0.8);
+    border-top-width: 7px;
+    border-bottom-width: 7px;
+    border-left-width: 9px;
+    border-right-width: 0;
+    border-top-color: transparent;
     border-bottom-color: transparent;
+    border-left-color: rgba(180, 180, 180, 0.8);
+    border-right-color: transparent;
     background-color: transparent;
     width: 0;
     height: 0;
 }
 
 .track-arrow--expanded {
-    rotate: 0deg;
-    border-left-width: 5px;
-    border-right-width: 5px;
-    border-top-width: 5px;
-    border-bottom-width: 5px;
+    border-left-width: 7px;
+    border-right-width: 7px;
+    border-top-width: 9px;
+    border-bottom-width: 0;
     border-left-color: transparent;
     border-right-color: transparent;
-    border-top-color: transparent;
-    border-bottom-color: rgba(180, 180, 180, 0.8);
+    border-top-color: rgba(180, 180, 180, 0.8);
+    border-bottom-color: transparent;
     background-color: transparent;
     width: 0;
     height: 0;
@@ -1014,11 +1008,33 @@
 }
 
 .track-row--camera .track-content {
-    background-color: rgba(200, 180, 50, 0.06);
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .track-row--element .track-content {
-    background-color: rgba(80, 200, 80, 0.06);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.track-type-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+.track-type-dot--camera {
+    background-color: rgb(220, 200, 60);
+}
+
+.track-type-dot--element {
+    background-color: rgb(80, 200, 80);
+}
+
+.track-shot-segment {
+    position: absolute;
+    top: 0;
+    bottom: 0;
 }
 
 /* ── Sub-track rows ─────────────────────────────────────────────── */
@@ -1036,7 +1052,7 @@
 }
 
 .sub-track-label-column {
-    width: 140px;
+    width: 180px;
     flex-shrink: 0;
     flex-direction: row;
     align-items: center;
@@ -1072,21 +1088,40 @@
 
 .keyframe-diamond {
     position: absolute;
+    width: 22px;
+    height: 22px;
+    top: 50%;
+    margin-top: -11px;
+    border-radius: 11px;
+    background-color: rgba(0, 0, 0, 0.01);
+    cursor: link;
+    justify-content: center;
+    align-items: center;
+}
+
+.keyframe-diamond__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 0;
+    rotate: 45deg;
+    background-color: rgb(180, 180, 180);
+}
+
+.keyframe-diamond:hover .keyframe-diamond__dot {
     width: 10px;
     height: 10px;
-    top: 50%;
-    margin-top: -5px;
-    rotate: 45deg;
-    background-color: rgb(220, 200, 60);
-    cursor: link;
+    border-radius: 0;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.6);
 }
 
-.keyframe-diamond--element {
-    background-color: rgb(80, 200, 80);
-}
-
-.keyframe-diamond--selected {
-    background-color: rgb(0, 220, 220);
+.keyframe-diamond--selected .keyframe-diamond__dot {
+    background-color: rgb(255, 255, 255);
+    border-width: 2px;
+    border-color: rgb(0, 180, 220);
+    width: 10px;
+    height: 10px;
+    border-radius: 0;
 }
 
 /* ── Stopwatch ──────────────────────────────────────────────────── */
@@ -1111,6 +1146,44 @@
 .track-stopwatch--partial {
     background-color: rgb(140, 50, 50);
     border-color: rgb(180, 60, 60);
+}
+
+/* ── Track keyframe nav ──────────────────────────────────────────── */
+
+.track-keyframe-nav {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.track-keyframe-btn {
+    min-width: 0;
+    width: 18px;
+    height: 18px;
+    font-size: 13px;
+    color: rgb(170, 170, 170);
+    background-color: transparent;
+    border-width: 0;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    -unity-text-align: middle-center;
+}
+
+.track-keyframe-btn--flipped {
+    scale: -1 1;
+}
+
+.track-keyframe-btn:hover {
+    color: rgb(255, 255, 255);
+}
+
+.track-keyframe-btn:disabled {
+    opacity: 0.3;
+}
+
+.track-keyframe-toggle {
+    font-size: 16px;
 }
 
 /* ── Stopwatch confirm dialog ──────────────────────────────────── */

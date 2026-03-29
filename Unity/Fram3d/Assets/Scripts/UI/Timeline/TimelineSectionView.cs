@@ -556,38 +556,31 @@ namespace Fram3d.UI.Timeline
 
         private void OnTrackAreaClick(ClickEvent evt)
         {
-            // Ignore clicks on diamonds — those fire DiamondClicked
-            if (evt.target is VisualElement ve && ve.ClassListContains("keyframe-diamond"))
+            var target = evt.target as VisualElement;
+
+            if (target == null)
             {
                 return;
             }
 
-            // Convert mouse screen position to track-local X
+            // Only scrub when clicking directly on a track-content area
+            // (the right-hand region where diamonds live). Clicks on the
+            // label column (stopwatch, arrow, name) are handled by their
+            // own handlers and should not scrub.
+            if (!target.ClassListContains("track-content"))
+            {
+                return;
+            }
+
             if (Mouse.current == null || this._trackContainer.panel == null)
             {
-                return;
-            }
-
-            // Use the first track row's content area for coordinate conversion
-            // (all track-content elements share the same horizontal space)
-            if (this._cameraTrackRow == null)
-            {
-                this._controller.Selection.Clear();
                 return;
             }
 
             var mousePos  = Mouse.current.position.ReadValue();
             var screenPos = new UnityEngine.Vector2(mousePos.x, Screen.height - mousePos.y);
             var panelPos  = RuntimePanelUtils.ScreenToPanel(this._trackContainer.panel, screenPos);
-            var content   = this._cameraTrackRow.Q(className: "track-content");
-
-            if (content == null)
-            {
-                this._controller.Selection.Clear();
-                return;
-            }
-
-            var localX = content.WorldToLocal(panelPos).x;
+            var localX    = target.WorldToLocal(panelPos).x;
             this._controller.ScrubTrackArea(localX);
         }
 

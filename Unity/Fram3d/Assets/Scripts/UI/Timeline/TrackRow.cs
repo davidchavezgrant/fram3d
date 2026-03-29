@@ -65,6 +65,11 @@ namespace Fram3d.UI.Timeline
             this._stopwatch.RegisterCallback<ClickEvent>(_ => this.StopwatchClicked?.Invoke(this._trackId));
             labels.Add(this._stopwatch);
 
+            var typeDot = new VisualElement();
+            typeDot.AddToClassList("track-type-dot");
+            typeDot.AddToClassList(isCamera ? "track-type-dot--camera" : "track-type-dot--element");
+            labels.Add(typeDot);
+
             var nameLabel = new Label(name);
             nameLabel.AddToClassList("track-name");
             labels.Add(nameLabel);
@@ -160,6 +165,8 @@ namespace Fram3d.UI.Timeline
             }
 
             // Position and color each segment
+            var hatch = HatchTexture.Get();
+
             for (var i = 0; i < shots.Length; i++)
             {
                 var info    = shots[i];
@@ -173,6 +180,16 @@ namespace Fram3d.UI.Timeline
                 seg.style.top             = 0;
                 seg.style.bottom          = 0;
                 seg.style.backgroundColor = new Color(color.r, color.g, color.b, alpha);
+
+                if (info.IsActive)
+                {
+                    seg.style.backgroundImage = StyleKeyword.None;
+                }
+                else
+                {
+                    seg.style.backgroundImage = new StyleBackground(hatch);
+                }
+
                 seg.EnableInClassList("track-shot-segment--active", info.IsActive);
                 seg.EnableInClassList("track-shot-segment--inactive", !info.IsActive);
             }
@@ -180,11 +197,16 @@ namespace Fram3d.UI.Timeline
 
         /// <summary>
         /// Update the main keyframe diamonds on the collapsed header row.
+        /// activeStart/activeEnd define the global time range of the active shot
+        /// (used to dim element keyframes in inactive regions).
+        /// Pass null to skip dimming (camera tracks, where all diamonds are in-range).
         /// </summary>
         public void UpdateMainDiamonds(
             IReadOnlyList<TimePosition> times,
             Func<double, double>        timeToPixel,
-            KeyframeSelection           selection)
+            KeyframeSelection           selection,
+            TimePosition                activeStart = null,
+            TimePosition                activeEnd   = null)
         {
             // Remove excess diamonds
             while (this._diamonds.Count > times.Count)
@@ -264,12 +286,12 @@ namespace Fram3d.UI.Timeline
 
             this._currentTimes = times;
 
-            // Position and update selection state
+            // Position, selection, and active-region dimming
             for (var i = 0; i < times.Count; i++)
             {
                 var px = (float)timeToPixel(times[i].Seconds);
                 this._diamonds[i].style.left = px - 5f;
-                // Main diamonds are selected if any keyframe at that time is selected
+
                 var isSelected = selection != null
                     && selection.HasSelection
                     && selection.TrackId != null
@@ -277,6 +299,17 @@ namespace Fram3d.UI.Timeline
                     && selection.Time != null
                     && selection.Time.Equals(times[i]);
                 this._diamonds[i].SetSelected(isSelected);
+
+                // Dim diamonds outside the active shot region (element tracks only)
+                if (activeStart != null && activeEnd != null)
+                {
+                    var inRange = times[i] >= activeStart && times[i] <= activeEnd;
+                    this._diamonds[i].style.opacity = inRange ? 1f : 0.35f;
+                }
+                else
+                {
+                    this._diamonds[i].style.opacity = 1f;
+                }
             }
         }
     }

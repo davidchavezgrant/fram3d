@@ -1021,15 +1021,26 @@
     background-color: rgba(0, 0, 0, 0);
 }
 
+.track-type-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+
+.track-type-dot--camera {
+    background-color: rgb(220, 200, 60);
+}
+
+.track-type-dot--element {
+    background-color: rgb(80, 200, 80);
+}
+
 .track-shot-segment {
     position: absolute;
     top: 0;
     bottom: 0;
-}
-
-.track-shot-segment--inactive {
-    border-left-width: 1px;
-    border-left-color: rgba(60, 60, 60, 0.4);
 }
 
 /* ── Sub-track rows ─────────────────────────────────────────────── */

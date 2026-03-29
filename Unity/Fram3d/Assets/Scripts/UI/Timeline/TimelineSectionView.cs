@@ -807,16 +807,19 @@ namespace Fram3d.UI.Timeline
             }
 
             var shot                         = this._controller.CurrentShot;
-            var shotStart                    = this._controller.GetGlobalStartTime(shot.Id).Seconds;
+            var shotStartSec                 = this._controller.GetGlobalStartTime(shot.Id).Seconds;
+            var shotEndSec                   = this._controller.GetGlobalEndTime(shot.Id).Seconds;
+            var activeStart                  = new TimePosition(shotStartSec);
+            var activeEnd                    = new TimePosition(shotEndSec);
             Func<double, double> timeToPixel = this._controller.TimeToPixel;
 
             // Build shot segments for all track rows
-            var segments    = this.BuildShotSegments(timeToPixel);
+            var segments = this.BuildShotSegments(timeToPixel);
 
-            // Camera track
+            // Camera track — no dimming (all diamonds are within active shot)
             this._cameraTrackRow.UpdateShotSegments(segments);
             var cameraTimes                        = shot.GetAllCameraKeyframeTimes();
-            Func<double, double> cameraTimeToPixel = t => timeToPixel(t + shotStart);
+            Func<double, double> cameraTimeToPixel = t => timeToPixel(t + shotStartSec);
             this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, cameraTimeToPixel, this._controller.Selection);
             this._cameraTrackRow.SetExpanded(this._controller.Expansion.IsExpanded(TrackId.Camera));
 
@@ -828,7 +831,7 @@ namespace Fram3d.UI.Timeline
                 this.SyncCameraSubTrackValues(shot);
             }
 
-            // Element tracks
+            // Element tracks — dim diamonds outside the active shot
             for (var i = 1; i < this._trackRows.Count; i++)
             {
                 var row     = this._trackRows[i];
@@ -848,7 +851,7 @@ namespace Fram3d.UI.Timeline
 
                 row.UpdateShotSegments(segments);
                 var elemTimes = track.GetAllKeyframeTimes();
-                row.UpdateMainDiamonds(elemTimes, timeToPixel, this._controller.Selection);
+                row.UpdateMainDiamonds(elemTimes, timeToPixel, this._controller.Selection, activeStart, activeEnd);
                 row.SetExpanded(this._controller.Expansion.IsExpanded(trackId));
 
                 var elemSw = track.Stopwatch;

@@ -299,7 +299,7 @@ namespace Fram3d.UI.Timeline
             for (var i = 0; i < times.Count; i++)
             {
                 var px = (float)timeToPixel(times[i].Seconds);
-                this._diamonds[i].style.left = px - 5f;
+                this._diamonds[i].style.left = px - 11f;
                 this._diamonds[i].SetColor(keyframeColor);
 
                 var isSelected = selection != null

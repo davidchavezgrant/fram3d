@@ -83,8 +83,6 @@ namespace Fram3d.UI.Timeline
         }
 
         public event Action         AddShotRequested;
-        public event Action         BoundaryDragEnded;
-        public event Action         BoundaryDragStarted;
         public event Action         ShotHoverEnded;
         public event Action<Shot>   ShotHoverStarted;
         public event Action<float>  TrackAreaResized;
@@ -233,9 +231,6 @@ namespace Fram3d.UI.Timeline
             return (float)this._controller.TimeToPixel(runningTime);
         }
 
-        private int HandleEdgeIndex(VisualElement handle) =>
-            handle.userData is int edgeIndex ? edgeIndex : -1;
-
         /// <summary>
         /// Returns the current mouse x in track-area-local pixels.
         /// Uses the Input System's screen position with explicit
@@ -258,93 +253,13 @@ namespace Fram3d.UI.Timeline
             return this._trackArea.WorldToLocal(panelPos).x;
         }
 
-        private void OnBoundaryPointerDown(PointerDownEvent evt)
-        {
-            if (evt.button != 0)
-            {
-                return;
-            }
-
-            var handle   = (VisualElement)evt.currentTarget;
-            var edgeIndex = this.HandleEdgeIndex(handle);
-            var result   = this._controller.BeginBoundaryDrag(edgeIndex);
-
-            if (result == ShotTrackAction.BOUNDARY_DRAG)
-            {
-                handle.CapturePointer(evt.pointerId);
-                CursorService.SetCursor(CursorType.ResizeHorizontal);
-                this.BoundaryDragStarted?.Invoke();
-            }
-
-            evt.StopPropagation();
-        }
-
-        private void OnBoundaryPointerEnter(PointerEnterEvent _)
-        {
-            CursorService.SetCursor(CursorType.ResizeHorizontal);
-        }
-
-        private void OnBoundaryPointerLeave(PointerLeaveEvent _)
-        {
-            if (!this._controller.IsBoundaryDragging)
-            {
-                CursorService.ResetCursor();
-            }
-        }
-
-        private void OnBoundaryPointerMove(PointerMoveEvent evt)
-        {
-            if (!this._controller.IsBoundaryDragging)
-            {
-                return;
-            }
-
-            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            this._controller.ShotTrackPointerMove(this.TrackLocalX(), now);
-            evt.StopPropagation();
-        }
-
-        private void OnBoundaryPointerUp(PointerUpEvent evt)
-        {
-            if (evt.button != 0)
-            {
-                return;
-            }
-
-            var handle = (VisualElement)evt.currentTarget;
-
-            if (handle.HasPointerCapture(evt.pointerId))
-            {
-                handle.ReleasePointer(evt.pointerId);
-            }
-
-            var result = this._controller.ShotTrackPointerUp();
-
-            if (result == ShotTrackAction.BOUNDARY_COMPLETE)
-            {
-                this.BoundaryDragEnded?.Invoke();
-                CursorService.ResetCursor();
-            }
-
-            evt.StopPropagation();
-        }
-
         private void OnPointerDown(PointerDownEvent evt)
         {
             if (evt.button == 0)
             {
                 var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var result = this._controller.ShotTrackPointerDown(this.TrackLocalX(), now);
-
-                // Capture pointer for all left-button interactions so drag
-                // continues when the pointer moves outside the strip vertically.
+                this._controller.ShotTrackPointerDown(this.TrackLocalX(), now);
                 this._trackArea.CapturePointer(evt.pointerId);
-
-                if (result == ShotTrackAction.BOUNDARY_DRAG)
-                {
-                    this.BoundaryDragStarted?.Invoke();
-                }
-
                 evt.StopPropagation();
             }
             else if (evt.button == 2)
@@ -355,17 +270,8 @@ namespace Fram3d.UI.Timeline
 
         private void OnPointerMove(PointerMoveEvent evt)
         {
-            var now    = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var result = this._controller.ShotTrackPointerMove(this.TrackLocalX(), now);
-
-            if (result == ShotTrackAction.NEAR_EDGE)
-            {
-                CursorService.SetCursor(CursorType.ResizeHorizontal);
-            }
-            else if (result == ShotTrackAction.NONE && !this._controller.IsBoundaryDragging)
-            {
-                CursorService.ResetCursor();
-            }
+            var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            this._controller.ShotTrackPointerMove(this.TrackLocalX(), now);
         }
 
         private void OnPointerUp(PointerUpEvent evt)
@@ -376,12 +282,6 @@ namespace Fram3d.UI.Timeline
             }
 
             var result = this._controller.ShotTrackPointerUp();
-
-            if (result == ShotTrackAction.BOUNDARY_COMPLETE)
-            {
-                this.BoundaryDragEnded?.Invoke();
-                CursorService.ResetCursor();
-            }
 
             if (result == ShotTrackAction.DRAG_COMPLETE)
             {
@@ -422,29 +322,7 @@ namespace Fram3d.UI.Timeline
 
         private void RebuildBoundaryHandles()
         {
-            for (var i = 0; i < this._boundaryHandles.Count; i++)
-            {
-                this._boundaryHandles[i].RemoveFromHierarchy();
-            }
-
-            this._boundaryHandles.Clear();
-
-            // One handle per shot boundary (after each shot except possibly the last,
-            // but we create one per shot — the last handle sits at the project end).
-            for (var i = 0; i < this._controller.Shots.Count; i++)
-            {
-                var handle = new VisualElement();
-                handle.AddToClassList("shot-track__boundary");
-                handle.userData  = i;
-                handle.focusable = false;
-                handle.RegisterCallback<PointerDownEvent>(this.OnBoundaryPointerDown);
-                handle.RegisterCallback<PointerEnterEvent>(this.OnBoundaryPointerEnter);
-                handle.RegisterCallback<PointerLeaveEvent>(this.OnBoundaryPointerLeave);
-                handle.RegisterCallback<PointerMoveEvent>(this.OnBoundaryPointerMove);
-                handle.RegisterCallback<PointerUpEvent>(this.OnBoundaryPointerUp);
-                this._boundaryHandles.Add(handle);
-                this._trackArea.Add(handle);
-            }
+            // Boundary resize drag deferred — see Linear ticket
         }
 
         private void UpdateBoundaryHandlePositions()

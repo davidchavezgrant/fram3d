@@ -189,10 +189,6 @@ namespace Fram3d.UI.Timeline
 
             this._shotTrackStrip = new ShotTrackStrip();
             this._shotTrackStrip.AddShotRequested += this.OnAddShot;
-            this._shotTrackStrip.BoundaryDragEnded += () =>
-                this._boundaryTooltip.style.display = DisplayStyle.None;
-            this._shotTrackStrip.BoundaryDragStarted += () =>
-                this._boundaryTooltip.style.display = DisplayStyle.Flex;
             this._shotTrackStrip.ShotHoverEnded += () =>
                 this._tooltip.style.display = DisplayStyle.None;
             this._shotTrackStrip.ShotHoverStarted += shot =>

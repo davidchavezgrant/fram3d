@@ -139,5 +139,16 @@ namespace Fram3d.Core.Tests.Timelines
             state.IsRecording(1).Should().BeTrue();
             state.IsRecording(2).Should().BeTrue();
         }
+
+        [Fact]
+        public void ToggleAll__DisablesAll__When__PartiallyEnabled()
+        {
+            var sw = new StopwatchState(5);
+            sw.Set(0, true);
+            sw.Set(2, true);
+            // Some on, some off — ToggleAll should turn all off
+            sw.ToggleAll();
+            sw.AnyRecording.Should().BeFalse();
+        }
     }
 }

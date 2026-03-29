@@ -84,5 +84,37 @@ namespace Fram3d.Core.Tests.Common
             euler.Tilt.Should().BeApproximately(90f, 0.5f);
             // Pan + Roll sum should be ~0 (they're coupled at gimbal lock)
         }
+
+        [Fact]
+        public void FromQuaternion__ExtractsNegativeTilt__When__TiltDown()
+        {
+            var q = Quaternion.CreateFromAxisAngle(Vector3.UnitX, -15f * MathF.PI / 180f);
+            var euler = EulerAngles.FromQuaternion(q);
+            euler.Tilt.Should().BeApproximately(-15f, TOLERANCE);
+        }
+
+        [Fact]
+        public void FromQuaternion__ExtractsPan__When__Pan180Degrees()
+        {
+            var q = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -180f * MathF.PI / 180f);
+            var euler = EulerAngles.FromQuaternion(q);
+            // Pan should be +/-180
+            Math.Abs(euler.Pan).Should().BeApproximately(180f, 0.5f);
+        }
+
+        [Fact]
+        public void FromQuaternion__DecomposesAllThree__When__CombinedPanTiltRoll()
+        {
+            // Apply pan, then tilt, then roll (intrinsic YXZ order)
+            var pan  = Quaternion.CreateFromAxisAngle(Vector3.UnitY, -25f * MathF.PI / 180f);
+            var tilt = Quaternion.CreateFromAxisAngle(Vector3.UnitX, 10f * MathF.PI / 180f);
+            var roll = Quaternion.CreateFromAxisAngle(-Vector3.UnitZ, 5f * MathF.PI / 180f);
+            var combined = Quaternion.Normalize(roll * tilt * pan); // intrinsic = reverse multiply
+
+            var euler = EulerAngles.FromQuaternion(combined);
+            euler.Pan.Should().BeApproximately(25f, 0.5f);
+            euler.Tilt.Should().BeApproximately(10f, 0.5f);
+            euler.Roll.Should().BeApproximately(5f, 0.5f);
+        }
     }
 }

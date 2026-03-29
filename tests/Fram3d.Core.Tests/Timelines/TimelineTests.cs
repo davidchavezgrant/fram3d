@@ -1428,5 +1428,33 @@ namespace Fram3d.Core.Tests.Timelines
             track.PositionKeyframes.Count.Should().Be(1);
             track.HasKeyframes.Should().BeTrue();
         }
+
+        [Fact]
+        public void RecordCameraManipulation__DoesNotRecord__When__NoShotsExist()
+        {
+            var timeline = new Timeline(FrameRate.FPS_24);
+            // No AddShot — CurrentShot is null
+            var before = new CameraSnapshot { Position = Vector3.Zero };
+            var after  = new CameraSnapshot { Position = new Vector3(5f, 0f, 0f) };
+
+            // Should not throw, just no-op
+            timeline.RecordCameraManipulation(after, before);
+        }
+
+        [Fact]
+        public void ForceRecordElement__DoesNotRecord__When__Playing()
+        {
+            var timeline  = Create();
+            var elementId = new ElementId(Guid.NewGuid());
+            var track     = timeline.Elements.GetOrCreateTrack(elementId);
+            track.Stopwatch.SetAll(true);
+            timeline.Playhead.Scrub(2.0, timeline.TotalDuration);
+            timeline.TogglePlayback();
+
+            var snap = new ElementSnapshot { Position = new Vector3(1f, 0f, 0f), Rotation = Quaternion.Identity, Scale = 1f };
+            timeline.ForceRecordElement(elementId, snap);
+
+            track.PositionKeyframes.Count.Should().Be(0);
+        }
     }
 }

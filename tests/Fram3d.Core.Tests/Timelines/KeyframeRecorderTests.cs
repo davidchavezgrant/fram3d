@@ -476,5 +476,107 @@ namespace Fram3d.Core.Tests.Timelines
 
             track.ScaleKeyframes.Count.Should().Be(0);
         }
+
+        // --- Below-threshold rejection for each property type ---
+
+        [Fact]
+        public void RecordCamera__DoesNotRecordRotation__When__RotationBelowThreshold()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time = new TimePosition(1.0);
+            // Rotation change below threshold (0.01 degrees ~ 0.000175 radians)
+            var tinyRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, 0.005f * MathF.PI / 180f);
+            var previous = new CameraSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity };
+            var current  = new CameraSnapshot { Position = Vector3.Zero, Rotation = tinyRotation };
+
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time, current, previous);
+
+            shot.CameraRotationKeyframes.Count.Should().Be(1); // only the initial
+        }
+
+        [Fact]
+        public void RecordCamera__DoesNotRecordFocalLength__When__ChangeBelowThreshold()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time     = new TimePosition(1.0);
+            var previous = new CameraSnapshot { FocalLength = 50f };
+            var current  = new CameraSnapshot { FocalLength = 50.005f }; // below 0.01
+
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time, current, previous);
+
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void RecordCamera__DoesNotRecordFocusDistance__When__ChangeBelowThreshold()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time     = new TimePosition(1.0);
+            var previous = new CameraSnapshot { FocusDistance = 5f };
+            var current  = new CameraSnapshot { FocusDistance = 5.0005f }; // below 0.001
+
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time, current, previous);
+
+            shot.CameraFocusDistanceKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void RecordCamera__DoesNotRecordAperture__When__ChangeBelowThreshold()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time     = new TimePosition(1.0);
+            var previous = new CameraSnapshot { Aperture = 2.8f };
+            var current  = new CameraSnapshot { Aperture = 2.805f }; // below threshold
+
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time, current, previous);
+
+            shot.CameraApertureKeyframes.Count.Should().Be(0);
+        }
+
+        [Fact]
+        public void RecordElement__DoesNotRecordRotation__When__RotationBelowThreshold()
+        {
+            var track     = MakeTrack();
+            var stopwatch = new StopwatchState(ElementProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time = new TimePosition(1.0);
+            var tinyRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitY, 0.005f * MathF.PI / 180f);
+            var previous = new ElementSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity, Scale = 1f };
+            var current  = new ElementSnapshot { Position = Vector3.Zero, Rotation = tinyRotation, Scale = 1f };
+
+            KeyframeRecorder.RecordElement(track, stopwatch, time, current, previous);
+
+            track.RotationKeyframes.Count.Should().Be(0);
+        }
+
+        // --- Merge window boundary ---
+
+        [Fact]
+        public void RecordCamera__CreatesNew__When__ExactlyAtMergeWindowBoundary()
+        {
+            var shot      = MakeShot();
+            var stopwatch = new StopwatchState(CameraProperty.COUNT);
+            stopwatch.SetAll(true);
+            var time1    = new TimePosition(1.0);
+            var previous = new CameraSnapshot { Position = Vector3.Zero, Rotation = Quaternion.Identity };
+            var current1 = new CameraSnapshot { Position = new Vector3(1f, 0f, 0f), Rotation = Quaternion.Identity };
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time1, current1, previous);
+
+            // Exactly 0.1s away — should create new, not merge
+            var time2    = new TimePosition(1.1);
+            var current2 = new CameraSnapshot { Position = new Vector3(3f, 0f, 0f), Rotation = Quaternion.Identity };
+            KeyframeRecorder.RecordCamera(shot, stopwatch, time2, current2, previous);
+
+            // Initial + 2 new = 3
+            shot.CameraPositionKeyframes.Count.Should().Be(3);
+        }
     }
 }

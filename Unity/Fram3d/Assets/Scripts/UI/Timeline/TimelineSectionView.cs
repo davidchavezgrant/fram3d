@@ -42,6 +42,7 @@ namespace Fram3d.UI.Timeline
         private VisualElement           _trackContainer;
         private VisualElement           _trackOutOfRange;
         private VisualElement           _trackPlayhead;
+        private ScrollView              _trackScroll;
 
         // ── Tooltips ──
         private VisualElement _boundaryTooltip;
@@ -240,9 +241,7 @@ namespace Fram3d.UI.Timeline
 
         private void BuildCameraSubTracks(TrackRow row)
         {
-            row.AddSubTrack("Position X");
-            row.AddSubTrack("Position Y");
-            row.AddSubTrack("Position Z");
+            row.AddSubTrack("Position");
             row.AddSubTrack("Pan");
             row.AddSubTrack("Tilt");
             row.AddSubTrack("Roll");
@@ -261,19 +260,20 @@ namespace Fram3d.UI.Timeline
 
         private void BuildElementSubTracks(TrackRow row)
         {
-            row.AddSubTrack("Position X");
-            row.AddSubTrack("Position Y");
-            row.AddSubTrack("Position Z");
+            row.AddSubTrack("Position");
             row.AddSubTrack("Scale");
-            row.AddSubTrack("Rotation X");
-            row.AddSubTrack("Rotation Y");
-            row.AddSubTrack("Rotation Z");
+            row.AddSubTrack("Rotation");
         }
 
         private void BuildTrackArea()
         {
             this._trackContainer = new VisualElement();
             this._trackContainer.AddToClassList("timeline-track-area");
+
+            this._trackScroll = new ScrollView(ScrollViewMode.Vertical);
+            this._trackScroll.style.flexGrow = 1;
+            this._trackScroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            this._trackContainer.Add(this._trackScroll);
 
             this._trackPlayhead = new VisualElement();
             this._trackPlayhead.AddToClassList("timeline-playhead");
@@ -286,7 +286,7 @@ namespace Fram3d.UI.Timeline
             this._trackOutOfRange.AddToClassList("timeline-out-of-range--tracks");
             this._trackOutOfRange.pickingMode = PickingMode.Ignore;
 
-            this._trackContainer.RegisterCallback<WheelEvent>(this.OnWheel);
+            this._trackContainer.RegisterCallback<WheelEvent>(this.OnWheel, TrickleDown.TrickleDown);
             this._section.Add(this._trackContainer);
 
             this.RebuildTracks();
@@ -351,6 +351,12 @@ namespace Fram3d.UI.Timeline
 
         private void SetPlayhead(VisualElement el, float px)
         {
+            if (px < 0)
+            {
+                el.style.display = DisplayStyle.None;
+                return;
+            }
+
             el.style.display = DisplayStyle.Flex;
             el.style.left    = px + LABEL_COL_W;
         }
@@ -387,27 +393,24 @@ namespace Fram3d.UI.Timeline
             if (evt.shiftKey)
             {
                 this._controller.Pan(evt.delta.y * 2.0);
+                evt.StopPropagation();
             }
             else if (evt.ctrlKey)
             {
                 this._controller.ZoomAtPoint(this._controller.PixelToTime(evt.localMousePosition.x), -evt.delta.y);
+                evt.StopPropagation();
             }
             else
             {
                 var absX = Math.Abs(evt.delta.x);
-                var absY = Math.Abs(evt.delta.y);
 
-                if (absY > absX)
-                {
-                    this._controller.ZoomAtPoint(this._controller.PixelToTime(evt.localMousePosition.x), -evt.delta.y);
-                }
-                else if (absX > 0.01f)
+                if (absX > 0.01f)
                 {
                     this._controller.Pan(evt.delta.x * 2.0);
+                    evt.StopPropagation();
                 }
+                // Unmodified scroll Y falls through to the scroll view
             }
-
-            evt.StopPropagation();
         }
 
         private void HandleInputSystemScroll()
@@ -689,7 +692,7 @@ namespace Fram3d.UI.Timeline
             };
             this.BuildCameraSubTracks(this._cameraTrackRow);
             this._trackRows.Add(this._cameraTrackRow);
-            this._trackContainer.Insert(0, this._cameraTrackRow);
+            this._trackScroll.Insert(0, this._cameraTrackRow);
 
             // Element tracks
             foreach (var track in this._controller.Elements.Tracks)
@@ -710,7 +713,7 @@ namespace Fram3d.UI.Timeline
                 elemRow.StopwatchClicked   += this.OnStopwatchClicked;
                 this.BuildElementSubTracks(elemRow);
                 this._trackRows.Add(elemRow);
-                this._trackContainer.Insert(this._trackRows.Count - 1, elemRow);
+                this._trackScroll.Insert(this._trackRows.Count - 1, elemRow);
             }
 
             // Re-add playhead and out-of-range as overlays spanning all tracks
@@ -733,9 +736,7 @@ namespace Fram3d.UI.Timeline
 
             var subs = this._cameraTrackRow.SubTracks;
             var idx  = 0;
-            subs[idx++].SetValue(pos.X.ToString("F2"));
-            subs[idx++].SetValue(pos.Y.ToString("F2"));
-            subs[idx++].SetValue(pos.Z.ToString("F2"));
+            subs[idx++].SetValue($"{pos.X:F2}, {pos.Y:F2}, {pos.Z:F2}");
             subs[idx++].SetValue(euler.Pan.ToString("F1") + "\u00B0");
             subs[idx++].SetValue(euler.Tilt.ToString("F1") + "\u00B0");
             subs[idx++].SetValue(euler.Roll.ToString("F1") + "\u00B0");

@@ -469,8 +469,6 @@ namespace Fram3d.Core.Timelines
         public void SelectKeyframe(TrackId trackId, KeyframeId keyframeId, TimePosition time)
         {
             this.Selection.Select(trackId, keyframeId, time);
-            this.Playhead.Scrub(time.Seconds, this.TotalDuration);
-            this.EvaluateCamera();
         }
 
         public void SetCurrentShot(ShotId id)                => this.Track.SetCurrentShot(id);

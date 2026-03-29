@@ -1106,30 +1106,17 @@ namespace Fram3d.Core.Tests.Timelines
         }
 
         [Fact]
-        public void SelectKeyframe__MovesPlayhead__When__Called()
+        public void SelectKeyframe__DoesNotMovePlayhead__When__Called()
         {
             var tl = new Timeline(FrameRate.FPS_24);
             tl.AddShot();
+            tl.Playhead.Scrub(0, tl.TotalDuration);
             tl.CurrentShot.CameraPositionKeyframes.Add(
                 new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Vector3.Zero));
             var kfId = tl.CurrentShot.CameraPositionKeyframes.Keyframes[0].Id;
             tl.SelectKeyframe(TrackId.Camera, kfId, new TimePosition(2.0));
-            tl.Playhead.CurrentTime.Should().BeApproximately(2.0, 0.05);
+            tl.Playhead.CurrentTime.Should().BeApproximately(0.0, 0.05);
             tl.Selection.IsSelected(kfId).Should().BeTrue();
-        }
-
-        [Fact]
-        public void SelectKeyframe__FiresCameraEvaluation__When__Called()
-        {
-            var tl = new Timeline(FrameRate.FPS_24);
-            tl.AddShot();
-            var fired = false;
-            tl.CameraEvaluationRequested.Subscribe(_ => fired = true);
-            tl.CurrentShot.CameraPositionKeyframes.Add(
-                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Vector3.Zero));
-            var kfId = tl.CurrentShot.CameraPositionKeyframes.Keyframes[0].Id;
-            tl.SelectKeyframe(TrackId.Camera, kfId, new TimePosition(1.0));
-            fired.Should().BeTrue();
         }
 
         [Fact]

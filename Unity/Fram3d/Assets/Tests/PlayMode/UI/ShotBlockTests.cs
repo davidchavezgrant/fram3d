@@ -24,7 +24,7 @@ namespace Fram3d.Tests.UI
         public void SetUp()
         {
             this._controller = new Timeline(FrameRate.FPS_24);
-            this._controller.AddShot(System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity);
+            this._controller.AddShot();
 
             this._uiGo       = new GameObject("TestUI");
             this._uiDocument = this._uiGo.AddComponent<UIDocument>();

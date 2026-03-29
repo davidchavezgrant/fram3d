@@ -220,19 +220,6 @@ namespace Fram3d.UI.Timeline
                 var diamond = new KeyframeDiamond();
                 var idx = this._diamonds.Count;
 
-                // Click handler — fires select if no drag occurred
-                diamond.RegisterCallback<ClickEvent>(evt =>
-                {
-                    if (this._isDragging || idx >= this._currentTimes.Count)
-                    {
-                        return;
-                    }
-
-                    this.DiamondClicked?.Invoke(this._trackId, null, this._currentTimes[idx]);
-                    evt.StopPropagation();
-                });
-
-                // Drag state machine
                 diamond.RegisterCallback<PointerDownEvent>(evt =>
                 {
                     if (evt.button != 0 || idx >= this._currentTimes.Count)
@@ -241,7 +228,7 @@ namespace Fram3d.UI.Timeline
                     }
 
                     this._dragDiamondIdx   = idx;
-                    this._isDragging       = false; // reset from any previous drag
+                    this._isDragging       = false;
                     this._pendingPointerId = evt.pointerId;
                     this._pointerDownX     = this._content.WorldToLocal(evt.position).x;
                     diamond.CapturePointer(evt.pointerId);
@@ -282,12 +269,15 @@ namespace Fram3d.UI.Timeline
                         var localX = this._content.WorldToLocal(evt.position).x;
                         this.DiamondDropped?.Invoke(this._currentTimes[idx], localX);
                     }
+                    else if (idx < this._currentTimes.Count)
+                    {
+                        this.DiamondClicked?.Invoke(this._trackId, null, this._currentTimes[idx]);
+                    }
 
                     this._dragDiamondIdx   = -1;
+                    this._isDragging       = false;
                     this._pendingPointerId = -1;
-                    // _isDragging stays true briefly so the ClickEvent handler
-                    // (which fires after PointerUp) knows to skip. It resets
-                    // next frame when UpdateMainDiamonds runs or on next PointerDown.
+                    evt.StopPropagation();
                 });
                 this._diamonds.Add(diamond);
                 this._content.Add(diamond);

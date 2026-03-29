@@ -35,6 +35,18 @@ namespace Fram3d.Core.Shots
         }
 
         /// <summary>
+        /// The camera position used when no position keyframes exist.
+        /// Set by the engine whenever the camera is moved while recording is off.
+        /// </summary>
+        public Vector3 DefaultCameraPosition { get; set; }
+
+        /// <summary>
+        /// The camera rotation used when no rotation keyframes exist.
+        /// Set by the engine whenever the camera is moved while recording is off.
+        /// </summary>
+        public Quaternion DefaultCameraRotation { get; set; } = Quaternion.Identity;
+
+        /// <summary>
         /// Per-shot camera aperture keyframes (f-stop).
         /// </summary>
         public KeyframeManager<float> CameraApertureKeyframes { get; } = new();
@@ -155,15 +167,21 @@ namespace Fram3d.Core.Shots
 
         /// <summary>
         /// Evaluates the camera position at a local shot time (0 to Duration).
+        /// Returns DefaultCameraPosition if no keyframes exist.
         /// </summary>
         public Vector3 EvaluateCameraPosition(TimePosition localTime) =>
-            this.CameraPositionKeyframes.Evaluate(localTime, Vector3.Lerp);
+            this.CameraPositionKeyframes.Count > 0
+                ? this.CameraPositionKeyframes.Evaluate(localTime, Vector3.Lerp)
+                : this.DefaultCameraPosition;
 
         /// <summary>
         /// Evaluates the camera rotation at a local shot time (0 to Duration).
+        /// Returns DefaultCameraRotation if no keyframes exist.
         /// </summary>
         public Quaternion EvaluateCameraRotation(TimePosition localTime) =>
-            this.CameraRotationKeyframes.Evaluate(localTime, Quaternion.Slerp);
+            this.CameraRotationKeyframes.Count > 0
+                ? this.CameraRotationKeyframes.Evaluate(localTime, Quaternion.Slerp)
+                : this.DefaultCameraRotation;
 
         /// <summary>
         /// Moves all camera property keyframes at one time to another time.

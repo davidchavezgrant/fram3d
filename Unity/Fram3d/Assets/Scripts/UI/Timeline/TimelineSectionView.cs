@@ -366,7 +366,14 @@ namespace Fram3d.UI.Timeline
 
         private void OnAddShot()
         {
-            this._controller.AddShot();
+            var shot = this._controller.AddShot();
+            var cam  = this.GetShotCamera();
+
+            if (cam != null)
+            {
+                shot.DefaultCameraPosition = cam.Position;
+                shot.DefaultCameraRotation = cam.Rotation;
+            }
         }
 
         private void OnScrub(float px)

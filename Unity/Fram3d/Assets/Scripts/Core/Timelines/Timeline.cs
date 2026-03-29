@@ -284,6 +284,15 @@ namespace Fram3d.Core.Timelines
                 return;
             }
 
+            // When recording is off, update the shot's default camera state
+            // so it holds whatever position the user places the camera at.
+            if (!this.CurrentShot.CameraStopwatch.AnyRecording)
+            {
+                this.CurrentShot.DefaultCameraPosition = current.Position;
+                this.CurrentShot.DefaultCameraRotation = current.Rotation;
+                return;
+            }
+
             var localTime = this.GetLocalPlayheadTime();
 
             if (localTime == null)

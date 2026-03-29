@@ -97,9 +97,9 @@ namespace Fram3d.Core.Timelines
         // Shot lifecycle
         // ══════════════════════════════════════════════════════════════════
 
-        public Shot AddShot(Vector3 cameraPosition, Quaternion cameraRotation)
+        public Shot AddShot()
         {
-            var shot = this.Track.AddShot(cameraPosition, cameraRotation);
+            var shot = this.Track.AddShot();
 
             if (this._view.IsInitialized)
             {
@@ -334,17 +334,18 @@ namespace Fram3d.Core.Timelines
                 return false;
             }
 
-            var trackId = this.Selection.TrackId;
-            var time    = this.Selection.Time;
+            var trackId    = this.Selection.TrackId;
+            var globalTime = this.Selection.Time;
 
             if (trackId == TrackId.Camera)
             {
-                if (this.CurrentShot == null || !this.CurrentShot.CanDeleteCameraKeyframesAtTime(time))
+                if (this.CurrentShot == null)
                 {
                     return false;
                 }
 
-                this.CurrentShot.DeleteAllCameraKeyframesAtTime(time);
+                var localTime = this.ToLocalCameraTime(globalTime);
+                this.CurrentShot.DeleteAllCameraKeyframesAtTime(localTime);
             }
             else if (trackId.IsElement)
             {
@@ -355,7 +356,7 @@ namespace Fram3d.Core.Timelines
                     return false;
                 }
 
-                track.DeleteAllKeyframesAtTime(time);
+                track.DeleteAllKeyframesAtTime(globalTime);
             }
             else
             {
@@ -379,10 +380,11 @@ namespace Fram3d.Core.Timelines
                 return false;
             }
 
-            var trackId = this.Selection.TrackId;
-            var oldTime = this.Selection.Time;
+            var trackId       = this.Selection.TrackId;
+            var oldGlobalTime = this.Selection.Time;
 
-            // Snap to 0.1s grid
+            // Snap to 0.1s grid (newTimeSeconds is already in the correct space:
+            // local for camera, global for elements — see PixelToTrackTime)
             var snapped = Math.Round(newTimeSeconds * 10.0) / 10.0;
 
             if (trackId == TrackId.Camera)
@@ -393,15 +395,21 @@ namespace Fram3d.Core.Timelines
                 }
 
                 snapped = Math.Clamp(snapped, 0.0, this.CurrentShot.Duration);
-                var to = new TimePosition(snapped);
+                var newLocal = new TimePosition(snapped);
+                var oldLocal = this.ToLocalCameraTime(oldGlobalTime);
 
-                if (to == oldTime)
+                if (newLocal == oldLocal)
                 {
                     return false;
                 }
 
-                this.CurrentShot.MoveAllCameraKeyframesAtTime(oldTime, to);
-                this.Selection.Select(trackId, this.Selection.KeyframeId, to);
+                this.CurrentShot.MoveAllCameraKeyframesAtTime(oldLocal, newLocal);
+
+                // Store global time in selection, scrub playhead to global
+                var shotStart   = this.Track.GetGlobalStartTime(this.CurrentShot.Id).Seconds;
+                var newGlobal   = new TimePosition(snapped + shotStart);
+                this.Selection.Select(trackId, this.Selection.KeyframeId, newGlobal);
+                this.Playhead.Scrub(newGlobal.Seconds, this.TotalDuration);
             }
             else if (trackId.IsElement)
             {
@@ -415,20 +423,20 @@ namespace Fram3d.Core.Timelines
                 snapped = Math.Max(snapped, 0.0);
                 var to = new TimePosition(snapped);
 
-                if (to == oldTime)
+                if (to == oldGlobalTime)
                 {
                     return false;
                 }
 
-                track.MoveAllKeyframesAtTime(oldTime, to);
+                track.MoveAllKeyframesAtTime(oldGlobalTime, to);
                 this.Selection.Select(trackId, this.Selection.KeyframeId, to);
+                this.Playhead.Scrub(snapped, this.TotalDuration);
             }
             else
             {
                 return false;
             }
 
-            this.Playhead.Scrub(snapped, this.TotalDuration);
             this.EvaluateCamera();
             return true;
         }
@@ -650,6 +658,20 @@ namespace Fram3d.Core.Timelines
             this._lastClickTime   = now;
             this._lastClickShotId = shotId;
             this.Track.SetCurrentShot(shotId);
+        }
+
+        /// <summary>
+        /// Converts a global time to shot-local time for the current shot.
+        /// </summary>
+        private TimePosition ToLocalCameraTime(TimePosition globalTime)
+        {
+            if (this.CurrentShot == null)
+            {
+                return globalTime;
+            }
+
+            var shotStart = this.Track.GetGlobalStartTime(this.CurrentShot.Id).Seconds;
+            return new TimePosition(Math.Max(0, globalTime.Seconds - shotStart));
         }
 
         private void ResetPointerState()

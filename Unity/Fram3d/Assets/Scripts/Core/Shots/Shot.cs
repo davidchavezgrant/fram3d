@@ -25,24 +25,13 @@ namespace Fram3d.Core.Shots
         private       double _duration;
         private       string _name;
 
-        public Shot(ShotId     id,
-                    string     name,
-                    Vector3    cameraPosition,
-                    Quaternion cameraRotation)
+        public Shot(ShotId id, string name)
         {
             this.Id = id ?? throw new ArgumentNullException(nameof(id));
             this.SetName(name);
             this._duration               = DEFAULT_DURATION;
             this.CameraPositionKeyframes = new KeyframeManager<Vector3>();
             this.CameraRotationKeyframes = new KeyframeManager<Quaternion>();
-
-            // Create the mandatory initial keyframes at t=0
-            var positionId = new KeyframeId(Guid.NewGuid());
-            var rotationId = new KeyframeId(Guid.NewGuid());
-            var positionKf = new Keyframe<Vector3>(positionId, TimePosition.ZERO, cameraPosition);
-            var rotationKf = new Keyframe<Quaternion>(rotationId, TimePosition.ZERO, cameraRotation);
-            this.CameraPositionKeyframes.Add(positionKf);
-            this.CameraRotationKeyframes.Add(rotationKf);
         }
 
         /// <summary>
@@ -115,13 +104,6 @@ namespace Fram3d.Core.Shots
             + this.CameraFocalLengthKeyframes.Count
             + this.CameraFocusDistanceKeyframes.Count;
 
-        /// <summary>
-        /// Returns true if keyframes at the given time can be deleted.
-        /// Returns false if this is the only remaining keyframe time (minimum 1 enforced).
-        /// </summary>
-        public bool CanDeleteCameraKeyframesAtTime(TimePosition time) =>
-            this.GetAllCameraKeyframeTimes().Count > 1;
-
         public void ClearAllCameraKeyframes()
         {
             this.CameraPositionKeyframes.Clear();
@@ -133,21 +115,14 @@ namespace Fram3d.Core.Shots
 
         /// <summary>
         /// Deletes all camera property keyframes at the given time.
-        /// No-op if CanDeleteCameraKeyframesAtTime returns false.
         /// </summary>
-        public bool DeleteAllCameraKeyframesAtTime(TimePosition time)
+        public void DeleteAllCameraKeyframesAtTime(TimePosition time)
         {
-            if (!this.CanDeleteCameraKeyframesAtTime(time))
-            {
-                return false;
-            }
-
             removeAtTime(this.CameraPositionKeyframes, time);
             removeAtTime(this.CameraRotationKeyframes, time);
             removeAtTime(this.CameraFocalLengthKeyframes, time);
             removeAtTime(this.CameraApertureKeyframes, time);
             removeAtTime(this.CameraFocusDistanceKeyframes, time);
-            return true;
 
             static void removeAtTime<T>(KeyframeManager<T> mgr, TimePosition t)
             {

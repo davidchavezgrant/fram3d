@@ -10,8 +10,15 @@ namespace Fram3d.Core.Tests.Timelines
 {
     public sealed class KeyframeRecorderTests
     {
-        private static Shot MakeShot() =>
-            new(new ShotId(Guid.NewGuid()), "Test", Vector3.Zero, Quaternion.Identity);
+        private static Shot MakeShot()
+        {
+            var shot = new Shot(new ShotId(Guid.NewGuid()), "Test");
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Vector3.Zero));
+            shot.CameraRotationKeyframes.Add(
+                new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), TimePosition.ZERO, Quaternion.Identity));
+            return shot;
+        }
 
         private static ElementTrack MakeTrack() =>
             new(new ElementId(Guid.NewGuid()));

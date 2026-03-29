@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using FluentAssertions;
 using Fram3d.Core.Common;
 using Fram3d.Core.Shots;
@@ -10,13 +9,10 @@ namespace Fram3d.Core.Tests.Shots
 {
     public class ShotRegistryTests
     {
-        private static readonly Vector3    DEFAULT_POS = new(0, 1.6f, 5);
-        private static readonly Quaternion DEFAULT_ROT = Quaternion.Identity;
-
         private ShotRegistry MakeRegistry() => new();
 
         private Shot AddDefaultShot(ShotRegistry registry) =>
-            registry.AddShot(DEFAULT_POS, DEFAULT_ROT);
+            registry.AddShot();
 
         // --- AddShot ---
 
@@ -58,13 +54,12 @@ namespace Fram3d.Core.Tests.Shots
         }
 
         [Fact]
-        public void AddShot__CapturesCameraState__When__Called()
+        public void AddShot__StartsWithNoKeyframes__When__Called()
         {
-            var reg = MakeRegistry();
-            var pos = new Vector3(5, 3, 10);
-            var rot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI / 4);
-            var shot = reg.AddShot(pos, rot);
-            shot.EvaluateCameraPosition(TimePosition.ZERO).Should().Be(pos);
+            var reg  = MakeRegistry();
+            var shot = reg.AddShot();
+            shot.CameraPositionKeyframes.Count.Should().Be(0);
+            shot.CameraRotationKeyframes.Count.Should().Be(0);
         }
 
         [Fact]
@@ -577,9 +572,7 @@ namespace Fram3d.Core.Tests.Shots
         [Fact]
         public void AcceptanceCriteria16__DurationClampsToMin__When__ZeroEntered()
         {
-            var shot = new Shot(
-                new ShotId(Guid.NewGuid()), "Test", Vector3.Zero, Quaternion.Identity
-            );
+            var shot = new Shot(new ShotId(Guid.NewGuid()), "Test");
             shot.Duration = 0.0;
             shot.Duration.Should().Be(Shot.MIN_DURATION);
         }
@@ -587,9 +580,7 @@ namespace Fram3d.Core.Tests.Shots
         [Fact]
         public void AcceptanceCriteria17__DurationClampsToMax__When__999Entered()
         {
-            var shot = new Shot(
-                new ShotId(Guid.NewGuid()), "Test", Vector3.Zero, Quaternion.Identity
-            );
+            var shot = new Shot(new ShotId(Guid.NewGuid()), "Test");
             shot.Duration = 999.0;
             shot.Duration.Should().Be(Shot.MAX_DURATION);
         }

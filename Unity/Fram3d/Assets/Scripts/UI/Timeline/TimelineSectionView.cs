@@ -366,12 +366,7 @@ namespace Fram3d.UI.Timeline
 
         private void OnAddShot()
         {
-            var cam = FindAnyObjectByType<CameraBehaviour>();
-
-            if (cam != null)
-            {
-                this._controller.AddShot(cam.ShotCamera.Position, cam.ShotCamera.Rotation);
-            }
+            this._controller.AddShot();
         }
 
         private void OnScrub(float px)
@@ -627,9 +622,18 @@ namespace Fram3d.UI.Timeline
                 return;
             }
 
+            // Camera keyframe times are shot-local — convert to global for scrub
+            var globalTime = time;
+
+            if (trackId == TrackId.Camera && this._controller.CurrentShot != null)
+            {
+                var shotStart = this._controller.GetGlobalStartTime(this._controller.CurrentShot.Id).Seconds;
+                globalTime = new TimePosition(time.Seconds + shotStart);
+            }
+
             if (keyframeId != null)
             {
-                this._controller.SelectKeyframe(trackId, keyframeId, time);
+                this._controller.SelectKeyframe(trackId, keyframeId, globalTime);
                 return;
             }
 
@@ -645,6 +649,7 @@ namespace Fram3d.UI.Timeline
                     return;
                 }
 
+                // Lookup uses shot-local time (what the keyframe manager stores)
                 representative = shot.CameraPositionKeyframes.GetAtTime(time)?.Id
                               ?? shot.CameraRotationKeyframes.GetAtTime(time)?.Id;
             }
@@ -664,7 +669,7 @@ namespace Fram3d.UI.Timeline
 
             if (representative != null)
             {
-                this._controller.SelectKeyframe(trackId, representative, time);
+                this._controller.SelectKeyframe(trackId, representative, globalTime);
             }
         }
 

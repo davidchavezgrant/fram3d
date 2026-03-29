@@ -48,11 +48,18 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
-            var cam      = this._cameraBehaviour.ShotCamera;
-            var position = eval.Shot.EvaluateCameraPosition(eval.LocalTime);
-            var rotation = eval.Shot.EvaluateCameraRotation(eval.LocalTime);
-            cam.Position = position;
-            cam.Rotation = rotation;
+            var cam = this._cameraBehaviour.ShotCamera;
+
+            if (eval.Shot.CameraPositionKeyframes.Count > 0)
+            {
+                cam.Position = eval.Shot.EvaluateCameraPosition(eval.LocalTime);
+            }
+
+            if (eval.Shot.CameraRotationKeyframes.Count > 0)
+            {
+                cam.Rotation = eval.Shot.EvaluateCameraRotation(eval.LocalTime);
+            }
+
             this.ApplyCameraProperties(eval.Shot, eval.LocalTime, cam);
         }
 
@@ -63,11 +70,18 @@ namespace Fram3d.Engine.Integration
                 return;
             }
 
-            var cam      = this._cameraBehaviour.ShotCamera;
-            var position = shot.EvaluateCameraPosition(TimePosition.ZERO);
-            var rotation = shot.EvaluateCameraRotation(TimePosition.ZERO);
-            cam.Position = position;
-            cam.Rotation = rotation;
+            var cam = this._cameraBehaviour.ShotCamera;
+
+            if (shot.CameraPositionKeyframes.Count > 0)
+            {
+                cam.Position = shot.EvaluateCameraPosition(TimePosition.ZERO);
+            }
+
+            if (shot.CameraRotationKeyframes.Count > 0)
+            {
+                cam.Rotation = shot.EvaluateCameraRotation(TimePosition.ZERO);
+            }
+
             this.ApplyCameraProperties(shot, TimePosition.ZERO, cam);
         }
 
@@ -119,8 +133,7 @@ namespace Fram3d.Engine.Integration
             this._currentShotSub = this.Controller.CurrentShotChanged.Subscribe(this.OnCurrentShotChanged);
             this._cameraEvalSub  = this.Controller.CameraEvaluationRequested.Subscribe(this.OnCameraEvaluationRequested);
             this._elementEvalSub = this.Controller.ElementEvaluationRequested.Subscribe(this.OnElementEvaluationRequested);
-            var cam = this._cameraBehaviour.ShotCamera;
-            this.Controller.AddShot(cam.Position, cam.Rotation);
+            this.Controller.AddShot();
         }
 
         private void OnDestroy()

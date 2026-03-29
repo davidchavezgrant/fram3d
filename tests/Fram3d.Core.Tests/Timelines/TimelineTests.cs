@@ -1456,5 +1456,156 @@ namespace Fram3d.Core.Tests.Timelines
 
             track.PositionKeyframes.Count.Should().Be(0);
         }
+
+        // ── DeleteSelectedKeyframe ─────────────────────────────────────
+
+        [Fact]
+        public void DeleteSelectedKeyframe__ReturnsFalse__When__NoSelection()
+        {
+            var t = Create();
+
+            t.DeleteSelectedKeyframe().Should().BeFalse();
+        }
+
+        [Fact]
+        public void DeleteSelectedKeyframe__DeletesCameraKeyframe__When__MultipleExist()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var t1   = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            shot.CameraRotationKeyframes.Add(
+                new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), t1, Quaternion.Identity));
+
+            var kfId = shot.CameraPositionKeyframes.Keyframes[1].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            t.DeleteSelectedKeyframe().Should().BeTrue();
+
+            shot.CameraPositionKeyframes.Count.Should().Be(1); // only t=0 remains
+            shot.CameraRotationKeyframes.Count.Should().Be(1);
+            t.Selection.HasSelection.Should().BeFalse();
+        }
+
+        [Fact]
+        public void DeleteSelectedKeyframe__ReturnsFalse__When__LastCameraKeyframe()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var kfId = shot.CameraPositionKeyframes.Keyframes[0].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, TimePosition.ZERO);
+
+            t.DeleteSelectedKeyframe().Should().BeFalse();
+
+            shot.CameraPositionKeyframes.Count.Should().Be(1); // still there
+        }
+
+        [Fact]
+        public void DeleteSelectedKeyframe__DeletesElementKeyframe__When__Selected()
+        {
+            var t         = Create(1);
+            var elementId = new ElementId(Guid.NewGuid());
+            var track     = t.Elements.GetOrCreateTrack(elementId);
+            var t0        = TimePosition.ZERO;
+            track.PositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t0, Vector3.One));
+            var kfId    = track.PositionKeyframes.Keyframes[0].Id;
+            var trackId = TrackId.ForElement(elementId);
+            t.SelectKeyframe(trackId, kfId, t0);
+
+            t.DeleteSelectedKeyframe().Should().BeTrue();
+
+            track.PositionKeyframes.Count.Should().Be(0);
+        }
+
+        // ── MoveSelectedKeyframe ───────────────────────────────────────
+
+        [Fact]
+        public void MoveSelectedKeyframe__ReturnsFalse__When__NoSelection()
+        {
+            var t = Create();
+
+            t.MoveSelectedKeyframe(1.0).Should().BeFalse();
+        }
+
+        [Fact]
+        public void MoveSelectedKeyframe__SnapsTo01Grid__When__Called()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var t1   = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            var kfId = shot.CameraPositionKeyframes.Keyframes[1].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            t.MoveSelectedKeyframe(2.37).Should().BeTrue();
+
+            shot.CameraPositionKeyframes.Keyframes[1].Time.Seconds.Should().BeApproximately(2.4, 0.001);
+        }
+
+        [Fact]
+        public void MoveSelectedKeyframe__ClampsToZero__When__NegativeTime()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var t1   = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            var kfId = shot.CameraPositionKeyframes.Keyframes[1].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            t.MoveSelectedKeyframe(-5.0).Should().BeTrue();
+
+            shot.CameraPositionKeyframes.Keyframes[0].Time.Seconds.Should().Be(0.0);
+        }
+
+        [Fact]
+        public void MoveSelectedKeyframe__ClampsToDuration__When__BeyondShotEnd()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var t1   = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            var kfId = shot.CameraPositionKeyframes.Keyframes[1].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            t.MoveSelectedKeyframe(999.0).Should().BeTrue();
+
+            shot.CameraPositionKeyframes.Keyframes[1].Time.Seconds.Should().Be(shot.Duration);
+        }
+
+        [Fact]
+        public void MoveSelectedKeyframe__UpdatesSelection__When__Moved()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var t1   = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            var kfId = shot.CameraPositionKeyframes.Keyframes[1].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            t.MoveSelectedKeyframe(3.0);
+
+            t.Selection.Time.Seconds.Should().BeApproximately(3.0, 0.001);
+        }
+
+        [Fact]
+        public void MoveSelectedKeyframe__ReturnsFalse__When__SameTimeAfterSnap()
+        {
+            var t    = Create(1);
+            var shot = t.CurrentShot;
+            var t1   = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            var kfId = shot.CameraPositionKeyframes.Keyframes[1].Id;
+            t.SelectKeyframe(TrackId.Camera, kfId, t1);
+
+            // 1.04 snaps to 1.0 — same as current
+            t.MoveSelectedKeyframe(1.04).Should().BeFalse();
+        }
     }
 }

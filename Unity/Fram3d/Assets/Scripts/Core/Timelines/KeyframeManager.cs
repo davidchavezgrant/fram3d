@@ -119,6 +119,15 @@ namespace Fram3d.Core.Timelines
         }
 
         /// <summary>
+        /// Gets the keyframe at a given time, or null if none exists.
+        /// </summary>
+        public Keyframe<T> GetAtTime(TimePosition time)
+        {
+            var idx = this._sorted.FindIndex(k => k.Time == time);
+            return idx >= 0 ? this._sorted[idx] : null;
+        }
+
+        /// <summary>
         /// Gets a keyframe by ID, or null if not found.
         /// </summary>
         public Keyframe<T> GetById(KeyframeId id)

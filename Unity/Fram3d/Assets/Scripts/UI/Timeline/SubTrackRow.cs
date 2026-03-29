@@ -40,7 +40,9 @@ namespace Fram3d.UI.Timeline
             this.Add(this._content);
         }
 
-        public event Action<KeyframeId, TimePosition> DiamondClicked;
+        public event Action<TrackId, KeyframeId, TimePosition> DiamondClicked;
+
+        public TrackId OwnerTrackId { get; set; }
 
         public void SetValue(string formattedValue) =>
             this._valueLabel.text = formattedValue;
@@ -73,7 +75,7 @@ namespace Fram3d.UI.Timeline
                 {
                     if (idx < ids.Count)
                     {
-                        this.DiamondClicked?.Invoke(ids[idx], times[idx]);
+                        this.DiamondClicked?.Invoke(this.OwnerTrackId, ids[idx], times[idx]);
                     }
                 });
                 this._diamonds.Add(diamond);

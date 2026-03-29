@@ -308,6 +308,140 @@ namespace Fram3d.Core.Timelines
             KeyframeRecorder.RecordElement(track, track.Stopwatch, globalTime, current, previous);
         }
 
+        /// <summary>
+        /// Adds a keyframe for all properties of the given element at the current
+        /// playhead time. No-op during playback or if no element ID is provided.
+        /// </summary>
+        public void AddElementKeyframeAtPlayhead(ElementId elementId, ElementSnapshot current)
+        {
+            if (this.Playhead.IsPlaying || elementId == null)
+            {
+                return;
+            }
+
+            this.ForceRecordElement(elementId, current);
+        }
+
+        /// <summary>
+        /// Deletes the currently selected keyframe. Enforces minimum 1 camera
+        /// keyframe per shot. Clears selection and re-evaluates camera state.
+        /// Returns true if a keyframe was deleted.
+        /// </summary>
+        public bool DeleteSelectedKeyframe()
+        {
+            if (!this.Selection.HasSelection)
+            {
+                return false;
+            }
+
+            var trackId = this.Selection.TrackId;
+            var time    = this.Selection.Time;
+
+            if (trackId == TrackId.Camera)
+            {
+                if (this.CurrentShot == null || !this.CurrentShot.CanDeleteCameraKeyframesAtTime(time))
+                {
+                    return false;
+                }
+
+                this.CurrentShot.DeleteAllCameraKeyframesAtTime(time);
+            }
+            else if (trackId.IsElement)
+            {
+                var track = this.Elements.GetTrack(trackId.ElementId);
+
+                if (track == null)
+                {
+                    return false;
+                }
+
+                track.DeleteAllKeyframesAtTime(time);
+            }
+            else
+            {
+                return false;
+            }
+
+            this.Selection.Clear();
+            this.EvaluateCamera();
+            return true;
+        }
+
+        /// <summary>
+        /// Moves the currently selected keyframe (and all co-located property
+        /// keyframes) to a new time. Snaps to 0.1s grid, clamps to [0, duration].
+        /// Returns true if the move was performed.
+        /// </summary>
+        public bool MoveSelectedKeyframe(double newTimeSeconds)
+        {
+            if (!this.Selection.HasSelection)
+            {
+                return false;
+            }
+
+            var trackId = this.Selection.TrackId;
+            var oldTime = this.Selection.Time;
+
+            // Snap to 0.1s grid
+            var snapped = Math.Round(newTimeSeconds * 10.0) / 10.0;
+
+            if (trackId == TrackId.Camera)
+            {
+                if (this.CurrentShot == null)
+                {
+                    return false;
+                }
+
+                snapped = Math.Clamp(snapped, 0.0, this.CurrentShot.Duration);
+                var to = new TimePosition(snapped);
+
+                if (to == oldTime)
+                {
+                    return false;
+                }
+
+                this.CurrentShot.MoveAllCameraKeyframesAtTime(oldTime, to);
+                this.Selection.Select(trackId, this.Selection.KeyframeId, to);
+            }
+            else if (trackId.IsElement)
+            {
+                var track = this.Elements.GetTrack(trackId.ElementId);
+
+                if (track == null)
+                {
+                    return false;
+                }
+
+                snapped = Math.Max(snapped, 0.0);
+                var to = new TimePosition(snapped);
+
+                if (to == oldTime)
+                {
+                    return false;
+                }
+
+                track.MoveAllKeyframesAtTime(oldTime, to);
+                this.Selection.Select(trackId, this.Selection.KeyframeId, to);
+            }
+            else
+            {
+                return false;
+            }
+
+            this.Playhead.Scrub(snapped, this.TotalDuration);
+            this.EvaluateCamera();
+            return true;
+        }
+
+        /// <summary>
+        /// Scrubs the playhead from a click in the track area and clears keyframe selection.
+        /// </summary>
+        public void ScrubTrackArea(double px)
+        {
+            this.Selection.Clear();
+            this.ScrubToPixel(px);
+        }
+
         public void ScrubToPixel(double px)
         {
             var rawTime = this.PixelToTime(px);

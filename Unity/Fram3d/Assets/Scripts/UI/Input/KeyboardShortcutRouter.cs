@@ -29,11 +29,11 @@ namespace Fram3d.UI.Input
                               CoreTimeline         timeline,
                               ViewCameraManager    viewCameraManager)
         {
-            this._cameraBehaviour  = cameraBehaviour;
+            this._cameraBehaviour   = cameraBehaviour;
             this._compositionGuides = compositionGuides;
-            this._gizmoController  = gizmoController;
-            this._timeline         = timeline;
-            this._timelineSection  = timelineSection;
+            this._gizmoController   = gizmoController;
+            this._timeline          = timeline;
+            this._timelineSection   = timelineSection;
             this._viewCameraManager = viewCameraManager;
         }
 
@@ -198,6 +198,25 @@ namespace Fram3d.UI.Input
             {
                 var snap = CameraSnapshot.FromCamera(camera);
                 this._timeline.ForceRecordCamera(snap);
+                return true;
+            }
+
+            if (keyboard.vKey.wasPressedThisFrame && this.CanRecord())
+            {
+                var selected = this._gizmoController?.GetSelectedElementSnapshot();
+
+                if (selected.HasValue)
+                {
+                    this._timeline.AddElementKeyframeAtPlayhead(
+                        selected.Value.id, selected.Value.snapshot);
+                }
+
+                return true;
+            }
+
+            if (keyboard.deleteKey.wasPressedThisFrame && this._timeline != null)
+            {
+                this._timeline.DeleteSelectedKeyframe();
                 return true;
             }
 

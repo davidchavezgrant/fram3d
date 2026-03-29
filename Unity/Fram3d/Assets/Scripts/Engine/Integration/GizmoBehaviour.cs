@@ -165,6 +165,22 @@ namespace Fram3d.Engine.Integration
         /// the active tool. Returns true if a reset was performed (element
         /// selected + non-Select tool active), false otherwise.
         /// </summary>
+        /// <summary>
+        /// Returns the ElementId and snapshot for the currently selected element,
+        /// or null if nothing is selected.
+        /// </summary>
+        public (ElementId id, ElementSnapshot snapshot)? GetSelectedElementSnapshot()
+        {
+            var element = this.FindSelectedElement();
+
+            if (element == null)
+            {
+                return null;
+            }
+
+            return (element.Id, ElementSnapshot.FromElement(element));
+        }
+
         public bool TryResetActiveTool()
         {
             var element = this.FindSelectedElement();

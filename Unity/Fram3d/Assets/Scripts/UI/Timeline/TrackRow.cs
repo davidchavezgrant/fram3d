@@ -11,6 +11,7 @@ namespace Fram3d.UI.Timeline
     /// </summary>
     public sealed class TrackRow : VisualElement
     {
+        private const    float                   DRAG_THRESHOLD_PX = 4f;
         private readonly VisualElement         _arrow;
         private readonly VisualElement         _content;
         private readonly List<KeyframeDiamond> _diamonds     = new();
@@ -19,6 +20,13 @@ namespace Fram3d.UI.Timeline
         private readonly VisualElement         _subContainer;
         private readonly List<SubTrackRow>     _subTracks    = new();
         private readonly TrackId               _trackId;
+        private          int                   _dragDiamondIdx = -1;
+        private          bool                  _isDragging;
+        private          int                   _pendingPointerId = -1;
+        private          float                 _pointerDownX;
+
+        // Stored reference so UpdateMainDiamonds can read times during drag
+        private IReadOnlyList<TimePosition> _currentTimes;
 
         public TrackRow(TrackId trackId, string name, bool isCamera)
         {
@@ -72,8 +80,19 @@ namespace Fram3d.UI.Timeline
             this.Add(this._subContainer);
         }
 
-        public event Action<TrackId>                  ArrowClicked;
-        public event Action<KeyframeId, TimePosition> DiamondClicked;
+        public event Action<TrackId>                          ArrowClicked;
+        public event Action<TrackId, KeyframeId, TimePosition> DiamondClicked;
+
+        /// <summary>
+        /// Fired continuously during a diamond drag. Provides the track-content-local X pixel.
+        /// </summary>
+        public event Action<TimePosition, float>      DiamondDragging;
+
+        /// <summary>
+        /// Fired when a diamond drag completes. Provides the original time and final track-content-local X pixel.
+        /// </summary>
+        public event Action<TimePosition, float>      DiamondDropped;
+
         public event Action<TrackId>                  StopwatchClicked;
 
         public IReadOnlyList<SubTrackRow> SubTracks => this._subTracks;
@@ -82,7 +101,8 @@ namespace Fram3d.UI.Timeline
         public SubTrackRow AddSubTrack(string propertyName)
         {
             var row = new SubTrackRow(propertyName, this._isCamera);
-            row.DiamondClicked += (id, time) => this.DiamondClicked?.Invoke(id, time);
+            row.OwnerTrackId = this._trackId;
+            row.DiamondClicked += (trackId, id, time) => this.DiamondClicked?.Invoke(trackId, id, time);
             this._subTracks.Add(row);
             this._subContainer.Add(row);
             return row;
@@ -131,16 +151,69 @@ namespace Fram3d.UI.Timeline
                 var diamond = new KeyframeDiamond();
                 diamond.SetColor(this._isCamera);
                 var idx = this._diamonds.Count;
-                diamond.RegisterCallback<ClickEvent>(_ =>
+                diamond.RegisterCallback<PointerDownEvent>(evt =>
                 {
-                    if (idx < times.Count)
+                    if (evt.button != 0 || idx >= this._currentTimes.Count)
                     {
-                        this.DiamondClicked?.Invoke(null, times[idx]);
+                        return;
                     }
+
+                    this._dragDiamondIdx  = idx;
+                    this._isDragging      = false;
+                    this._pendingPointerId = evt.pointerId;
+                    this._pointerDownX    = this._content.WorldToLocal(evt.position).x;
+                    diamond.CapturePointer(evt.pointerId);
+                    evt.StopPropagation();
+                });
+                diamond.RegisterCallback<PointerMoveEvent>(evt =>
+                {
+                    if (this._dragDiamondIdx != idx || this._pendingPointerId < 0)
+                    {
+                        return;
+                    }
+
+                    var localX = this._content.WorldToLocal(evt.position).x;
+
+                    if (!this._isDragging)
+                    {
+                        if (Math.Abs(localX - this._pointerDownX) < DRAG_THRESHOLD_PX)
+                        {
+                            return;
+                        }
+
+                        this._isDragging = true;
+                    }
+
+                    this.DiamondDragging?.Invoke(this._currentTimes[idx], localX);
+                });
+                diamond.RegisterCallback<PointerUpEvent>(evt =>
+                {
+                    if (this._dragDiamondIdx != idx)
+                    {
+                        return;
+                    }
+
+                    diamond.ReleasePointer(this._pendingPointerId);
+
+                    if (this._isDragging)
+                    {
+                        var localX = this._content.WorldToLocal(evt.position).x;
+                        this.DiamondDropped?.Invoke(this._currentTimes[idx], localX);
+                    }
+                    else if (idx < this._currentTimes.Count)
+                    {
+                        this.DiamondClicked?.Invoke(this._trackId, null, this._currentTimes[idx]);
+                    }
+
+                    this._dragDiamondIdx   = -1;
+                    this._isDragging       = false;
+                    this._pendingPointerId = -1;
                 });
                 this._diamonds.Add(diamond);
                 this._content.Add(diamond);
             }
+
+            this._currentTimes = times;
 
             // Position and update selection state
             for (var i = 0; i < times.Count; i++)

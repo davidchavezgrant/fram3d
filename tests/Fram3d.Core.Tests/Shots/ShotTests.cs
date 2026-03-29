@@ -438,5 +438,116 @@ namespace Fram3d.Core.Tests.Shots
             shot.ClearAllCameraKeyframes();
             shot.GetAllCameraKeyframeTimes().Should().BeEmpty();
         }
+
+        // --- CanDeleteCameraKeyframesAtTime ---
+
+        [Fact]
+        public void CanDeleteCameraKeyframesAtTime__ReturnsFalse__When__OnlyOneKeyframeTime()
+        {
+            var shot = MakeShot();
+            shot.CanDeleteCameraKeyframesAtTime(TimePosition.ZERO).Should().BeFalse();
+        }
+
+        [Fact]
+        public void CanDeleteCameraKeyframesAtTime__ReturnsTrue__When__MultipleKeyframeTimes()
+        {
+            var shot = MakeShot();
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), new TimePosition(1.0), Vector3.One));
+            shot.CanDeleteCameraKeyframesAtTime(new TimePosition(1.0)).Should().BeTrue();
+        }
+
+        // --- DeleteAllCameraKeyframesAtTime ---
+
+        [Fact]
+        public void DeleteAllCameraKeyframesAtTime__RemovesKeyframes__When__MultipleTimesExist()
+        {
+            var shot = MakeShot();
+            var t1 = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            shot.CameraRotationKeyframes.Add(
+                new Keyframe<Quaternion>(new KeyframeId(Guid.NewGuid()), t1, Quaternion.Identity));
+
+            shot.DeleteAllCameraKeyframesAtTime(t1).Should().BeTrue();
+
+            shot.CameraPositionKeyframes.Count.Should().Be(1); // only t=0 remains
+            shot.CameraRotationKeyframes.Count.Should().Be(1);
+        }
+
+        [Fact]
+        public void DeleteAllCameraKeyframesAtTime__ReturnsFalse__When__LastKeyframeTime()
+        {
+            var shot = MakeShot();
+            shot.DeleteAllCameraKeyframesAtTime(TimePosition.ZERO).Should().BeFalse();
+            shot.CameraPositionKeyframes.Count.Should().Be(1); // unchanged
+        }
+
+        [Fact]
+        public void DeleteAllCameraKeyframesAtTime__DeletesAcrossAllManagers__When__FloatKeyframesExist()
+        {
+            var shot = MakeShot();
+            var t1 = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, Vector3.One));
+            shot.CameraFocalLengthKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t1, 50f));
+            shot.CameraApertureKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t1, 2.8f));
+            shot.CameraFocusDistanceKeyframes.Add(
+                new Keyframe<float>(new KeyframeId(Guid.NewGuid()), t1, 5f));
+
+            shot.DeleteAllCameraKeyframesAtTime(t1).Should().BeTrue();
+
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
+            shot.CameraApertureKeyframes.Count.Should().Be(0);
+            shot.CameraFocusDistanceKeyframes.Count.Should().Be(0);
+        }
+
+        // --- MoveAllCameraKeyframesAtTime ---
+
+        [Fact]
+        public void MoveAllCameraKeyframesAtTime__MovesKeyframes__When__Called()
+        {
+            var shot = MakeShot();
+            var from = TimePosition.ZERO;
+            var to   = new TimePosition(2.0);
+
+            shot.MoveAllCameraKeyframesAtTime(from, to);
+
+            shot.CameraPositionKeyframes.Keyframes[0].Time.Should().Be(to);
+            shot.CameraRotationKeyframes.Keyframes[0].Time.Should().Be(to);
+        }
+
+        [Fact]
+        public void MoveAllCameraKeyframesAtTime__MergesSilently__When__TargetTimeHasKeyframes()
+        {
+            var shot = MakeShot();
+            var t1 = new TimePosition(1.0);
+            shot.CameraPositionKeyframes.Add(
+                new Keyframe<Vector3>(new KeyframeId(Guid.NewGuid()), t1, new Vector3(5, 5, 5)));
+
+            // Move t=0 onto t=1 — should merge (overwrite)
+            shot.MoveAllCameraKeyframesAtTime(TimePosition.ZERO, t1);
+
+            shot.CameraPositionKeyframes.Count.Should().Be(1);
+            shot.CameraPositionKeyframes.Keyframes[0].Time.Should().Be(t1);
+            // The arriving value (from t=0) overwrites
+            shot.CameraPositionKeyframes.Keyframes[0].Value.Should().Be(Vector3.Zero);
+        }
+
+        [Fact]
+        public void MoveAllCameraKeyframesAtTime__PreservesUnaffectedManagers__When__ManagerHasNoKeyframeAtTime()
+        {
+            var shot = MakeShot();
+            var t1 = new TimePosition(1.0);
+            // Only position has t=0, focal length has nothing
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
+
+            shot.MoveAllCameraKeyframesAtTime(TimePosition.ZERO, t1);
+
+            // Focal length still empty — no crash, no phantom keyframe
+            shot.CameraFocalLengthKeyframes.Count.Should().Be(0);
+        }
     }
 }

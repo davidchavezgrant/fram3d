@@ -115,6 +115,13 @@ namespace Fram3d.Core.Shots
             + this.CameraFocalLengthKeyframes.Count
             + this.CameraFocusDistanceKeyframes.Count;
 
+        /// <summary>
+        /// Returns true if keyframes at the given time can be deleted.
+        /// Returns false if this is the only remaining keyframe time (minimum 1 enforced).
+        /// </summary>
+        public bool CanDeleteCameraKeyframesAtTime(TimePosition time) =>
+            this.GetAllCameraKeyframeTimes().Count > 1;
+
         public void ClearAllCameraKeyframes()
         {
             this.CameraPositionKeyframes.Clear();
@@ -122,6 +129,35 @@ namespace Fram3d.Core.Shots
             this.CameraFocalLengthKeyframes.Clear();
             this.CameraApertureKeyframes.Clear();
             this.CameraFocusDistanceKeyframes.Clear();
+        }
+
+        /// <summary>
+        /// Deletes all camera property keyframes at the given time.
+        /// No-op if CanDeleteCameraKeyframesAtTime returns false.
+        /// </summary>
+        public bool DeleteAllCameraKeyframesAtTime(TimePosition time)
+        {
+            if (!this.CanDeleteCameraKeyframesAtTime(time))
+            {
+                return false;
+            }
+
+            removeAtTime(this.CameraPositionKeyframes, time);
+            removeAtTime(this.CameraRotationKeyframes, time);
+            removeAtTime(this.CameraFocalLengthKeyframes, time);
+            removeAtTime(this.CameraApertureKeyframes, time);
+            removeAtTime(this.CameraFocusDistanceKeyframes, time);
+            return true;
+
+            static void removeAtTime<T>(KeyframeManager<T> mgr, TimePosition t)
+            {
+                var kf = mgr.GetAtTime(t);
+
+                if (kf != null)
+                {
+                    mgr.RemoveById(kf.Id);
+                }
+            }
         }
 
         /// <summary>
@@ -153,6 +189,30 @@ namespace Fram3d.Core.Shots
         /// </summary>
         public Quaternion EvaluateCameraRotation(TimePosition localTime) =>
             this.CameraRotationKeyframes.Evaluate(localTime, Quaternion.Slerp);
+
+        /// <summary>
+        /// Moves all camera property keyframes at one time to another time.
+        /// Uses SetOrMerge so that if keyframes already exist at the target time,
+        /// arriving values overwrite (silent merge per spec 3.2.4).
+        /// </summary>
+        public void MoveAllCameraKeyframesAtTime(TimePosition from, TimePosition to)
+        {
+            moveAtTime(this.CameraPositionKeyframes, from, to);
+            moveAtTime(this.CameraRotationKeyframes, from, to);
+            moveAtTime(this.CameraFocalLengthKeyframes, from, to);
+            moveAtTime(this.CameraApertureKeyframes, from, to);
+            moveAtTime(this.CameraFocusDistanceKeyframes, from, to);
+
+            static void moveAtTime<T>(KeyframeManager<T> mgr, TimePosition f, TimePosition t)
+            {
+                var kf = mgr.GetAtTime(f);
+
+                if (kf != null)
+                {
+                    mgr.SetOrMerge(kf.WithTime(t));
+                }
+            }
+        }
 
         /// <summary>
         /// Returns the sorted, deduplicated union of all keyframe times across

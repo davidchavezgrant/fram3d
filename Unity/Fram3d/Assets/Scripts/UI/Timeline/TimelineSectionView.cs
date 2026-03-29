@@ -511,6 +511,13 @@ namespace Fram3d.UI.Timeline
             else
             {
                 stopwatch.SetAll(true);
+                var cam = this.GetShotCamera();
+
+                if (cam != null)
+                {
+                    var snap = CameraSnapshot.FromCamera(cam);
+                    this._controller.ForceRecordCamera(snap);
+                }
             }
 
             this.SyncTrackVisuals();

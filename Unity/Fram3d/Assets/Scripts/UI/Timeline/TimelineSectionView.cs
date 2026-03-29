@@ -816,11 +816,13 @@ namespace Fram3d.UI.Timeline
             // Build shot segments for all track rows
             var segments = this.BuildShotSegments(timeToPixel);
 
-            // Camera track — no dimming (all diamonds are within active shot)
+            // Camera track — color matches the active shot's palette color
             this._cameraTrackRow.UpdateShotSegments(segments);
+            var shotIndex                          = this._controller.IndexOf(shot.Id);
+            var shotColor                          = ShotColorPalette.GetColor(shotIndex);
             var cameraTimes                        = shot.GetAllCameraKeyframeTimes();
             Func<double, double> cameraTimeToPixel = t => timeToPixel(t + shotStartSec);
-            this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, cameraTimeToPixel, this._controller.Selection);
+            this._cameraTrackRow.UpdateMainDiamonds(cameraTimes, cameraTimeToPixel, this._controller.Selection, shotColor);
             this._cameraTrackRow.SetExpanded(this._controller.Expansion.IsExpanded(TrackId.Camera));
 
             var camSw = shot.CameraStopwatch;
@@ -850,8 +852,9 @@ namespace Fram3d.UI.Timeline
                 }
 
                 row.UpdateShotSegments(segments);
-                var elemTimes = track.GetAllKeyframeTimes();
-                row.UpdateMainDiamonds(elemTimes, timeToPixel, this._controller.Selection, activeStart, activeEnd);
+                var elemTimes    = track.GetAllKeyframeTimes();
+                var elemColor    = new Color(0.31f, 0.78f, 0.31f);
+                row.UpdateMainDiamonds(elemTimes, timeToPixel, this._controller.Selection, elemColor, activeStart, activeEnd);
                 row.SetExpanded(this._controller.Expansion.IsExpanded(trackId));
 
                 var elemSw = track.Stopwatch;

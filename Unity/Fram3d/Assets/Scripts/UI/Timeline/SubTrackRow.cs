@@ -69,7 +69,9 @@ namespace Fram3d.UI.Timeline
             while (this._diamonds.Count < times.Count)
             {
                 var diamond = new KeyframeDiamond();
-                diamond.SetColor(this._isCamera);
+                diamond.SetColor(this._isCamera
+                    ? new UnityEngine.Color(0.86f, 0.78f, 0.24f)
+                    : new UnityEngine.Color(0.31f, 0.78f, 0.31f));
                 var idx = this._diamonds.Count;
                 diamond.RegisterCallback<ClickEvent>(_ =>
                 {

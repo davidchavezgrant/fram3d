@@ -165,14 +165,12 @@ namespace Fram3d.UI.Timeline
             }
 
             // Position and color each segment
-            var hatch = HatchTexture.Get();
-
             for (var i = 0; i < shots.Length; i++)
             {
-                var info    = shots[i];
-                var seg     = this._segments[i];
-                var alpha   = info.IsActive ? ACTIVE_ALPHA : INACTIVE_ALPHA;
-                var color   = this._isCamera ? info.Color : new Color(0.6f, 0.6f, 0.6f);
+                var info  = shots[i];
+                var seg   = this._segments[i];
+                var alpha = info.IsActive ? ACTIVE_ALPHA : INACTIVE_ALPHA;
+                var color = info.Color;
 
                 seg.style.position        = Position.Absolute;
                 seg.style.left            = info.LeftPx;
@@ -180,18 +178,6 @@ namespace Fram3d.UI.Timeline
                 seg.style.top             = 0;
                 seg.style.bottom          = 0;
                 seg.style.backgroundColor = new Color(color.r, color.g, color.b, alpha);
-
-                if (info.IsActive)
-                {
-                    seg.style.backgroundImage = StyleKeyword.None;
-                }
-                else
-                {
-                    seg.style.backgroundImage = new StyleBackground(hatch);
-                }
-
-                seg.EnableInClassList("track-shot-segment--active", info.IsActive);
-                seg.EnableInClassList("track-shot-segment--inactive", !info.IsActive);
             }
         }
 
@@ -205,6 +191,7 @@ namespace Fram3d.UI.Timeline
             IReadOnlyList<TimePosition> times,
             Func<double, double>        timeToPixel,
             KeyframeSelection           selection,
+            Color                       keyframeColor,
             TimePosition                activeStart = null,
             TimePosition                activeEnd   = null)
         {
@@ -220,8 +207,21 @@ namespace Fram3d.UI.Timeline
             while (this._diamonds.Count < times.Count)
             {
                 var diamond = new KeyframeDiamond();
-                diamond.SetColor(this._isCamera);
                 var idx = this._diamonds.Count;
+
+                // Click handler — fires select if no drag occurred
+                diamond.RegisterCallback<ClickEvent>(evt =>
+                {
+                    if (this._isDragging || idx >= this._currentTimes.Count)
+                    {
+                        return;
+                    }
+
+                    this.DiamondClicked?.Invoke(this._trackId, null, this._currentTimes[idx]);
+                    evt.StopPropagation();
+                });
+
+                // Drag state machine
                 diamond.RegisterCallback<PointerDownEvent>(evt =>
                 {
                     if (evt.button != 0 || idx >= this._currentTimes.Count)
@@ -229,10 +229,10 @@ namespace Fram3d.UI.Timeline
                         return;
                     }
 
-                    this._dragDiamondIdx  = idx;
-                    this._isDragging      = false;
+                    this._dragDiamondIdx   = idx;
+                    this._isDragging       = false; // reset from any previous drag
                     this._pendingPointerId = evt.pointerId;
-                    this._pointerDownX    = this._content.WorldToLocal(evt.position).x;
+                    this._pointerDownX     = this._content.WorldToLocal(evt.position).x;
                     diamond.CapturePointer(evt.pointerId);
                     evt.StopPropagation();
                 });
@@ -271,14 +271,12 @@ namespace Fram3d.UI.Timeline
                         var localX = this._content.WorldToLocal(evt.position).x;
                         this.DiamondDropped?.Invoke(this._currentTimes[idx], localX);
                     }
-                    else if (idx < this._currentTimes.Count)
-                    {
-                        this.DiamondClicked?.Invoke(this._trackId, null, this._currentTimes[idx]);
-                    }
 
                     this._dragDiamondIdx   = -1;
-                    this._isDragging       = false;
                     this._pendingPointerId = -1;
+                    // _isDragging stays true briefly so the ClickEvent handler
+                    // (which fires after PointerUp) knows to skip. It resets
+                    // next frame when UpdateMainDiamonds runs or on next PointerDown.
                 });
                 this._diamonds.Add(diamond);
                 this._content.Add(diamond);
@@ -286,11 +284,12 @@ namespace Fram3d.UI.Timeline
 
             this._currentTimes = times;
 
-            // Position, selection, and active-region dimming
+            // Position, color, selection, and active-region dimming
             for (var i = 0; i < times.Count; i++)
             {
                 var px = (float)timeToPixel(times[i].Seconds);
                 this._diamonds[i].style.left = px - 5f;
+                this._diamonds[i].SetColor(keyframeColor);
 
                 var isSelected = selection != null
                     && selection.HasSelection
@@ -300,7 +299,6 @@ namespace Fram3d.UI.Timeline
                     && selection.Time.Equals(times[i]);
                 this._diamonds[i].SetSelected(isSelected);
 
-                // Dim diamonds outside the active shot region (element tracks only)
                 if (activeStart != null && activeEnd != null)
                 {
                     var inRange = times[i] >= activeStart && times[i] <= activeEnd;

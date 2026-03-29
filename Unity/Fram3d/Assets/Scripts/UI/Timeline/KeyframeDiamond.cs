@@ -1,9 +1,9 @@
+using UnityEngine;
 using UnityEngine.UIElements;
 namespace Fram3d.UI.Timeline
 {
     /// <summary>
-    /// A diamond-shaped keyframe marker on the timeline.
-    /// Rendered as a rotated square via USS transform.
+    /// A circular keyframe marker on the timeline.
     /// </summary>
     public sealed class KeyframeDiamond : VisualElement
     {
@@ -13,10 +13,11 @@ namespace Fram3d.UI.Timeline
             this.pickingMode = PickingMode.Position;
         }
 
-        public void SetColor(bool isCamera) =>
-            this.EnableInClassList("keyframe-diamond--element", !isCamera);
+        public void SetColor(Color color) =>
+            this.style.backgroundColor = color;
 
         public void SetSelected(bool selected) =>
             this.EnableInClassList("keyframe-diamond--selected", selected);
     }
 }
+

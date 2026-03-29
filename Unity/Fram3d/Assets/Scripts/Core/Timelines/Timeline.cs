@@ -416,11 +416,9 @@ namespace Fram3d.Core.Timelines
 
                 this.CurrentShot.MoveAllCameraKeyframesAtTime(oldLocal, newLocal);
 
-                // Store global time in selection, scrub playhead to global
-                var shotStart   = this.Track.GetGlobalStartTime(this.CurrentShot.Id).Seconds;
-                var newGlobal   = new TimePosition(snapped + shotStart);
+                var shotStart = this.Track.GetGlobalStartTime(this.CurrentShot.Id).Seconds;
+                var newGlobal = new TimePosition(snapped + shotStart);
                 this.Selection.Select(trackId, this.Selection.KeyframeId, newGlobal);
-                this.Playhead.Scrub(newGlobal.Seconds, this.TotalDuration);
             }
             else if (trackId.IsElement)
             {
@@ -441,7 +439,6 @@ namespace Fram3d.Core.Timelines
 
                 track.MoveAllKeyframesAtTime(oldGlobalTime, to);
                 this.Selection.Select(trackId, this.Selection.KeyframeId, to);
-                this.Playhead.Scrub(snapped, this.TotalDuration);
             }
             else
             {

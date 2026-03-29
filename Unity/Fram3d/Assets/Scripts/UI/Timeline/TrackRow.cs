@@ -18,6 +18,7 @@ namespace Fram3d.UI.Timeline
         private readonly VisualElement         _arrow;
         private readonly VisualElement         _content;
         private readonly List<KeyframeDiamond> _diamonds          = new();
+        private readonly VisualElement         _hideBtn;
         private readonly bool                  _isCamera;
         private readonly VisualElement         _keyframeNav;
         private readonly Button                _nextKeyframeBtn;
@@ -71,10 +72,10 @@ namespace Fram3d.UI.Timeline
 
             if (!isCamera)
             {
-                var hideBtn = new VisualElement();
-                hideBtn.AddToClassList("track-hide-btn");
-                hideBtn.RegisterCallback<ClickEvent>(_ => this.HideClicked?.Invoke(this._trackId));
-                labels.Add(hideBtn);
+                this._hideBtn = new VisualElement();
+                this._hideBtn.AddToClassList("track-hide-btn");
+                this._hideBtn.RegisterCallback<ClickEvent>(_ => this.HideClicked?.Invoke(this._trackId));
+                labels.Add(this._hideBtn);
             }
 
             var nameLabel = new Label(name);
@@ -166,6 +167,11 @@ namespace Fram3d.UI.Timeline
 
             this._arrow.EnableInClassList("track-arrow--collapsed", !expanded);
             this._arrow.EnableInClassList("track-arrow--expanded", expanded);
+        }
+
+        public void SetHiddenState(bool isHidden)
+        {
+            this._hideBtn?.EnableInClassList("track-hide-btn--hidden", isHidden);
         }
 
         public void SetStopwatchState(bool anyOn, bool allOn)

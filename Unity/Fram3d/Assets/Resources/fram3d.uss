@@ -1184,6 +1184,11 @@
     background-color: rgba(150, 150, 150, 0.15);
 }
 
+.track-hide-btn--hidden {
+    background-color: rgb(100, 100, 100);
+    border-color: rgb(140, 140, 140);
+}
+
 /* ── Track keyframe nav ──────────────────────────────────────────── */
 
 .track-keyframe-nav {

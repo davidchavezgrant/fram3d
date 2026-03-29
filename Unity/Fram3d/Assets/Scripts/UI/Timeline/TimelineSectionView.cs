@@ -556,6 +556,20 @@ namespace Fram3d.UI.Timeline
             else
             {
                 stopwatch.SetAll(true);
+
+                // Create an initial keyframe when enabling recording
+                var elements = FindObjectsByType<ElementBehaviour>(FindObjectsSortMode.None);
+
+                foreach (var eb in elements)
+                {
+                    if (eb.Element?.Id != null && eb.Element.Id.Equals(elementId))
+                    {
+                        var snap = ElementSnapshot.FromElement(eb.Element);
+                        this._controller.ForceRecordElement(elementId, snap);
+
+                        break;
+                    }
+                }
             }
 
             this.SyncTrackVisuals();
@@ -870,6 +884,7 @@ namespace Fram3d.UI.Timeline
 
                 var elemSw = track.Stopwatch;
                 row.SetStopwatchState(elemSw.AnyRecording, elemSw.AllRecording);
+                row.SetHiddenState(this._controller.Visibility.IsHidden(trackId));
             }
         }
 

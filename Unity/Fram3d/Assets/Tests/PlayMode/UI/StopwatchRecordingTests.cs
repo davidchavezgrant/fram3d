@@ -389,6 +389,168 @@ namespace Fram3d.Tests.UI
         }
 
         // ══════════════════════════════════════════════════════════════════
+        // Camera gizmo drag records to shot keyframes
+        // ══════════════════════════════════════════════════════════════════
+
+        [UnityTest]
+        public IEnumerator GizmoDrag__RecordsCameraToShotKeyframes__When__CameraElementDragged()
+        {
+            yield return null;
+            yield return null;
+
+            this._timeline = this._shotEvaluator.Controller;
+            var shot = this._timeline.CurrentShot;
+            shot.CameraStopwatch.SetAll(true);
+            this._timeline.Playhead.Scrub(2.0, this._timeline.TotalDuration);
+
+            // Simulate what EndDrag does for a CameraElement by calling the Timeline API directly
+            // (actual gizmo drag requires physics raycasting which is hard to simulate in tests)
+            var cam    = this._behaviour.ShotCamera;
+            var before = new CameraSnapshot
+            {
+                Position = cam.Position,
+                Rotation = cam.Rotation,
+                FocalLength = cam.FocalLength,
+                FocusDistance = cam.FocusDistance,
+                Aperture = cam.Aperture
+            };
+            cam.Position = new Vector3(5f, 2f, -3f);
+            var after = CameraSnapshot.FromCamera(cam);
+            this._timeline.RecordCameraManipulation(after, before);
+
+            // Should record to shot camera keyframes, NOT create an element track
+            Assert.AreEqual(2, shot.CameraPositionKeyframes.Count,
+                "Camera gizmo drag should create shot camera position keyframe");
+            Assert.AreEqual(0, this._timeline.Elements.TrackCount,
+                "Camera gizmo drag should NOT create an element track");
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // Auto-record on stopwatch enable
+        // ══════════════════════════════════════════════════════════════════
+
+        [UnityTest]
+        public IEnumerator StopwatchEnable__CreatesKeyframe__When__TurnedOn()
+        {
+            yield return null;
+            yield return null;
+
+            this._timeline = this._shotEvaluator.Controller;
+            var shot = this._timeline.CurrentShot;
+            this._timeline.Playhead.Scrub(2.0, this._timeline.TotalDuration);
+
+            // Simulate what TimelineSectionView.HandleCameraStopwatchClick does
+            shot.CameraStopwatch.SetAll(true);
+            var cam  = this._behaviour.ShotCamera;
+            var snap = CameraSnapshot.FromCamera(cam);
+            this._timeline.ForceRecordCamera(snap);
+
+            Assert.AreEqual(2, shot.CameraPositionKeyframes.Count,
+                "Enabling stopwatch should auto-record a keyframe at playhead position");
+            Assert.AreEqual(2, shot.CameraRotationKeyframes.Count,
+                "Enabling stopwatch should auto-record rotation keyframe");
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // Split view Camera View active — recording works
+        // ══════════════════════════════════════════════════════════════════
+
+        [UnityTest]
+        public IEnumerator ScrollDolly__CreatesKeyframe__When__CameraViewActiveInSplitMode()
+        {
+            yield return null;
+            yield return null;
+
+            this._timeline = this._shotEvaluator.Controller;
+            var shot = this._timeline.CurrentShot;
+            shot.CameraStopwatch.SetAll(true);
+            this._timeline.Playhead.Scrub(2.0, this._timeline.TotalDuration);
+
+            // Create ViewCameraManager and wire it
+            var vcm = this._cameraGo.AddComponent<ViewCameraManager>();
+            SetField(vcm, "cameraBehaviour", this._behaviour);
+            SetField(this._handler, "viewCameraManager", vcm);
+            yield return null;
+
+            // Ensure director camera exists
+            this._behaviour.EnsureDirectorInitialized();
+
+            // Split view with Camera View in slot 0 (active)
+            vcm.ViewSlotModel.SetLayout(ViewLayout.HORIZONTAL);
+            vcm.ViewSlotModel.SetSlotType(0, ViewMode.CAMERA);
+            vcm.ViewSlotModel.SetSlotType(1, ViewMode.DIRECTOR);
+
+            // Active slot is 0 (Camera View) — recording should work
+            var activeSlotField = typeof(ViewCameraManager)
+                .GetField("_activeSlot", BindingFlags.NonPublic | BindingFlags.Instance);
+            activeSlotField.SetValue(vcm, 0);
+
+            // Dolly via scroll
+            InputSystem.QueueStateEvent(this._mouse,
+                new MouseState { scroll = new UnityEngine.Vector2(0f, 120f) });
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._mouse, new MouseState());
+            yield return null;
+
+            Assert.AreEqual(2, shot.CameraPositionKeyframes.Count,
+                "Recording SHOULD work when Camera View is the active slot in split mode");
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // Focal preset key records when stopwatch on
+        // ══════════════════════════════════════════════════════════════════
+
+        [UnityTest]
+        public IEnumerator DigitKey__RecordsFocalLength__When__StopwatchOnAndZoomLens()
+        {
+            yield return null;
+            yield return null;
+
+            this._timeline = this._shotEvaluator.Controller;
+            var shot = this._timeline.CurrentShot;
+            shot.CameraStopwatch.SetAll(true);
+            this._timeline.Playhead.Scrub(2.0, this._timeline.TotalDuration);
+
+            // Press digit 1 for focal preset
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.Digit1));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            yield return null;
+
+            // Should have created a focal length keyframe
+            Assert.GreaterOrEqual(shot.CameraFocalLengthKeyframes.Count, 1,
+                "Digit key should record focal length keyframe when stopwatch is on");
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // Aperture step records when stopwatch on
+        // ══════════════════════════════════════════════════════════════════
+
+        [UnityTest]
+        public IEnumerator BracketKey__RecordsAperture__When__StopwatchOn()
+        {
+            yield return null;
+            yield return null;
+
+            this._timeline = this._shotEvaluator.Controller;
+            var shot = this._timeline.CurrentShot;
+            shot.CameraStopwatch.SetAll(true);
+            this._timeline.Playhead.Scrub(2.0, this._timeline.TotalDuration);
+
+            // Press [ for wider aperture
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState(Key.LeftBracket));
+            yield return null;
+
+            InputSystem.QueueStateEvent(this._keyboard, new KeyboardState());
+            yield return null;
+
+            Assert.GreaterOrEqual(shot.CameraApertureKeyframes.Count, 1,
+                "[ key should record aperture keyframe when stopwatch is on");
+        }
+
+        // ══════════════════════════════════════════════════════════════════
         // Helpers
         // ══════════════════════════════════════════════════════════════════
 
